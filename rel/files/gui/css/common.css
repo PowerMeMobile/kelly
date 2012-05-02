@@ -1,0 +1,23 @@
+input.inputArea {
+    width: 100%;
+}
+
+td.optionName {
+    text-align: right;
+    width: 250px;;
+    background-color: #E6E6E6;
+}
+
+td.optionValue {
+    width: 400px;
+}
+
+textarea.smallResponse {
+    height: 50px;
+    width: 657px;
+}
+
+textarea.largeResponse {
+    height: 150px;
+    width: 657px;
+}

@@ -1,0 +1,14 @@
+{application, k_j3_support,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  k_common,
+                  snmp
+                 ]},
+  {mod, {k_j3_support_app, []} },
+  {env, []}
+ ]}.

@@ -1,0 +1,16 @@
+{application, k_http_api,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+					kernel,
+					stdlib,
+					gproc,
+					cowboy,
+					rfc4627_jsonrpc,
+					k_common
+                 ]},
+  {mod, {k_http_api_app, []}},
+  {env, []}
+ ]}.

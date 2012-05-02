@@ -1,0 +1,13 @@
+{application, k_kyte_storage,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  lager,
+                  kyte
+                 ]},
+  {env, []}
+ ]}.

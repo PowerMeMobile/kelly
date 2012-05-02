@@ -1,0 +1,6 @@
+{exclusive_decode,
+ {'JustAsn',
+  [{decode_sms_req_exclusive,
+    ['SmsRequest', [{destAddrs, [{regular, parts},
+                                 {part, parts},
+                                 {retries, parts}]}]]}]}}.

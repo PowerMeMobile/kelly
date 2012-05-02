@@ -1,0 +1,52 @@
+#!/bin/bash
+
+if [ $# -lt 0 ]; then
+	echo "usage: performance.sh"
+	exit 1
+fi
+
+function is_queue_empty() {
+	rabbitmqctl list_queues -q | grep -q -v 0$
+	res1=$?
+	sleep 1
+	rabbitmqctl list_queues -q | grep -q -v 0$
+	res2=$?
+	sleep 1
+	rabbitmqctl list_queues -q | grep -q -v 0$
+	res3=$?
+
+	# check that all results are the same.
+	if [ $res1 -eq $res2 -a $res2 -eq $res3 ]; then
+		if [ $res1 -ne 0 ]; then
+			return 1
+		else
+			return 0
+		fi
+	else
+		# we got different results. repeat again...
+		is_queue_empty
+	fi
+}
+
+is_queue_empty
+while [ $? -eq 1 ]; do
+	echo Waiting for data...
+	sleep 1
+	is_queue_empty
+done
+
+start=`date '+%s'`
+printf "Starting...[%s]\n" $start
+
+is_queue_empty
+while [ $? -eq 0 ]; do
+	echo Processing...
+	sleep 1
+	is_queue_empty
+done
+
+end=`date '+%s'`
+printf "Done.[%s]\n" $end
+printf "Total time:[%s] secs\n" $(($end - $start))
+
+exit 0

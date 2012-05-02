@@ -1,0 +1,14 @@
+{application, k_riak_storage,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  lager,
+                  %pooler, k_riak_storage launches the pooler itself with custom parameters
+                  riakc
+                 ]},
+  {env, []}
+ ]}.

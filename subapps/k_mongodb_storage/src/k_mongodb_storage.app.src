@@ -1,0 +1,12 @@
+{application, k_mongodb_storage,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  mongodb
+                 ]},
+  {env, []}
+ ]}.
