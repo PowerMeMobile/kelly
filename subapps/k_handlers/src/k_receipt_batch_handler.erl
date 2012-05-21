@@ -9,7 +9,7 @@
 -include_lib("k_common/include/logging.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(undefined, Message) -> % One day ContentType will be <<"ReceiptBatch">> here.
+process(<<"ReceiptBatch">>, Message) ->
 	% ?log_debug("Got message...", []),
 	case 'JustAsn':decode('ReceiptBatch', Message) of
 		{ok, ReceiptBatch} ->

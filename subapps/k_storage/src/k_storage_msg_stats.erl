@@ -201,14 +201,12 @@ read_manifest() ->
 build_reports_and_delete_interval(Start, End, ReportPath1, ReportPath2) ->
 	gen_server:cast(?SERVER, {build_reports_and_delete_interval, Start, End, ReportPath1, ReportPath2}).
 
--spec match_addr(AddrRec::#'FullAddr'{} | #'FullAddrAndRefNum'{} | #'Retry'{}) -> Addr::string().
+-spec match_addr(AddrRec::#'FullAddr'{} | #'FullAddrAndRefNum'{}) -> Addr::string().
 match_addr(AddrRec) ->
 	case AddrRec of
 		#'FullAddr'{addr = Addr} ->
 			Addr;
 		#'FullAddrAndRefNum'{fullAddr = #'FullAddr'{addr = Addr}} ->
-			Addr;
-		#'Retry'{fullAddr = #'FullAddr'{addr = Addr}} ->
 			Addr
 	 end.
 

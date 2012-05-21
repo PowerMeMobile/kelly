@@ -16,8 +16,7 @@ SmsRequest ::= SEQUENCE {
     params     [6] SEQUENCE OF Param,
     sourceAddr [7] FullAddr,
     destAddrs  [8] CHOICE { regular [0] SEQUENCE OF FullAddr,
-                            part    [1] SEQUENCE OF FullAddrAndRefNum,
-                            retries [2] SEQUENCE OF Retry },
+                            part    [1] SEQUENCE OF FullAddrAndRefNum },
     messageIds [9] SEQUENCE OF IA5String
 }
 
@@ -72,12 +71,6 @@ FullAddrAndRefNum ::= SEQUENCE {
     refNum   [1] INTEGER
 }
 
-Retry ::= SEQUENCE {
-    fullAddr  [0] FullAddr,
-    refNum    [1] INTEGER OPTIONAL,
-    onlyIndex [2] INTEGER OPTIONAL
-}
-
 SmStatus ::= SEQUENCE {
     originalId [0] IA5String,
     destAddr   [1] FullAddr,
@@ -93,54 +86,6 @@ Param ::= SEQUENCE {
     value [1] CHOICE { integer [0] INTEGER,
                        string  [1] IA5String,
                        boolean [2] BOOLEAN }
-}
-
-GtwStateRequest ::= SEQUENCE {
-}
-
-GenAck ::= SEQUENCE {
-}
-
-GenNack ::= SEQUENCE {
-}
-
-GtwStateResponse ::= SEQUENCE {
-    states [0] SEQUENCE OF GtwState
-}
-
-GtwState ::= SEQUENCE {
-    id           [0] IA5String,
-    runningSince [1] UTCTime,
-    state        [2] ENUMERATED { running(0), stopping(1), restarting(2) },
-    conns        [3] SEQUENCE OF GtwConn,
-    windowSize   [4] INTEGER,
-    windowInUse  [5] INTEGER,
-    errorCount   [6] INTEGER,
-    connAttempts [7] INTEGER
-}
-
-GtwConn ::= SEQUENCE {
-    name  [0] IA5String,
-    state [1] IA5String
-}
-
-ThroughputRequest ::= SEQUENCE {
-}
-
-ThroughputResponse ::= SEQUENCE {
-    slices [0] SEQUENCE OF Slice
-}
-
-Slice ::= SEQUENCE {
-    periodStart [0] UTCTime,
-    counters    [1] SEQUENCE OF Counter
-}
-
-Counter ::= SEQUENCE {
-    gatewayId      [0] IA5String,
-    connectionName [1] IA5String,
-    type           [2] ENUMERATED { smsOut(1), smsIn(2) },
-    count          [3] INTEGER
 }
 
 END

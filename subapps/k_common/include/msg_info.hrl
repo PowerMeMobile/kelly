@@ -5,7 +5,7 @@
 
 -type encoding() :: {atom(), atom()}.
 -type source_addr() :: #'FullAddr'{}.
--type dest_addr() :: #'FullAddr'{} | #'FullAddrAndRefNum'{} | #'Retry'{}.
+-type dest_addr() :: #'FullAddr'{} | #'FullAddrAndRefNum'{}.
 
 -record(msg_info, {
 	id :: string(),
