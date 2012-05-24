@@ -1,0 +1,86 @@
+REPORTS
+
+Statistical interface for Customers, Networks, Gateways
+
+REST call:
+GET /report/ReportID?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+Where
+	ReportID - report type, 1 - customer's networks, 2 - network's customers
+	YYYY - year
+	MM - month
+	DD - day
+	hh - hours
+	mm - minutes
+
+Example:
+http://localhost:8080/report/1?from=2012-05-20T00:00&to=2012-02-25T00:00
+
+Result:
+<reports>
+    <customer>
+        <id>feda5822-5271-11e1-bd27-001d0947ec73</id>
+        <networks>
+            <network>
+                <id>920a009a-5270-11e1-b961-001d0947ec73</id>
+                <mids>
+                    <id>10140</id>
+                    <id>10112</id>
+                    <id>10178</id>
+                </mids>
+            </network>
+        </networks>
+    </customer>
+</reports>
+
+Example:
+http://localhost:8080/report/2?from=2012-05-20T00:00&to=2012-02-25T00:00
+
+Result:
+<reports>
+    <network>
+        <id>920a009a-5270-11e1-b961-001d0947ec73</id>
+        <customers>
+            <customer>
+                <id>feda5822-5271-11e1-bd27-001d0947ec73</id>
+                <mids>
+                    <id>10149</id>
+                    <id>10126</id>
+                    <id>10109</id>
+                </mids>
+            </customer>
+        </customers>
+    </network>
+</reports>
+
+REST call:
+GET /report/gateways?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+Where
+	YYYY - year
+	MM - month
+	DD - day
+	hh - hours
+	mm - minutes
+
+Example:
+http://localhost:8080/report/gateways?from=2012-05-21T16:00&to=2012-05-25T19:00
+
+Result:
+
+
+Message status request.
+
+REST call:
+GET /message_status/MesID/customer/CustUUID
+Where
+	MesID - message id
+	CustUUID - customer uuid
+
+Example:
+http://localhost:8080/message_status/59/customer/feda5822-5271-11e1-bd27-001d0947ec73
+
+Result:
+<message>
+	<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+	<message_id>59</message_id>
+	<status>delivered</status>
+</message>
