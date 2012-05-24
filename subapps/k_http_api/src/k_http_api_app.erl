@@ -30,6 +30,7 @@ start(_StartType, _StartArgs) ->
             {[<<"network">>], gen_cowboy_restful, [k_http_api_handler_networks]},
             {[<<"provider">>, '_'], gen_cowboy_restful, [k_http_api_handler_providers]},
             {[<<"provider">>], gen_cowboy_restful, [k_http_api_handler_providers]},
+			{[<<"report">>, <<"gateways">>], gen_cowboy_restful, [k_http_api_handler_gtw_stats]},
             {[<<"report">>, '_'], gen_cowboy_restful, [k_http_api_handler_reports]},
 		    {[<<"addr2cust">>], gen_cowboy_restful, [k_http_api_handler_addr2cust]},
             {[<<"gui">>, '...'], gen_cowboy_restful, [k_http_api_handler_gui]},
