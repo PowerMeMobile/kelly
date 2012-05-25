@@ -7,7 +7,7 @@
 -include_lib("k_common/include/JustAsn.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(undefined, Message) -> % in future - CT will be <<"IncomingSm">>
+process(<<"IncomingSm">>, Message) ->
 	case 'JustAsn':decode('IncomingSm', Message) of
 		{ok, #'IncomingSm'{
 			source = SourceFullAddr,
