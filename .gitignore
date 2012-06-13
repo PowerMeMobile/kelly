@@ -1,6 +1,8 @@
-deps
+deps/
+rel/erl_crash.dump
+rel/files/mib/.index
 rel/kelly/
-subapps/*/ebin
+subapps/*/ebin/
 subapps/k_common/include/FunnelAsn.hrl
 subapps/k_common/include/JustAsn.hrl
 subapps/k_common/src/FunnelAsn.asn1db
