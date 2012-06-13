@@ -45,15 +45,16 @@ handle(Req, State = #state{
 		handler_params = Params
 		}) ->
 	{Method, _} = cowboy_http_req:method(Req),
-	case Method of
-		'POST' ->
-			{BodyQs, _} = cowboy_http_req:body_qs(Req),
-			{QsVals, _} = cowboy_http_req:qs_vals(Req),
-			ReqPropList = BodyQs ++ QsVals;
-		Any ->
-			{QsVals, _} = cowboy_http_req:qs_vals(Req),
-			ReqPropList = QsVals
-	end,
+	ReqPropList =
+		case Method of
+			'POST' ->
+				{BodyQs, _} = cowboy_http_req:body_qs(Req),
+				{QsVals, _} = cowboy_http_req:qs_vals(Req),
+				BodyQs ++ QsVals;
+			_Any ->
+				{QsVals, _} = cowboy_http_req:qs_vals(Req),
+				QsVals
+		end,
 	?log_debug("ReqPropList: ~p", [ReqPropList]),
 
 	case parse_params(Params, ReqPropList) of
