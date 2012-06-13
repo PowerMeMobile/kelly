@@ -33,7 +33,7 @@ Result:
 </reports>
 
 Example:
-http://localhost:8080/report/2?from=2012-05-20T00:00&to=2012-02-25T00:00
+http://localhost:8080/report/2?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
 <reports>
