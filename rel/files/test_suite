@@ -1,0 +1,83 @@
+#!/bin/bash
+
+WORK=~/Projects
+STOP=0
+START=0
+BUILD=0
+CONFIG=0
+
+function usage() {
+	echo "Usage: $(basename $0) <stop|build|start|config>"
+}
+
+function perform() {
+	WHAT=$1
+	WHERE=$2
+	HOW=$3
+	echo -n "$WHAT"
+	bash -c "cd $WHERE; $HOW" &> /dev/null
+	if [ $? -ne 0 ]; then
+		echo "Failed"
+		exit 1
+	else
+		echo "Done"
+	fi
+}
+
+function stop() {
+	perform "Stopping $1..." "$2" "$3"
+}
+
+function build() {
+	perform "Building $1..." "$2" "$3"
+}
+
+function start() {
+	perform "Starting $1..." "$2" "$3"
+}
+
+function config() {
+	perform "Configuring $1..." "$2" "$3"
+}
+
+if [ $# -lt 1 ]; then
+	usage
+	exit 1
+fi
+
+while [ ! -z "$1" ]; do
+	case "$1" in
+		stop) STOP=1;;
+		build) BUILD=1;;
+		start) START=1;;
+		config) CONFIG=1;;
+		*) usage; exit 1;
+	esac
+	shift
+done
+
+if [ $STOP -eq 1 ]; then
+	stop Funnel "$WORK/funnel_mini_rel/funnel_mini/bin/" "./funnel stop"
+	stop Just "$WORK/just_mini_rel/just_mini/bin/" "./just stop"
+	stop Kelly "$WORK/kelly_private/rel/kelly/bin/" "./kelly stop; true" # kelly returns 1 if it's not running
+	stop RabbitMQ . "rabbitmqctl list_queues -q 2> /dev/null | cut -f 1 | xargs -I {} rabbitmqadmin delete queue name={} ; rabbitmqctl stop"
+	stop Java . "pkill java"
+fi
+
+if [ $BUILD -eq 1 ]; then
+	build Funnel "$WORK/funnel_mini_rel/" "make"
+	build Just "$WORK/just_mini_rel/" "make"
+	build Kelly "$WORK/kelly_private/" "make"
+fi
+
+if [ $START -eq 1 ]; then
+	start RabbitMQ . "rabbitmq-server -detached; sleep 5"
+	start Funnel "$WORK/funnel_mini_rel/funnel_mini/bin/" "./funnel start"
+	start Just "$WORK/just_mini_rel/just_mini/bin/" "./just start"
+	start Kelly "$WORK/kelly_private/rel/kelly/bin/" "./kelly start; sleep 5"
+	start SMPPSim "/opt/SMPPSim/" "./startsmppsim.sh &"
+fi
+
+if [ $CONFIG -eq 1 ]; then
+	config Kelly "$WORK/kelly_private/rel/kelly/bin" "./kelly_http_configure"
+fi

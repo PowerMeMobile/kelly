@@ -1,0 +1,10 @@
+Kyte	11.702	12.199	12.475	11.002
+MongoDB	30.145	30.199	23.608	30.269
+# Riak 1 node
+Riak	114.322	128.984	99.235	193.554
+PostgreSQL	610.411	610.74	60.739	604.692
+MySQL(MyISAM)	80.675	152.878	86.612	70.342
+# MySQL InnoDB wit innodb_flush_log_at_trx_commit = 2
+MySQL(InnoDB)	88.665	169.727	84.632	79.239
+# Cassandra 1 node
+Cassandra	38.032	35.354	58.727	30.259

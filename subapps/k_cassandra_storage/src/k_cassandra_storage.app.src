@@ -1,0 +1,14 @@
+{application, k_cassandra_storage,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  lager,
+                  thrift,
+				  cassandra_thrift
+                 ]},
+  {env, []}
+ ]}.
