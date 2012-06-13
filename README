@@ -67,17 +67,22 @@ $ ./funnel console
 Note the address and port from the console output, you will see something like:
 [info] server: initializing (addr: 127.0.1.1, port: 2775)
 
-4.3 Kelly launching
+4.3 Configure Kelly node name.
+$ cd $WORD/kelly/rel/kelly/releases/1/vm.args
+Replace '127.0.0.1' in kelly@127.0.0.1 with valid server's ip address.
+
+4.4 Kelly launching
 $ cd $WORK/kelly/
 $ make console
 
-4.4 Just launching
+4.5 Just launching
 $ cd $WORK/just_mini_rel/
 $ make console
 
-4.5 Configuration
+4.6 Configuration uplink settings
 $ cd $WORK/kelly/rel/kelly/bin/
 
 Configure the `OUTPUT_SMPP_HOST' and `OUTPUT_SMPP_PORT' settings to your SMPP target (SMPPSim for example) in `kelly_http_configure' file.
 Apply the settings:
 $ ./kelly_http_configure
+
