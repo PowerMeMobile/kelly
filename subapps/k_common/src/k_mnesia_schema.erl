@@ -56,7 +56,24 @@ init({}) ->
 	Nodes = [node()],
 	mnesia:set_debug_level(verbose),
 	mnesia:stop(),
-	mnesia:create_schema(Nodes),
+	?log_debug("Creating mnesia schema on: ~p...", [Nodes]),
+	ok = case mnesia:create_schema(Nodes) of
+			ok ->
+				ok;
+			{error, {MnesiaNode, {already_exists, MnesiaNode}}} ->
+				MnesiaNodes = mnesia:system_info(db_nodes),
+				case lists:member(MnesiaNode, MnesiaNodes) of
+					true ->
+						?log_debug("Mnesia schema already exists on: ~p", [MnesiaNode]),
+						ok;
+					false ->
+						?log_error("Mnesia schema already exists on: ~p, but it's not in existing list: ~p",
+							[MnesiaNode, MnesiaNodes]),
+						?log_error("Did you rename the node?", []),
+						{error, schema_already_exists_created_on_different_node}
+				end
+		end,
+	?log_debug("Mnesia schema created/reused.", []),
 	mnesia:start(),
 
 	{ok, #state{
