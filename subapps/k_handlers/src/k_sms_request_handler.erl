@@ -67,8 +67,9 @@ update_msg_status(InputId, DefaultStatus, RegDelivery, ReqTime) ->
 						ok = k_storage_api:set_msg_status(InputId, NewMsgStatus);
 					%% unexpected message status.
 					%% the most probably the same message was received again.
-					Unexpected ->
-						?log_error("Unexpected message status: ~p", [Unexpected])
+					_Unexpected ->
+						%?log_error("Unexpected message status: ~p", [Unexpected]),
+						ok
 				end
 	end.
 

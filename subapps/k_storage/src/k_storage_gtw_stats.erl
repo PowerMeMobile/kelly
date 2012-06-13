@@ -94,10 +94,10 @@ handle_cast({build_report_and_delete_interval, _Start, _End, ReportPath}, State 
 			Query = qlc:q([GtwStats || GtwStats <- mnesia:table(gtw_stats)]),
 			GtwStatsRecs = qlc:e(Query),
 
-			?log_debug("Raw gtw stats report: ~p", [GtwStatsRecs]),
+			%?log_debug("Raw gtw stats report: ~p", [GtwStatsRecs]),
 
 			Report = k_storage_reports:gtw_stats_report(GtwStatsRecs),
-			?log_debug("Gtw report: ~p", [Report]),
+			%?log_debug("Gtw report: ~p", [Report]),
 
 			ok = k_storage_util:write_term_to_file(Report, ReportPath),
 
@@ -146,7 +146,7 @@ on_tick(State = #state{}) ->
 	%% Align time by frequency.
 	To = Current - Current rem Frequency,
 	From = To - Frequency,
-	?log_debug("~p-~p", [From, To]),
+	%?log_debug("~p-~p", [From, To]),
 	Filename = io_lib:format("~p.dat", [From]),
 	Path = k_storage_util:gtw_stats_file_path(Filename),
 	build_report_and_delete_interval(From, To, Path),

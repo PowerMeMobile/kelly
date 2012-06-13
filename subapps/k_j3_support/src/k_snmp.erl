@@ -98,8 +98,8 @@ ready(process_queue, State = #state{time = Time}) ->
 				process_queue(),
 				{next_state, ready, State};
 			Error ->
-				?log_error("error process snmp task: ~p", [Error]),
-				?log_debug("going to sleep...", []),
+				%?log_error("error process snmp task: ~p", [Error]),
+				%?log_debug("going to sleep...", []),
 				start_timer(Time),
 				{next_state, sleep, State}
 		end;
@@ -211,7 +211,7 @@ set(Index, [{ColumnName, Value} | RestValueList], _LastResult = {ok, _}) ->
 	%?log_debug("snmp result: ~p", [Result]),
 	set(Index, RestValueList, parse_snmp_result(Result));
 set(_Index, _ValueList, ErrorResult) ->
-	?log_error("snmp set error: ~p", [ErrorResult]),
+	%?log_error("snmp set error: ~p", [ErrorResult]),
 	{error, ErrorResult}.
 
 is_exist(TableName, Index)->

@@ -130,13 +130,13 @@ handle_cast({build_reports_and_delete_interval, Start, End, ReportPath1, ReportP
 							end
 					end
 				end, {[], PrefixNetworkIdMap}, MsgInfoRecs),
-			?log_debug("Raw msg stats report: ~p", [RawReport]),
+			%?log_debug("Raw msg stats report: ~p", [RawReport]),
 
 			Report1 = k_storage_reports:msg_stats_report1(RawReport),
-			?log_debug("Msg stats report1: ~p", [Report1]),
+			%?log_debug("Msg stats report1: ~p", [Report1]),
 
 			Report2 = k_storage_reports:msg_stats_report2(RawReport),
-			?log_debug("Msg stats report2: ~p", [Report2]),
+			%?log_debug("Msg stats report2: ~p", [Report2]),
 
 			ok = k_storage_util:write_term_to_file(Report1, ReportPath1),
 			ok = k_storage_util:write_term_to_file(Report2, ReportPath2),
@@ -187,7 +187,7 @@ on_tick(State = #state{}) ->
 	%% Align time by frequency.
 	To = Current - Current rem Frequency,
 	From = To - Frequency,
-	?log_debug("~p-~p", [From, To]),
+	%?log_debug("~p-~p", [From, To]),
 	Filename1 = io_lib:format("~p-1.dat", [From]),
 	Filename2 = io_lib:format("~p-2.dat", [From]),
 	Path1 = k_storage_util:msg_stats_file_path(Filename1),
