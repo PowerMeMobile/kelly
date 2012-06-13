@@ -312,20 +312,40 @@ register(Dict, Pid, Tag) ->
 	NewDict = dict:store(MonRef, Tag, Dict),
 	{ok, NewDict}.
 
+parse_opts(undefined) ->
+	parse_opts([]);
+
 parse_opts(Opts) ->
-	Host    = proplists:get_value(host, Opts, "localhost"),
-	Port 	= proplists:get_value(port, Opts, 5672),
-	Xchg 	= proplists:get_value(exchange, Opts, <<"/">>),
-	User 	= proplists:get_value(username, Opts, <<"guest">>),
-	Pass 	= proplists:get_value(password, Opts, <<"guest">>),
-	Qos 	= proplists:get_value(qos, Opts, 0),
+	DefaultPropList = 
+		case application:get_env(k_common, amqp_props) of
+			{ok, Value} -> Value;
+			undefined -> []
+		end,
+	?log_debug("DefaultPropList: ~p", [DefaultPropList]),
+	
+	%% default amqp props definition
+	DHost 		= proplists:get_value(host, DefaultPropList, "127.0.0.1"),
+	DPort 		= proplists:get_value(port, DefaultPropList, 5672),
+	DVHost 		= proplists:get_value(vhost, DefaultPropList, <<"/">>),
+	DUsername 	= proplists:get_value(username, DefaultPropList, <<"guest">>),
+	DPass 		= proplists:get_value(password, DefaultPropList, <<"guest">>),
+	DQos 		= proplists:get_value(qos, DefaultPropList, 0),
+
+	%% custom amqp props definition
+	Host    = proplists:get_value(host, Opts, DHost),
+	Port 	= proplists:get_value(port, Opts, DPort),
+	VHost 	= proplists:get_value(vhost, Opts, DVHost),
+	User 	= proplists:get_value(username, Opts, DUsername),
+	Pass 	= proplists:get_value(password, Opts, DPass),
+	Qos 	= proplists:get_value(qos, Opts, DQos),
 
 	AmqpSpec = #amqp_params_network{
 					username = User,
 					password = Pass,
-					virtual_host = Xchg,
+					virtual_host = VHost,
 					host = Host,
 					port = Port,
 					heartbeat = 1
 				},
+	?log_debug("AmqpSpec: ~p", [AmqpSpec]),
 	{ok, AmqpSpec, Qos}.
