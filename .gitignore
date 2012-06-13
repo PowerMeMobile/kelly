@@ -1,0 +1,9 @@
+deps
+rel/kelly/
+subapps/*/ebin
+subapps/k_common/include/FunnelAsn.hrl
+subapps/k_common/include/JustAsn.hrl
+subapps/k_common/src/FunnelAsn.asn1db
+subapps/k_common/src/FunnelAsn.erl
+subapps/k_common/src/JustAsn.asn1db
+subapps/k_common/src/JustAsn.erl
