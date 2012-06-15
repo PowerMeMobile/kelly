@@ -4,14 +4,17 @@
 	set_network/2,
 	del_network/1,
 	get_network/1,
+	get_networks/0,
 
 	set_provider/2,
 	del_provider/1,
 	get_provider/1,
+	get_providers/0,
 
 	set_gateway/2,
 	del_gateway/1,
 	get_gateway/1,
+	get_gateways/0,
 	set_gateway_connection/2,
 	del_gateway_connection/2
 ]).
@@ -32,6 +35,10 @@ set_network(NetworkId, Network)->
 get_network(NetworkId) ->
 	k_ntw_storage:get_network(NetworkId).
 
+-spec get_networks() -> {ok, [{network_id(), #network{}}]} | {error, term()}.
+get_networks() ->
+	k_ntw_storage:get_networks().
+
 -spec del_network(network_id()) -> ok | {error, no_entry} | {error, term()}.
 del_network(NetworkId) ->
 	k_ntw_storage:del_network(NetworkId).
@@ -48,6 +55,10 @@ set_provider(ProviderId, Provider)->
 get_provider(ProviderId) ->
 	k_prv_storage:get_provider(ProviderId).
 
+-spec get_providers() -> {ok, [{provider_id(), #provider{}}]} | {error, term()}.
+get_providers() ->
+	k_prv_storage:get_providers().
+
 -spec del_provider(provider_id()) -> ok | {error, no_entry} | {error, term()}.
 del_provider(ProviderId) ->
 	k_prv_storage:del_provider(ProviderId).
@@ -63,6 +74,10 @@ set_gateway(GatewayId, Gateway)->
 -spec get_gateway(gateway_id()) -> {ok, #gateway{}} | {error, no_entry} | {error, term()}.
 get_gateway(GatewayId) ->
 	k_gtw_storage:get_gateway(GatewayId).
+
+-spec get_gateways() -> {ok, [{gateway_id(), #gateway{}}]} | {error, term()}.
+get_gateways() ->
+	k_gtw_storage:get_gateways().
 
 -spec del_gateway(gateway_id()) -> ok | {error, no_entry} | {error, term()}.
 del_gateway(GatewayId) ->
