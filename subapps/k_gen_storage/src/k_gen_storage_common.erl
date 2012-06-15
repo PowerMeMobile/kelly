@@ -6,13 +6,15 @@
 -export([
 	start_link/1,
 	%% non-versioned
+	read/1,
 	read/2,
 	write/3,
 	delete/2,
 	%% versioned
-	read/3,
-	write/4,
-	delete/3
+	read_version/2,
+	read_version/3,
+	write_version/4,
+	delete_version/3
 ]).
 
 %% gen_server callbacks
@@ -42,6 +44,11 @@ start_link(CollectionName) ->
 
 %% Non-versioned
 
+-spec read(CollectionName::atom()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
+read(CollectionName) ->
+	{ok, Db} = gen_server:call(CollectionName, get_db, infinity),
+	k_gen_storage:read(Db).
+
 -spec read(CollectionName::atom(), Key::term()) -> {ok, Value::term()} | {error, Reason::term()}.
 read(CollectionName, Key) ->
 	{ok, Db} = gen_server:call(CollectionName, get_db, infinity),
@@ -59,8 +66,27 @@ delete(CollectionName, Key) ->
 
 %% Versioned
 
--spec read(CollectionName::atom(), Version::integer(), Key::term()) -> {ok, Value::term()} | {error, Reason::term()}.
-read(CollectionName, Version, Key) ->
+-spec read_version(CollectionName::atom(), Version::integer()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
+read_version(CollectionName, Version) ->
+	{ok, Db} = gen_server:call(CollectionName, get_db, infinity),
+	case k_gen_storage:read(Db) of
+		{ok, Entries} ->
+			{ok, lists:map(
+				fun({Key, VersionedValue}) ->
+					case VersionedValue of
+						{Version, Value} ->
+							{Key, Value};
+						{OldVersion, OldValue} ->
+							{Key, update(OldVersion, OldValue, Version)}
+					end
+				end,
+				Entries)};
+		Error ->
+			Error
+	 end.
+
+-spec read_version(CollectionName::atom(), Version::integer(), Key::term()) -> {ok, Value::term()} | {error, Reason::term()}.
+read_version(CollectionName, Version, Key) ->
 	{ok, Db} = gen_server:call(CollectionName, get_db, infinity),
 	case k_gen_storage:read(Db, Key) of
 		{ok, {Version, Value}} ->
@@ -71,14 +97,14 @@ read(CollectionName, Version, Key) ->
 			Error
 	 end.
 
--spec write(CollectionName::atom(), Version::integer(), Key::term(), Value::term()) -> ok | {error, Reason::term()}.
-write(CollectionName, Version, Key, Value) ->
+-spec write_version(CollectionName::atom(), Version::integer(), Key::term(), Value::term()) -> ok | {error, Reason::term()}.
+write_version(CollectionName, Version, Key, Value) ->
 	{ok, Db} = gen_server:call(CollectionName, get_db, infinity),
 	VValue = {Version, Value},
 	k_gen_storage:write(Db, Key, VValue).
 
--spec delete(CollectionName::atom(), Version::integer(), Key::term()) -> ok | {error, Reason::term()}.
-delete(CollectionName, _Version, Key) ->
+-spec delete_version(CollectionName::atom(), Version::integer(), Key::term()) -> ok | {error, Reason::term()}.
+delete_version(CollectionName, _Version, Key) ->
 	{ok, Db} = gen_server:call(CollectionName, get_db, infinity),
 	k_gen_storage:delete(Db, Key).
 
