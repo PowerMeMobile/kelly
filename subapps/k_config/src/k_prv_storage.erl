@@ -5,8 +5,9 @@
 %% API
 -export([
 	set_provider/2,
-	del_provider/1,
-	get_provider/1
+	get_provider/1,
+	get_providers/0,
+	del_provider/1
 ]).
 
 -include_lib("k_common/include/storages.hrl").
@@ -17,12 +18,16 @@
 
 -spec set_provider(provider_id(), #provider{}) -> ok | {error, term()}.
 set_provider(ProviderId, Provider)->
-	k_gen_storage_common:write(providers, ?CURRENT_VERSION, ProviderId, Provider).
+	k_gen_storage_common:write_version(providers, ?CURRENT_VERSION, ProviderId, Provider).
 
--spec get_provider(provider_id()) -> {ok, Provider :: #provider{}} | {error, no_entry} | {error, term()}.
+-spec get_provider(provider_id()) -> {ok, #provider{}} | {error, no_entry} | {error, term()}.
 get_provider(ProviderId) ->
-	k_gen_storage_common:read(providers, ?CURRENT_VERSION, ProviderId).
+	k_gen_storage_common:read_version(providers, ?CURRENT_VERSION, ProviderId).
+
+-spec get_providers() -> {ok, [{provider_id(), #provider{}}]} | {error, term()}.
+get_providers() ->
+	k_gen_storage_common:read_version(providers, ?CURRENT_VERSION).
 
 -spec del_provider(provider_id()) -> ok | {error, no_entry} | {error, term()}.
 del_provider(ProviderId) ->
-	k_gen_storage_common:delete(providers, ?CURRENT_VERSION, ProviderId).
+	k_gen_storage_common:delete_version(providers, ?CURRENT_VERSION, ProviderId).

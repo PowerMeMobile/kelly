@@ -7,6 +7,7 @@
 	start_link/0,
 	open/2,
 	close/1,
+	read/1,
 	read/2,
 	write/3,
 	delete/2
@@ -41,28 +42,51 @@
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec open(CollectionName::string(), Opts::[tuple()]) -> {ok, Coll::atom()} | {error, Reason::term()}.
+-spec open(CollectionName::string(), Opts::[tuple()]) -> {ok, Coll::binary()} | {error, Reason::term()}.
 open(CollectionName, _Opts) ->
-	%% !!! Take care `list_to_atom' !!!
-	{ok, list_to_atom(CollectionName)}.
+	{ok, list_to_binary(CollectionName)}.
 
--spec close(Coll::atom()) -> ok | {error, Reason::term()}.
+-spec close(Coll::binary()) -> ok | {error, Reason::term()}.
 close(_Coll) ->
 	ok.
 
--spec read(Coll::atom(), Key::term()) -> {ok, Value::term()} | {error, no_entry} | {error, Reason::term()}.
+-spec read(Coll::binary()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
+read(Coll) ->
+	case gen_server:call(?MODULE, get_conn_and_db, infinity) of
+		{ok, Conn, DBName} ->
+			Res = mongo:do(safe, master, Conn, DBName,
+				fun() ->
+					Cursor = mongo:find(Coll, {}),
+					Documents = mongo_cursor:rest(Cursor),
+					lists:map(
+						fun({'_id', BsonBinKey, 'value', BsonBinValue}) ->
+							{bson_bin_to_term(BsonBinKey), bson_bin_to_term(BsonBinValue)}
+						end,
+						Documents)
+				end),
+			case Res of
+				{ok, Entries} ->
+					{ok, Entries};
+				{failure, Reason} ->
+					{error, Reason}
+			end;
+		{error, Reason} ->
+			{error, Reason}
+	end.
+
+-spec read(Coll::binary(), Key::term()) -> {ok, Value::term()} | {error, no_entry} | {error, Reason::term()}.
 read(Coll, Key) ->
 	case gen_server:call(?MODULE, get_conn_and_db, infinity) of
 		{ok, Conn, DBName} ->
 			Res = mongo:do(safe, master, Conn, DBName,
-					fun() ->
-						case mongo:find_one(Coll, selector(Key)) of
-							{} ->
-								{error, no_entry};
-							{{'_id', _, 'value', BsonBin}} ->
-								{ok, bson_bin_to_term(BsonBin)}
-						end
-					end),
+				fun() ->
+					case mongo:find_one(Coll, selector(Key)) of
+						{} ->
+							{error, no_entry};
+						{{'_id', _, 'value', BsonBinValue}} ->
+							{ok, bson_bin_to_term(BsonBinValue)}
+					end
+				end),
 			case Res of
 				{ok, RetValue} ->
 					RetValue;
@@ -73,14 +97,14 @@ read(Coll, Key) ->
 			{error, Reason}
 	end.
 
--spec write(Coll::atom(), Key::term(), Value::term()) -> ok | {error, Reason::term()}.
+-spec write(Coll::binary(), Key::term(), Value::term()) -> ok | {error, Reason::term()}.
 write(Coll, Key, Value) ->
 	case gen_server:call(?MODULE, get_conn_and_db, infinity) of
 		{ok, Conn, DBName} ->
 			Res = mongo:do(safe, master, Conn, DBName,
-					fun() ->
-						mongo:repsert(Coll, selector(Key), {'_id', term_to_bson_bin(Key), 'value', term_to_bson_bin(Value)})
-					end),
+				fun() ->
+					mongo:repsert(Coll, selector(Key), {'_id', term_to_bson_bin(Key), 'value', term_to_bson_bin(Value)})
+				end),
 			case Res of
 				{ok, _} ->
 					ok;
@@ -91,14 +115,14 @@ write(Coll, Key, Value) ->
 			{error, Reason}
 	end.
 
--spec delete(Coll::atom(), Key::term()) -> ok | {error, no_entry} | {error, Reason::term()}.
+-spec delete(Coll::binary(), Key::term()) -> ok | {error, no_entry} | {error, Reason::term()}.
 delete(Coll, Key) ->
 	case gen_server:call(?MODULE, get_conn_and_db, infinity) of
 		{ok, Conn, DBName} ->
 			Res = mongo:do(safe, master, Conn, DBName,
-					fun() ->
-						mongo:delete(Coll, selector(Key))
-					end),
+				fun() ->
+					mongo:delete(Coll, selector(Key))
+				end),
 			case Res of
 				{ok, _} ->
 					ok;

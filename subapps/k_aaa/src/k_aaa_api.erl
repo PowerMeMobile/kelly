@@ -4,6 +4,7 @@
 -export([
 	set_customer/2,
 	del_customer/1,
+	get_customers/0,
 	get_customer_by_system_id/1,
 	get_customer_by_id/1,
 	get_customer_user/2,
@@ -29,6 +30,10 @@ set_customer(SystemId, Customer = #customer{
 		Error ->
 			Error
 	end.
+
+-spec get_customers() -> {ok, [{customer_id(), #customer{}}]} | {error, term()}.
+get_customers() ->
+	k_aaa_customers:get_customers().
 
 -spec get_customer_by_system_id(system_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_system_id(SystemId) ->

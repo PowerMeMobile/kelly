@@ -4,6 +4,7 @@
 -export([
 	open/1,
 	close/1,
+	read/1,
 	read/2,
 	write/3,
 	delete/2
@@ -13,7 +14,7 @@
 -export([behaviour_info/1]).
 
 behaviour_info(callbacks) ->
-    [{start_link, 0}, {open, 2}, {close, 1}, {read, 2}, {write, 3}, {delete, 2}];
+    [{start_link, 0}, {open, 2}, {close, 1}, {read, 1}, {read, 2}, {write, 3}, {delete, 2}];
 behaviour_info(_Other) ->
     undefined.
 
@@ -40,6 +41,10 @@ open(CollectionName) ->
 -spec close(Handle::handle()) -> ok | {error, Reason::term()}.
 close({Engine, Collection}) ->
 	Engine:close(Collection).
+
+-spec read(Handle::handle()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
+read({Engine, Collection}) ->
+	Engine:read(Collection).
 
 -spec read(Handle::handle(), Key::term()) -> {ok, Value::term()} | {error, no_entry} | {error, Reason::term()}.
 read({Engine, Collection}, Key) ->
