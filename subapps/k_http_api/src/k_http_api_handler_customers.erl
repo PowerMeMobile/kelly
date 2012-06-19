@@ -9,7 +9,7 @@
 -include_lib("k_common/include/storages.hrl").
 
 -record(state, {
-	id
+	id :: list() | all
 }).
 
 %%% REST parameters
@@ -41,6 +41,9 @@ init(_Req, 'GET', [<<"customer">>, BinId]) ->
 	Id = binary_to_list(BinId),
 	{ok, #get{}, #state{id = Id}};
 
+init(_Req, 'GET', [<<"customers">>]) ->
+	{ok, #get{}, #state{id = all}};
+
 init(_Req, 'POST', [<<"customer">>]) ->
 	{ok, #create{}, #state{}};
 
@@ -55,6 +58,16 @@ init(_Req, 'DELETE', [<<"customer">>, BinId]) ->
 init(_Req, HttpMethod, Path) ->
 	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
 	{error, bad_request}.
+
+handle(_Req, #get{}, State = #state{id = all}) ->
+	case k_aaa_api:get_customers() of
+ 		{ok, CustList} ->
+			{ok, CustReady} = prepare(CustList),
+			?log_debug("CustReady: ~p", [CustReady]),
+			{ok, {customers, CustReady}, State};
+		{error, Error} ->
+			{ok, Error, State}
+	end;
 
 handle(_Req, #get{}, State = #state{id = Id}) ->
 	case k_aaa_api:get_customer_by_system_id(Id) of
@@ -154,7 +167,59 @@ handle(_Req, #delete{}, State = #state{id = Id}) ->
 terminate(_Req, _State = #state{}) ->
     ok.
 
-%%% Local functions
+%% ===================================================================
+%% Local Functions Definitions
+%% ===================================================================
+
+
+prepare(ItemList) when is_list(ItemList) ->
+	prepare(ItemList, []).
+
+prepare([], Acc) ->
+	{ok, Acc};
+prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
+	%% ProviderFun = ?record_to_proplist_(provider),
+	%% ReadyPrv = ProviderFun(Prv, [{uuid, UUID}]),
+	%% prepare(Rest, [ReadyPrv | Acc]).
+
+	 #customer{
+		allowedSources = AddrsList,
+		defaultSource = DefaultSource, %addr() | undefined, ????????
+		users = UsersList
+			} = Customer,
+
+	%% preparation users' records
+	UserFun = ?record_to_proplist(user),
+	UsersPropList = lists:map(fun(UserRecord)->
+		{RecName, PropList} = UserFun(UserRecord),
+		{RecName, proplists:delete(pswd_hash, PropList)}
+		end, UsersList),
+
+	%% preparation addrs' records
+	AddrFun = ?record_to_proplist(addr),
+		AddrsPropList = lists:map(fun(AddrRecord)->
+		AddrFun(AddrRecord)
+		end, AddrsList),
+
+	%% preparation defaultSource field
+	DefSourcePropList =
+		case DefaultSource of
+			undefined ->
+				undefined;
+			Record when is_tuple(Record) ->
+				AddrFun(Record)
+		end,
+
+	%% preparation customer's record
+	CustomerFun = ?record_to_proplist_(customer),
+	ReadyCustomer = CustomerFun(Customer#customer{
+								users = UsersPropList,
+								allowedSources = AddrsPropList,
+								defaultSource = DefSourcePropList},
+								[{uuid, UUID}]),
+	?log_debug("ReadyCustomer: ~p", [ReadyCustomer]),
+	prepare(Rest, [ReadyCustomer | Acc]).
+
 
 %% convert "addr,ton,npi;addr,ton,npi" to [#addr{}]
 decode_addr(AddrString) ->

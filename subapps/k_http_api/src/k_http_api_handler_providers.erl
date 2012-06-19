@@ -61,7 +61,6 @@ handle(_Req, #get{}, State = #state{id = all}) ->
 			{ok, Error, State}
 	end;
 
-
 handle(_Req, #get{}, State = #state{id = ProviderId}) ->
 	case k_config_api:get_provider(ProviderId) of
 		{ok, Provider = #provider{}} ->

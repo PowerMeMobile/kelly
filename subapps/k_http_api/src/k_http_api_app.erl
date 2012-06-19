@@ -27,6 +27,7 @@ start(_StartType, _StartArgs) ->
             {[<<"customer">>, '_', <<"user">>], gen_cowboy_restful, [k_http_api_handler_users]},
             {[<<"customer">>, '_'], gen_cowboy_restful, [k_http_api_handler_customers]},
             {[<<"customer">>], gen_cowboy_restful, [k_http_api_handler_customers]},
+            {[<<"customers">>], gen_cowboy_restful, [k_http_api_handler_customers]},
             {[<<"network">>, '_'], gen_cowboy_restful, [k_http_api_handler_networks]},
             {[<<"network">>], gen_cowboy_restful, [k_http_api_handler_networks]},
             {[<<"networks">>], gen_cowboy_restful, [k_http_api_handler_networks]},
