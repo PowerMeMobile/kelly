@@ -53,9 +53,9 @@ init(_Req, HttpMethod, Path) ->
 handle(_Req, #get{}, State = #state{id = all}) ->
 	case k_config_api:get_gateways() of
 		{ok, GtwList} ->
-			{ok, Response} = prepare_gtws(GtwList),
-			?log_debug("Response: ~p", [Response]),
-			{ok, Response, State};
+			{ok, GtwsReady} = prepare_gtws(GtwList),
+			?log_debug("GtwsReady: ~p", [GtwsReady]),
+			{ok, {gateways, GtwsReady}, State};
 		{error, Error} ->
 			{ok, Error, State}
 	end;
