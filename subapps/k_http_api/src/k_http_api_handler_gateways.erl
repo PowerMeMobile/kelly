@@ -9,7 +9,7 @@
 -include("gen_cowboy_restful_spec.hrl").
 
 -record(state, {
-	id
+	id :: list() | all
 }).
 
 %%% REST parameters
@@ -31,6 +31,9 @@
 init(_Req, 'GET', [<<"gateway">>, BinId]) ->
 	Id = binary_to_list(BinId),
 	{ok, #get{}, #state{id = Id}};
+
+init(_Req, 'GET', [<<"gateway">>]) ->
+	{ok, #get{}, #state{id = all}};
 
 init(_Req, 'POST', [<<"gateway">>]) ->
 	{ok, #create{}, #state{}};
@@ -65,11 +68,20 @@ handle(_Req, #get{}, State = #state{id = Id}) ->
 										connections = ConnPropList
 										}),
 			?log_debug("Response: ~p", [Response]),
+			erlang:halt(),
 
 			{ok, Response, State};
 		Any ->
 			{ok, Any, State}
 	end;
+
+%% handle(_Req, #get{}, State = #state{id = all}) ->
+%% 	case k_config_api:get_gateways() of
+%% 		{ok, GtwList} ->
+
+%% 		{error, Error} ->
+%% 			{ok, Error, State}
+%% 	end;
 
 handle(_Req, #create{
 	id = Id,
