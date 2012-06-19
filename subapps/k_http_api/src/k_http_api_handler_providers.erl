@@ -9,7 +9,7 @@
 -include("gen_cowboy_restful_spec.hrl").
 
 -record(state, {
-	id
+	id :: list() | all
 }).
 
 %%% REST parameters
@@ -33,6 +33,9 @@ init(_Req, 'GET', [<<"provider">>, BinId]) ->
 	Id = binary_to_list(BinId),
 	{ok, #get{}, #state{id = Id}};
 
+init(_Req, 'GET', [<<"providers">>]) ->
+	{ok, #get{}, #state{id = all}};
+
 init(_Req, 'POST', [<<"provider">>]) ->
 	{ok, #create{}, #state{}};
 
@@ -47,6 +50,17 @@ init(_Req, 'DELETE', [<<"provider">>, BinId]) ->
 init(_Req, HttpMethod, Path) ->
 	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
 	{error, bad_request}.
+
+handle(_Req, #get{}, State = #state{id = all}) ->
+	case k_config_api:get_providers() of
+		{ok, PrvList} ->
+			{ok, PrvsReady} = prepare(PrvList),
+			?log_debug("PrvsReady: ~p", [PrvsReady]),
+			{ok, {providers, PrvsReady}, State};
+		{error, Error} ->
+			{ok, Error, State}
+	end;
+
 
 handle(_Req, #get{}, State = #state{id = ProviderId}) ->
 	case k_config_api:get_provider(ProviderId) of
@@ -82,3 +96,19 @@ handle(_Req, #delete{}, State = #state{id = ProviderId}) ->
 
 terminate(_Req, _State = #state{}) ->
     ok.
+
+%% ===================================================================
+%% Local Functions Definitions
+%% ===================================================================
+
+prepare(PrvList) when is_list(PrvList) ->
+	prepare(PrvList, []).
+
+prepare([], Acc) ->
+	{ok, Acc};
+prepare([{UUID, Prv = #provider{}} | Rest], Acc) ->
+	ProviderFun = ?record_to_proplist_(provider),
+	ReadyPrv = ProviderFun(Prv, [{uuid, UUID}]),
+	prepare(Rest, [ReadyPrv | Acc]).
+
+
