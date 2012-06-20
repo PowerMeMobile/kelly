@@ -19,6 +19,7 @@
 -record(create, {
 	id = {mandatory, <<"id">>, list},
 	uuid = {mandatory, <<"uuid">>, list},
+	name = {mandatory, <<"name">>, list},
 	priority = {mandatory, <<"priority">>, integer},
 	rps = {optional, <<"rps">>, integer},
 	allowedSources = {mandatory, <<"allowed_sources">>, list},
@@ -28,7 +29,8 @@
 	receiptsAllowed = {optional, <<"receipts_allowed">>, boolean},
 	noRetry = {optional, <<"no_retry">>, boolean},
 	defaultValidity = {mandatory, <<"default_validity">>, list},
-	maxValidity = {mandatory, <<"max_validity">>, integer}
+	maxValidity = {mandatory, <<"max_validity">>, integer},
+	state = {mandatory, <<"state">>, integer}
 }).
 
 -record(update, {
@@ -83,6 +85,7 @@ handle(_Req, #get{}, State = #state{id = Id}) ->
 handle(_Req, #create{
 			id = Id,
 			uuid = UUID,
+			name = Name,
 			priority = Priority,
 			rps = Rps,
 			allowedSources = AddrString,
@@ -92,12 +95,14 @@ handle(_Req, #create{
 			receiptsAllowed = ReceiptsAllowed,
 			noRetry = NoRetry,
 			defaultValidity = DefaultValidity,
-			maxValidity = MaxValidity
+			maxValidity = MaxValidity,
+			state = CustState
 					}, State = #state{}) ->
 
 	Customer = #customer{
 			id = Id,
 			uuid = UUID,
+			name = Name,
 			priority = Priority,
 			rps = Rps,
 			allowedSources = decode_addr(AddrString),
@@ -108,7 +113,8 @@ handle(_Req, #create{
 			noRetry = NoRetry,
 			defaultValidity = DefaultValidity,
 			maxValidity = MaxValidity,
-			users = []
+			users = [],
+			state = CustState
 	},
 
 	k_snmp:set_row(cst, UUID, [
