@@ -7,6 +7,7 @@
 	start_link/0,
 	open/2,
 	close/1,
+	read/1,
 	read/2,
 	write/3,
 	delete/2
@@ -48,6 +49,15 @@ open(FileName, Opts) ->
 -spec close(Db::pid()) -> ok | {error, Reason::term()}.
 close(Db) ->
 	kyte:db_close(Db).
+
+-spec read(Db::pid()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
+read(Db) ->
+	case kyte:db_list(Db) of
+		{error, "no record"} ->
+			{ok, []};
+		Other ->
+			Other
+	end.
 
 -spec read(Db::pid(), Key::term()) -> {ok, Value::term()} | {error, no_entry} | {error, Reason::term()}.
 read(Db, Key) ->
