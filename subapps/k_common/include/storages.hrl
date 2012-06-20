@@ -89,6 +89,7 @@
 -record(customer, {
 	id 					:: customer_id(),
 	uuid 				:: uuid(),
+	name 				:: string(),
 	priority 			:: integer(),
 	rps 				:: integer() | undefined,
 	allowedSources 		:: [addr()], %% originators
@@ -99,7 +100,8 @@
 	noRetry 			:: boolean(),
 	defaultValidity 	:: string(),
 	maxValidity			:: integer(),
-	users = []			:: [user()] | []
+	users = []			:: [user()] | [],
+	state = 0			:: non_neg_integer() %% 0 blocked, 1 active
 }).
 -type customer_id() :: uuid().
 -type system_id() :: uuid().

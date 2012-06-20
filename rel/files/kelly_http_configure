@@ -35,7 +35,7 @@ echo -n 'id=3b25cd8e-5eca-11e1-bf77-00269e42f7a5&country_code=375&numbers_len=12
 #
 
 # kannel
-echo -n 'id=test-sys-id&uuid=feda5822-5271-11e1-bd27-001d0947ec73&priority=1&rps=2000&allowed_sources=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
+echo -n 'name=test-sys-id&state=1&id=test-sys-id&uuid=feda5822-5271-11e1-bd27-001d0947ec73&priority=1&rps=2000&allowed_sources=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
 
 # kannel's users
 echo -n 'id=user&pswd=password&permitted_smpp_types=transmitter,receiver,transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer/test-sys-id/user; echo
@@ -50,12 +50,12 @@ echo -n 'id=user9&pswd=password&permitted_smpp_types=transmitter,receiver,transc
 echo -n 'id=user10&pswd=password&permitted_smpp_types=transmitter,receiver,transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer/test-sys-id/user; echo
 
 # smppclient1 - transmitter (for sms collider)
-echo -n 'id=smppclient1&uuid=4441e33c-87b3-11e1-b563-00269e42f7a5&priority=1&rps=2000&allowed_sources=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=false&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
+echo -n 'name=smppclient1&state=1&id=smppclient1&uuid=4441e33c-87b3-11e1-b563-00269e42f7a5&priority=1&rps=2000&allowed_sources=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=false&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
 
 echo -n 'id=smppclient1&pswd=password&permitted_smpp_types=transmitter' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer/smppclient1/user; echo
 
 # smppclient2 - receiver (for sms collider)
-echo -n 'id=smppclient2&uuid=54d82c58-87b6-11e1-ba66-00269e42f7a5&priority=1&rps=2000&allowed_sources=375296663333,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
+echo -n 'name=smppclient2&state=1&id=smppclient2&uuid=54d82c58-87b6-11e1-ba66-00269e42f7a5&priority=1&rps=2000&allowed_sources=375296663333,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
 
 echo -n 'id=smppclient2&pswd=password&permitted_smpp_types=receiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer/smppclient2/user; echo
 
