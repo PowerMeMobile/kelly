@@ -9,7 +9,7 @@
 -include("gen_cowboy_restful_spec.hrl").
 
 -record(state, {
-	id
+	id :: list() | all
 }).
 
 %%% REST parameters
@@ -32,6 +32,9 @@ init(_Req, 'GET', [<<"gateway">>, BinId]) ->
 	Id = binary_to_list(BinId),
 	{ok, #get{}, #state{id = Id}};
 
+init(_Req, 'GET', [<<"gateways">>]) ->
+	{ok, #get{}, #state{id = all}};
+
 init(_Req, 'POST', [<<"gateway">>]) ->
 	{ok, #create{}, #state{}};
 
@@ -47,6 +50,16 @@ init(_Req, HttpMethod, Path) ->
 	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
 	{error, bad_request}.
 
+handle(_Req, #get{}, State = #state{id = all}) ->
+	case k_config_api:get_gateways() of
+		{ok, GtwList} ->
+			{ok, GtwsReady} = prepare_gtws(GtwList),
+			?log_debug("GtwsReady: ~p", [GtwsReady]),
+			{ok, {gateways, GtwsReady}, State};
+		{error, Error} ->
+			{ok, Error, State}
+	end;
+
 handle(_Req, #get{}, State = #state{id = Id}) ->
 	case k_config_api:get_gateway(Id) of
 		{ok, Gateway = #gateway{
@@ -60,11 +73,12 @@ handle(_Req, #get{}, State = #state{id = Id}) ->
 			end, Connections),
 
 			%% preparation gateway's record
-			GatewayFun = ?record_to_proplist(gateway),
+			GatewayFun = ?record_to_proplist_(gateway),
 			Response = GatewayFun(Gateway#gateway{
 										connections = ConnPropList
-										}),
+										}, [{uuid, Id}]),
 			?log_debug("Response: ~p", [Response]),
+			erlang:halt(),
 
 			{ok, Response, State};
 		Any ->
@@ -91,3 +105,26 @@ handle(_Req, #delete{}, State = #state{id = Id}) ->
 
 terminate(_Req, _State = #state{}) ->
     ok.
+
+%% ===================================================================
+%% Local Functions Definitions
+%% ===================================================================
+
+prepare_gtws(GtwList) when is_list(GtwList) ->
+	prepare_gtws(GtwList, []).
+
+prepare_gtws([], Acc) ->
+	{ok, Acc};
+prepare_gtws([{UUID, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
+	%% preparation connections' records
+	ConnFun = ?record_to_proplist(connection),
+	ConnPropList = lists:map(fun(ConnRec)->
+		{_RecName, _PropList} = ConnFun(ConnRec)
+		end, Conns),
+	%% preparation gateway's record
+	GatewayFun = ?record_to_proplist_(gateway),
+	GtwReady = GatewayFun(Gtw#gateway{
+					connections = ConnPropList
+				}, [{uuid, UUID}]),
+	prepare_gtws(Rest, [GtwReady | Acc]).
+

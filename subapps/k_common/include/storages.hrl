@@ -91,8 +91,8 @@
 	uuid 				:: uuid(),
 	priority 			:: integer(),
 	rps 				:: integer() | undefined,
-	allowedSources 		:: [addr()],
-	defaultSource 		:: addr() | undefined,
+	allowedSources 		:: [addr()], %% originators
+	defaultSource 		:: addr() | undefined, %% default originator
 	networks 			:: [network_id()],
 	defaultProviderId	:: provider_id() | undefined,
 	receiptsAllowed 	:: boolean(),
