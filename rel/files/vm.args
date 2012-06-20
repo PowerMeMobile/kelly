@@ -25,3 +25,7 @@
 ## http://streamhacker.wordpress.com/2008/12/10/how-to-eliminate-mnesia-overload-events/
 -mnesia dc_dump_limit 40
 -mnesia dump_log_write_threshold 50000
+
+## Sync settings
+# disable notifications
+-sync growl false

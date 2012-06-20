@@ -6,8 +6,9 @@
   {applications, [
                   kernel,
                   stdlib,
-                  lager
+                  lager,
+                  sync
                  ]},
-  {mod, {k_common_app, []} },
+  {mod, {k_common_app, []}},
   {env, []}
  ]}.
