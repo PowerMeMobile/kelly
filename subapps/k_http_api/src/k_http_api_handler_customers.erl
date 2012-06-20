@@ -149,13 +149,15 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 	 #customer{
 		allowedSources = AddrsList,
 		defaultSource = DefaultSource, %addr() | undefined, ????????
-		users = UsersList
+		users = UsersList,
+		networks = NtwList
 			} = Customer,
 
 	%% preparation users' records
 	UserFun = ?record_to_proplist(user),
-	UsersPropList = lists:map(fun(UserRecord)->
-		{RecName, PropList} = UserFun(UserRecord),
+	UsersPropList = lists:map(fun(User = #user{permitted_smpp_types = Types})->
+		TypesPropList = lists:map(fun(Type) -> {type, Type} end, Types),
+		{RecName, PropList} = UserFun(User#user{permitted_smpp_types = TypesPropList}),
 		{RecName, proplists:delete(pswd_hash, PropList)}
 		end, UsersList),
 
@@ -180,14 +182,20 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 			Record when is_tuple(Record) ->
 				AddrFun(Record)
 		end,
+	%% network constructor
+	Ntws = lists:map(fun(NtwUUID) ->
+		{network, NtwUUID}
+		end, NtwList),
+
 
 	%% preparation customer's record
 	CustomerFun = ?record_to_proplist_(customer),
 	ReadyCustomer = CustomerFun(Customer#customer{
 								users = UsersPropList,
 								allowedSources = AddrsPropList,
-								defaultSource = DefSourcePropList},
-								[{uuid, UUID}, {msisdns, MSISDNS}]),
+								defaultSource = DefSourcePropList,
+								networks = Ntws},
+								[{msisdns, MSISDNS}]),
 	?log_debug("ReadyCustomer: ~p", [ReadyCustomer]),
 	prepare(Rest, [ReadyCustomer | Acc]).
 
