@@ -19,6 +19,7 @@
 -record(create, {
 	id = {mandatory, <<"id">>, list},
 	uuid = {mandatory, <<"uuid">>, list},
+	name = {mandatory, <<"name">>, list},
 	priority = {mandatory, <<"priority">>, integer},
 	rps = {optional, <<"rps">>, integer},
 	allowedSources = {mandatory, <<"allowed_sources">>, list},
@@ -28,7 +29,8 @@
 	receiptsAllowed = {optional, <<"receipts_allowed">>, boolean},
 	noRetry = {optional, <<"no_retry">>, boolean},
 	defaultValidity = {mandatory, <<"default_validity">>, list},
-	maxValidity = {mandatory, <<"max_validity">>, integer}
+	maxValidity = {mandatory, <<"max_validity">>, integer},
+	state = {mandatory, <<"state">>, integer}
 }).
 
 -record(update, {
@@ -62,6 +64,7 @@ init(_Req, HttpMethod, Path) ->
 handle(_Req, #get{}, State = #state{id = all}) ->
 	case k_aaa_api:get_customers() of
  		{ok, CustList} ->
+			?log_debug("CustList: ~p", [CustList]),
 			{ok, CustReady} = prepare(CustList),
 			?log_debug("CustReady: ~p", [CustReady]),
 			{ok, {customers, CustReady}, State};
@@ -71,44 +74,10 @@ handle(_Req, #get{}, State = #state{id = all}) ->
 
 handle(_Req, #get{}, State = #state{id = Id}) ->
 	case k_aaa_api:get_customer_by_system_id(Id) of
-		{ok, Customer = #customer{
-			allowedSources = AddrsList,
-			defaultSource = DefaultSource, %addr() | undefined, ????????
-			users = UsersList
-			}} ->
-
-			%% preparation users' records
-			UserFun = ?record_to_proplist(user),
-			UsersPropList = lists:map(fun(UserRecord)->
-				{RecName, PropList} = UserFun(UserRecord),
-				{RecName, proplists:delete(pswd_hash, PropList)}
-			end, UsersList),
-
-			%% preparation addrs' records
-			AddrFun = ?record_to_proplist(addr),
-			AddrsPropList = lists:map(fun(AddrRecord)->
-				AddrFun(AddrRecord)
-			end, AddrsList),
-
-			%% preparation defaultSource field
-			DefSourcePropList =
-			case DefaultSource of
-				undefined ->
-					undefined;
-				Record when is_tuple(Record) ->
-					AddrFun(Record)
-			end,
-
-			%% preparation customer's record
-			CustomerFun = ?record_to_proplist(customer),
-			Response = CustomerFun(Customer#customer{
-										users = UsersPropList,
-										allowedSources = AddrsPropList,
-										defaultSource = DefSourcePropList}),
-			?log_debug("Response: ~p", [Response]),
-
-			{ok, Response, State};
-
+		{ok, Customer = #customer{uuid = UUID}} ->
+			{ok, [CustReady]} = prepare({UUID, Customer}),
+			?log_debug("CustReady: ~p", [CustReady]),
+			{ok, CustReady, State};
 		Any ->
 			{ok, Any, State}
 	end;
@@ -116,6 +85,7 @@ handle(_Req, #get{}, State = #state{id = Id}) ->
 handle(_Req, #create{
 			id = Id,
 			uuid = UUID,
+			name = Name,
 			priority = Priority,
 			rps = Rps,
 			allowedSources = AddrString,
@@ -125,12 +95,14 @@ handle(_Req, #create{
 			receiptsAllowed = ReceiptsAllowed,
 			noRetry = NoRetry,
 			defaultValidity = DefaultValidity,
-			maxValidity = MaxValidity
+			maxValidity = MaxValidity,
+			state = CustState
 					}, State = #state{}) ->
 
 	Customer = #customer{
 			id = Id,
 			uuid = UUID,
+			name = Name,
 			priority = Priority,
 			rps = Rps,
 			allowedSources = decode_addr(AddrString),
@@ -141,7 +113,8 @@ handle(_Req, #create{
 			noRetry = NoRetry,
 			defaultValidity = DefaultValidity,
 			maxValidity = MaxValidity,
-			users = []
+			users = [],
+			state = CustState
 	},
 
 	k_snmp:set_row(cst, UUID, [
@@ -171,35 +144,41 @@ terminate(_Req, _State = #state{}) ->
 %% Local Functions Definitions
 %% ===================================================================
 
-
 prepare(ItemList) when is_list(ItemList) ->
-	prepare(ItemList, []).
+	prepare(ItemList, []);
+prepare(Item) ->
+	prepare([Item], []).
 
 prepare([], Acc) ->
 	{ok, Acc};
 prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
-	%% ProviderFun = ?record_to_proplist_(provider),
-	%% ReadyPrv = ProviderFun(Prv, [{uuid, UUID}]),
-	%% prepare(Rest, [ReadyPrv | Acc]).
-
 	 #customer{
 		allowedSources = AddrsList,
 		defaultSource = DefaultSource, %addr() | undefined, ????????
-		users = UsersList
+		users = UsersList,
+		networks = NtwList
 			} = Customer,
 
 	%% preparation users' records
 	UserFun = ?record_to_proplist(user),
-	UsersPropList = lists:map(fun(UserRecord)->
-		{RecName, PropList} = UserFun(UserRecord),
+	UsersPropList = lists:map(fun(User = #user{permitted_smpp_types = Types})->
+		TypesPropList = lists:map(fun(Type) -> {type, Type} end, Types),
+		{RecName, PropList} = UserFun(User#user{permitted_smpp_types = TypesPropList}),
 		{RecName, proplists:delete(pswd_hash, PropList)}
 		end, UsersList),
 
-	%% preparation addrs' records
+	%% source addrs' constuctor
 	AddrFun = ?record_to_proplist(addr),
-		AddrsPropList = lists:map(fun(AddrRecord)->
+
+	AddrsPropList = lists:map(fun(AddrRecord)->
 		AddrFun(AddrRecord)
 		end, AddrsList),
+
+	%% MSISDNS constructor
+	{ok, MSISDNSList} = k_addr2cust:available_addresses(UUID),
+	MSISDNS = lists:map(fun(MSISDN)->
+		AddrFun(MSISDN)
+		end, MSISDNSList),
 
 	%% preparation defaultSource field
 	DefSourcePropList =
@@ -209,14 +188,20 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 			Record when is_tuple(Record) ->
 				AddrFun(Record)
 		end,
+	%% network constructor
+	Ntws = lists:map(fun(NtwUUID) ->
+		{network, NtwUUID}
+		end, NtwList),
+
 
 	%% preparation customer's record
 	CustomerFun = ?record_to_proplist_(customer),
 	ReadyCustomer = CustomerFun(Customer#customer{
 								users = UsersPropList,
 								allowedSources = AddrsPropList,
-								defaultSource = DefSourcePropList},
-								[{uuid, UUID}]),
+								defaultSource = DefSourcePropList,
+								networks = Ntws},
+								[{msisdns, MSISDNS}]),
 	?log_debug("ReadyCustomer: ~p", [ReadyCustomer]),
 	prepare(Rest, [ReadyCustomer | Acc]).
 
