@@ -53,7 +53,7 @@ open(Table, Opts) ->
 close(_Table) ->
 	ok.
 
--spec read(Table::string()) -> {ok, Value::term()} | {error, Reason::term()}.
+-spec read(Table::string()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
 read(Table) ->
 	gen_server:call(?MODULE, {read, Table}, infinity).
 

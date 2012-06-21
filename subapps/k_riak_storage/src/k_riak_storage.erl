@@ -45,7 +45,7 @@ open(CollectionName, _Opts) ->
 close(_Bucket) ->
 	ok.
 
--spec read(Bucket::binary()) -> {ok, Value::term()} | {error, Reason::term()}.
+-spec read(Bucket::binary()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
 read(Bucket) ->
 	riak_do(
 		fun(Pid) ->
