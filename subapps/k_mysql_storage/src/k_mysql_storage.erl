@@ -7,6 +7,7 @@
 	start_link/0,
 	open/2,
 	close/1,
+	read/1,
 	read/2,
 	write/3,
 	delete/2
@@ -74,6 +75,25 @@ open(Table, Opts) ->
 -spec close(Table::string()) -> ok | {error, Reason::term()}.
 close(_Table) ->
 	ok.
+
+-spec read(Table::string()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
+read(Table) ->
+	SelectSql = io_lib:format(
+		"SELECT k, v FROM ~s", [Table]),
+	%?log_debug("~s", [SelectSql]),
+	case emysql:execute(?MYSQL_POOL, SelectSql) of
+		#result_packet{rows = []} ->
+			{ok, []};
+		#result_packet{rows = Rows} ->
+			KeyValuePairs = lists:map(
+				fun([Key, Value]) ->
+					{decode_key(Key), decode_key(Value)}
+				end,
+				Rows),
+			{ok, KeyValuePairs};
+		#error_packet{msg = Msg} ->
+			{error, Msg}
+	end.
 
 -spec read(Table::string(), Key::term()) -> {ok, Value::term()} | {error, no_entry} | {error, Reason::term()}.
 read(Table, Key) ->
@@ -179,6 +199,11 @@ encode_value(Value) ->
 
 encode(Fmt, Value) ->
 	lists:flatten(io_lib:format(Fmt, [Value])).
+
+decode_key(Key) ->
+	{ok, Tokens, _} = erl_scan:string(binary_to_list(Key)),
+    {ok, Term} = erl_parse:parse_term(Tokens),
+	Term.
 
 decode_value(Value) ->
 	{ok, Tokens, _} = erl_scan:string(binary_to_list(Value)),
