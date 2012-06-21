@@ -7,6 +7,7 @@
 	start_link/0,
 	open/2,
 	close/1,
+	read/1,
 	read/2,
 	write/3,
 	delete/2
@@ -43,6 +44,32 @@ open(CollectionName, _Opts) ->
 -spec close(Bucket::binary()) -> ok | {error, Reason::term()}.
 close(_Bucket) ->
 	ok.
+
+-spec read(Bucket::binary()) -> {ok, Value::term()} | {error, Reason::term()}.
+read(Bucket) ->
+	riak_do(
+		fun(Pid) ->
+			case riakc_pb_socket:list_keys(Pid, Bucket) of
+				{ok, KeyBins} ->
+					lists:foldl(
+						fun(_, {error, Reason}) -> {error, Reason};
+						   (KeyBin, {ok, Acc}) ->
+								case riakc_pb_socket:get(Pid, Bucket, KeyBin) of
+									{ok, Object} ->
+										ValueBin = riakc_obj:get_value(Object),
+										Key = binary_to_term(KeyBin),
+										Value = binary_to_term(ValueBin),
+										{ok, [{Key, Value} | Acc]};
+									{error, Reason} ->
+										{error, Reason}
+								end
+						end,
+						{ok, []},
+						KeyBins);
+				Other ->
+					Other
+			end
+		end).
 
 -spec read(Bucket::binary(), Key::term()) -> {ok, Value::term()} | {error, no_entry} | {error, Reason::term()}.
 read(Bucket, Key) ->
