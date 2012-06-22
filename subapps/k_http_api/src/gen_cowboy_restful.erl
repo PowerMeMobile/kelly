@@ -22,7 +22,7 @@ behaviour_info(callbacks) ->
 	].
 
 init({tcp, http}, Req, [Opts]) ->
-	?log_debug("Req: ~p", [Req]),
+%	?log_debug("Req: ~p", [Req]),
 	Handler = Opts,
 	{Method, _} = cowboy_http_req:method(Req),
 	{Path, _} = cowboy_http_req:path(Req),

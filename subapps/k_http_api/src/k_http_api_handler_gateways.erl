@@ -53,36 +53,21 @@ init(_Req, HttpMethod, Path) ->
 handle(_Req, #get{}, State = #state{id = all}) ->
 	case k_config_api:get_gateways() of
 		{ok, GtwList} ->
-			{ok, GtwsReady} = prepare_gtws(GtwList),
-			?log_debug("GtwsReady: ~p", [GtwsReady]),
-			{ok, {gateways, GtwsReady}, State};
+			{ok, GtwPropLists} = prepare_gtws(GtwList),
+			?log_debug("GtwPropLists: ~p", [GtwPropLists]),
+			{ok, {gateways, GtwPropLists}, State};
 		{error, Error} ->
-			{ok, Error, State}
+			{ok, {error, io_lib:format("~p", [Error])}, State}
 	end;
 
-handle(_Req, #get{}, State = #state{id = Id}) ->
-	case k_config_api:get_gateway(Id) of
-		{ok, Gateway = #gateway{
-			connections = Connections
-			}} ->
-
-			%% preparation connections' records
-			ConnFun = ?record_to_proplist(connection),
-			ConnPropList = lists:map(fun(ConnRec)->
-				{_RecName, _PropList} = ConnFun(ConnRec)
-			end, Connections),
-
-			%% preparation gateway's record
-			GatewayFun = ?record_to_proplist_(gateway),
-			Response = GatewayFun(Gateway#gateway{
-										connections = ConnPropList
-										}, [{uuid, Id}]),
-			?log_debug("Response: ~p", [Response]),
-			erlang:halt(),
-
-			{ok, Response, State};
-		Any ->
-			{ok, Any, State}
+handle(_Req, #get{}, State = #state{id = GtwUUID}) ->
+	case k_config_api:get_gateway(GtwUUID) of
+		{ok, Gtw = #gateway{}} ->
+			{ok, [GtwPropList]} = prepare_gtws([{GtwUUID, Gtw}]),
+			?log_debug("GtwPropList: ~p", [GtwPropList]),
+			{ok, {gateway, GtwPropList}, State};
+		{error, Error} ->
+			{ok, {error, io_lib:format("~p", [Error])}, State}
 	end;
 
 handle(_Req, #create{
@@ -93,7 +78,7 @@ handle(_Req, #create{
 	Gateway = #gateway{rps = RPS, name = Name},
 	k_snmp:set_row(gtw, Id, [{gtwName, Name}, {gtwRPS, RPS}]),
 	Res = k_config_api:set_gateway(Id, Gateway),
-	{ok, {result, Res}, State};
+	{ok, {result, io_lib:format("~p", [Res])}, State};
 
 handle(_Req, #update{}, State = #state{}) ->
 	{ok, {result, error}, State};
@@ -101,7 +86,7 @@ handle(_Req, #update{}, State = #state{}) ->
 handle(_Req, #delete{}, State = #state{id = Id}) ->
 	k_snmp:del_row(gtw, Id),
 	Res = k_config_api:del_gateway(Id),
-	{ok, {result, Res}, State}.
+	{ok, {result, io_lib:format("~p", [Res])}, State}.
 
 terminate(_Req, _State = #state{}) ->
     ok.
@@ -111,20 +96,22 @@ terminate(_Req, _State = #state{}) ->
 %% ===================================================================
 
 prepare_gtws(GtwList) when is_list(GtwList) ->
-	prepare_gtws(GtwList, []).
+	prepare_gtws(GtwList, []);
+prepare_gtws(Gtw = {_UUID, #gateway{}}) ->
+	prepare_gtws([Gtw], []).
 
 prepare_gtws([], Acc) ->
 	{ok, Acc};
-prepare_gtws([{UUID, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
-	%% preparation connections' records
+prepare_gtws([{GtwUUID, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
+
+	%% convert connections records to proplists
 	ConnFun = ?record_to_proplist(connection),
-	ConnPropList = lists:map(fun(ConnRec)->
-		{_RecName, _PropList} = ConnFun(ConnRec)
-		end, Conns),
-	%% preparation gateway's record
-	GatewayFun = ?record_to_proplist_(gateway),
-	GtwReady = GatewayFun(Gtw#gateway{
-					connections = ConnPropList
-				}, [{uuid, UUID}]),
-	prepare_gtws(Rest, [GtwReady | Acc]).
+	ConnPropLists = [ConnFun(ConnRec) || ConnRec <- Conns],
+
+	%% convert gateway record to proplist
+	GatewayFun = ?record_to_proplist(gateway),
+	GtwPropList =  [{uuid, GtwUUID}] ++ GatewayFun(Gtw#gateway{
+													connections = ConnPropLists
+													}),
+	prepare_gtws(Rest, [GtwPropList | Acc]).
 

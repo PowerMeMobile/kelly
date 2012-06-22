@@ -94,7 +94,7 @@ handle(_Req, #create{
 	{ok, {result, ok}, State};
 
 handle(_Req, #update{}, State = #state{}) ->
-	{ok, {result, error}, State};
+	{ok, {result, "update not implemented"}, State};
 
 handle(_Req, #delete{}, State = #state{gtwid = GtwId, cnnid = ConnId}) ->
 	k_config_api:del_gateway_connection(GtwId, ConnId),

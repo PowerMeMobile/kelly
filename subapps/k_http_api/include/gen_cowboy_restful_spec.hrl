@@ -17,18 +17,9 @@
 -define(record_to_proplist(Record),
 	fun(Val) ->
 		Fields = record_info(fields, Record),
-		[Name| Values] = tuple_to_list(Val),
-		{Name, lists:zip(Fields, Values)}
+		[_Name| Values] = tuple_to_list(Val),
+		lists:zip(Fields, Values)
 	end
 ).
-
--define(record_to_proplist_(Record),
-	fun(Val, Proplist) ->
-		Fields = record_info(fields, Record),
-		[Name| Values] = tuple_to_list(Val),
-		{Name, Proplist ++ lists:zip(Fields, Values)}
-	end
-).
-
 
 -endif. % gen_cowboy_restful_spec
