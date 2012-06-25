@@ -55,20 +55,19 @@ init(_Req, HttpMethod, Path) ->
 handle(_Req, #get{}, State = #state{id = all}) ->
 	case k_config_api:get_networks() of
 		{ok, NtwList} ->
-			{ok, GtwsReady} = prepare_ntws(NtwList),
-			?log_debug("GtwsReady: ~p", [GtwsReady]),
-			{ok, {networks, GtwsReady}, State};
+			{ok, NtwPropLists} = prepare_ntws(NtwList),
+			?log_debug("NtwPropLists: ~p", [NtwPropLists]),
+			{ok, {networks, NtwPropLists}, State};
 		{error, Error} ->
 			{ok, Error, State}
 	end;
 
-handle(_Req, #get{}, State = #state{id = NetworkId}) ->
-	case k_config_api:get_network(NetworkId) of
-		{ok, Network = #network{}} ->
-			NetworkFun = ?record_to_proplist(network),
-			Response = NetworkFun(Network),
-			?log_debug("Response: ~p", [Response]),
-			{ok, Response, State};
+handle(_Req, #get{}, State = #state{id = NtwUUID}) ->
+	case k_config_api:get_network(NtwUUID) of
+		{ok, Ntw = #network{}} ->
+			{ok, [NtwPropList]} = prepare_ntws({NtwUUID, Ntw}),
+			?log_debug("NtwPropList: ~p", [NtwPropList]),
+			{ok, {network, NtwPropList}, State};
 		Error ->
 			{ok, Error, State}
 	end;
@@ -103,16 +102,17 @@ terminate(_Req, _State = #state{}) ->
 %% Local Functions Definitions
 %% ===================================================================
 
-prepare_ntws(NtwList) ->
-	prepare_ntws(NtwList, []).
+prepare_ntws(NtwList) when is_list(NtwList) ->
+	prepare_ntws(NtwList, []);
+prepare_ntws(Ntw = {_UUID, #network{}}) ->
+	prepare_ntws([Ntw]).
 
 prepare_ntws([], Acc) ->
 	{ok, Acc};
-prepare_ntws([{UUID, Ntw = #network{}} | Rest], Acc) ->
-	NetworkFun = ?record_to_proplist_(network),
-	NtwReady = NetworkFun(Ntw, [{uuid, UUID}]),
-	?log_debug("NtwReady: ~p", [NtwReady]),
-	prepare_ntws(Rest, [NtwReady | Acc]).
+prepare_ntws([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
+	NtwFun = ?record_to_proplist(network),
+	NtwPropList = [{uuid, NtwUUID}] ++ NtwFun(Ntw),
+	prepare_ntws(Rest, [NtwPropList | Acc]).
 
 %% split "29,33,44" to ["29", "33", "44"]
 split(Prefixes) ->

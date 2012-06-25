@@ -54,22 +54,21 @@ init(_Req, HttpMethod, Path) ->
 handle(_Req, #get{}, State = #state{id = all}) ->
 	case k_config_api:get_providers() of
 		{ok, PrvList} ->
-			{ok, PrvsReady} = prepare(PrvList),
-			?log_debug("PrvsReady: ~p", [PrvsReady]),
-			{ok, {providers, PrvsReady}, State};
+			{ok, PrvPropLists} = prepare(PrvList),
+			?log_debug("PrvPropLists: ~p", [PrvPropLists]),
+			{ok, {providers, PrvPropLists}, State};
 		{error, Error} ->
 			{ok, Error, State}
 	end;
 
-handle(_Req, #get{}, State = #state{id = ProviderId}) ->
-	case k_config_api:get_provider(ProviderId) of
-		{ok, Provider = #provider{}} ->
-			ProviderFun = ?record_to_proplist(provider),
-			Response = ProviderFun(Provider),
-			?log_debug("Response: ~p", [Response]),
-			{ok, Response, State};
-		ErrorResponse ->
-			{ok, ErrorResponse, State}
+handle(_Req, #get{}, State = #state{id = PrvUUID}) ->
+	case k_config_api:get_provider(PrvUUID) of
+		{ok, Prv = #provider{}} ->
+			{ok, [PrvPropList]} = prepare({PrvUUID, Prv}),
+			?log_debug("PrvPropList: ~p", [PrvPropList]),
+			{ok, {provider, PrvPropList}, State};
+		{error, Error} ->
+			{ok, Error, State}
 	end;
 
 handle(_Req, #create{
@@ -101,13 +100,15 @@ terminate(_Req, _State = #state{}) ->
 %% ===================================================================
 
 prepare(PrvList) when is_list(PrvList) ->
-	prepare(PrvList, []).
+	prepare(PrvList, []);
+prepare(Prv = {_UUID, #provider{}}) ->
+	prepare([Prv]).
 
 prepare([], Acc) ->
 	{ok, Acc};
-prepare([{UUID, Prv = #provider{}} | Rest], Acc) ->
-	ProviderFun = ?record_to_proplist_(provider),
-	ReadyPrv = ProviderFun(Prv, [{uuid, UUID}]),
-	prepare(Rest, [ReadyPrv | Acc]).
+prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
+	PrvFun = ?record_to_proplist(provider),
+	PrvPropList = [{uuid, PrvUUID}] ++ PrvFun(Prv),
+	prepare(Rest, [PrvPropList | Acc]).
 
 
