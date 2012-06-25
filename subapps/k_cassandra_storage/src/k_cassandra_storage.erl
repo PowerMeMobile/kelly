@@ -7,6 +7,7 @@
 	start_link/0,
 	open/2,
 	close/1,
+	read/1,
 	read/2,
 	write/3,
 	delete/2
@@ -52,6 +53,10 @@ open(Table, Opts) ->
 close(_Table) ->
 	ok.
 
+-spec read(Table::string()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
+read(Table) ->
+	gen_server:call(?MODULE, {read, Table}, infinity).
+
 -spec read(Table::string(), Key::term()) -> {ok, Value::term()} | {error, no_entry} | {error, Reason::term()}.
 read(Table, Key) ->
 	gen_server:call(?MODULE, {read, Table, Key}, infinity).
@@ -88,6 +93,31 @@ handle_call({open, Table, _Opts}, _From, State = #state{
 		throw:{Conn2, {exception, {invalidRequestException, Reason}}} ->
 			?log_debug("Caught exception: ~p", [Reason]),
 			{reply, {ok, Table}, State#state{connection = Conn2}}
+	end;
+
+handle_call({read, Table}, _From, State = #state{
+	connection = Conn
+}) ->
+	try thrift_client:call(Conn,
+		'get_range_slices', [
+			#columnParent{column_family = Table},
+			#slicePredicate{column_names = ["v"], slice_range = undefined},
+			#keyRange{start_key = "", end_key = ""},
+			?cassandra_ConsistencyLevel_ONE
+		]) of
+			{Conn1, {ok, KeySlices}} ->
+				KeyValuePairs = lists:map(
+					fun(#keySlice{
+							key = Key,
+							columns = [#columnOrSuperColumn{column = #column{value = Value}} | _]
+						}) ->
+						{decode_key(Key), decode_value(Value)}
+					end,
+					KeySlices),
+				{reply, {ok, KeyValuePairs}, State#state{connection = Conn1}}
+	catch
+		throw:{Conn2, {exception, #notFoundException{}}} ->
+			{reply, {error, no_entry}, State#state{connection = Conn2}}
 	end;
 
 handle_call({read, Table, Key}, _From, State = #state{
@@ -180,6 +210,9 @@ encode_key(Key) ->
 
 encode_value(Value) ->
 	term_to_binary(Value).
+
+decode_key(Key) ->
+	binary_to_term(Key).
 
 decode_value(Value) ->
 	binary_to_term(Value).

@@ -7,6 +7,7 @@
 	start_link/0,
 	open/2,
 	close/1,
+	read/1,
 	read/2,
 	write/3,
 	delete/2
@@ -75,6 +76,28 @@ open(Table, Opts) ->
 close(_Table) ->
 	ok.
 
+-spec read(Table::string()) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
+read(Table) ->
+	pgsql_do(
+		fun(Conn) ->
+			SelectSql = io_lib:format(
+				"SELECT k, v FROM ~s", [Table]),
+			%?log_debug("~s", [SelectSql]),
+			case pgsql:equery(Conn, SelectSql) of
+				{ok, _Cols, []} ->
+					{ok, []};
+				{ok, _Cols, Rows} ->
+					KeyValuePairs = lists:map(
+						fun({Key, Value}) ->
+							{decode_key(Key), decode_value(Value)}
+						end,
+						Rows),
+					{ok, KeyValuePairs};
+				{error, Reason} ->
+					{error, Reason}
+			end
+		end).
+
 -spec read(Table::string(), Key::term()) -> {ok, Value::term()} | {error, no_entry} | {error, Reason::term()}.
 read(Table, Key) ->
 	pgsql_do(
@@ -86,7 +109,7 @@ read(Table, Key) ->
 			case pgsql:equery(Conn, SelectSqlFmt, [ParamKey]) of
 				{ok, _Cols, []} ->
 					{error, no_entry};
-				{ok, _Cols, [Value|_]} ->
+				{ok, _Cols, [{Value}|_]} ->
 					{ok, decode_value(Value)};
 				{error, Reason} ->
 					{error, Reason}
@@ -234,7 +257,12 @@ encode_value(Value) ->
 encode(Fmt, Value) ->
 	lists:flatten(io_lib:format(Fmt, [Value])).
 
-decode_value({Value}) ->
+decode_key(Key) ->
+	{ok, Tokens, _} = erl_scan:string(binary_to_list(Key)),
+    {ok, Term} = erl_parse:parse_term(Tokens),
+	Term.
+
+decode_value(Value) ->
 	{ok, Tokens, _} = erl_scan:string(binary_to_list(Value)),
     {ok, Term} = erl_parse:parse_term(Tokens),
 	Term.
