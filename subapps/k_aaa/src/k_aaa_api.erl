@@ -79,9 +79,9 @@ del_customer_user(SysCustomerId, UserId) ->
 %% Internal
 %% ===================================================================
 
--spec find_user([#user{}], string()) -> {ok, #user{}} | {error, no_record}.
+-spec find_user([#user{}], string()) -> {ok, #user{}} | {error, no_entry}.
 find_user([], _Uname) ->
-	{error, no_record};
+	{error, no_entry};
 find_user([User = #user{id = Uname} | _RestUsers], Uname) ->
 	{ok, User};
 find_user([_User | RestUsers], UserName) ->

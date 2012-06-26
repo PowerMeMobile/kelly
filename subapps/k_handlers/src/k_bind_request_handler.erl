@@ -14,13 +14,18 @@ process(_ContentType, Message) ->
 	% ?log_debug("got message...", []),
 	case 'FunnelAsn':decode('BindRequest', Message) of
 		{ok, Request = #'BindRequest'{}} ->
-			case authenticate(Request) of
-				{allow, Customer = #customer{}} ->
-					build_response(Request, Customer);
-				Error ->
-					?log_error("authentication error: ~p", [Error]),
-					?authentication_failed
-			end;
+			Response =
+				case authenticate(Request) of
+					{allow, Customer = #customer{}} ->
+						build_customer_response(Request, Customer);
+					{deny, Reason} ->
+						?log_error("authentication denied: ~p", [Reason]),
+						build_error_response(Request, Reason);
+					{error, Reason} ->
+						?log_error("authentication error: ~p", [Reason]),
+						build_error_response(Request, Reason)
+				end,
+			reply(Response);
 		Error ->
 			?log_error("asn decode error: ~p", [Error]),
 			?authentication_failed
@@ -46,7 +51,7 @@ authenticate(BindReq = #'BindRequest'{
 						fun check_stage_conntype/2
 					],
 					perform_checks(BindReq, User, Checks, Customer);
-				{error, no_record} ->
+				{error, no_entry} ->
 					{deny, no_such_customer};
 				Other ->
 					Other
@@ -80,7 +85,7 @@ perform_checks(BindReq = #'BindRequest'{}, User = #user{}, [Check | SoFar], Cust
 			{deny, DenyReason}
 	end.
 
-build_response(#'BindRequest'{
+build_customer_response(#'BindRequest'{
 	connectionId = ConnectionId,
 	customerId = CustomerId
 	}, #customer{
@@ -96,7 +101,7 @@ build_response(#'BindRequest'{
 			defaultValidity = DV,
 			maxValidity = MV
 	}) ->
-	% ?log_debug("building bind response...", []),
+	% ?log_debug("building bind customer response...", []),
 
 	%%% validation optional values %%%
 	RPS = validate_optional_asn_value(RPSt),
@@ -104,18 +109,15 @@ build_response(#'BindRequest'{
 	DP = validate_optional_asn_value(DPt),
 	%%% END of validation %%%
 
-	Addrs = lists:map(fun(#addr{
-								addr = Addr,
-								ton = TON,
-								npi = NPI })->
-		#'Addr'{
-			addr = Addr,
-			ton = TON,
-			npi = NPI
-		}
-
-	end, AddrList),
-
+	Addrs = lists:map(
+		fun(#addr{addr = Addr, ton = TON, npi = NPI})->
+			#'Addr'{
+				addr = Addr,
+				ton = TON,
+				npi = NPI
+			}
+		end,
+		AddrList),
 	% ?log_debug("built Addr: ~p", [Addrs]),
 
 	{Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
@@ -176,17 +178,26 @@ build_response(#'BindRequest'{
 	},
 	?log_debug("built Customer: ~p", [Customer]),
 
-	Response = #'BindResponse'{
+	#'BindResponse'{
 		connectionId = ConnectionId,
 		result = {customer, Customer}
-	},
+	}.
+
+build_error_response(#'BindRequest'{connectionId = ConnectionId}, Reason) ->
+	?log_debug("building bind error response...", []),
+	#'BindResponse'{
+		connectionId = ConnectionId,
+		result = {error, atom_to_list(Reason)}
+	}.
+
+reply(Response = #'BindResponse'{}) ->
 	case 'FunnelAsn':encode('BindResponse', Response) of
 		{ok, Binary} ->
 			Reply = #worker_reply{
 				reply_to = <<"pmm.funnel.server_control">>,
 				content_type = <<"BindResponse">>,
 				payload = Binary},
-			% ?log_debug("response: ~p", [Reply]),
+			%?log_debug("response: ~p", [Reply]),
 			{ok, [Reply]};
 		Error ->
 	   		Error
