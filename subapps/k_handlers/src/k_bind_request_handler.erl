@@ -51,7 +51,7 @@ authenticate(BindReq = #'BindRequest'{
 						fun check_stage_conntype/2
 					],
 					perform_checks(BindReq, User, Checks, Customer);
-				{error, no_record} ->
+				{error, no_entry} ->
 					{deny, no_such_customer};
 				Other ->
 					Other
