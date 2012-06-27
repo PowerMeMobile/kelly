@@ -171,11 +171,16 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 		AddrFun(Originator)
 		end, OriginatorsList),
 
-	%% MSISDNS constructor
-	{ok, MSISDNSList} = k_addr2cust:available_addresses(UUID),
-	MSISDNSPropLists = lists:map(fun(MSISDN)->
-		AddrFun(MSISDN)
-		end, MSISDNSList),
+    %% MSISDNS constructor
+    {ok, MSISDNSPropLists} =
+    case k_addr2cust:available_addresses(UUID) of
+		{ok, []} -> {ok, null};
+	    {ok, MSISDNSList} ->
+			{ok, lists:map(fun(MSISDN)->
+				AddrFun(MSISDN)
+			end, MSISDNSList)}
+	end,
+
 
 	%% defaultSource field validation
 	DefSourcePropList =
