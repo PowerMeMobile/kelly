@@ -59,7 +59,7 @@ handle_subscribe(State = #state{
 handle_message(ContentType, Message, Channel, State = #state{
 	handler = Handler
 }) ->
-	?log_debug("got message: ~p", [Message]),
+	%?log_debug("got message: ~p", [Message]),
 	{ok, Pid} = k_worker_sup:process(Handler, ContentType, Message, Channel),
 	{noreply, Pid, State}.
 
