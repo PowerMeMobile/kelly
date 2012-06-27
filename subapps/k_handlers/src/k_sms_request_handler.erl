@@ -22,6 +22,7 @@ process(_ContentType, Message) ->
 process_sms_request(SmsRequest = #'SmsRequest'{}) ->
 	?log_debug("Got request: ~p", [SmsRequest]),
 	MsgInfos = sms_request_to_msg_info_list(SmsRequest),
+	%?log_debug("~p", [MsgInfos]),
 	Time = k_storage_util:utc_unix_epoch(),
 	lists:foreach(fun(MsgInfo = #msg_info{
 						id = Id,
@@ -68,7 +69,7 @@ update_msg_status(InputId, DefaultStatus, RegDelivery, ReqTime) ->
 					%% unexpected message status.
 					%% the most probably the same message was received again.
 					_Unexpected ->
-						%?log_error("Unexpected message status: ~p", [Unexpected]),
+						%?log_error("Unexpected message status: ~p", [_Unexpected]),
 						ok
 				end
 	end.
@@ -95,6 +96,14 @@ sms_request_to_msg_info_list(#'SmsRequest'{
 	destAddrs = {_, DestAddrs},
 	messageIds = MessageIds
 }) ->
+	%% Message ids come in ["ID1", "ID2:ID3", "ID4"], where "ID2:ID3" is a multipart message ids.
+	%% Destination addrs come in ["ADDR1", "ADDR2", "ADDR3"]. The task is to get {ADDRX, IDY} pairs
+	%% like that [{"ADDR1", "ID1"}, {"ADDR2", "ID2"}, {"ADDR2", "ID3"}, {"ADDR3", "ID4"}].
+	AllPairs = lists:foldr(
+		fun({Addr, ID}, Acc) ->
+			Ids = lists:map(fun(Id) -> {Addr, Id} end, explode($:, ID)),
+			Ids ++ Acc
+		end, [], lists:zip(DestAddrs, MessageIds)),
 	RegisteredDelivery =
 		case get_param_by_name("registered_delivery", Params) of
 			{ok, #'Param'{value = {boolean, Value}}} ->
@@ -112,4 +121,14 @@ sms_request_to_msg_info_list(#'SmsRequest'{
 					source_addr = SourceAddr,
 					dest_addr = DestAddr,
 					registered_delivery = RegisteredDelivery
-				} end, lists:zip(DestAddrs, MessageIds)).
+				} end, AllPairs).
+
+-spec explode(Delimiter::char(), String::string()) -> [string()].
+explode(Delimiter, String) ->
+	explode(Delimiter, lists:reverse(String), [[]]).
+explode(_, [], Groups) ->
+	Groups;
+explode(Delimiter, [Delimiter | String], Groups) ->
+	explode(Delimiter, String, [[] | Groups]);
+explode(Delimiter, [Char | String], [Group | Groups]) ->
+	explode(Delimiter, String, [[Char | Group] | Groups]).

@@ -8,12 +8,14 @@ Password=test
 DlrMask=0
 Count=0
 Same=0
+Length=160
 Networks=(37529 37533 37544 37525)
 
 function usage() {
-   echo "Usage: $(basename $0) <-c Count> [-t Text] [-s] [-d Dlr] [-H Host] [-P Port] [-u User] [-p Password]"
+   echo "Usage: $(basename $0) <-c Count> [-t Text] [-l Length] [-s] [-d Dlr] [-H Host] [-P Port] [-u User] [-p Password]"
    echo "Where -c Message Count. Mandatory option"
    echo "      -t Message Text. By default message text is randomly generated"
+   echo "      -l Randomly generated text Length. Default is '$Length'"
    echo "      -s Same randomly generated text for all messages"
    echo "      -d Delivery report mask. Default is '$DlrMask'"
    echo "      -H Kannel's Host name. Default is '$Host'"
@@ -32,16 +34,17 @@ function usage() {
    echo "Example: 31 = 1+2+4+8+16"
 }
 
-# generate random 100 chars sequence.
+# generate random $Length chars sequence.
 function generate_random_text() {
-	cat /dev/urandom | tr -dc '0-9a-zA-Z' | head -c 100
+	cat /dev/urandom | tr -dc '0-9a-zA-Z' | head -c $Length
 }
 
 # parse arguments.
-while getopts c:t:sd:H:P:u:p:qh opt; do
+while getopts c:t:l:sd:H:P:u:p:qh opt; do
     case "$opt" in
 		c) Count="$OPTARG";;
 		t) Text="$OPTARG"; Same=1;;
+		l) Length="$OPTARG";;
 		s) Same=1;;
 		d) DlrMask="$OPTARG";;
 		H) Host="$OPTARG";;

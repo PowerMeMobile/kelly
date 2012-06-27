@@ -72,7 +72,7 @@ update_msg_status(InputId, ResponseStatus) ->
 					%% this means that the response was already received,
 					%% but the message info wasn't yet stored.
 					NewMsgStatus = MsgStatus#msg_status{
-						status = ResponseStatus,
+						status = ResponseStatus, % success | failure
 						resp_time = RespTime
 					},
 					ok = k_storage_api:set_msg_status(InputId, NewMsgStatus)
@@ -81,7 +81,7 @@ update_msg_status(InputId, ResponseStatus) ->
 			%% this means that the response came before the message was registered,
 			%% store its response status and the response time.
 			NewMsgStatus = #msg_status{
-				status = ResponseStatus,
+				status = ResponseStatus, % success | failure
 				resp_time = RespTime
 			},
 			ok = k_storage_api:set_msg_status(InputId, NewMsgStatus)
