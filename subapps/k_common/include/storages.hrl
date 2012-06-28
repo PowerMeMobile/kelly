@@ -87,8 +87,8 @@
 -type user() :: #user{}.
 
 -record(customer, {
-	id 					:: customer_id(),
-	uuid 				:: uuid(),
+	id 					:: system_id(),
+	uuid 				:: customer_id(),
 	name 				:: string(),
 	priority 			:: integer(),
 	rps 				:: integer() | undefined,
@@ -104,8 +104,7 @@
 	state = 0			:: non_neg_integer() %% 0 blocked, 1 active
 }).
 -type customer_id() :: uuid().
--type system_id() :: uuid().
+-type system_id() :: string().
 -type customer() :: {ver(), #customer{} }.
-
 
 -endif. % storages_hrl

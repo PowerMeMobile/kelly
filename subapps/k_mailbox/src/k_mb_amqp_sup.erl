@@ -34,6 +34,6 @@ init([]) ->
 		{k_mb_amqp_consumer_srv, {k_mb_amqp_consumer_srv, start_link, []},
 			permanent, 5000, worker, [k_mb_amqp_consumer_srv]},
 
-		{k_mb_amqp_fw_srv, {k_mb_amqp_fw_srv, start_link, []},
-			permanent, 5000, worker, [k_mb_amqp_fw_srv]}
+		{k_mb_amqp_producer_srv, {k_mb_amqp_producer_srv, start_link, []},
+			permanent, 5000, worker, [k_mb_amqp_producer_srv]}
 	]} }.

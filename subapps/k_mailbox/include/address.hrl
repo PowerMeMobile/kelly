@@ -1,15 +1,12 @@
 -ifndef(k_mailbox_address_hrl).
 -define(k_mailbox_address_hrl, included).
 
--type address() :: {
-	Addr :: string(),
-	Ton :: integer(),
-	Npi :: integer()
-}.
+-include_lib("k_common/include/storages.hrl").
 
 -record(k_mb_address, {
-	address :: address(),
-	customer_id :: string()
+	address		:: addr(),
+	customer_id :: customer_id(),
+	user_id		:: user_id()
 }).
 
 -endif.

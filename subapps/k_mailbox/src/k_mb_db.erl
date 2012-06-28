@@ -1,6 +1,8 @@
 %% @private
 %% @doc This module is rersponsible for all database operations.
 
+%% @TODO get_wait/2 => add content_type restriction
+
 -module(k_mb_db).
 
 -include_lib("k_common/include/logging.hrl").
@@ -20,7 +22,7 @@
 	get_customers/0,
 	
 	get_subscription/1,
-	get_subscriptions/1,
+	get_subscriptions/2,
 	delete_subscriptions/1,
 	
 	get_items/0,
@@ -28,7 +30,7 @@
 	delete_items/1,
 
 	set_wait/1,
-	get_wait/1,
+	get_wait/2,
 	set_pending/1
 ]).
 
@@ -110,12 +112,14 @@ get_subscription(SubscriptionID) ->
 	end),
 	{ok, Subscription}.	
 
--spec get_subscriptions(CustomerID :: string()) -> {ok, [#k_mb_subscription{}]} | {ok, []}.
-get_subscriptions(CustomerID) ->
+-spec get_subscriptions(CustomerID :: string(), UserID :: string()) -> {ok, [#k_mb_subscription{}]} | {ok, []}.
+get_subscriptions(CustomerID, UserID) ->
 	{atomic, Subscriptions} = mnesia:transaction(fun() ->
 		qlc:e(qlc:q([
 				Sub || Sub <- mnesia:table(k_mb_subscription),
 				Sub#k_mb_subscription.customer_id == CustomerID
+				andalso
+				Sub#k_mb_subscription.user_id == UserID
 		]))
 	end),
 	{ok, Subscriptions}.
@@ -124,7 +128,7 @@ get_subscriptions(CustomerID) ->
 get_customers() ->
 		{atomic, Customers} = mnesia:transaction(fun() ->
 		qlc:e(qlc:q([
-				Sub#k_mb_subscription.customer_id
+				{Sub#k_mb_subscription.customer_id, Sub#k_mb_subscription.user_id}
 				|| Sub <- mnesia:table(k_mb_subscription)],
 				{unique, true}
 		))
@@ -154,13 +158,15 @@ change_item_status(ItemID, Status) ->
 	{ok, Item} = get_pending_item(ItemID),	
 	save(Item#k_mb_pending_item{state = Status}).
 
--spec get_wait(CustomerID :: string()) -> 
+-spec get_wait(CustomerID :: string(), UserID :: string()) -> 
 	{ok, []} | {ok, [#k_mb_pending_item{}]}.
-get_wait(CustomerID) ->
+get_wait(CustomerID, UserID) ->
 	{atomic, Items} = mnesia:transaction(fun() ->
 		qlc:e(qlc:q([
 				Item || Item <- mnesia:table(k_mb_pending_item),
 				Item#k_mb_pending_item.customer_id == CustomerID
+				andalso
+				Item#k_mb_pending_item.user_id == UserID
 				andalso
 				Item#k_mb_pending_item.state == wait_for_sub
 		]))

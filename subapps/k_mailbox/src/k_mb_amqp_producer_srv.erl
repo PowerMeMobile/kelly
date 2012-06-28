@@ -1,4 +1,4 @@
--module(k_mb_amqp_fw_srv).
+-module(k_mb_amqp_producer_srv).
 
 -behaviour(gen_wp).
 
@@ -24,8 +24,8 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
--include_lib("k_mailbox/include/pending_item.hrl").
 -include_lib("gen_wp/include/gen_wp_spec.hrl").
+-include("pending_item.hrl").
 
 -record(state, {
 	chan :: pid(),
@@ -47,7 +47,7 @@ send(QName, Item, TimeOut) ->
 init([]) ->
 	Chan = k_mb_amqp_pool:open_channel(),
 	link(Chan),
-	{ok, ReplyTo} = application:get_env(reply_to),
+	ReplyTo = k_mb_config:get_env(reply_to),
 	{ok, #state{chan = Chan, reply_to = ReplyTo}}.
 
 handle_call(Msg = {send, _Item, _QName, _TimeOut}, _From, State = #state{}) ->

@@ -5,7 +5,7 @@
 -export([init/3, handle/3, terminate/2]).
 
 -include_lib("k_common/include/logging.hrl").
-% -include_lib("k_mailbox/include/address.hrl").
+-include_lib("k_mailbox/include/address.hrl").
 -include("gen_cowboy_restful_spec.hrl").
 
 -record(state, {
@@ -22,7 +22,8 @@
 	addr = {mandatory, <<"addr">>, list},
 	ton = {mandatory, <<"ton">>, integer},
 	npi = {mandatory, <<"npi">>, integer},
-	cid = {mandatory, <<"cid">>, list}
+	cid = {mandatory, <<"cid">>, list},
+	user = {mandatory, <<"user">>, list}
 }).
 
 -record(update, {
@@ -55,7 +56,7 @@ handle(_Req, #get{
 				ton = Ton,
 				npi = Npi
 			}, State = #state{}) ->
-	Response = k_addr2cust:resolve({Addr, Ton, Npi}),
+	Response = k_addr2cust:resolve(#addr{addr=Addr, ton=Ton, npi=Npi}),
 	{ok, Response, State};
 
 handle(_Req, #create{
@@ -64,7 +65,8 @@ handle(_Req, #create{
 				npi = Npi,
 				cid = CustID
 					}, State = #state{}) ->
-	Result = k_addr2cust:link({Addr, Ton, Npi}, CustID),
+	UserID = undefined,
+	Result = k_addr2cust:link(#addr{addr=Addr, ton=Ton, npi=Npi}, CustID, UserID),
 	{ok, {result, Result}, State};
 
 handle(_Req, #update{}, State = #state{}) ->
@@ -75,7 +77,7 @@ handle(_Req, #delete{
 				ton = Ton,
 				npi = Npi
 					}, State = #state{}) ->
-	Result = k_addr2cust:unlink({Addr, Ton, Npi}),
+	Result = k_addr2cust:unlink(#addr{addr=Addr, ton=Ton, npi=Npi}),
 	{ok, {result, Result}, State}.
 
 terminate(_Req, _State = #state{}) ->

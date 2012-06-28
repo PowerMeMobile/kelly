@@ -1,0 +1,117 @@
+
+message FrontendUpEvent {
+	required bool reset_subscriptions = 1;
+	required bytes auth_q = 2;
+	required bytes register_q = 3;
+	required bytes control_q = 4;
+	optional string timestamp = 5;
+}
+
+message FrontEndDownEvent {
+	optional string reason = 0;
+	optional string timestamp = 1;
+}
+
+enum Type {
+	transmitter = 0;
+	receiver = 1;
+	tranceiver = 2;
+	dlvrReceiptReceiver = 3;
+	incomingSMSReceiver = 4;
+}
+
+message AuthReq {
+	required string system_id = 1;
+	required string user_id = 2;
+	required string password = 3;
+	required Type type = 4;
+	required bool is_cached = 5;
+	required int32 timestamp = 6;
+}
+
+message PB_Provider {
+	required bytes id = 0;
+	required bytes gateway = 1;
+	required bytes bulk_gateway = 2;
+	required bool receipts_supported = 3;
+}
+
+message PB_Network {
+	required bytes id = 0;
+	required string country_code = 1;
+	required int32 numbers_len = 2; // including country code and prefixes.
+	repeated string prefixes = 3;
+	required bytes provider_id = 4 ;
+}
+
+
+message PB_Addr {
+	required string addr = 0;
+	required int32 ton = 1;
+	required int32 npi = 2;
+}
+
+message PB_Customer {
+	required bytes id = 0;
+    required bytes uuid = 1;
+    required int32 priority = 2;
+    optional int32 rps = 3;
+    repeated PB_Addr allowed_sources = 4;
+    optional PB_Addr default_source = 5;
+    repeated PB_Network networks = 6;
+    repeated PB_Provider providers = 7;
+    optional bytes default_provider_id = 8;
+    required bool receipts_allowed = 9;
+    required bool no_retry = 10;
+    required bytes default_validity = 11;
+    required int32 max_validity = 12; // in seconds (relative)
+}
+
+message AuthResponse {
+    
+    enum Result {
+    	customer = 0;
+    	error = 1;
+    }
+
+    required Result result = 0;
+    optional PB_Customer customer = 1;
+    optional string error = 2;
+}
+
+message SubscribeEvent {
+	required string subscribe_id = 0;
+	required bytes queue_name = 1;
+	required string customer_id = 2;
+	required string user_id = 3;
+	required Type type = 4;
+	optional string destination_addr = 5; 	// 1api parameter
+	optional string notify_url = 6; 		// 1api parameter
+	optional string criteria = 7;			// 1api parameter
+	optional string notification_format = 8; // 1api parameter
+	optional string client_correlator = 9;	 // 1api parameter
+	optional string callback_data = 10; 	// 1api parameter
+}
+
+message UnsubscribeEvent {
+	required string subscribe_id = 0;
+	required string reason = 1;
+}
+
+message OutgoingMessage {
+	required PB_Addr source = 1;
+	required PB_Addr dest = 2;
+	required string message = 3;
+
+	enum DataCoding {
+    	gsm0338 = 1;
+    	ucs2 = 2;
+    }
+
+	required DataCoding data_coding = 4;
+}
+
+message OutgoingBatch {
+	required string id = 1;
+	repeated OutgoingMessage messages = 2;
+}

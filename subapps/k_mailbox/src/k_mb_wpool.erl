@@ -23,7 +23,7 @@
 	]).
 
 %% ===================================================================
-%% gen_wp Function Exports
+%% GenWp Callback Functions Exports
 %% ===================================================================
 
 -export([
@@ -54,7 +54,7 @@ process_incoming_item(Item = #k_mb_pending_item{}) ->
 	gen_wp:cast(?MODULE, {process_item, Item}).
 
 %% ===================================================================
-%% gen_wp Functions Definitions
+%% GenWp Callback Functions Definitions
 %% ===================================================================
 
 init([]) ->
@@ -126,7 +126,7 @@ handle_child_terminated(Reason, _Task = {process_item, Item}, _Child, State = #s
 	{noreply, State#state{}}.
 
 %% ===================================================================
-%% Internal Function Definitions
+%% Local Functions Definitions
 %% ===================================================================
 
 process(Item) ->
@@ -134,9 +134,10 @@ process(Item) ->
 	#k_mb_pending_item{
 		item_id = ItemID,
 		customer_id = CustomerID,
+		user_id = UserID,
 		content_type = ContentType
 		} = Item,
-	case k_mb_map_mgr:get_subscription(CustomerID, ContentType) of
+	case k_mb_map_mgr:get_subscription(CustomerID, UserID, ContentType) of
 		{ok, SubscriptionID} ->
 			?log_debug("subscription FOUND...", []),
 			?log_debug("SubscriptionID: ~p", [SubscriptionID]),
@@ -152,8 +153,7 @@ process(Item, SubID) ->
 		} = Item,
 
 	Timeout = k_mb_config:get_env(request_timeout),
-	Adapter = k_mb_config:get_env(adapter),
 
 	QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [SubID])),
-	ok = Adapter:call(QName, Item, Timeout),
+	ok = k_mb_amqp_producer_srv:send(QName, Item, Timeout),
 	k_mb_db:delete_items([ItemID]).

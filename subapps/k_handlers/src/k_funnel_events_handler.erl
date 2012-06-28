@@ -6,6 +6,7 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/FunnelAsn.hrl").
 -include_lib("k_common/include/storages.hrl").
+-include_lib("k_mailbox/include/subscription.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"ConnectionDownEvent">>, Message) ->
@@ -48,7 +49,8 @@ process_connection_down_event(ConnId, SystemId) ->
 	end.
 
 perform_unregister_connection(CustId, ConnId) ->
-	case k_mailbox:unregister_connection(CustId, ConnId) of
+	UserId = undefined,
+	case k_mailbox:unregister_subscription(ConnId, CustId, UserId) of
 		ok ->
 			{ok, []};
 		{error, Error} ->
@@ -57,15 +59,29 @@ perform_unregister_connection(CustId, ConnId) ->
 			{ok, []}
 	end.
 
-process_connection_up_event(ConnId, SystemId, ConnType) ->
+process_connection_up_event(ConnId, SystemId, ConnType) when
+									ConnType == transmitter
+									orelse
+									ConnType == transceiver ->
 	case resolve_cust_id(SystemId) of
 		{ok, CustId} ->
-			k_mailbox:register_connection(CustId, ConnId, conn_type_to_cannonical(ConnType)),
+			QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [ConnId])),
+			Subscription = #k_mb_subscription{
+					id = ConnId,
+					customer_id = CustId,
+					user_id = undefined,
+				   	type = ConnType,
+					app_type = smpp,
+					queue_name = QName
+			},
+			k_mailbox:register_subscription(Subscription),
 			{ok, []};
 		{error, no_entry} ->
 			?log_error("Could not register: failed to resolve [system-id: ~p]", [SystemId]),
 			{ok, []}
-	end.
+	end;
+process_connection_up_event(_ConnId, _SystemId, _ConnType) ->
+	{ok, []}.
 
 resolve_cust_id( SystemId ) ->
 	case k_aaa_api:get_customer_by_system_id(SystemId) of
@@ -75,6 +91,6 @@ resolve_cust_id( SystemId ) ->
 		Error -> Error
 	end.
 
-conn_type_to_cannonical(transmitter) -> 'smpp.transmitter';
-conn_type_to_cannonical(transceiver) -> 'smpp.transceiver';
-conn_type_to_cannonical(receiver) -> 'smpp.receiver'.
+%% conn_type_to_cannonical(transmitter) -> 'smpp.transmitter';
+%% conn_type_to_cannonical(transceiver) -> 'smpp.transceiver';
+%% conn_type_to_cannonical(receiver) -> 'smpp.receiver'.
