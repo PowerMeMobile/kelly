@@ -2,6 +2,9 @@
 %% @doc Mailbox garbage collector.
 %% This module is responsible for purging expired items.
 
+%% @TODO Add cron like functionality?
+%% @TODO Compute timeout relatively to next checktime
+
 -module(k_mb_gcollector).
 
 -behaviour(gen_server).
@@ -58,7 +61,7 @@ is_expired(ExpireTime) ->
     is_expired(ExpireTime, now()).
 
 %% ===================================================================
-%% gen_server Function Definitions
+%% GenServer Function Definitions
 %% ===================================================================
 
 init([]) ->
@@ -86,7 +89,7 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %% ===================================================================
-%% Internal Function Definitions
+%% Local Function Definitions
 %% ===================================================================
 
 now() ->

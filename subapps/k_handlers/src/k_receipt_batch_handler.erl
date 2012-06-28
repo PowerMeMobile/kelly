@@ -105,8 +105,9 @@ store_dlr_receipts(ReceiptsData) ->
 	{ok, ReceiptBatches} = k_funnel_asn_helper:render_receipts(ReceiptsData),
 	lists:foreach(fun({CID, BatchId, BatchBinary}) ->
 		% ?log_debug("Registering ReceiptBatch: ~p -> ~p", [CID, BatchBinary]),
+		UserID = undefined,
 		ok = k_mailbox:register_incoming_item(
-			BatchId, CID, <<"ReceiptBatch">>, BatchBinary)
+			BatchId, CID, UserID, <<"ReceiptBatch">>, BatchBinary)
 	end, ReceiptBatches),
 	ok.
 

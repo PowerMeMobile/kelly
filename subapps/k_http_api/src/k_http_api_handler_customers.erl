@@ -172,8 +172,9 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 		end, OriginatorsList),
 
     %% MSISDNS constructor
+	UserID = undefined,
     {ok, MSISDNSPropLists} =
-    case k_addr2cust:available_addresses(UUID) of
+    case k_addr2cust:available_addresses(UUID, UserID) of
 		{ok, []} -> {ok, null};
 	    {ok, MSISDNSList} ->
 			{ok, lists:map(fun(MSISDN)->

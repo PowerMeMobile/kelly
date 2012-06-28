@@ -101,7 +101,8 @@ process_unhandled_dlr_status(InputId, OutputId) ->
 							{CustomerId, InputMsgId} = InputId,
 							Data = {CustomerId, InputMsgId, DlrStatus, SrcAddr, DstAddr, DlrTime},
 							{CustomerId, BatchId, BatchBinary} = k_funnel_asn_helper:render_receipt(Data),
-							ok = k_mailbox:register_incoming_item(BatchId, CustomerId, <<"ReceiptBatch">>, BatchBinary),
+							UserID = undefined,
+							ok = k_mailbox:register_incoming_item(BatchId, CustomerId, UserID, <<"ReceiptBatch">>, BatchBinary),
 							%% delete handled status.
 							ok = k_storage_api:delete_dlr_msg_status(OutputId);
 						{error, Reason} ->

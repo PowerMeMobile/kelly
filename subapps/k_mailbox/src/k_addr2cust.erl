@@ -1,57 +1,45 @@
 -module(k_addr2cust).
 
 -export([
-	link/2,
+	link/3,
 	unlink/1,
 	resolve/1,
-	available_addresses/1
+	available_addresses/2
 ]).
 
--include_lib("k_common/include/storages.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include("address.hrl").
 
--spec resolve(address()) -> {ok, CustID :: string()} | {error, addr_not_used}.
-resolve({Addr, Ton, Npi}) ->
-	Address = #addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi
-		},
+-spec resolve(addr()) -> {ok, customer_id(), user_id()} |
+						 {error, addr_not_used}.
+resolve(Address = #addr{}) ->
 	{atomic, Result} = mnesia:transaction(fun() ->
 		case mnesia:read({k_mb_address, Address}) of
-			[] -> {error, addr_not_used};
-			[#k_mb_address{customer_id = CustID}] -> {ok, CustID}
+			[] ->
+				{error, addr_not_used};
+			[#k_mb_address{customer_id = CustID, user_id = UserID}] ->
+				{ok, CustID, UserID}
 		end
 	end),
 	Result.
 
--spec link(address(), CustID :: string()) -> ok | {error, addr_in_use}.
-link({Addr, Ton, Npi}, CustID) ->
-	Address = #addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi
-		},
+-spec link(addr(), customer_id(), user_id()) -> ok | {error, addr_in_use}.
+link(Address = #addr{}, CustID, UserID) ->
 	{atomic, Result} = mnesia:transaction(fun() ->
 		case mnesia:read({k_mb_address, Address}) of
 			[] ->
 				ok = mnesia:write(#k_mb_address{
 					address = Address,
-					customer_id = CustID
+					customer_id = CustID,
+					user_id = UserID
 				});
 			_ -> {error, addr_in_use}
 		end
 	end),
 	Result.
 
--spec unlink(address()) -> ok | {error, addr_not_used}.
-unlink({Addr, Ton, Npi}) ->
-	Address = #addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi
-		},
+-spec unlink(addr()) -> ok | {error, addr_not_used}.
+unlink(Address = #addr{}) ->
 	{atomic, Result} = mnesia:transaction(fun() ->
 		case mnesia:read({k_mb_address, Address}) of
 			[] ->
@@ -63,13 +51,14 @@ unlink({Addr, Ton, Npi}) ->
 	end),
 	Result.
 
--spec available_addresses(CustID :: string()) ->
-	{ok, [address()]}.
-available_addresses(CustID) ->
+-spec available_addresses(customer_id(), user_id()) ->
+	{ok, [addr()]}.
+available_addresses(CustID, UserID) ->
 	{atomic, Items} = mnesia:transaction(fun() ->
 		qlc:e(qlc:q([
 				Item#k_mb_address.address || Item <- mnesia:table(k_mb_address),
-				Item#k_mb_address.customer_id == CustID
+				Item#k_mb_address.customer_id == CustID andalso
+				Item#k_mb_address.user_id == UserID
 		]))
 	end),
 	{ok, Items}.

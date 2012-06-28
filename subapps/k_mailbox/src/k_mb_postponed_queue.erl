@@ -23,7 +23,7 @@
 ]).
 
 %% ===================================================================
-%% gen_server Function Exports
+%% GenServer Functions Exports
 %% ===================================================================
 
 -export([
@@ -36,7 +36,7 @@
 ]).
 
 %% ===================================================================
-%% API Function Definitions
+%% API Functions Definitions
 %% ===================================================================
 
 -spec start_link() -> {ok, pid()}.
@@ -50,7 +50,7 @@ postpone(Item = #k_mb_pending_item{attempt = Attempt}) ->
     postpone(Item, CurrentAttempt, MaxRetry).
 
 %% ===================================================================
-%% gen_server Function Definitions
+%% GenServer Functions Definitions
 %% ===================================================================
 
 init([]) ->
@@ -93,7 +93,7 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %% ===================================================================
-%% Internal Function Definitions
+%% Local Functions Definitions
 %% ===================================================================
 
 process(ItemList) ->

@@ -9,3 +9,4 @@ subapps/k_common/src/FunnelAsn.asn1db
 subapps/k_common/src/FunnelAsn.erl
 subapps/k_common/src/JustAsn.asn1db
 subapps/k_common/src/JustAsn.erl
+subapps/k_common/include/k1api_pb.hrl

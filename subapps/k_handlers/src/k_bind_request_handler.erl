@@ -44,19 +44,24 @@ authenticate(BindReq = #'BindRequest'{
 	?log_debug("got request: ~p", [BindReq]),
 	case k_aaa_api:get_customer_by_system_id(SystemId) of
 		{ok, Customer} ->
+			?log_debug("Customer found: ~p", [Customer]),
 			case k_aaa_api:get_customer_user(Customer, UserId) of
 				{ok, User = #user{}} ->
+					?log_debug("User found: ~p", [User]),
 					Checks = [
 						fun check_stage_password/2,
 						fun check_stage_conntype/2
 					],
 					perform_checks(BindReq, User, Checks, Customer);
 				{error, no_entry} ->
+					?log_debug("User not found.", []),
 					{deny, no_such_customer};
-				Other ->
-					Other
+				Error ->
+					?log_error("Unexpected error: ~p", [Error]),
+					Error
 			end;
 		Any ->
+			?log_debug("Customer not found.", []),
 			Any
 	end.
 
