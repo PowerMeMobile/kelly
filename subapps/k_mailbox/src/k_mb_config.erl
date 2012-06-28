@@ -52,7 +52,11 @@ default(max_retry)		   			-> 5;
 default(adapter)	     			-> k_mb_amqp;
 default(expiration_date) 	 		-> 48; % hours
 default(purge_rate)					-> 2; % hours
+
+default(reply_to) 					-> <<"pmm.kelly.mailbox_reply">>;
+
 default(_Key)            			-> undefined.
+
 
 convert_to_sec(Hours) ->
 	Hours * 3600.

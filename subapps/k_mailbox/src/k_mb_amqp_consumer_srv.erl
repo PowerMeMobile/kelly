@@ -66,7 +66,7 @@ get_response(MesID, Timeout) ->
 init([]) ->
 	Chan = k_mb_amqp_pool:open_channel(),
 	link(Chan),
-	{ok, ReplyToQName} = application:get_env(reply_to),
+	ReplyToQName = k_mb_config:get_env(reply_to),
 	DeclareProps = [{durable, false}],
 	ok = k_mb_amqp_funs:queue_declare(Chan, ReplyToQName, DeclareProps),
 	NoAck = true,

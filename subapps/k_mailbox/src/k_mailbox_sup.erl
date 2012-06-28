@@ -34,10 +34,12 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-	?log_debug("initialization...", []),
 	{ok, {
 
 		{rest_for_one, 5, 10}, [
+
+			{k_mb_amqp_sup, {k_mb_amqp_sup, start_link, []},
+				permanent, infinity, supervisor, [k_mb_amqp_sup]},
 
 			{k_mb_map_mgr, {k_mb_map_mgr, start_link, []},
 				permanent, 5000, worker, [k_mb_map_mgr]},
