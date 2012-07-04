@@ -1,5 +1,50 @@
 REPORTS
 
+Statistical interface for uplink and downlink
+
+REST call
+GET /report/uplink
+
+Example:
+http://localhost:8080/report/uplink
+
+Result:
+<reports>
+	<gateways>
+		<gateway>
+			<id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
+			<name>test_gtw</name>
+			<status>1</status>
+			<max_rps>1000</max_rps>
+			<actual_rps>N/A</actual_rps>
+		</gateway>
+	</gateways>
+</reports>
+
+
+REST call
+GET /report/downlink
+
+Example:
+http://localhost:8080/report/downlink
+
+Result:
+<reports>
+	<connections>
+		<connection>
+			<id>7185a36c-ccea-4437-aba7-c86c23d4b888</id>
+			<remote_ip>127.0.0.1</remote_ip>
+			<customer_id>test-sys-id</customer_id>
+			<user_id>user</user_id>
+			<connected_at>120704112550</connected_at>
+			<type>transceiver</type>
+			<msgs_received>200</msgs_received>
+			<msgs_sent>0</msgs_sent>
+			<errors/></connection>
+		</connections>
+</reports>
+
+
 Statistical interface for Customers, Networks, Gateways
 
 REST call:
