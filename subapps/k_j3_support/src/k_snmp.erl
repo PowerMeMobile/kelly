@@ -97,8 +97,8 @@ ready(process_queue, State = #state{time = Time}) ->
 				ack(Id),
 				process_queue(),
 				{next_state, ready, State};
-			Error ->
-				%?log_error("error process snmp task: ~p", [Error]),
+			_Error ->
+				%?log_error("error process snmp task: ~p", [_Error]),
 				%?log_debug("going to sleep...", []),
 				start_timer(Time),
 				{next_state, sleep, State}

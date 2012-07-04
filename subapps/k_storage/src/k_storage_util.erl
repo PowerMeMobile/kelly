@@ -5,10 +5,16 @@
 	gtw_stats_file_path/1,
 
 	utc_unix_epoch/0,
+
 	timestamp_to_unix_epoch/1,
 	unix_epoch_to_timestamp/1,
+
 	datetime_to_unix_epoch/1,
 	unix_epoch_to_datetime/1,
+
+	timestamp_to_milliseconds/1,
+	milliseconds_to_timestamp/1,
+
 	datetime_to_iso_8601/1,
 
 	write_term_to_file/2,
@@ -58,6 +64,16 @@ unix_epoch_to_datetime(UnixTime) ->
     ReferenceDate = {{1970,1,1}, {0,0,0}},
 	TotalSeconds = calendar:datetime_to_gregorian_seconds(ReferenceDate) + UnixTime,
 	calendar:gregorian_seconds_to_datetime(TotalSeconds).
+
+-spec timestamp_to_milliseconds(erlang:timestamp()) -> pos_integer().
+timestamp_to_milliseconds({MegaSecs, Secs, MicroSecs}) ->
+    (MegaSecs * 1000000 + Secs) * 1000 + MicroSecs div 1000.
+
+-spec milliseconds_to_timestamp(pos_integer()) -> erlang:timestamp().
+milliseconds_to_timestamp(MS) ->
+    Secs = MS div 1000,
+    {Secs div 1000000, Secs rem 1000000, (MS rem 1000) * 1000}.
+
 
 -spec datetime_to_iso_8601(calendar:datetime()) -> string().
 datetime_to_iso_8601({{Year,Month,Day},{Hour,Min,Sec}}) ->
