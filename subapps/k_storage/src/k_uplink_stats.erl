@@ -15,7 +15,7 @@ get_stats() ->
 		{ok, GtwList} ->
 			{ok, GtwPropLists} = prepare_gtws(GtwList),
 			%?log_debug("GtwPropLists: ~p", [GtwPropLists]),
-			Report = {reports, [{gateways, GtwPropLists}]},
+			Report = {gateways, GtwPropLists},
 			{ok, Report};
 		{error, Error} ->
 			{error, Error}
@@ -36,11 +36,11 @@ prepare_gtws([{GtwUUID, #gateway{}} | Rest], Acc) ->
 	{ok, Name} = k_snmp:get_column_val(gtwName, GtwUUID),
 	{ok, Status} = k_snmp:get_column_val(gtwStatus, GtwUUID),
 	{ok, MaxRPS} = k_snmp:get_column_val(gtwRPS, GtwUUID),
-	GtwPropList = {gateway, [
+	GtwPropList = [
 		{id, GtwUUID},
 		{name, Name},
 		{status, Status},
 		{max_rps, MaxRPS},
 		{actual_rps, 'N/A'}
-	]},
+	],
 	prepare_gtws(Rest, [GtwPropList | Acc]).

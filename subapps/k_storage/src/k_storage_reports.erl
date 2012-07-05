@@ -38,55 +38,59 @@ msg_stats_report(ReportType, From, To) when From < To ->
 						  SoFar
 				  end
 		  end, [], Filenames),
-	AnnotatedReport = annotate_report_bunch(Reports),
+	AnnotatedReport = annotate_msg_stats_report_bunch(ReportType, Reports),
 	{ok, AnnotatedReport}.
 
+-spec annotate_msg_stats_report_bunch(ReportType::integer(), Records::[tuple()]) -> {term(), Records::[tuple()]}.
+annotate_msg_stats_report_bunch(1, Records) ->
+	{customers, Records};
+annotate_msg_stats_report_bunch(2, Records) ->
+	{networks, Records}.
+
 -spec annotate_msg_stats_report(ReportType::integer(), Records::[tuple()]) -> [tuple()].
-annotate_msg_stats_report(ReportType, Records) ->
-	case ReportType of
-		1 ->
-			annotate_msg_stats_report1(Records);
-		2 ->
-			annotate_msg_stats_report2(Records)
-	end.
+annotate_msg_stats_report(1, Records) ->
+	annotate_msg_stats_report1(Records);
+annotate_msg_stats_report(2, Records) ->
+	annotate_msg_stats_report2(Records).
 
 -spec annotate_msg_stats_report1(Customers::[tuple()]) -> [tuple()].
 annotate_msg_stats_report1(Customers) ->
 	lists:map(
-	  fun(Customer) ->
-			  {CustomerId, Networks} = Customer,
-			  {customer, [
-						  {id, CustomerId},
-						  {networks,
-						   lists:map(
-							 fun(Network) ->
-									 {NetworkId, MsgIds} = Network,
-									 {network, [
-												{id, NetworkId},
-												{mids, lists:map(fun(MsgId) -> {id, MsgId} end, MsgIds)}
-											   ]}
-							 end, Networks)}
-						 ]}
-	  end, Customers).
+		fun(Customer) ->
+			{CustomerId, Networks} = Customer,
+			[
+				{id, CustomerId},
+				{networks,
+					lists:map(
+						fun({NetworkId, MsgIds}) ->
+							[
+								{id, NetworkId},
+								{mids, MsgIds}
+							]
+						end,
+						Networks)}
+			]
+		end,
+		Customers).
 
 -spec annotate_msg_stats_report2(Networks::[tuple()]) -> [tuple()].
 annotate_msg_stats_report2(Networks) ->
 	lists:map(
-	  fun(Network) ->
-			  {NetworkId, Customers} = Network,
-			  {network, [
-						  {id, NetworkId},
-						  {customers,
-						   lists:map(
-							 fun(Customer) ->
-									 {CustomerId, MsgIds} = Customer,
-									 {customer, [
-												{id, CustomerId},
-												{mids, lists:map(fun(MsgId) -> {id, MsgId} end, MsgIds)}
-											   ]}
-							 end, Customers)}
-						 ]}
-	  end, Networks).
+		fun({NetworkId, Customers}) ->
+			[
+				{id, NetworkId},
+				{customers,
+					lists:map(
+						fun({CustomerId, MsgIds}) ->
+							[
+								{id, CustomerId},
+								{mids, MsgIds}
+							]
+						 end,
+						Customers)}
+			]
+		end,
+		Networks).
 
 -spec msg_stats_report1(Records::[tuple()]) -> [tuple()].
 msg_stats_report1(Records) ->
@@ -148,24 +152,26 @@ gtw_stats_report(From, To) when From < To ->
 						SoFar
 				end
 			end, [], Timestamps),
-	AnnotatedReport = annotate_report_bunch(Reports),
+	AnnotatedReport = {slices, Reports},
 	{ok, AnnotatedReport}.
 
 -spec annotate_gtw_stats_report(Timestamp::os:timestamp(), Records::[term()]) -> [term()].
 annotate_gtw_stats_report(Timestamp, Records) ->
 	Datetime = k_storage_util:datetime_to_iso_8601(
 					k_storage_util:unix_epoch_to_datetime(Timestamp)),
-	{time, [
-		{value, Datetime},
-		{gateways, lists:map(
-					fun({GatewayId, Number}) ->
-						{gateway, [
-							{id, GatewayId},
-							{number, Number}
-						]}
-					end, Records)
+	[
+		{datetime, Datetime},
+		{gateways,
+			lists:map(
+				fun({GatewayId, Number}) ->
+					[
+						{id, GatewayId},
+						{count, Number}
+					]
+				end,
+				Records)
 		}
-	]}.
+	].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -176,10 +182,6 @@ annotate_gtw_stats_report(Timestamp, Records) ->
 get_timestamp_list(From, To) when From < To ->
 	Step = stats_report_frequency(),
 	lists:seq(From, To, Step).
-
--spec annotate_report_bunch(ReportBunch::[tuple()]) -> tuple.
-annotate_report_bunch(ReportBunch) ->
-	{reports, ReportBunch}.
 
 -spec align_time_range(From::os:timestamp(), To::os:timestamp()) ->
 	{FromFloor::os:timestamp(), ToCeiling::os:timestamp()}.
