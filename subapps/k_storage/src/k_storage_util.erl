@@ -5,6 +5,7 @@
 	gtw_stats_file_path/1,
 
 	utc_unix_epoch/0,
+	timestamp/0,
 
 	timestamp_to_unix_epoch/1,
 	unix_epoch_to_timestamp/1,
@@ -74,6 +75,12 @@ milliseconds_to_timestamp(MS) ->
     Secs = MS div 1000,
     {Secs div 1000000, Secs rem 1000000, (MS rem 1000) * 1000}.
 
+-spec timestamp() -> pos_integer().
+timestamp() ->
+	timestamp(erlang:now()).
+
+timestamp({Mega, Secs, Micro}) ->
+    Mega*1000*1000*1000*1000 + Secs * 1000 * 1000 + Micro.
 
 -spec datetime_to_iso_8601(calendar:datetime()) -> string().
 datetime_to_iso_8601({{Year,Month,Day},{Hour,Min,Sec}}) ->
