@@ -36,7 +36,7 @@ start_link() ->
 %% ===================================================================
 
 init(_Args) ->
-	?log_debug("initialization...", []),
+	% ?log_debug("initialization...", []),
 	{ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
