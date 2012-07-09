@@ -17,13 +17,13 @@ Example:
 http://localhost:8080/report/status?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
-<status>
+<statuses>
 	<accepted>5</accepted>
 	<delivered>177</delivered>
 	<rejected>7</rejected>
 	<sent>500</sent>
 	<undeliverable>11</undeliverable>
-</status>
+</statuses>
 
 REST call:
 GET /report/status?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&status=STATUS

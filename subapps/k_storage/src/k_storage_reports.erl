@@ -193,7 +193,7 @@ status_stats_report(Records, undefined) ->
 			{Status, length(Group)}
 		end,
 		Groups),
-	{status, Freqs};
+	{statuses, Freqs};
 
 status_stats_report(Records, sent) ->
 	status_stats_report(Records, success_no_delivery);
