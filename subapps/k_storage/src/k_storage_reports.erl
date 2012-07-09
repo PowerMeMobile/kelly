@@ -8,17 +8,23 @@
 	msg_stats_report/3,
 
 	gtw_stats_report/1,
-	gtw_stats_report/2
+	gtw_stats_report/2,
+
+	status_stats_report/1,
+	status_stats_report/2
 ]).
+
+-include("status_stats.hrl").
+
+-compile(export_all).
 
 -spec stats_report_frequency() -> integer().
 stats_report_frequency() ->
 	60.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
+%% ===================================================================
 %% Message Stats
-%%
+%% ===================================================================
 
 -spec msg_stats_report(ReportType::integer(), From::os:timestamp(), To::os:timestamp()) -> {ok, term()} | {error, Reason::any()}.
 msg_stats_report(ReportType, From, To) when From < To ->
@@ -120,11 +126,9 @@ get_msg_stats_file_list(ReportType, From, To) when From < To ->
 				io_lib:format("~p-~p.dat", [Timestamp, ReportType]))
 		 end, Timestamps).
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
+%% ===================================================================
 %% Gateway Stats
-%%
+%% ===================================================================
 
 -spec gtw_stats_report(Records::[tuple()]) -> [tuple()].
 gtw_stats_report(Records) ->
@@ -173,10 +177,61 @@ annotate_gtw_stats_report(Timestamp, Records) ->
 		}
 	].
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Common
-%%
+%% ===================================================================
+%% Status stats
+%% ===================================================================
+
+-spec status_stats_report(Records::[tuple()]) -> [tuple()].
+status_stats_report(Records) ->
+	Groups = group(lists:sort(lists:map(
+		fun(#status_stats{msg_status = #msg_status{status = Status}}) ->
+			case Status of
+				success_no_delivery -> sent;
+				Other -> Other
+			end
+		end,
+		Records))),
+	Freqs = lists:map(
+		fun(Group = [Status|_]) ->
+			{Status, length(Group)}
+		end,
+		Groups),
+	Freqs.
+
+-spec status_stats_report(From::os:timestamp(), To::os:timestamp()) -> [tuple()].
+status_stats_report(From, To) ->
+	{FromFloor, ToCeiling} = align_time_range(From, To),
+	Filenames = get_status_stats_file_list(FromFloor, ToCeiling),
+	AllRecords =
+		lists:foldr(
+			fun(Filename, SoFar) ->
+				case k_storage_util:read_term_from_file(Filename) of
+					{ok, []} ->
+						SoFar;
+					{ok, Records} ->
+						Records ++ SoFar;
+					{error, _Reason} ->
+						%?log_debug("Missing msg stats report: ~p", [Filename])
+						SoFar
+				end
+			end,
+			[],
+			Filenames),
+	Report = status_stats_report(AllRecords),
+	{ok, {status, Report}}.
+
+-spec get_status_stats_file_list(From::os:timestamp(), To::os:timestamp()) -> [file:filename()].
+get_status_stats_file_list(From, To) when From < To ->
+	Timestamps = get_timestamp_list(From, To),
+	lists:map(
+		fun(Timestamp) ->
+			k_storage_util:status_stats_file_path(
+				io_lib:format("~p.dat", [Timestamp]))
+		 end, Timestamps).
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
 
 -spec get_timestamp_list(From::os:timestamp(), To::os:timestamp()) -> [os:timestamp()].
 get_timestamp_list(From, To) when From < To ->
@@ -210,3 +265,14 @@ make_pair(KeyN, Tuple) ->
 remove(_, []) -> [];
 remove(1, [_|T]) -> T;
 remove(N, [H|T]) -> [H | remove(N-1, T)].
+
+-spec group([A]) -> [[A]].
+group(List) ->
+	groupwith(fun erlang:'=:='/2, List).
+
+-spec groupwith(Eq::fun((A, A) -> boolean()), [A]) -> [[A]].
+groupwith(_, []) ->
+	[];
+groupwith(Eq, [X|XS]) ->
+	{YS, ZS} = lists:splitwith(fun(I) -> Eq(X, I) end, XS),
+	[[X|YS] | groupwith(Eq, ZS)].

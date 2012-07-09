@@ -3,6 +3,7 @@
 -export([
 	msg_stats_file_path/1,
 	gtw_stats_file_path/1,
+	status_stats_file_path/1,
 
 	utc_unix_epoch/0,
 	timestamp/0,
@@ -34,6 +35,12 @@ msg_stats_file_path(Filename) ->
 gtw_stats_file_path(Filename) ->
 	{ok, CWD} = file:get_cwd(),
 	Path = lists:flatten(io_lib:format("data/time-slices.d/gtw-stats/~s", [Filename])),
+	filename:join(CWD, Path).
+
+-spec status_stats_file_path(string()) -> string().
+status_stats_file_path(Filename) ->
+	{ok, CWD} = file:get_cwd(),
+	Path = lists:flatten(io_lib:format("data/time-slices.d/status-stats/~s", [Filename])),
 	filename:join(CWD, Path).
 
 %%%%%
