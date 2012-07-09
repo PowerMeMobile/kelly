@@ -29,50 +29,59 @@ process_sms_response(SmsResponse = #'SmsResponse'{}) ->
 	?log_debug("got request: ~p", [SmsResponse]),
 	MsgResps = sms_response_to_msg_resp_list(SmsResponse),
 	ok = store_gtw_stats(SmsResponse),
-	lists:foreach(
-		fun(MsgResp =
-			#msg_resp{
+	Fun =
+		fun(#msg_resp{
 				input_id = InputId,
 				output_id = OutputId,
 				status = Status
 			 }) ->
-				ok = update_msg_status(InputId, OutputId, Status),
-				ok = map_in_to_out(InputId, OutputId),
-				?log_debug("ids mapped and status updated: ~p", [MsgResp])
+				%% check if the message is already registered, it's quite possible that it isn't.
+				case k_storage_api:get_msg_status(InputId) of
+					%% normal case, sms request is handled.
+					{ok, MsgStatus} ->
+						ok = update_msg_status(InputId, OutputId, MsgStatus, Status),
+						ok = map_in_to_out(InputId, OutputId),
+						?log_debug("ids mapped and status updated: in:~p out:~p st:~p", [InputId, OutputId, Status]);
+					%% abnormal case, sms request isn't handled yet.
+					{error, no_entry} ->
+						{error, request_data_unavailable};
+					Error ->
+						Error
+				end
 		end,
-		MsgResps),
-	{ok, []}.
-
--spec update_msg_status(msg_id(), msg_id(), atom()) -> ok | {error, any()}.
-update_msg_status(InputId, OutputId, ResponseStatus) ->
-	RespTime = k_storage_util:utc_unix_epoch(),
-	%% check if the message is already registered, it's quite possible that it isn't.
-	case k_storage_api:get_msg_status(InputId) of
-		{ok, MsgStatus} ->
-			case k_storage_api:get_msg_info(InputId) of
-				{ok, MsgInfo = #msg_info{registered_delivery = RegDelivery}} ->
-					NewStatus = case ResponseStatus of
-									success ->
-										case RegDelivery of
-											true -> success_waiting_delivery;
-											false -> success_no_delivery
-										end;
-									failure ->
-										failure
-								end,
-					NewMsgStatus = MsgStatus#msg_status{
-						status = NewStatus,
-						resp_time = RespTime
-					},
-					%% update message status and stats.
-					ok = k_storage_api:set_msg_status(InputId, NewMsgStatus),
-					ok = k_reports_api:store_status_stats(InputId, OutputId, MsgInfo, NewStatus, RespTime);
-				Error ->
-					Error
-			end;
+	case foreach(Fun, MsgResps) of
+		ok ->
+			{ok, []};
 		Error ->
 			Error
 	end.
+
+foreach(_, []) ->
+	ok;
+foreach(Fun, [H | T]) ->
+	case Fun(H) of
+		ok ->
+			foreach(Fun, T);
+		Error ->
+			Error
+	end.
+
+-spec update_msg_status(msg_id(), msg_id(), #msg_status{}, atom()) -> ok | {error, any()}.
+update_msg_status(InputId, OutputId, MsgStatus, ResponseStatus) ->
+	RespTime = k_storage_util:utc_unix_epoch(),
+	{ok, MsgInfo} = k_storage_api:get_msg_info(InputId),
+	NewStatus = fix_status(ResponseStatus, MsgInfo#msg_info.registered_delivery),
+	NewMsgStatus = MsgStatus#msg_status{
+		status = NewStatus,
+		resp_time = RespTime
+	},
+	%% update message status and stats.
+	ok = k_storage_api:set_msg_status(InputId, NewMsgStatus),
+	ok = k_reports_api:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, RespTime).
+
+fix_status(success, true) -> success_waiting_delivery;
+fix_status(success, false) -> success_no_delivery;
+fix_status(failure, _) -> failure.
 
 -spec map_in_to_out(msg_id(), msg_id()) -> ok.
 map_in_to_out(InputId, OutputId) ->

@@ -24,19 +24,34 @@ process_sms_request(SmsRequest = #'SmsRequest'{}) ->
 	MsgInfos = sms_request_to_msg_info_list(SmsRequest),
 	%?log_debug("~p", [MsgInfos]),
 	Time = k_storage_util:utc_unix_epoch(),
-	lists:foreach(
-		fun(MsgInfo =
-			#msg_info{
+	Fun =
+		fun(#msg_info{
 				id = Id,
 				customer_id = CustomerId
-			}) ->
+			} = MsgInfo) ->
 				InputId = {CustomerId, Id},
-				ok = update_msg_status(InputId, submitted, Time),
+				Status = submitted,
+				ok = update_msg_status(InputId, Status, Time),
 				ok = store_msg_info(InputId, MsgInfo, Time),
-				?log_debug("Message stored and its status updated: ~p", [MsgInfo])
-			 end,
-			MsgInfos),
-	{ok, []}.
+				?log_debug("Message stored and its status updated: in:~p st:~p", [InputId, Status])
+		end,
+	case foreach(Fun, MsgInfos) of
+		ok ->
+			{ok, []};
+		Error ->
+			Error
+	end.
+
+foreach(_, []) ->
+	ok;
+foreach(Fun, [H | T]) ->
+	case Fun(H) of
+		ok ->
+			foreach(Fun, T);
+		Error ->
+			Error
+	end.
+
 
 -spec update_msg_status(msg_id(), atom(), integer()) -> ok | {error, any()}.
 update_msg_status(InputId, DefaultStatus, ReqTime) ->

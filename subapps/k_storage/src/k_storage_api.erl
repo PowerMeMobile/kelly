@@ -9,9 +9,6 @@
 	get_output_id_by_input_id/1,
 	map_output_id_to_input_id/2,
 	get_input_id_by_output_id/1,
-	set_dlr_msg_status/2,
-	get_dlr_msg_status/1,
-	delete_dlr_msg_status/1,
 
 	utc_unix_epoch/0
 ]).
@@ -54,18 +51,6 @@ map_output_id_to_input_id(OutputId, InputId) ->
 -spec get_input_id_by_output_id(msg_id()) -> {ok, msg_id()} | {error, any()}.
 get_input_id_by_output_id(OutputId) ->
 	gen_server:call(out_to_in, {get, OutputId}, infinity).
-
--spec set_dlr_msg_status(msg_id(), #msg_status{}) -> ok | {error, any()}.
-set_dlr_msg_status(OutputId, MsgStatus) ->
-	gen_server:call(dlr_msg_status, {set, OutputId, MsgStatus}, infinity).
-
--spec get_dlr_msg_status(msg_id()) -> {ok, #msg_status{}} | {error, any()}.
-get_dlr_msg_status(OutputId) ->
-	gen_server:call(dlr_msg_status, {get, OutputId}, infinity).
-
--spec delete_dlr_msg_status(msg_id()) -> ok | {error, any()}.
-delete_dlr_msg_status(OutputId) ->
-	gen_server:call(dlr_msg_status, {delete, OutputId}, infinity).
 
 -spec utc_unix_epoch() -> integer().
 utc_unix_epoch() ->
