@@ -7,7 +7,9 @@
 
 	msg_stats_report/3,
 	gtw_stats_report/2,
-	status_stats_report/2
+
+	status_stats_report/2,
+	status_stats_report/3
 ]).
 
 -include_lib("k_common/include/msg_id.hrl").
@@ -45,4 +47,10 @@ gtw_stats_report(From, To) when From < To ->
 status_stats_report(From, To) when From < To ->
 	FromUnix = k_storage_util:datetime_to_unix_epoch(From),
 	ToUnix = k_storage_util:datetime_to_unix_epoch(To),
-	k_storage_reports:status_stats_report(FromUnix, ToUnix).
+	k_storage_reports:status_stats_report(FromUnix, ToUnix, undefined).
+
+-spec status_stats_report(From::calendar:datetime(), To::calendar:datetime(), Status::atom()) -> {ok, term()} | {error, Reason::any()}.
+status_stats_report(From, To, Status) when From < To ->
+	FromUnix = k_storage_util:datetime_to_unix_epoch(From),
+	ToUnix = k_storage_util:datetime_to_unix_epoch(To),
+	k_storage_reports:status_stats_report(FromUnix, ToUnix, Status).

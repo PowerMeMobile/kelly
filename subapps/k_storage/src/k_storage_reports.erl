@@ -10,13 +10,10 @@
 	gtw_stats_report/1,
 	gtw_stats_report/2,
 
-	status_stats_report/1,
-	status_stats_report/2
+	status_stats_report/3
 ]).
 
 -include("status_stats.hrl").
-
--compile(export_all).
 
 -spec stats_report_frequency() -> integer().
 stats_report_frequency() ->
@@ -181,8 +178,8 @@ annotate_gtw_stats_report(Timestamp, Records) ->
 %% Status stats
 %% ===================================================================
 
--spec status_stats_report(Records::[tuple()]) -> [tuple()].
-status_stats_report(Records) ->
+-spec status_stats_report(Records::[tuple()], Status::atom()) -> [tuple()].
+status_stats_report(Records, undefined) ->
 	Groups = group(lists:sort(lists:map(
 		fun(#status_stats{msg_status = #msg_status{status = Status}}) ->
 			case Status of
@@ -196,10 +193,65 @@ status_stats_report(Records) ->
 			{Status, length(Group)}
 		end,
 		Groups),
-	Freqs.
+	{status, Freqs};
 
--spec status_stats_report(From::os:timestamp(), To::os:timestamp()) -> [tuple()].
-status_stats_report(From, To) ->
+status_stats_report(Records, sent) ->
+	status_stats_report(Records, success_no_delivery);
+
+status_stats_report(Records, Status) ->
+	Filtered = lists:filter(
+		fun(#status_stats{msg_status = #msg_status{status = St}}) when St =:= Status ->
+			true;
+		   (_) ->
+			false
+		end,
+		Records),
+	Report = lists:map(
+		fun(#status_stats{
+ 				output_id = {GatewayId, _},
+ 				msg_info = #msg_info{
+					id = MessageId,
+					customer_id = CustomerId,
+					source_addr = SrcAddr,
+					dest_addr = DstAddr,
+					body = BinText
+				},
+				time = Timestamp
+			}) ->
+			Datetime = k_storage_util:datetime_to_iso_8601(
+					k_storage_util:unix_epoch_to_datetime(Timestamp)),
+			[
+				{datetime, Datetime},
+				{message_id, MessageId},
+				{customer_id, CustomerId},
+				{gateway_id, GatewayId},
+				{src_addr, transform_addr(SrcAddr)},
+				{dst_addr, transform_addr(DstAddr)},
+				{message_text, binary_to_list(BinText)}
+			]
+		end,
+		Filtered),
+	{messages, Report}.
+
+transform_addr(#'FullAddr'{
+	addr = Addr,
+	ton = Ton,
+	npi = Npi
+}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi}
+	];
+transform_addr(#'FullAddrAndRefNum'{
+	fullAddr = FullAddr,
+	refNum = RefNum
+}) ->
+	transform_addr(FullAddr) ++ [{ref_num, RefNum}].
+
+%% usage: k_reports_api:status_stats_report({{2012,7,9},{0,0,0}}, {{2012,7,9},{23,59,0}}, rejected).
+-spec status_stats_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [tuple()].
+status_stats_report(From, To, Status) ->
 	{FromFloor, ToCeiling} = align_time_range(From, To),
 	Filenames = get_status_stats_file_list(FromFloor, ToCeiling),
 	AllRecords =
@@ -217,8 +269,8 @@ status_stats_report(From, To) ->
 			end,
 			[],
 			Filenames),
-	Report = status_stats_report(AllRecords),
-	{ok, {status, Report}}.
+	Report = status_stats_report(AllRecords, Status),
+	{ok, Report}.
 
 -spec get_status_stats_file_list(From::os:timestamp(), To::os:timestamp()) -> [file:filename()].
 get_status_stats_file_list(From, To) when From < To ->

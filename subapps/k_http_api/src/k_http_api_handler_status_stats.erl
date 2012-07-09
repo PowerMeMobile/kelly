@@ -13,7 +13,8 @@
 %%% REST parameters
 -record(get, {
 	from = {mandatory, <<"from">>, binary},
-	to = {mandatory, <<"to">>, binary}
+	to = {mandatory, <<"to">>, binary},
+	status = {optional, <<"status">>, binary}
 }).
 
 init(_Req, 'GET', [<<"report">>, <<"status">>]) ->
@@ -24,10 +25,17 @@ init(_Req, HttpMethod, Path) ->
 	{error, bad_request}.
 
 %% format time: YYYY-MM-DDThh:mm
-handle(_Req, #get{from = HttpFrom, to = HttpTo}, State = #state{}) ->
+handle(_Req, #get{from = HttpFrom, to = HttpTo, status = undefined}, State = #state{}) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
 	{ok, Response} = k_reports_api:status_stats_report(From, To),
+	{ok, Response, State};
+
+handle(_Req, #get{from = HttpFrom, to = HttpTo, status = HttpStatus}, State = #state{}) ->
+	From = convert_http_datetime_to_term(HttpFrom),
+	To = convert_http_datetime_to_term(HttpTo),
+	Status = list_to_atom(binary_to_list(HttpStatus)),
+	{ok, Response} = k_reports_api:status_stats_report(From, To, Status),
 	{ok, Response, State}.
 
 terminate(_Req, _State = #state{}) ->
