@@ -107,20 +107,6 @@ handle_cast({store_status_stats, InputId, OutputId, MsgInfo, MsgStatus, Time}, S
 		end,
 	{noreply, State};
 
-%% #status_stats{
-%% 					output_id = {GatewayId, _},
-%% 					msg_info = #msg_info{
-%% 						id = MsgId,
-%% 						customer_id = CustomerId,
-%% 						source_addr = From,
-%% 						dest_addr = To,
-%% 						body = Text
-%% 					},
-%% 					msg_status = #msg_status{
-%% 						status = Status
-%% 					},
-%% 					time = Time
-
 % k_storage_status_stats:build_reports_and_delete_interval(1341842975, 1341842984).
 
 handle_cast({build_reports_and_delete_interval, Start, End}, State) ->

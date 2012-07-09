@@ -117,7 +117,7 @@ handle_child_forked(_Task, _Child, State = #state{}) ->
 	{noreply, State#state{}}.
 
 handle_child_terminated(normal, _Task, _Child, State = #state{}) ->
-	?log_debug("successful", []),
+	%?log_debug("successful", []),
 	{noreply, State#state{}};
 
 handle_child_terminated(Reason, _Task = {process_item, Item}, _Child, State = #state{}) ->
