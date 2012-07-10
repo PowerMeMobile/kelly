@@ -65,7 +65,7 @@ unregister_subscription(CustomerID, UserID, SubscriptionID) ->
 		{ok, SubscriptionID :: subscription_id()} |
 		{error, no_subscription}.
 get_subscription(CustomerID, UserID, ContentType) ->
-	gen_server:call(?MODULE, {get_sub, CustomerID, UserID, ContentType}).
+	gen_server:call(?MODULE, {get_sub, CustomerID, UserID, ContentType}, infinity).
 
 %% ===================================================================
 %% GenServer Function Definitions
