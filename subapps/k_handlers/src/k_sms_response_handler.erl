@@ -32,6 +32,9 @@ process_sms_response(SmsResponse = #'SmsResponse'{}) ->
 	case safe_foreach(fun process_msg_resp/1, MsgResps) of
 		ok ->
 			{ok, []};
+		%% abnormal case, sms request isn't handled yet.
+		{error, no_entry} ->
+			{error, not_enough_data_to_proceed};
 		Error ->
 			Error
 	end.
@@ -67,9 +70,6 @@ process_msg_resp(#msg_resp{
 				Error ->
 					Error
 			end;
-		%% abnormal case, sms request isn't handled yet.
-		{error, no_entry} ->
-			{error, request_data_unavailable};
 		Error ->
 			Error
 	end.

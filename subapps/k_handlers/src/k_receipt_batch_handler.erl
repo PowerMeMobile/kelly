@@ -32,6 +32,9 @@ process_receipt_batch(ReceiptBatch = #'ReceiptBatch'{
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
 		ok ->
 			{ok, []};
+		%% abnormal case, either sms request or response isn't handled yet, or both.
+		{error, no_entry} ->
+			{error, not_enough_data_to_proceed};
 		Error ->
 			Error
 	end.
