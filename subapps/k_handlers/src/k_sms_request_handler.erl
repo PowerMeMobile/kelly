@@ -23,35 +23,42 @@ process_sms_request(SmsRequest = #'SmsRequest'{}) ->
 	?log_debug("Got request: ~p", [SmsRequest]),
 	MsgInfos = sms_request_to_msg_info_list(SmsRequest),
 	%?log_debug("~p", [MsgInfos]),
-	Time = k_storage_util:utc_unix_epoch(),
-	Fun =
-		fun(#msg_info{
-				id = Id,
-				customer_id = CustomerId
-			} = MsgInfo) ->
-				InputId = {CustomerId, Id},
-				Status = submitted,
-				ok = update_msg_status(InputId, Status, Time),
-				ok = store_msg_info(InputId, MsgInfo, Time),
-				?log_debug("Message stored and its status updated: in:~p st:~p", [InputId, Status])
-		end,
-	case foreach(Fun, MsgInfos) of
+	case safe_foreach(fun process_msg_info/1, MsgInfos) of
 		ok ->
 			{ok, []};
 		Error ->
 			Error
 	end.
 
-foreach(_, []) ->
+safe_foreach(_, []) ->
 	ok;
-foreach(Fun, [H | T]) ->
+safe_foreach(Fun, [H | T]) ->
 	case Fun(H) of
 		ok ->
-			foreach(Fun, T);
+			safe_foreach(Fun, T);
 		Error ->
 			Error
 	end.
 
+-spec process_msg_info(#msg_info{}) -> ok | {error, any()}.
+process_msg_info(MsgInfo = #msg_info{
+	id = Id,
+	customer_id = CustomerId
+}) ->
+	InputId = {CustomerId, Id},
+	Status = submitted,
+	Time = k_storage_util:utc_unix_epoch(),
+	case update_msg_status(InputId, Status, Time) of
+		ok ->
+			case store_msg_info(InputId, MsgInfo, Time) of
+				ok ->
+					?log_debug("Message stored and its status updated: in:~p st:~p", [InputId, Status]);
+				Error ->
+					Error
+			end;
+		Error ->
+			Error
+	end.
 
 -spec update_msg_status(msg_id(), atom(), integer()) -> ok | {error, any()}.
 update_msg_status(InputId, DefaultStatus, ReqTime) ->
@@ -63,6 +70,11 @@ update_msg_status(InputId, DefaultStatus, ReqTime) ->
 				req_time = ReqTime
 			},
 			ok = k_storage_api:set_msg_status(InputId, NewMsgStatus);
+		%% Very strange case. It shouldn't be here, but I saw it happened during the testing.
+		%% I'm not sure what to do in this case. :(
+		{ok, _MsgStatus} ->
+			?log_info("~p", [_MsgStatus]),
+			ok;
 		Other ->
 			Other
 	end.

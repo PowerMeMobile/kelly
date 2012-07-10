@@ -29,39 +29,47 @@ process_sms_response(SmsResponse = #'SmsResponse'{}) ->
 	?log_debug("got request: ~p", [SmsResponse]),
 	MsgResps = sms_response_to_msg_resp_list(SmsResponse),
 	ok = store_gtw_stats(SmsResponse),
-	Fun =
-		fun(#msg_resp{
-				input_id = InputId,
-				output_id = OutputId,
-				status = Status
-			 }) ->
-				%% check if the message is already registered, it's quite possible that it isn't.
-				case k_storage_api:get_msg_status(InputId) of
-					%% normal case, sms request is handled.
-					{ok, MsgStatus} ->
-						ok = update_msg_status(InputId, OutputId, MsgStatus, Status),
-						ok = map_in_to_out(InputId, OutputId),
-						?log_debug("ids mapped and status updated: in:~p out:~p st:~p", [InputId, OutputId, Status]);
-					%% abnormal case, sms request isn't handled yet.
-					{error, no_entry} ->
-						{error, request_data_unavailable};
-					Error ->
-						Error
-				end
-		end,
-	case foreach(Fun, MsgResps) of
+	case safe_foreach(fun process_msg_resp/1, MsgResps) of
 		ok ->
 			{ok, []};
 		Error ->
 			Error
 	end.
 
-foreach(_, []) ->
+safe_foreach(_, []) ->
 	ok;
-foreach(Fun, [H | T]) ->
+safe_foreach(Fun, [H | T]) ->
 	case Fun(H) of
 		ok ->
-			foreach(Fun, T);
+			safe_foreach(Fun, T);
+		Error ->
+			Error
+	end.
+
+-spec process_msg_resp(#msg_resp{}) -> ok | {error, any()}.
+process_msg_resp(#msg_resp{
+	input_id = InputId,
+	output_id = OutputId,
+	status = Status
+}) ->
+	%% check if the message is already registered, it's quite possible that it isn't.
+	case k_storage_api:get_msg_status(InputId) of
+		%% normal case, sms request is handled.
+		{ok, MsgStatus} ->
+			case update_msg_status(InputId, OutputId, MsgStatus, Status) of
+				ok ->
+					case map_in_to_out(InputId, OutputId) of
+						ok ->
+							?log_debug("ids mapped and status updated: in:~p out:~p st:~p", [InputId, OutputId, Status]);
+						Error ->
+							Error
+					end;
+				Error ->
+					Error
+			end;
+		%% abnormal case, sms request isn't handled yet.
+		{error, no_entry} ->
+			{error, request_data_unavailable};
 		Error ->
 			Error
 	end.
