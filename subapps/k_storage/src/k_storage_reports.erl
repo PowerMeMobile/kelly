@@ -184,6 +184,7 @@ status_stats_report(Records, undefined) ->
 		fun(#status_stats{msg_status = #msg_status{status = Status}}) ->
 			case Status of
 				success_no_delivery -> sent;
+				success_waiting_delivery -> sent_expected_delivery;
 				Other -> Other
 			end
 		end,
@@ -197,6 +198,8 @@ status_stats_report(Records, undefined) ->
 
 status_stats_report(Records, sent) ->
 	status_stats_report(Records, success_no_delivery);
+status_stats_report(Records, sent_expected_delivery) ->
+	status_stats_report(Records, success_waiting_delivery);
 
 status_stats_report(Records, Status) ->
 	Filtered = lists:filter(
