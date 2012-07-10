@@ -23,56 +23,66 @@ process_sms_request(SmsRequest = #'SmsRequest'{}) ->
 	?log_debug("Got request: ~p", [SmsRequest]),
 	MsgInfos = sms_request_to_msg_info_list(SmsRequest),
 	%?log_debug("~p", [MsgInfos]),
+	case safe_foreach(fun process_msg_info/1, MsgInfos) of
+		ok ->
+			{ok, []};
+		Error ->
+			Error
+	end.
+
+safe_foreach(_, []) ->
+	ok;
+safe_foreach(Fun, [H | T]) ->
+	case Fun(H) of
+		ok ->
+			safe_foreach(Fun, T);
+		Error ->
+			Error
+	end.
+
+-spec process_msg_info(#msg_info{}) -> ok | {error, any()}.
+process_msg_info(MsgInfo = #msg_info{
+	id = Id,
+	customer_id = CustomerId
+}) ->
+	InputId = {CustomerId, Id},
+	Status = submitted,
 	Time = k_storage_util:utc_unix_epoch(),
-	lists:foreach(fun(MsgInfo = #msg_info{
-						id = Id,
-						customer_id = CustomerId,
-						registered_delivery = RegDelivery
-					 }) ->
-						InputId = {CustomerId, Id},
-						ok = store_msg_info(InputId, MsgInfo, Time),
-						ok = update_msg_status(InputId, submitted, RegDelivery, Time),
-						?log_debug("Message stored and its status updated: ~p", [MsgInfo])
-				  end, MsgInfos),
-	{ok, []}.
+	case update_msg_status(InputId, Status, Time) of
+		ok ->
+			case store_msg_info(InputId, MsgInfo, Time) of
+				ok ->
+					?log_debug("Message stored and its status updated: in:~p st:~p", [InputId, Status]);
+				Error ->
+					Error
+			end;
+		Error ->
+			Error
+	end.
 
--spec store_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
-store_msg_info(InputId, MsgInfo, Time) ->
-	ok = k_storage_api:set_msg_info(InputId, MsgInfo),
-	ok = k_reports_api:store_msg_stats(InputId, MsgInfo, Time).
-
--spec update_msg_status(msg_id(), atom(), boolean(), integer()) -> ok.
-update_msg_status(InputId, DefaultStatus, RegDelivery, ReqTime) ->
+-spec update_msg_status(msg_id(), atom(), integer()) -> ok | {error, any()}.
+update_msg_status(InputId, DefaultStatus, ReqTime) ->
 	case k_storage_api:get_msg_status(InputId) of
-		%% normal case, no response yet received.
+		%% normal case, no data stored yet.
 		{error, no_entry} ->
 			NewMsgStatus = #msg_status{
 				status = DefaultStatus,
 				req_time = ReqTime
 			},
 			ok = k_storage_api:set_msg_status(InputId, NewMsgStatus);
-		%% response already received...
-		{ok, #msg_status{status = Status} = MsgStatus} ->
-				case Status of
-					%% with failed status, update the request time and leave the status as it is.
-					failure ->
-						NewMsgStatus = MsgStatus#msg_status{req_time = ReqTime},
-						ok = k_storage_api:set_msg_status(InputId, NewMsgStatus);
-					%% with successful status, update the request time and the status.
-					success ->
-						NewStatus = case RegDelivery of
-										true -> success_waiting_delivery;
-										false -> success_no_delivery
-									end,
-						NewMsgStatus = MsgStatus#msg_status{status = NewStatus, req_time = ReqTime},
-						ok = k_storage_api:set_msg_status(InputId, NewMsgStatus);
-					%% unexpected message status.
-					%% the most probably the same message was received again.
-					_Unexpected ->
-						%?log_error("Unexpected message status: ~p", [_Unexpected]),
-						ok
-				end
+		%% Very strange case. It shouldn't be here, but I saw it happened during the testing.
+		%% I'm not sure what to do in this case. :(
+		{ok, _MsgStatus} ->
+			?log_info("~p", [_MsgStatus]),
+			ok;
+		Other ->
+			Other
 	end.
+
+-spec store_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
+store_msg_info(InputId, MsgInfo, Time) ->
+	ok = k_storage_api:set_msg_info(InputId, MsgInfo),
+	ok = k_reports_api:store_msg_stats(InputId, MsgInfo, Time).
 
 -spec get_param_by_name(string(), [#'Param'{}]) -> {ok, #'Param'{}} | {error, no_entry}.
 get_param_by_name(Name, Params) ->
@@ -123,6 +133,7 @@ sms_request_to_msg_info_list(#'SmsRequest'{
 					registered_delivery = RegisteredDelivery
 				} end, AllPairs).
 
+%% it turned out to be the reimplementation of string:tokens/2 :)
 -spec explode(Delimiter::char(), String::string()) -> [string()].
 explode(Delimiter, String) ->
 	explode(Delimiter, lists:reverse(String), [[]]).

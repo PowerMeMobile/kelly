@@ -1,4 +1,63 @@
 REPORTS
+Reports are delivered in both `json' and `xml' formats (use parameter `view' with `json' or `xml' value respectively).
+Default is `json'.
+
+Statistical interface for statuses
+
+REST call:
+GET /report/status?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+Where
+	YYYY - year
+	MM - month
+	DD - day
+	hh - hours
+	mm - minutes
+
+Example:
+http://localhost:8080/report/status?from=2012-05-20T00:00&to=2012-05-25T00:00
+
+Result:
+<statuses>
+	<accepted>5</accepted>
+	<delivered>177</delivered>
+	<rejected>7</rejected>
+	<sent>500</sent>
+	<undeliverable>11</undeliverable>
+</statuses>
+
+REST call:
+GET /report/status?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&status=STATUS
+Where
+	STATUS - status
+	YYYY - year
+	MM - month
+	DD - day
+	hh - hours
+	mm - minutes
+
+Example:
+http://localhost:8080/report/status?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted
+
+Result:
+<messages>
+	<item>
+		<datetime>2012-07-09T14:36:58</datetime>
+		<message_id>17041</message_id>
+		<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+		<gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+		<src_addr>
+			<addr>375296662323</addr>
+			<ton>1</ton>
+			<npi>1</npi>
+		</src_addr>
+		<dst_addr>
+			<addr>375448413713</addr>
+			<ton>1</ton>
+			<npi>1</npi>
+		</dst_addr>
+		<message_text>Hello, there!</message_text>
+	</item>
+</messages>
 
 Statistical interface for uplink and downlink
 
@@ -9,17 +68,15 @@ Example:
 http://localhost:8080/report/uplink
 
 Result:
-<reports>
-	<gateways>
-		<gateway>
-			<id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
-			<name>test_gtw</name>
-			<status>1</status>
-			<max_rps>1000</max_rps>
-			<actual_rps>N/A</actual_rps>
-		</gateway>
-	</gateways>
-</reports>
+<gateways>
+	<item>
+		<id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
+		<name>test_gtw</name>
+		<status>1</status>
+		<max_rps>1000</max_rps>
+		<actual_rps>N/A</actual_rps>
+	</item>
+</gateways>
 
 
 REST call
@@ -29,20 +86,19 @@ Example:
 http://localhost:8080/report/downlink
 
 Result:
-<reports>
-	<connections>
-		<connection>
-			<id>7185a36c-ccea-4437-aba7-c86c23d4b888</id>
-			<remote_ip>127.0.0.1</remote_ip>
-			<customer_id>test-sys-id</customer_id>
-			<user_id>user</user_id>
-			<connected_at>120704112550</connected_at>
-			<type>transceiver</type>
-			<msgs_received>200</msgs_received>
-			<msgs_sent>0</msgs_sent>
-			<errors/></connection>
-		</connections>
-</reports>
+<connections>
+	<item>
+		<id>7185a36c-ccea-4437-aba7-c86c23d4b888</id>
+		<remote_ip>127.0.0.1</remote_ip>
+		<customer_id>test-sys-id</customer_id>
+		<user_id>user</user_id>
+		<connected_at>120704112550</connected_at>
+		<type>transceiver</type>
+		<msgs_received>200</msgs_received>
+		<msgs_sent>0</msgs_sent>
+		<errors/>
+	</item>
+</connections>
 
 
 Statistical interface for Customers, Networks, Gateways
@@ -61,41 +117,41 @@ Example:
 http://localhost:8080/report/1?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
-<reports>
-    <customer>
+<customers>
+    <item>
         <id>feda5822-5271-11e1-bd27-001d0947ec73</id>
         <networks>
-            <network>
+            <item>
                 <id>920a009a-5270-11e1-b961-001d0947ec73</id>
                 <mids>
-                    <id>10140</id>
-                    <id>10112</id>
-                    <id>10178</id>
+                    <item>10140</item>
+                    <item>10112</item>
+                    <item>10178</item>
                 </mids>
-            </network>
+            </item>
         </networks>
-    </customer>
-</reports>
+    </item>
+</customers>
 
 Example:
 http://localhost:8080/report/2?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
-<reports>
-    <network>
+<networks>
+    <item>
         <id>920a009a-5270-11e1-b961-001d0947ec73</id>
         <customers>
-            <customer>
+            <item>
                 <id>feda5822-5271-11e1-bd27-001d0947ec73</id>
                 <mids>
-                    <id>10149</id>
-                    <id>10126</id>
-                    <id>10109</id>
+                    <item>10149</item>
+                    <item>10126</item>
+                    <item>10109</item>
                 </mids>
-            </customer>
+            </item>
         </customers>
-    </network>
-</reports>
+    </item>
+</networks>
 
 REST call:
 GET /report/gateways?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
@@ -110,17 +166,17 @@ Example:
 http://localhost:8080/report/gateways?from=2012-05-01T06:00&to=2012-05-25T00:00
 
 Result:
-<reports>
-	<time>
-		<value>2012-05-24T13:22:00</value>
+<slices>
+	<item>
+		<datetime>2012-05-24T13:22:00</value>
 		<gateways>
-			<gateway>
+			<item>
 				<id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
-				<number>1</number>
-			</gateway>
+				<count>1</count>
+			</item>
 		</gateways>
-	</time>
-</reports>
+	</item>
+</slices>
 
 Message status request.
 

@@ -29,92 +29,72 @@ process_sms_response(SmsResponse = #'SmsResponse'{}) ->
 	?log_debug("got request: ~p", [SmsResponse]),
 	MsgResps = sms_response_to_msg_resp_list(SmsResponse),
 	ok = store_gtw_stats(SmsResponse),
-	lists:foreach(fun(MsgResp = #msg_resp{
-						input_id = InputId,
-						output_id = OutputId,
-						status = Status
-					  }) ->
-						ok = map_in_to_out(InputId, OutputId),
-						ok = update_msg_status(InputId, Status),
-						ok = process_unhandled_dlr_status(InputId, OutputId),
-						?log_debug("ids mapped and status updated: ~p", [MsgResp])
-				  end, MsgResps),
-	{ok, []}.
+	case safe_foreach(fun process_msg_resp/1, MsgResps) of
+		ok ->
+			{ok, []};
+		%% abnormal case, sms request isn't handled yet.
+		{error, no_entry} ->
+			{error, not_enough_data_to_proceed};
+		Error ->
+			Error
+	end.
+
+safe_foreach(_, []) ->
+	ok;
+safe_foreach(Fun, [H | T]) ->
+	case Fun(H) of
+		ok ->
+			safe_foreach(Fun, T);
+		Error ->
+			Error
+	end.
+
+-spec process_msg_resp(#msg_resp{}) -> ok | {error, any()}.
+process_msg_resp(#msg_resp{
+	input_id = InputId,
+	output_id = OutputId,
+	status = Status
+}) ->
+	%% check if the message is already registered, it's quite possible that it isn't.
+	case k_storage_api:get_msg_status(InputId) of
+		%% normal case, sms request is handled.
+		{ok, MsgStatus} ->
+			case update_msg_status(InputId, OutputId, MsgStatus, Status) of
+				ok ->
+					case map_in_to_out(InputId, OutputId) of
+						ok ->
+							?log_debug("ids mapped and status updated: in:~p out:~p st:~p", [InputId, OutputId, Status]);
+						Error ->
+							Error
+					end;
+				Error ->
+					Error
+			end;
+		Error ->
+			Error
+	end.
+
+-spec update_msg_status(msg_id(), msg_id(), #msg_status{}, atom()) -> ok | {error, any()}.
+update_msg_status(InputId, OutputId, MsgStatus, ResponseStatus) ->
+	RespTime = k_storage_util:utc_unix_epoch(),
+	{ok, MsgInfo} = k_storage_api:get_msg_info(InputId),
+	NewStatus = fix_status(ResponseStatus, MsgInfo#msg_info.registered_delivery),
+	NewMsgStatus = MsgStatus#msg_status{
+		status = NewStatus,
+		resp_time = RespTime
+	},
+	%% update message status and stats.
+	ok = k_storage_api:set_msg_status(InputId, NewMsgStatus),
+	ok = k_reports_api:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, RespTime).
+
+fix_status(success, true) -> success_waiting_delivery;
+fix_status(success, false) -> success_no_delivery;
+fix_status(failure, _) -> failure.
 
 -spec map_in_to_out(msg_id(), msg_id()) -> ok.
 map_in_to_out(InputId, OutputId) ->
 	ok = k_storage_api:map_input_id_to_output_id(InputId, OutputId),
 	ok = k_storage_api:map_output_id_to_input_id(OutputId, InputId).
-
--spec update_msg_status(msg_id(), atom()) -> ok.
-update_msg_status(InputId, ResponseStatus) ->
-	RespTime = k_storage_util:utc_unix_epoch(),
-	%% check if the message is already registered, it's quite possible that it isn't.
-	case k_storage_api:get_msg_status(InputId) of
-		{ok, MsgStatus} ->
-			case k_storage_api:get_msg_info(InputId) of
-				{ok, #msg_info{registered_delivery = RegDelivery}} ->
-					NewStatus = case ResponseStatus of
-									success ->
-										case RegDelivery of
-											true -> success_waiting_delivery;
-											false -> success_no_delivery
-										end;
-									failure ->
-										failure
-								end,
-					NewMsgStatus = MsgStatus#msg_status{
-						status = NewStatus,
-						resp_time = RespTime
-					},
-					ok = k_storage_api:set_msg_status(InputId, NewMsgStatus);
-				{error, no_entry} ->
-					%% this means that the response was already received,
-					%% but the message info wasn't yet stored.
-					NewMsgStatus = MsgStatus#msg_status{
-						status = ResponseStatus, % success | failure
-						resp_time = RespTime
-					},
-					ok = k_storage_api:set_msg_status(InputId, NewMsgStatus)
-			end;
-		{error, no_entry} ->
-			%% this means that the response came before the message was registered,
-			%% store its response status and the response time.
-			NewMsgStatus = #msg_status{
-				status = ResponseStatus, % success | failure
-				resp_time = RespTime
-			},
-			ok = k_storage_api:set_msg_status(InputId, NewMsgStatus)
-	end.
-
--spec process_unhandled_dlr_status(msg_id(), msg_id()) -> ok.
-process_unhandled_dlr_status(InputId, OutputId) ->
-	case k_storage_api:get_dlr_msg_status(OutputId) of
-		{ok, #msg_status{status = DlrStatus, dlr_time = DlrTime}} ->
-			case k_storage_api:get_msg_status(InputId) of
-				{ok, MsgStatus} ->
-					case k_storage_api:get_msg_info(InputId) of
-						{ok, #msg_info{source_addr = SrcAddr, dest_addr = DstAddr}} ->
-							%% update delivery status.
-							ok = k_storage_api:set_msg_status(InputId, MsgStatus#msg_status{status = DlrStatus, dlr_time = DlrTime}),
-							%% ??? Roma, what's going on here? :)
-							{CustomerId, InputMsgId} = InputId,
-							Data = {CustomerId, InputMsgId, DlrStatus, SrcAddr, DstAddr, DlrTime},
-							{CustomerId, BatchId, BatchBinary} = k_funnel_asn_helper:render_receipt(Data),
-							UserID = undefined,
-							ok = k_mailbox:register_incoming_item(BatchId, CustomerId, UserID, <<"ReceiptBatch">>, BatchBinary),
-							%% delete handled status.
-							ok = k_storage_api:delete_dlr_msg_status(OutputId);
-						{error, Reason} ->
-							?log_error("Impossible to get msg info with reason: ~p", [Reason])
-					end;
-				{error, Reason} ->
-					?log_error("Impossible to get msg status with reason: ~p", [Reason])
-			end;
-		{error, no_entry} ->
-			%% it's ok. nothing to process.
-			ok
-	end.
 
 -spec sms_response_to_msg_resp_list(#'SmsResponse'{}) -> [#msg_resp{}].
 sms_response_to_msg_resp_list(#'SmsResponse'{

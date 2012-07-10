@@ -11,16 +11,6 @@
 	id
 }).
 
--type month() :: integer().
--type day() :: integer().
--type year() :: integer().
--type hour() :: integer().
--type minute() :: integer().
--type second() :: integer().
--type time() :: {hour(), minute(), second()}.
--type date() :: {year(), month(), day()}.
--type datetime() :: {date(), time()}.
-
 %%% REST parameters
 -record(get, {
 	from = {mandatory, <<"from">>, binary},
@@ -47,7 +37,7 @@ terminate(_Req, _State = #state{}) ->
 
 %%% Local functions
 
--spec convert_http_datetime_to_term(string()) -> datetime().
+-spec convert_http_datetime_to_term(string()) -> calendar:datetime().
 convert_http_datetime_to_term(DateTime) ->
 	DateTimeBinList = binary:split(DateTime, [<<"T">>, <<":">>, <<"-">>], [global]),
 	Result =

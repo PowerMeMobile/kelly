@@ -1,7 +1,7 @@
 -ifndef(msg_info_hrl).
 -define(msg_info_hrl, included).
 
--include_lib("k_common/include/JustAsn.hrl").
+-include_lib("JustAsn.hrl").
 
 -type encoding() :: {atom(), atom()}.
 -type source_addr() :: #'FullAddr'{}.

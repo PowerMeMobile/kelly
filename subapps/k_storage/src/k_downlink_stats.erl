@@ -75,7 +75,7 @@ get_stats() ->
 	ok = amqp_connection:close(Conn),
 
 	{ok, ConnectionPropLists} = prepare_conns(Connections),
-	Report = {reports, [{connections, ConnectionPropLists}]},
+	Report = {connections, ConnectionPropLists},
 	{ok, Report}.
 
 %% ===================================================================
@@ -109,7 +109,7 @@ prepare_conns([#'Connection'{
 	msgsSent = MsgsSent,
 	errors = Errors
 } | Rest], Acc) ->
-	ConnPropList = {connection, [
+	ConnPropList = [
 		{id, ConnectionId},
 		{remote_ip, RemoteIp},
 		{customer_id, CustomerId},
@@ -119,5 +119,5 @@ prepare_conns([#'Connection'{
 		{msgs_received, MsgsReceived},
 		{msgs_sent, MsgsSent},
 		{errors, Errors}
-	]},
+	],
 	prepare_conns(Rest, [ConnPropList | Acc]).

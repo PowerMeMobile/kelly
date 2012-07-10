@@ -36,7 +36,7 @@ start_link() ->
 %% ===================================================================
 
 init(_Args) ->
-	?log_debug("initialization...", []),
+	% ?log_debug("initialization...", []),
 	{ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -56,10 +56,8 @@ handle_cast({process, {Module, ContentType, Message, Channel}}, State = #state{}
 handle_cast(_Msg, State) ->
 	{stop, bad_cast_request, State}.
 
-
 handle_info(_Info, State) ->
 	{stop, bad_info_request, State}.
-
 
 terminate(_Reason, _State) ->
 	ok.
@@ -73,11 +71,11 @@ code_change(_OldVsn, State, _Extra) ->
 
 send_response(_Channel, []) ->
 	ok;
-send_response(Channel,
-				[#worker_reply{	reply_to = QName,
-								payload = Mes,
-								content_type = Type
-								} | Tail]) ->
+send_response(Channel, [#worker_reply{
+	reply_to = QName,
+	payload = Mes,
+	content_type = Type
+} | Tail]) ->
 	{ok, Payload} = convert(Mes),
 	Publish = #'basic.publish'{routing_key = QName},
 	Props = #'P_basic'{content_type = Type},
