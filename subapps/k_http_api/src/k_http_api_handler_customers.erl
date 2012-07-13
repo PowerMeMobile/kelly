@@ -62,7 +62,7 @@ init(_Req, HttpMethod, Path) ->
 	{error, bad_request}.
 
 handle(_Req, #get{}, State = #state{id = all}) ->
-	case k_aaa_api:get_customers() of
+	case k_aaa:get_customers() of
  		{ok, CustList} ->
 			{ok, CustPropLists} = prepare(CustList),
 			?log_debug("CustPropLists: ~p", [CustPropLists]),
@@ -72,7 +72,7 @@ handle(_Req, #get{}, State = #state{id = all}) ->
 	end;
 
 handle(_Req, #get{}, State = #state{id = CustSysID}) ->
-	case k_aaa_api:get_customer_by_system_id(CustSysID) of
+	case k_aaa:get_customer_by_system_id(CustSysID) of
 		{ok, Customer = #customer{uuid = UUID}} ->
 			{ok, [CustPropList]} = prepare({UUID, Customer}),
 			?log_debug("CustPropList: ~p", [CustPropList]),
@@ -120,17 +120,17 @@ handle(_Req, #create{
 		{cstRPS, Rps},
 		{cstPriority, Priority}]),
 
-	Res = k_aaa_api:set_customer(Id, Customer),
+	Res = k_aaa:set_customer(Id, Customer),
 	{ok, {result, io_lib:format("~p", [Res])}, State};
 
 handle(_Req, #update{}, State = #state{}) ->
 	{ok, {result, error}, State};
 
 handle(_Req, #delete{}, State = #state{id = Id}) ->
-	case k_aaa_api:get_customer_by_system_id(Id) of
+	case k_aaa:get_customer_by_system_id(Id) of
 		{ok, _Customer = #customer{uuid = UUID}} ->
 			k_snmp:del_row(cst, UUID),
-			Res = k_aaa_api:del_customer(Id),
+			Res = k_aaa:del_customer(Id),
 			{ok, {result, io_lib:format("~p", [Res])}, State};
 		Error ->
 			{ok, {error, io_lib:format("~p", [Error])}, State}

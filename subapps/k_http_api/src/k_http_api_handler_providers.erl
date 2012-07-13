@@ -52,7 +52,7 @@ init(_Req, HttpMethod, Path) ->
 	{error, bad_request}.
 
 handle(_Req, #get{}, State = #state{id = all}) ->
-	case k_config_api:get_providers() of
+	case k_config:get_providers() of
 		{ok, PrvList} ->
 			{ok, PrvPropLists} = prepare(PrvList),
 			?log_debug("PrvPropLists: ~p", [PrvPropLists]),
@@ -62,7 +62,7 @@ handle(_Req, #get{}, State = #state{id = all}) ->
 	end;
 
 handle(_Req, #get{}, State = #state{id = PrvUUID}) ->
-	case k_config_api:get_provider(PrvUUID) of
+	case k_config:get_provider(PrvUUID) of
 		{ok, Prv = #provider{}} ->
 			{ok, [PrvPropList]} = prepare({PrvUUID, Prv}),
 			?log_debug("PrvPropList: ~p", [PrvPropList]),
@@ -82,14 +82,14 @@ handle(_Req, #create{
 		bulkGateway = BulkGateway,
 		receiptsSupported = ReceiptsSupported
 	},
-	Res = k_config_api:set_provider(Id, Provider),
+	Res = k_config:set_provider(Id, Provider),
 	{ok, {result, Res}, State};
 
 handle(_Req, #update{}, State = #state{}) ->
 	{ok, {result, error}, State};
 
 handle(_Req, #delete{}, State = #state{id = ProviderId}) ->
-	Res = k_config_api:del_provider(ProviderId),
+	Res = k_config:del_provider(ProviderId),
 	{ok, {result, Res}, State}.
 
 terminate(_Req, _State = #state{}) ->

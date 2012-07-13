@@ -1,4 +1,4 @@
--module(k_storage_gtw_stats).
+-module(k_statistic_gtw_stats).
 
 -behaviour(gen_server).
 
@@ -96,10 +96,10 @@ handle_cast({build_report_and_delete_interval, _Start, _End, ReportPath}, State 
 
 			%?log_debug("Raw gtw stats report: ~p", [GtwStatsRecs]),
 
-			Report = k_storage_reports:gtw_stats_report(GtwStatsRecs),
+			Report = k_statistic_reports:gtw_stats_report(GtwStatsRecs),
 			%?log_debug("Gtw report: ~p", [Report]),
 
-			ok = k_storage_util:write_term_to_file(Report, ReportPath),
+			ok = k_statistic_util:write_term_to_file(Report, ReportPath),
 
 			lists:foreach(fun(GtwStatsRec) ->
 							mnesia:delete_object(GtwStatsRec)
@@ -137,18 +137,18 @@ code_change(_OldVsn, State, _Extra) ->
 %% ===================================================================
 
 setup_alarm(TickRef) ->
-	TimerInterval = k_storage_reports:stats_report_frequency() * 1000,
+	TimerInterval = k_statistic_reports:stats_report_frequency() * 1000,
 	timer:send_after(TimerInterval, self(), {tick, TickRef}).
 
 on_tick(State = #state{}) ->
-	Current = k_storage_api:utc_unix_epoch(),
-	Frequency = k_storage_reports:stats_report_frequency(),
+	Current = k_datetime:utc_unix_epoch(),
+	Frequency = k_statistic_reports:stats_report_frequency(),
 	%% Align time by frequency.
 	To = Current - Current rem Frequency,
 	From = To - Frequency,
 	%?log_debug("~p-~p", [From, To]),
 	Filename = io_lib:format("~p.dat", [From]),
-	Path = k_storage_util:gtw_stats_file_path(Filename),
+	Path = k_statistic_util:gtw_stats_file_path(Filename),
 	build_report_and_delete_interval(From, To, Path),
 	{ok, State}.
 

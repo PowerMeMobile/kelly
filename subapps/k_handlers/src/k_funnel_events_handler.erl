@@ -84,7 +84,7 @@ process_connection_up_event(_ConnId, _SystemId, _ConnType) ->
 	{ok, []}.
 
 resolve_cust_id( SystemId ) ->
-	case k_aaa_api:get_customer_by_system_id(SystemId) of
+	case k_aaa:get_customer_by_system_id(SystemId) of
 			{ok, #customer{
 			uuid = CustId
 		}} -> {ok, CustId};

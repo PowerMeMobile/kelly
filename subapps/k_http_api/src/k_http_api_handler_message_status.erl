@@ -27,12 +27,13 @@ init(_Req, HttpMethod, Path) ->
 	{error, bad_request}.
 
 handle(_Req, #get{}, State = #state{mesid = MesId, custid = CustUUID}) ->
-	case k_storage_api:get_msg_status({CustUUID, MesId}) of
-		{ok, #msg_status{status = Status}} ->
-			Response = {message, [{customer_id, CustUUID}, {message_id, MesId}, {status, Status}]};
-		Any ->
-			Response = Any
-	end,
+	Response =
+		case k_storage:get_msg_status({CustUUID, MesId}) of
+			{ok, #msg_status{status = Status}} ->
+				{message, [{customer_id, CustUUID}, {message_id, MesId}, {status, Status}]};
+			Any ->
+				Any
+		end,
 	{ok, Response, State}.
 
 terminate(_Req, _State = #state{}) ->

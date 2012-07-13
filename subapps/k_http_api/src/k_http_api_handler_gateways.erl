@@ -51,7 +51,7 @@ init(_Req, HttpMethod, Path) ->
 	{error, bad_request}.
 
 handle(_Req, #get{}, State = #state{id = all}) ->
-	case k_config_api:get_gateways() of
+	case k_config:get_gateways() of
 		{ok, GtwList} ->
 			{ok, GtwPropLists} = prepare_gtws(GtwList),
 			?log_debug("GtwPropLists: ~p", [GtwPropLists]),
@@ -61,7 +61,7 @@ handle(_Req, #get{}, State = #state{id = all}) ->
 	end;
 
 handle(_Req, #get{}, State = #state{id = GtwUUID}) ->
-	case k_config_api:get_gateway(GtwUUID) of
+	case k_config:get_gateway(GtwUUID) of
 		{ok, Gtw = #gateway{}} ->
 			{ok, [GtwPropList]} = prepare_gtws([{GtwUUID, Gtw}]),
 			?log_debug("GtwPropList: ~p", [GtwPropList]),
@@ -77,7 +77,7 @@ handle(_Req, #create{
 }, State = #state{}) ->
 	Gateway = #gateway{rps = RPS, name = Name},
 	k_snmp:set_row(gtw, Id, [{gtwName, Name}, {gtwRPS, RPS}]),
-	Res = k_config_api:set_gateway(Id, Gateway),
+	Res = k_config:set_gateway(Id, Gateway),
 	{ok, {result, io_lib:format("~p", [Res])}, State};
 
 handle(_Req, #update{}, State = #state{}) ->
@@ -85,7 +85,7 @@ handle(_Req, #update{}, State = #state{}) ->
 
 handle(_Req, #delete{}, State = #state{id = Id}) ->
 	k_snmp:del_row(gtw, Id),
-	Res = k_config_api:del_gateway(Id),
+	Res = k_config:del_gateway(Id),
 	{ok, {result, io_lib:format("~p", [Res])}, State}.
 
 terminate(_Req, _State = #state{}) ->

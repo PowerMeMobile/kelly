@@ -1,4 +1,4 @@
--module(k_aaa_api).
+-module(k_aaa).
 
 %% API
 -export([
@@ -17,7 +17,7 @@
 -include_lib("k_common/include/logging.hrl").
 
 %% ===================================================================
-%% Customer API
+%% API
 %% ===================================================================
 
 -spec set_customer(system_id(), #customer{}) -> ok | {error, term()}.

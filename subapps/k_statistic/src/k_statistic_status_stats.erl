@@ -1,4 +1,4 @@
--module(k_storage_status_stats).
+-module(k_statistic_status_stats).
 
 -behaviour(gen_server).
 
@@ -107,7 +107,7 @@ handle_cast({store_status_stats, InputId, OutputId, MsgInfo, MsgStatus, Time}, S
 		end,
 	{noreply, State};
 
-% k_storage_status_stats:build_reports_and_delete_interval(1341842975, 1341842984).
+% k_statistic_status_stats:build_reports_and_delete_interval(1341842975, 1341842984).
 
 handle_cast({build_reports_and_delete_interval, Start, End}, State) ->
 	F = fun() ->
@@ -119,8 +119,8 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State) ->
 			)),
 
 			Filename = io_lib:format("~p.dat", [Start]),
-			ReportPath = k_storage_util:status_stats_file_path(Filename),
-			ok = k_storage_util:write_term_to_file(Records, ReportPath),
+			ReportPath = k_statistic_util:status_stats_file_path(Filename),
+			ok = k_statistic_util:write_term_to_file(Records, ReportPath),
 
 			lists:foreach(
 				fun(Record) ->
@@ -160,12 +160,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% ===================================================================
 
 setup_alarm(TickRef) ->
-	TimerInterval = k_storage_reports:stats_report_frequency() * 1000,
+	TimerInterval = k_statistic_reports:stats_report_frequency() * 1000,
 	timer:send_after(TimerInterval, self(), {tick, TickRef}).
 
 on_tick(State = #state{}) ->
-	Current = k_storage_api:utc_unix_epoch(),
-	Frequency = k_storage_reports:stats_report_frequency(),
+	Current = k_datetime:utc_unix_epoch(),
+	Frequency = k_statistic_reports:stats_report_frequency(),
 	%% Align time by frequency.
 	To = Current - Current rem Frequency,
 	From = To - Frequency,

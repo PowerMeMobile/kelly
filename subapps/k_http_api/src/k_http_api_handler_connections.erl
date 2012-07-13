@@ -76,7 +76,7 @@ handle(_Req, #create{
 		addr_npi 	= AddrNpi,
 		addr_range	= AddrRange
 	},
-	k_config_api:set_gateway_connection(GtwId, Connection),
+	k_config:set_gateway_connection(GtwId, Connection),
 
 	SnmpConnId = GtwId ++ [CnnId],
 	k_snmp:set_row(cnn, SnmpConnId,
@@ -97,7 +97,7 @@ handle(_Req, #update{}, State = #state{}) ->
 	{ok, {result, "update not implemented"}, State};
 
 handle(_Req, #delete{}, State = #state{gtwid = GtwId, cnnid = ConnId}) ->
-	k_config_api:del_gateway_connection(GtwId, ConnId),
+	k_config:del_gateway_connection(GtwId, ConnId),
 	k_snmp:del_row(cnn, GtwId ++ [ConnId]),
 	{ok, {result, deleted}, State}.
 

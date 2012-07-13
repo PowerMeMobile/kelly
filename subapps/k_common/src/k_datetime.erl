@@ -1,10 +1,6 @@
--module(k_storage_util).
+-module(k_datetime).
 
 -export([
-	msg_stats_file_path/1,
-	gtw_stats_file_path/1,
-	status_stats_file_path/1,
-
 	utc_unix_epoch/0,
 	timestamp/0,
 
@@ -17,31 +13,10 @@
 	timestamp_to_milliseconds/1,
 	milliseconds_to_timestamp/1,
 
-	datetime_to_iso_8601/1,
-
-	write_term_to_file/2,
-	read_term_from_file/1
+	datetime_to_iso_8601/1
 ]).
 
 -include("application.hrl").
-
--spec msg_stats_file_path(string()) -> string().
-msg_stats_file_path(Filename) ->
-	{ok, CWD} = file:get_cwd(),
-	Path = lists:flatten(io_lib:format("data/time-slices.d/msg-stats/~s", [Filename])),
-	filename:join(CWD, Path).
-
--spec gtw_stats_file_path(string()) -> string().
-gtw_stats_file_path(Filename) ->
-	{ok, CWD} = file:get_cwd(),
-	Path = lists:flatten(io_lib:format("data/time-slices.d/gtw-stats/~s", [Filename])),
-	filename:join(CWD, Path).
-
--spec status_stats_file_path(string()) -> string().
-status_stats_file_path(Filename) ->
-	{ok, CWD} = file:get_cwd(),
-	Path = lists:flatten(io_lib:format("data/time-slices.d/status-stats/~s", [Filename])),
-	filename:join(CWD, Path).
 
 %%%%%
 %% Datetime
@@ -94,18 +69,3 @@ datetime_to_iso_8601({{Year,Month,Day},{Hour,Min,Sec}}) ->
     lists:flatten(
 		io_lib:format("~4.10.0B-~2.10.0B-~2.10.0BT~2.10.0B:~2.10.0B:~2.10.0B",
 			[Year, Month, Day, Hour, Min, Sec])).
-
--type filename() :: string().
--spec write_term_to_file(Term::term(), Filename::filename()) -> ok | {error, any()}.
-write_term_to_file(Term, Filename) ->
-	Binary = term_to_binary(Term, [compressed]),
-	file:write_file(Filename, Binary).
-
--spec read_term_from_file(Filename::filename()) -> {ok, term()} | {error, Reason::any()}.
-read_term_from_file(Filename) ->
-	case file:read_file(Filename) of
-		{ok, Binary} ->
-			{ok, binary_to_term(Binary)};
-		Error ->
-			Error
-	end.

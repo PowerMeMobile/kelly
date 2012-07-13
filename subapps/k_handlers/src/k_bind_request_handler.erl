@@ -42,10 +42,10 @@ authenticate(BindReq = #'BindRequest'{
 	userId = UserId
 }) ->
 	?log_debug("got request: ~p", [BindReq]),
-	case k_aaa_api:get_customer_by_system_id(SystemId) of
+	case k_aaa:get_customer_by_system_id(SystemId) of
 		{ok, Customer} ->
 			?log_debug("Customer found: ~p", [Customer]),
-			case k_aaa_api:get_customer_user(Customer, UserId) of
+			case k_aaa:get_customer_user(Customer, UserId) of
 				{ok, User = #user{}} ->
 					?log_debug("User found: ~p", [User]),
 					Checks = [
@@ -127,7 +127,7 @@ build_customer_response(#'BindRequest'{
 
 	{Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
 		%%%NETWORK SECTION%%%
-		{ok, Network} = k_config_api:get_network(NetworkId),
+		{ok, Network} = k_config:get_network(NetworkId),
 		#network{
 			countryCode = CC,
 			numbersLen = NL,
@@ -143,7 +143,7 @@ build_customer_response(#'BindRequest'{
 		},
 
 		%%% PROVIDER SECTION %%%
-		{ok, Provider} = k_config_api:get_provider(ProviderId),
+		{ok, Provider} = k_config:get_provider(ProviderId),
 		#provider{
 			gateway = Gateway,
 			bulkGateway = BGateway,
