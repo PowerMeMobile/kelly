@@ -11,7 +11,7 @@
 
 -spec get_stats() -> {ok, Report::term()} | {error, Reason::term()}.
 get_stats() ->
-	case k_config_api:get_gateways() of
+	case k_config:get_gateways() of
 		{ok, GtwList} ->
 			{ok, GtwPropLists} = prepare_gtws(GtwList),
 			%?log_debug("GtwPropLists: ~p", [GtwPropLists]),

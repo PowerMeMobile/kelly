@@ -259,7 +259,7 @@ get_network_id(CustomerId, Address) ->
 -spec get_networks_by_ids(NetworkIds::[network_id()]) -> [{network_id(), #network{}}].
 get_networks_by_ids(NetworkIds) ->
 	lists:foldl(fun(NetworkId, SoFar) ->
-				   case k_config_api:get_network(NetworkId) of
+				   case k_config:get_network(NetworkId) of
 						{ok, Network = #network{}} ->
 							[{NetworkId, Network} | SoFar];
 						_ ->

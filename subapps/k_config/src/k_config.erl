@@ -1,4 +1,4 @@
--module(k_config_api).
+-module(k_config).
 
 -export([
 	set_network/2,

@@ -53,7 +53,7 @@ init(_Req, HttpMethod, Path) ->
 	{error, bad_request}.
 
 handle(_Req, #get{}, State = #state{id = all}) ->
-	case k_config_api:get_networks() of
+	case k_config:get_networks() of
 		{ok, NtwList} ->
 			{ok, NtwPropLists} = prepare_ntws(NtwList),
 			?log_debug("NtwPropLists: ~p", [NtwPropLists]),
@@ -63,7 +63,7 @@ handle(_Req, #get{}, State = #state{id = all}) ->
 	end;
 
 handle(_Req, #get{}, State = #state{id = NtwUUID}) ->
-	case k_config_api:get_network(NtwUUID) of
+	case k_config:get_network(NtwUUID) of
 		{ok, Ntw = #network{}} ->
 			{ok, [NtwPropList]} = prepare_ntws({NtwUUID, Ntw}),
 			?log_debug("NtwPropList: ~p", [NtwPropList]),
@@ -85,14 +85,14 @@ handle(_Req, #create{
 			prefixes = split(Prefixes),
 			providerId = ProviderId
 	},
-	Res = k_config_api:set_network(Id, Network),
+	Res = k_config:set_network(Id, Network),
 	{ok, {result, Res}, State};
 
 handle(_Req, #update{}, State = #state{}) ->
 	{ok, {result, error}, State};
 
 handle(_Req, #delete{}, State = #state{id = NetworkId}) ->
-	Res = k_config_api:del_network(NetworkId),
+	Res = k_config:del_network(NetworkId),
 	{ok, {result, Res}, State}.
 
 terminate(_Req, _State = #state{}) ->
