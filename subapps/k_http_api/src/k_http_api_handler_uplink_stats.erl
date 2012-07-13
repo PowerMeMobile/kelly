@@ -22,7 +22,7 @@ init(_Req, HttpMethod, Path) ->
 	{error, bad_request}.
 
 handle(_Req, #get{}, State = #state{}) ->
-	case k_uplink_stats:get_stats() of
+	case k_statistic:uplink_report() of
 		{ok, Report} ->
 			{ok, Report, State};
 		{error, Error} ->

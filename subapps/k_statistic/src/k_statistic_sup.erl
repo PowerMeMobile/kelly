@@ -29,12 +29,12 @@ init([]) ->
 	?log_debug("init", []),
 	{ok, {
 		{one_for_one, 5, 10}, [
-			{k_storage_msg_stats,
-				{k_storage_msg_stats, start_link, []}, permanent, 1000000, worker, [k_storage_msg_stats]},
-			{k_storage_gtw_stats,
-				{k_storage_gtw_stats, start_link, []}, permanent, 1000000, worker, [k_storage_gtw_stats]},
-			{k_storage_status_stats,
-				{k_storage_status_stats, start_link, []}, permanent, 1000000, worker, [k_storage_status_stats]}
+			{k_statistic_msg_stats,
+				{k_statistic_msg_stats, start_link, []}, permanent, 1000000, worker, [k_statistic_msg_stats]},
+			{k_statistic_gtw_stats,
+				{k_statistic_gtw_stats, start_link, []}, permanent, 1000000, worker, [k_statistic_gtw_stats]},
+			{k_statistic_status_stats,
+				{k_statistic_status_stats, start_link, []}, permanent, 1000000, worker, [k_statistic_status_stats]}
 		]}
 	}.
 

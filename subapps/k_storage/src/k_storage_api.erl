@@ -8,9 +8,7 @@
 	map_input_id_to_output_id/2,
 	get_output_id_by_input_id/1,
 	map_output_id_to_input_id/2,
-	get_input_id_by_output_id/1,
-
-	utc_unix_epoch/0
+	get_input_id_by_output_id/1
 ]).
 
 -include_lib("k_common/include/msg_id.hrl").
@@ -18,7 +16,9 @@
 -include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/storages.hrl").
 
-%% Public APIs
+%% ===================================================================
+%% API
+%% ===================================================================
 
 -spec set_msg_info(msg_id(), #msg_info{}) -> ok | {error, any()}.
 set_msg_info(InputId, MsgInfo = #msg_info{}) ->
@@ -51,7 +51,3 @@ map_output_id_to_input_id(OutputId, InputId) ->
 -spec get_input_id_by_output_id(msg_id()) -> {ok, msg_id()} | {error, any()}.
 get_input_id_by_output_id(OutputId) ->
 	gen_server:call(out_to_in, {get, OutputId}, infinity).
-
--spec utc_unix_epoch() -> integer().
-utc_unix_epoch() ->
-	k_storage_util:utc_unix_epoch().

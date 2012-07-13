@@ -1,4 +1,4 @@
--module(k_storage_reports).
+-module(k_statistic_reports).
 
 -export([
 	stats_report_frequency/0,
@@ -30,7 +30,7 @@ msg_stats_report(ReportType, From, To) when From < To ->
 	Reports =
 		lists:foldr(
 		  fun(Filename, SoFar) ->
-				  case k_storage_util:read_term_from_file(Filename) of
+				  case k_statistic_util:read_term_from_file(Filename) of
 					  {ok, []} ->
 						  SoFar;
 					  {ok, Records} ->
@@ -119,7 +119,7 @@ get_msg_stats_file_list(ReportType, From, To) when From < To ->
 	Timestamps = get_timestamp_list(From, To),
 	lists:map(
 		fun(Timestamp) ->
-			k_storage_util:msg_stats_file_path(
+			k_statistic_util:msg_stats_file_path(
 				io_lib:format("~p-~p.dat", [Timestamp, ReportType]))
 		 end, Timestamps).
 
@@ -141,8 +141,8 @@ gtw_stats_report(From, To) when From < To ->
 	Reports =
 		lists:foldr(
 			fun(Timestamp, SoFar) ->
-				Filename = k_storage_util:gtw_stats_file_path(io_lib:format("~p.dat", [Timestamp])),
-				case k_storage_util:read_term_from_file(Filename) of
+				Filename = k_statistic_util:gtw_stats_file_path(io_lib:format("~p.dat", [Timestamp])),
+				case k_statistic_util:read_term_from_file(Filename) of
 					{ok, []} ->
 						SoFar;
 					{ok, Records} ->
@@ -158,8 +158,8 @@ gtw_stats_report(From, To) when From < To ->
 
 -spec annotate_gtw_stats_report(Timestamp::os:timestamp(), Records::[term()]) -> [term()].
 annotate_gtw_stats_report(Timestamp, Records) ->
-	Datetime = k_storage_util:datetime_to_iso_8601(
-					k_storage_util:unix_epoch_to_datetime(Timestamp)),
+	Datetime = k_datetime:datetime_to_iso_8601(
+					k_datetime:unix_epoch_to_datetime(Timestamp)),
 	[
 		{datetime, Datetime},
 		{gateways,
@@ -221,8 +221,8 @@ status_stats_report(Records, Status) ->
 				},
 				time = Timestamp
 			}) ->
-			Datetime = k_storage_util:datetime_to_iso_8601(
-					k_storage_util:unix_epoch_to_datetime(Timestamp)),
+			Datetime = k_datetime:datetime_to_iso_8601(
+					k_datetime:unix_epoch_to_datetime(Timestamp)),
 			[
 				{datetime, Datetime},
 				{message_id, MessageId},
@@ -252,7 +252,7 @@ transform_addr(#'FullAddrAndRefNum'{
 }) ->
 	transform_addr(FullAddr) ++ [{ref_num, RefNum}].
 
-%% usage: k_reports_api:status_stats_report({{2012,7,9},{0,0,0}}, {{2012,7,9},{23,59,0}}, rejected).
+%% usage: k_statistic:status_stats_report({{2012,7,9},{0,0,0}}, {{2012,7,9},{23,59,0}}, rejected).
 -spec status_stats_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [tuple()].
 status_stats_report(From, To, Status) ->
 	{FromFloor, ToCeiling} = align_time_range(From, To),
@@ -260,7 +260,7 @@ status_stats_report(From, To, Status) ->
 	AllRecords =
 		lists:foldr(
 			fun(Filename, SoFar) ->
-				case k_storage_util:read_term_from_file(Filename) of
+				case k_statistic_util:read_term_from_file(Filename) of
 					{ok, []} ->
 						SoFar;
 					{ok, Records} ->
@@ -280,7 +280,7 @@ get_status_stats_file_list(From, To) when From < To ->
 	Timestamps = get_timestamp_list(From, To),
 	lists:map(
 		fun(Timestamp) ->
-			k_storage_util:status_stats_file_path(
+			k_statistic_util:status_stats_file_path(
 				io_lib:format("~p.dat", [Timestamp]))
 		 end, Timestamps).
 

@@ -76,7 +76,7 @@ process_msg_resp(#msg_resp{
 
 -spec update_msg_status(msg_id(), msg_id(), #msg_status{}, atom()) -> ok | {error, any()}.
 update_msg_status(InputId, OutputId, MsgStatus, ResponseStatus) ->
-	RespTime = k_storage_util:utc_unix_epoch(),
+	RespTime = k_datetime:utc_unix_epoch(),
 	{ok, MsgInfo} = k_storage_api:get_msg_info(InputId),
 	NewStatus = fix_status(ResponseStatus, MsgInfo#msg_info.registered_delivery),
 	NewMsgStatus = MsgStatus#msg_status{
@@ -85,7 +85,7 @@ update_msg_status(InputId, OutputId, MsgStatus, ResponseStatus) ->
 	},
 	%% update message status and stats.
 	ok = k_storage_api:set_msg_status(InputId, NewMsgStatus),
-	ok = k_reports_api:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, RespTime).
+	ok = k_statistic:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, RespTime).
 
 fix_status(success, true) -> success_waiting_delivery;
 fix_status(success, false) -> success_no_delivery;
@@ -125,5 +125,5 @@ store_gtw_stats(#'SmsResponse'{
 	statuses = Statuses
 }) ->
 	Number = length(Statuses),
-	Time = k_storage_util:utc_unix_epoch(),
-	k_reports_api:store_gtw_stats(GatewayId, Number, Time).
+	Time = k_datetime:utc_unix_epoch(),
+	k_statistic:store_gtw_stats(GatewayId, Number, Time).

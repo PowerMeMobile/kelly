@@ -47,7 +47,7 @@ process_msg_info(MsgInfo = #msg_info{
 }) ->
 	InputId = {CustomerId, Id},
 	Status = submitted,
-	Time = k_storage_util:utc_unix_epoch(),
+	Time = k_datetime:utc_unix_epoch(),
 	case update_msg_status(InputId, Status, Time) of
 		ok ->
 			case store_msg_info(InputId, MsgInfo, Time) of
@@ -82,7 +82,7 @@ update_msg_status(InputId, DefaultStatus, ReqTime) ->
 -spec store_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
 store_msg_info(InputId, MsgInfo, Time) ->
 	ok = k_storage_api:set_msg_info(InputId, MsgInfo),
-	ok = k_reports_api:store_msg_stats(InputId, MsgInfo, Time).
+	ok = k_statistic:store_msg_stats(InputId, MsgInfo, Time).
 
 -spec get_param_by_name(string(), [#'Param'{}]) -> {ok, #'Param'{}} | {error, no_entry}.
 get_param_by_name(Name, Params) ->

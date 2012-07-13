@@ -27,7 +27,7 @@ init(_Req, HttpMethod, Path) ->
 handle(_Req, #get{from = HttpFrom, to = HttpTo}, State = #state{}) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
-	{ok, Response} = k_reports_api:gtw_stats_report(From, To),
+	{ok, Response} = k_statistic:gtw_stats_report(From, To),
 	{ok, Response, State}.
 
 terminate(_Req, _State = #state{}) ->

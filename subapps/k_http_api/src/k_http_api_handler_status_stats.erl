@@ -28,14 +28,14 @@ init(_Req, HttpMethod, Path) ->
 handle(_Req, #get{from = HttpFrom, to = HttpTo, status = undefined}, State = #state{}) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
-	{ok, Response} = k_reports_api:status_stats_report(From, To),
+	{ok, Response} = k_statistic:status_stats_report(From, To),
 	{ok, Response, State};
 
 handle(_Req, #get{from = HttpFrom, to = HttpTo, status = HttpStatus}, State = #state{}) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
 	Status = list_to_atom(binary_to_list(HttpStatus)),
-	{ok, Response} = k_reports_api:status_stats_report(From, To, Status),
+	{ok, Response} = k_statistic:status_stats_report(From, To, Status),
 	{ok, Response, State}.
 
 terminate(_Req, _State = #state{}) ->

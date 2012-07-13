@@ -28,7 +28,7 @@ process_receipt_batch(ReceiptBatch = #'ReceiptBatch'{
 	receipts = Receipts
 }) ->
 	?log_debug("Got request: ~p", [ReceiptBatch]),
-	DlrTime = k_storage_util:utc_unix_epoch(),
+	DlrTime = k_datetime:utc_unix_epoch(),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
 		ok ->
 			{ok, []};
@@ -75,7 +75,7 @@ update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) ->
 				dlr_time = DlrTime
 			},
 			ok = k_storage_api:set_msg_status(InputId, NewMsgStatus),
-			ok = k_reports_api:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, DlrTime);
+			ok = k_statistic:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, DlrTime);
 		Error ->
 			Error
 	end.
