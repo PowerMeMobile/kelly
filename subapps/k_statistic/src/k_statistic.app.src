@@ -1,0 +1,17 @@
+{application, k_statistic, [
+  {description, "Statistical interface to Kelly"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  k_common,
+                  k_storage,
+                  k_aaa,
+                  k_config,
+                  k_j3_support,
+                  amqp_client
+                 ]},
+  {mod, {k_statistic_app, []}},
+  {env, []}
+ ]}.
