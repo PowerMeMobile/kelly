@@ -56,7 +56,7 @@ process_msg_resp(#msg_resp{
 	status = Status
 }) ->
 	%% check if the message is already registered, it's quite possible that it isn't.
-	case k_storage_api:get_msg_status(InputId) of
+	case k_storage:get_msg_status(InputId) of
 		%% normal case, sms request is handled.
 		{ok, MsgStatus} ->
 			case update_msg_status(InputId, OutputId, MsgStatus, Status) of
@@ -77,14 +77,14 @@ process_msg_resp(#msg_resp{
 -spec update_msg_status(msg_id(), msg_id(), #msg_status{}, atom()) -> ok | {error, any()}.
 update_msg_status(InputId, OutputId, MsgStatus, ResponseStatus) ->
 	RespTime = k_datetime:utc_unix_epoch(),
-	{ok, MsgInfo} = k_storage_api:get_msg_info(InputId),
+	{ok, MsgInfo} = k_storage:get_msg_info(InputId),
 	NewStatus = fix_status(ResponseStatus, MsgInfo#msg_info.registered_delivery),
 	NewMsgStatus = MsgStatus#msg_status{
 		status = NewStatus,
 		resp_time = RespTime
 	},
 	%% update message status and stats.
-	ok = k_storage_api:set_msg_status(InputId, NewMsgStatus),
+	ok = k_storage:set_msg_status(InputId, NewMsgStatus),
 	ok = k_statistic:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, RespTime).
 
 fix_status(success, true) -> success_waiting_delivery;
@@ -93,8 +93,8 @@ fix_status(failure, _) -> failure.
 
 -spec map_in_to_out(msg_id(), msg_id()) -> ok.
 map_in_to_out(InputId, OutputId) ->
-	ok = k_storage_api:map_input_id_to_output_id(InputId, OutputId),
-	ok = k_storage_api:map_output_id_to_input_id(OutputId, InputId).
+	ok = k_storage:map_input_id_to_output_id(InputId, OutputId),
+	ok = k_storage:map_output_id_to_input_id(OutputId, InputId).
 
 -spec sms_response_to_msg_resp_list(#'SmsResponse'{}) -> [#msg_resp{}].
 sms_response_to_msg_resp_list(#'SmsResponse'{

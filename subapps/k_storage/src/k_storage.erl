@@ -1,4 +1,4 @@
--module(k_storage_api).
+-module(k_storage).
 
 -export([
 	set_msg_info/2,

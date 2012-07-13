@@ -44,10 +44,10 @@ traverse_delivery_receipts(_GatewayId, _DlrTime, []) ->
 traverse_delivery_receipts(GatewayId, DlrTime,
 	[#'DeliveryReceipt'{messageId = MessageId, messageState = MessageState} | Receipts]) ->
 	OutputId = {GatewayId, MessageId},
-	case k_storage_api:get_input_id_by_output_id(OutputId) of
+	case k_storage:get_input_id_by_output_id(OutputId) of
 		{ok, InputId} ->
 			?log_debug("[out:~p] -> [in:~p]", [OutputId, InputId]),
-			case k_storage_api:get_msg_info(InputId) of
+			case k_storage:get_msg_info(InputId) of
 				{ok, MsgInfo} ->
 					case update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) of
 						ok ->
@@ -68,13 +68,13 @@ traverse_delivery_receipts(GatewayId, DlrTime,
 	end.
 
 update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) ->
-	case k_storage_api:get_msg_status(InputId) of
+	case k_storage:get_msg_status(InputId) of
 		{ok, MsgStatus} ->
 			NewMsgStatus = MsgStatus#msg_status{
 				status = MessageState,
 				dlr_time = DlrTime
 			},
-			ok = k_storage_api:set_msg_status(InputId, NewMsgStatus),
+			ok = k_storage:set_msg_status(InputId, NewMsgStatus),
 			ok = k_statistic:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, DlrTime);
 		Error ->
 			Error

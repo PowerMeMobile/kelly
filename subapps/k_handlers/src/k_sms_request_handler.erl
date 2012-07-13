@@ -62,14 +62,14 @@ process_msg_info(MsgInfo = #msg_info{
 
 -spec update_msg_status(msg_id(), atom(), integer()) -> ok | {error, any()}.
 update_msg_status(InputId, DefaultStatus, ReqTime) ->
-	case k_storage_api:get_msg_status(InputId) of
+	case k_storage:get_msg_status(InputId) of
 		%% normal case, no data stored yet.
 		{error, no_entry} ->
 			NewMsgStatus = #msg_status{
 				status = DefaultStatus,
 				req_time = ReqTime
 			},
-			ok = k_storage_api:set_msg_status(InputId, NewMsgStatus);
+			ok = k_storage:set_msg_status(InputId, NewMsgStatus);
 		%% Very strange case. It shouldn't be here, but I saw it happened during the testing.
 		%% I'm not sure what to do in this case. :(
 		{ok, _MsgStatus} ->
@@ -81,7 +81,7 @@ update_msg_status(InputId, DefaultStatus, ReqTime) ->
 
 -spec store_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
 store_msg_info(InputId, MsgInfo, Time) ->
-	ok = k_storage_api:set_msg_info(InputId, MsgInfo),
+	ok = k_storage:set_msg_info(InputId, MsgInfo),
 	ok = k_statistic:store_msg_stats(InputId, MsgInfo, Time).
 
 -spec get_param_by_name(string(), [#'Param'{}]) -> {ok, #'Param'{}} | {error, no_entry}.
