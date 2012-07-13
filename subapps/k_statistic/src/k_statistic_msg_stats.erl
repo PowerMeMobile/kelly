@@ -113,7 +113,7 @@ handle_cast({build_reports_and_delete_interval, Start, End, ReportPath1, ReportP
 				fun(#msg_stats{msg_info = MsgInfo}, {SoFar, Map}) ->
 					MessageId = MsgInfo#msg_info.id,
 					CustomerId = MsgInfo#msg_info.customer_id,
-					Address = match_addr(MsgInfo#msg_info.dest_addr),
+					Address = match_addr(MsgInfo#msg_info.dst_addr),
 
 					case cache_lookup_network_id(Address, Map) of
 						{value, NetworkId} ->
@@ -201,12 +201,12 @@ read_manifest() ->
 build_reports_and_delete_interval(Start, End, ReportPath1, ReportPath2) ->
 	gen_server:cast(?SERVER, {build_reports_and_delete_interval, Start, End, ReportPath1, ReportPath2}).
 
--spec match_addr(AddrRec::#'FullAddr'{} | #'FullAddrAndRefNum'{}) -> Addr::string().
+-spec match_addr(AddrRec::#full_addr{} | #full_addr_ref_num{}) -> Addr::string().
 match_addr(AddrRec) ->
 	case AddrRec of
-		#'FullAddr'{addr = Addr} ->
+		#full_addr{addr = Addr} ->
 			Addr;
-		#'FullAddrAndRefNum'{fullAddr = #'FullAddr'{addr = Addr}} ->
+		#full_addr_ref_num{full_addr = #full_addr{addr = Addr}} ->
 			Addr
 	 end.
 
