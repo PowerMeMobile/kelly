@@ -233,7 +233,7 @@ findwith(Pred, [H|T]) ->
 
 -spec get_network_id(CustomerId::customer_id(), Address::string()) -> {ok, {Prefix::string(), network_id()}} | {error, Reason::any()}.
 get_network_id(CustomerId, Address) ->
-	case k_aaa_api:get_customer_by_id(CustomerId) of
+	case k_aaa:get_customer_by_id(CustomerId) of
 		{ok, #customer{networks = NetworkIds}} ->
 			IdNetworkPairs = get_networks_by_ids(NetworkIds),
 			case [{Prefix, NetworkId} || {true, {Prefix, NetworkId}} <-

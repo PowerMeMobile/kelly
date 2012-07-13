@@ -42,10 +42,10 @@ authenticate(BindReq = #'BindRequest'{
 	userId = UserId
 }) ->
 	?log_debug("got request: ~p", [BindReq]),
-	case k_aaa_api:get_customer_by_system_id(SystemId) of
+	case k_aaa:get_customer_by_system_id(SystemId) of
 		{ok, Customer} ->
 			?log_debug("Customer found: ~p", [Customer]),
-			case k_aaa_api:get_customer_user(Customer, UserId) of
+			case k_aaa:get_customer_user(Customer, UserId) of
 				{ok, User = #user{}} ->
 					?log_debug("User found: ~p", [User]),
 					Checks = [

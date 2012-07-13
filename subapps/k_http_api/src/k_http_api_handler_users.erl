@@ -43,7 +43,6 @@ init(_Req, HttpMethod, Path) ->
 	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
 	{error, bad_request}.
 
-
 handle(_Req, #create{
 				id 						= UserId,
 				pswd 	 				= Pass,
@@ -56,14 +55,14 @@ handle(_Req, #create{
 		permitted_smpp_types 	= convert(TypesString)
 	},
 
-	Res = k_aaa_api:set_customer_user(User, CstId),
+	Res = k_aaa:set_customer_user(User, CstId),
 	{ok, {result, Res}, State};
 
 handle(_Req, #update{}, State = #state{}) ->
 	{ok, {result, error}, State};
 
 handle(_Req, #delete{}, State = #state{cstid = CstId, usrid = UserId}) ->
-	Res = k_aaa_api:del_customer_user(CstId, UserId),
+	Res = k_aaa:del_customer_user(CstId, UserId),
 	{ok, {result, Res}, State}.
 
 terminate(_Req, _State = #state{}) ->
