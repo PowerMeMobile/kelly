@@ -19,9 +19,9 @@ function usage() {
    echo "      -s Same randomly generated text for all messages"
    echo "      -d Delivery report mask. Default is '$DlrMask'"
    echo "      -H Kannel's Host name. Default is '$Host'"
-   echo "      -P Kannel's Port number. Default is '$Port'"
-   echo "      -u Kannel's User name. Default is '$Username'"
-   echo "      -p Kannel's Password. Default is '$Password'"
+   echo "      -P Kannel's smsbox-port Port number. Default is '$Port'"
+   echo "      -u Kannel's sendsms-user User name. Default is '$Username'"
+   echo "      -p Kannel's sendsms-user Password. Default is '$Password'"
    echo "      -q Quiet mode"
    echo "      -h Help"
    echo
