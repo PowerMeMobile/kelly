@@ -15,9 +15,9 @@ echo -n 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=test_gtw&rps=10000' | lwp-
 #
 # Connections
 #
-echo -n "id=0&type=1&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient1&pass=password&sys_type=smppclient1&addr_ton=0&addr_npi=0&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateway/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connection; echo
+echo -n "id=0&type=1&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient1&pass=password&sys_type=smppclient1&addr_ton=1&addr_npi=0&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateway/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connection; echo
 
-echo -n "id=1&type=2&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient2&pass=password&sys_type=smppclient2&addr_ton=0&addr_npi=0&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateway/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connection; echo
+echo -n "id=1&type=2&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient2&pass=password&sys_type=smppclient2&addr_ton=1&addr_npi=0&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateway/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connection; echo
 
 #
 # Providers
@@ -35,7 +35,7 @@ echo -n 'id=3b25cd8e-5eca-11e1-bf77-00269e42f7a5&country_code=375&numbers_len=12
 #
 
 # kannel
-echo -n 'name=test-sys-id&state=1&id=test-sys-id&uuid=feda5822-5271-11e1-bd27-001d0947ec73&priority=1&rps=2000&allowed_sources=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
+echo -n 'name=test-sys-id&state=1&id=test-sys-id&uuid=feda5822-5271-11e1-bd27-001d0947ec73&priority=1&rps=2000&allowed_sources=375296662323,1,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
 
 # kannel's users
 echo -n 'id=user&pswd=password&permitted_smpp_types=transmitter,receiver,transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer/test-sys-id/user; echo
@@ -62,5 +62,5 @@ echo -n 'id=smppclient2&pswd=password&permitted_smpp_types=receiver' | lwp-reque
 #
 # Addr2Cust
 #
-echo -n 'addr=375296662323&ton=0&npi=0&cid=feda5822-5271-11e1-bd27-001d0947ec73&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
-echo -n 'addr=375296663333&ton=0&npi=0&cid=54d82c58-87b6-11e1-ba66-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+echo -n 'addr=375296662323&ton=1&npi=0&cid=feda5822-5271-11e1-bd27-001d0947ec73&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+echo -n 'addr=375296663333&ton=1&npi=0&cid=54d82c58-87b6-11e1-ba66-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
