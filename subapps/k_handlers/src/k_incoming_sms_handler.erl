@@ -5,6 +5,8 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/JustAsn.hrl").
 -include_lib("k_mailbox/include/address.hrl").
+-include_lib("k_common/include/msg_id.hrl").
+-include_lib("k_common/include/msg_info.hrl").
 -include("amqp_worker_reply.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
@@ -22,36 +24,87 @@ process(CT, Message) ->
 	{ok, []}.
 
 process_incoming_sms_request(IncomingSmsRequest = #'IncomingSm'{
-	source = SourceFullAddr,
-	dest = DestFullAddr,
+	gatewayId = GatewayId,
+	source = SourceAddr,
+	dest = DestAddr,
 	message = MessageBody,
-	dataCoding = DataCoding
+	dataCoding = DataCoding,
+	partsRefNum = _PartsRefNum,
+	partsCount = _PartsCount,
+	partIndex = _PartIndex,
+	timestamp = _UTCTime
 }) ->
 	?log_debug("Got request: ~p", [IncomingSmsRequest]),
 	#'FullAddr'{
 		addr = Addr,
 		ton = TON,
 		npi = NPI
-	} = DestFullAddr,
-	case k_addr2cust:resolve(#addr{addr=Addr, ton=TON, npi=NPI}) of
-		{ok, CID, UserID} ->
-			?log_debug("Got incoming message for [cust:~p; user: ~p] (addr:~p, ton:~p, npi:~p)", [CID, UserID, Addr, TON, NPI] ),
-			DC = case DataCoding of
+	} = DestAddr,
+	case k_addr2cust:resolve(#addr{addr = Addr, ton = TON, npi = NPI}) of
+		{ok, CustomerId, UserId} ->
+			?log_debug("Got incoming message for [cust:~p; user: ~p] (addr:~p, ton:~p, npi:~p)",
+				[CustomerId, UserId, Addr, TON, NPI] ),
+			Encoding = case DataCoding of
+			   -1 -> {text, default};
 				0 -> {text, gsm0338};
+				1 -> {text, ascii};
+				3 -> {text, latin1};
 				8 -> {text, ucs2};
 				_ -> {other, DataCoding}
 			end,
-			ItemID = k_uuid:to_string(k_uuid:newid()),
-			?log_debug("Incomming message registered [item:~p]", [ItemID]),
+			%% generate new id.
+			ItemId = k_uuid:to_string(k_uuid:newid()),
+			%% register it to futher sending.
+			Batch = k_funnel_asn_helper:render_outgoing_batch(
+				ItemId, SourceAddr, DestAddr, MessageBody, Encoding),
 			k_mailbox:register_incoming_item(
-				ItemID,
-				CID, UserID, <<"OutgoingBatch">>,
-				k_funnel_asn_helper:render_outgoing_batch(
-					ItemID, SourceFullAddr,
-					DestFullAddr, MessageBody, DC
-				));
+				ItemId, CustomerId, UserId, <<"OutgoingBatch">>, Batch),
+			?log_debug("Incomming message registered [item:~p]", [ItemId]),
+			%% build OutputId.
+			OutputId = {GatewayId, ItemId},
+			%% build msg_info out of available data
+			MsgInfo = #msg_info{
+				id = ItemId,
+				customer_id = CustomerId,
+				type = regular,
+				encoding = Encoding,
+				body = iolist_to_binary(MessageBody),
+				src_addr = transform_addr(SourceAddr),
+				dst_addr = transform_addr(DestAddr),
+				registered_delivery = false
+			},
+			?log_debug("~p", [MsgInfo]),
+			%% determine receiving time.
+			Time = k_datetime:utc_unix_epoch(),
+			%% store it.
+			store_incoming_msg_info(OutputId, MsgInfo, Time),
+			?log_debug("Incoming message stored: out:~p", [OutputId]);
 	    Result ->
 			?log_debug("Resolve result: ~p", [Result]),
 			?log_debug("Could not resolve incoming message to (addr:~p, ton:~p, npi:~p)", [Addr, TON, NPI])
 	end,
 	{ok, []}.
+
+transform_addr(#'FullAddr'{
+	addr = Addr,
+	ton = Ton,
+	npi = Npi
+}) ->
+	#full_addr{
+		addr = Addr,
+		ton = Ton,
+		npi = Npi
+	};
+transform_addr(#'FullAddrAndRefNum'{
+	fullAddr = FullAddr,
+	refNum = RefNum
+}) ->
+	#full_addr_ref_num{
+		full_addr = transform_addr(FullAddr),
+		ref_num = RefNum
+	}.
+
+-spec store_incoming_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
+store_incoming_msg_info(OutputId, MsgInfo, Time) ->
+	ok = k_storage:set_incoming_msg_info(OutputId, MsgInfo),
+	ok = k_statistic:store_incoming_msg_stats(OutputId, MsgInfo, Time).

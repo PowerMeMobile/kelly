@@ -3,12 +3,18 @@
 -export([
 	set_msg_info/2,
 	get_msg_info/1,
+
 	set_msg_status/2,
 	get_msg_status/1,
+
 	map_input_id_to_output_id/2,
 	get_output_id_by_input_id/1,
+
 	map_output_id_to_input_id/2,
-	get_input_id_by_output_id/1
+	get_input_id_by_output_id/1,
+
+	set_incoming_msg_info/2,
+	get_incoming_msg_info/1
 ]).
 
 -include_lib("k_common/include/msg_id.hrl").
@@ -51,3 +57,11 @@ map_output_id_to_input_id(OutputId, InputId) ->
 -spec get_input_id_by_output_id(msg_id()) -> {ok, msg_id()} | {error, any()}.
 get_input_id_by_output_id(OutputId) ->
 	gen_server:call(out_to_in, {get, OutputId}, infinity).
+
+-spec set_incoming_msg_info(msg_id(), #msg_info{}) -> ok | {error, any()}.
+set_incoming_msg_info(OutputId, MsgInfo = #msg_info{}) ->
+	gen_server:call(incoming_msg_info, {set, OutputId, MsgInfo}, infinity).
+
+-spec get_incoming_msg_info(msg_id()) -> {ok, #msg_info{}} | {error, any()}.
+get_incoming_msg_info(OutputId) ->
+	gen_server:call(incoming_msg_info, {get, OutputId}, infinity).

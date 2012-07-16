@@ -4,6 +4,7 @@
 	store_msg_stats/3,
 	store_gtw_stats/3,
 	store_status_stats/5,
+	store_incoming_msg_stats/3,
 
 	msg_stats_report/3,
 	gtw_stats_report/2,
@@ -35,6 +36,10 @@ store_gtw_stats(GatewayId, Number, Time) ->
 -spec store_status_stats(msg_id(), msg_id(), #msg_info{}, #msg_status{}, unix_epoch()) -> ok | {error, any()}.
 store_status_stats(InputId, OutputId, MsgInfo, MsgStatus, Time) ->
 	k_statistic_status_stats:store_status_stats(InputId, OutputId, MsgInfo, MsgStatus, Time).
+
+-spec store_incoming_msg_stats(msg_id(), #msg_info{}, unix_epoch()) -> ok | {error, any()}.
+store_incoming_msg_stats(OutputId, MsgInfo = #msg_info{}, Time) ->
+	k_statistic_incoming_msg_stats:store_incoming_msg_stats(OutputId, MsgInfo, Time).
 
 %% ===================================================================
 %% Reports API
