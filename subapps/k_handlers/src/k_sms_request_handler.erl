@@ -7,6 +7,7 @@
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
+-include_lib("k_common/include/JustAsn.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_ContentType, Message) ->
@@ -128,10 +129,29 @@ sms_request_to_msg_info_list(#'SmsRequest'{
 					type = Type,
 					encoding = Encoding,
 					body = list_to_binary(Message),
-					source_addr = SourceAddr,
-					dest_addr = DestAddr,
+					src_addr = transform_addr(SourceAddr),
+					dst_addr = transform_addr(DestAddr),
 					registered_delivery = RegisteredDelivery
 				} end, AllPairs).
+
+transform_addr(#'FullAddr'{
+	addr = Addr,
+	ton = Ton,
+	npi = Npi
+}) ->
+	#full_addr{
+		addr = Addr,
+		ton = Ton,
+		npi = Npi
+	};
+transform_addr(#'FullAddrAndRefNum'{
+	fullAddr = FullAddr,
+	refNum = RefNum
+}) ->
+	#full_addr_ref_num{
+		full_addr = transform_addr(FullAddr),
+		ref_num = RefNum
+	}.
 
 %% it turned out to be the reimplementation of string:tokens/2 :)
 -spec explode(Delimiter::char(), String::string()) -> [string()].

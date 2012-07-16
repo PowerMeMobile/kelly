@@ -1,11 +1,11 @@
--module(k_statistic_msg_stats).
+-module(k_statistic_incoming_msg_stats).
 
 -behaviour(gen_server).
 
 %% API
 -export([
 	start_link/0,
-	store_msg_stats/3
+	store_incoming_msg_stats/3
 ]).
 
 %% gen_server callbacks
@@ -31,14 +31,13 @@
 
 -record(state, {
 	tick_ref :: reference(),
-	prefix_network_id_map :: [{string(), network_id()}],
 	manifest :: #msg_stats_manifest{}
 }).
 
--record(msg_stats, {
-	input_id  :: msg_id(),
+-record(incoming_msg_stats, {
+	output_id  :: msg_id(),
 	msg_info  :: #msg_info{},
-	req_time  :: integer()
+	time  :: integer()
 }).
 
 -define(SERVER, ?MODULE).
@@ -51,9 +50,9 @@
 start_link() ->
 	gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
--spec store_msg_stats(msg_id(), #msg_info{}, integer()) -> ok | {error, any()}.
-store_msg_stats(InputId, MsgInfo, Time) ->
-	gen_server:cast(?SERVER, {store_msg_stats, InputId, MsgInfo, Time}).
+-spec store_incoming_msg_stats(msg_id(), #msg_info{}, integer()) -> ok | {error, any()}.
+store_incoming_msg_stats(OutputId, MsgInfo, Time) ->
+	gen_server:cast(?SERVER, {store_incoming_msg_stats, OutputId, MsgInfo, Time}).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -63,31 +62,30 @@ init([]) ->
 	?log_debug("init", []),
 
 	ok = k_mnesia_schema:ensure_table(
-		msg_stats,
-		record_info(fields, msg_stats)
+		incoming_msg_stats,
+		record_info(fields, incoming_msg_stats)
 	),
 
 	TickRef = make_ref(),
-	setup_alarm(TickRef),
+	%setup_alarm(TickRef),
 
 	{ok, Manifest} = read_manifest(),
 
 	?log_debug("started", []),
 	{ok, #state{
 		tick_ref = TickRef,
-		prefix_network_id_map = [],
 		manifest = Manifest
 	}}.
 
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
 
-handle_cast({store_msg_stats, InputId, MsgInfo, Time}, State = #state{}) ->
+handle_cast({store_incoming_msg_stats, OutputId, MsgInfo, Time}, State = #state{}) ->
 	F = fun() ->
-			Rec = #msg_stats{
-				input_id = InputId,
+			Rec = #incoming_msg_stats{
+				output_id = OutputId,
 				msg_info = MsgInfo,
-				req_time = Time
+				time = Time
 			},
 			mnesia:write(Rec)
 		end,
@@ -99,61 +97,24 @@ handle_cast({store_msg_stats, InputId, MsgInfo, Time}, State = #state{}) ->
 		end,
 	{noreply, State};
 
-handle_cast({build_reports_and_delete_interval, Start, End, ReportPath1, ReportPath2}, State = #state{
-	prefix_network_id_map = PrefixNetworkIdMap
-}) ->
+handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{}) ->
 	F = fun() ->
-			MatchHead = #msg_stats{req_time = '$1', _ = '_'},
+			MatchHead = #incoming_msg_stats{time = '$1', _ = '_'},
 	        GuardStart = {'>=', '$1', Start},
 			GuardEnd = {'=<', '$1', End},
 	        Result = '$_',
-    	    MsgInfoRecs = mnesia:select(msg_stats, [{MatchHead, [GuardStart, GuardEnd], [Result]}]),
+    	    MsgInfoRecs = mnesia:select(incoming_msg_stats, [{MatchHead, [GuardStart, GuardEnd], [Result]}]),
 
-			{RawReport, NewPrefixNetworkIdMap} = lists:foldl(
-				fun(#msg_stats{msg_info = MsgInfo}, {SoFar, Map}) ->
-					MessageId = MsgInfo#msg_info.id,
-					CustomerId = MsgInfo#msg_info.customer_id,
-					Address = match_addr(MsgInfo#msg_info.dst_addr),
-
-					case cache_lookup_network_id(Address, Map) of
-						{value, NetworkId} ->
-							{[{CustomerId, NetworkId, MessageId} | SoFar], Map};
-						false ->
-							case get_network_id(CustomerId, Address) of
-								{ok, {Prefix, NetworkId}} ->
-									{[{CustomerId, NetworkId, MessageId} | SoFar], [{Prefix, NetworkId} | Map]};
-								{error, Reason} ->
-									%% unusual case. log the error, and leave the state unchanged.
-									?log_error("Impossible to determine NetworkId from CustomerId: ~p Address: ~p with reason: ~p",
-										[CustomerId, Address, Reason]),
-									{SoFar, Map}
-							end
-					end
-				end, {[], PrefixNetworkIdMap}, MsgInfoRecs),
-			%?log_debug("Raw msg stats report: ~p", [RawReport]),
-
-			Report1 = k_statistic_reports:msg_stats_report1(RawReport),
-			%?log_debug("Msg stats report1: ~p", [Report1]),
-
-			Report2 = k_statistic_reports:msg_stats_report2(RawReport),
-			%?log_debug("Msg stats report2: ~p", [Report2]),
-
-			ok = k_statistic_util:write_term_to_file(Report1, ReportPath1),
-			ok = k_statistic_util:write_term_to_file(Report2, ReportPath2),
-
-			lists:foreach(fun(MsgInfoRec) ->
-							mnesia:delete_object(MsgInfoRec)
-						  end, MsgInfoRecs),
-			{ok, NewPrefixNetworkIdMap}
+			{ok, MsgInfoRecs}
 		end,
-	{ok, NewPrefixNetworkIdMap} =
+	{ok, Recs} =
 		try
 			mnesia:activity(sync_dirty, F)
 		catch
 			exit:Reason ->
 				{error, Reason}
 		end,
-	{noreply, State#state{prefix_network_id_map = NewPrefixNetworkIdMap}};
+	{noreply, State#state{}};
 
 handle_cast(Request, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.

@@ -215,8 +215,8 @@ status_stats_report(Records, Status) ->
  				msg_info = #msg_info{
 					id = MessageId,
 					customer_id = CustomerId,
-					source_addr = SrcAddr,
-					dest_addr = DstAddr,
+					src_addr = SrcAddr,
+					dst_addr = DstAddr,
 					body = BinText
 				},
 				time = Timestamp
@@ -236,7 +236,7 @@ status_stats_report(Records, Status) ->
 		Filtered),
 	{messages, Report}.
 
-transform_addr(#'FullAddr'{
+transform_addr(#full_addr{
 	addr = Addr,
 	ton = Ton,
 	npi = Npi
@@ -246,9 +246,9 @@ transform_addr(#'FullAddr'{
 		{ton, Ton},
 		{npi, Npi}
 	];
-transform_addr(#'FullAddrAndRefNum'{
-	fullAddr = FullAddr,
-	refNum = RefNum
+transform_addr(#full_addr_ref_num{
+	full_addr = FullAddr,
+	ref_num = RefNum
 }) ->
 	transform_addr(FullAddr) ++ [{ref_num, RefNum}].
 

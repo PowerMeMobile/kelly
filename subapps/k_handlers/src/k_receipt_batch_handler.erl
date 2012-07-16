@@ -7,6 +7,7 @@
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
+-include_lib("k_common/include/JustAsn.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"ReceiptBatch">>, Message) ->
@@ -81,8 +82,8 @@ update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) ->
 	end.
 
 register_funnel_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
-	SrcAddr = MsgInfo#msg_info.source_addr,
-	DstAddr = MsgInfo#msg_info.dest_addr,
+	SrcAddr = MsgInfo#msg_info.src_addr,
+	DstAddr = MsgInfo#msg_info.dst_addr,
 	Data = {InputId, MessageState, SrcAddr, DstAddr, DlrTime},
 	{CustomerId, BatchId, BatchBinary} = k_funnel_asn_helper:render_receipt(Data),
 	UserId = undefined,

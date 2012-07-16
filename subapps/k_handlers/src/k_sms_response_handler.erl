@@ -7,6 +7,7 @@
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
+-include_lib("k_common/include/JustAsn.hrl").
 
 -record(msg_resp, {
 	input_id :: msg_id(),
