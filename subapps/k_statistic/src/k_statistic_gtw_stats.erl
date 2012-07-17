@@ -104,7 +104,10 @@ handle_cast({store_gtw_stats, GatewayId, Number, Time}, State = #state{}) ->
 	{atomic, ok} = mnesia:transaction(F),
 	{noreply, State};
 
-handle_cast({build_report_and_delete_interval, Start, End, ReportPath}, State = #state{}) ->
+handle_cast({build_report_and_delete_interval, Start, End}, State = #state{}) ->
+	Filename = io_lib:format("~p.dat", [Start]),
+	ReportPath = k_statistic_util:gtw_stats_file_path(Filename),
+
 	F = fun() ->
 			GtwStatsRecs = mnesia:select(?TABLE, ets:fun2ms(
 				fun(Record = #gtw_stats{init_time = Time})
@@ -115,10 +118,10 @@ handle_cast({build_report_and_delete_interval, Start, End, ReportPath}, State = 
 
 			%?log_debug("Raw gtw stats report: ~p", [GtwStatsRecs]),
 
+			%% build & store the report.
 			Report = k_statistic_reports:gtw_stats_report(GtwStatsRecs),
-			%?log_debug("Gtw report: ~p", [Report]),
-
 			ok = k_statistic_util:write_term_to_file(Report, ReportPath),
+			%?log_debug("Gtw report: ~p", [Report]),
 
 			lists:foreach(fun(GtwStatsRec) ->
 				mnesia:delete_object(GtwStatsRec)
@@ -165,10 +168,8 @@ on_tick(State = #state{}) ->
 	To = Current - Current rem Frequency,
 	From = To - Frequency,
 	%?log_debug("~p-~p", [From, To]),
-	Filename = io_lib:format("~p.dat", [From]),
-	Path = k_statistic_util:gtw_stats_file_path(Filename),
-	build_report_and_delete_interval(From, To, Path),
+	build_report_and_delete_interval(From, To),
 	{ok, State}.
 
-build_report_and_delete_interval(Start, End, ReportPath) ->
-	gen_server:cast(?SERVER, {build_report_and_delete_interval, Start, End, ReportPath}).
+build_report_and_delete_interval(Start, End) ->
+	gen_server:cast(?SERVER, {build_report_and_delete_interval, Start, End}).

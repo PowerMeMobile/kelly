@@ -6,9 +6,7 @@
 -export([
 	start_link/0,
 	store_status_stats/5,
-
-	delete_all/0,
-	build_reports_and_delete_interval/2
+	delete_all/0
 ]).
 
 %% gen_server callbacks
@@ -110,6 +108,9 @@ handle_cast({store_status_stats, InputId, OutputId, MsgInfo, MsgStatus, Time}, S
 % k_statistic_status_stats:build_reports_and_delete_interval(1341842975, 1341842984).
 
 handle_cast({build_reports_and_delete_interval, Start, End}, State) ->
+	Filename = io_lib:format("~p.dat", [Start]),
+	ReportPath = k_statistic_util:status_stats_file_path(Filename),
+
 	F = fun() ->
     	    Records = mnesia:select(?TABLE, ets:fun2ms(
 				fun(Record = #status_stats{time = Time})
@@ -118,15 +119,12 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State) ->
 				end
 			)),
 
-			Filename = io_lib:format("~p.dat", [Start]),
-			ReportPath = k_statistic_util:status_stats_file_path(Filename),
+			%% store raw generic records.
 			ok = k_statistic_util:write_term_to_file(Records, ReportPath),
 
-			lists:foreach(
-				fun(Record) ->
-					mnesia:delete_object(Record)
-				end,
-				Records)
+			lists:foreach(fun(Record) ->
+				mnesia:delete_object(Record)
+			end, Records)
 		end,
 	ok =
 		try
