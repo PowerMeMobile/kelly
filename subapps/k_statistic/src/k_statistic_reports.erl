@@ -211,9 +211,9 @@ status_stats_report(Records, Status) ->
 		Records),
 	Report = lists:map(
 		fun(#status_stats{
- 				output_id = {GatewayId, _},
  				msg_info = #msg_info{
 					id = MessageId,
+					gateway_id = GatewayId,
 					customer_id = CustomerId,
 					src_addr = SrcAddr,
 					dst_addr = DstAddr,
@@ -226,8 +226,8 @@ status_stats_report(Records, Status) ->
 			[
 				{datetime, Datetime},
 				{message_id, MessageId},
-				{customer_id, CustomerId},
 				{gateway_id, GatewayId},
+				{customer_id, CustomerId},
 				{src_addr, transform_addr(SrcAddr)},
 				{dst_addr, transform_addr(DstAddr)},
 				{message_text, binary_to_list(BinText)}

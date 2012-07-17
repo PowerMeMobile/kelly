@@ -19,6 +19,7 @@
 
 -record(msg_info, {
 	id :: string(),
+	gateway_id :: string(),
 	customer_id :: string(),
 	type :: atom(),
 	encoding :: encoding(),

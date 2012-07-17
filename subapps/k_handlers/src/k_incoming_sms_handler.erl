@@ -78,6 +78,7 @@ process_incoming_sms_request(IncomingSmsRequest = #'IncomingSm'{
 	%% build msg_info out of available data
 	MsgInfo = #msg_info{
 		id = ItemId,
+		gateway_id = GatewayId,
 		customer_id = CustomerId,
 		type = regular,
 		encoding = Encoding,

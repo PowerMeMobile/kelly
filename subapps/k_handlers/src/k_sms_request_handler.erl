@@ -98,6 +98,7 @@ get_param_by_name(Name, Params) ->
 -spec sms_request_to_msg_info_list(#'SmsRequest'{}) -> [#msg_info{}].
 sms_request_to_msg_info_list(#'SmsRequest'{
 	id = _Id,
+	gatewayId = GatewayId,
 	customerId = CustomerId,
 	type = Type,
 	message = Message,
@@ -125,6 +126,7 @@ sms_request_to_msg_info_list(#'SmsRequest'{
 	lists:map(fun({DestAddr, MessageId}) ->
 				#msg_info{
 					id = MessageId,
+					gateway_id = GatewayId,
 					customer_id = CustomerId,
 					type = Type,
 					encoding = Encoding,
