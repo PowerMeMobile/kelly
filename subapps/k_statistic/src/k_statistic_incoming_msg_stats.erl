@@ -5,7 +5,7 @@
 %% API
 -export([
 	start_link/0,
-	store_incoming_msg_stats/3,
+	store_msg_stats/3,
 	delete_all/0
 ]).
 
@@ -20,6 +20,7 @@
 ]).
 
 -include("application.hrl").
+-include("msg_stats.hrl").
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/storages.hrl").
@@ -35,12 +36,6 @@
 	manifest :: #msg_stats_manifest{}
 }).
 
--record(incoming_msg_stats, {
-	output_id  :: msg_id(),
-	msg_info  :: #msg_info{},
-	time  :: integer()
-}).
-
 -define(SERVER, ?MODULE).
 -define(TABLE, incoming_msg_stats).
 
@@ -52,8 +47,8 @@
 start_link() ->
 	gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
--spec store_incoming_msg_stats(msg_id(), #msg_info{}, integer()) -> ok | {error, any()}.
-store_incoming_msg_stats(OutputId, MsgInfo, Time) ->
+-spec store_msg_stats(msg_id(), #msg_info{}, integer()) -> ok | {error, any()}.
+store_msg_stats(OutputId, MsgInfo, Time) ->
 	gen_server:cast(?SERVER, {store_incoming_msg_stats, OutputId, MsgInfo, Time}).
 
 -spec delete_all() -> ok.
@@ -68,8 +63,9 @@ init([]) ->
 	?log_debug("init", []),
 
 	ok = k_mnesia_schema:ensure_table(
-		incoming_msg_stats,
-		record_info(fields, incoming_msg_stats)
+		?TABLE,
+		msg_stats,
+		record_info(fields, msg_stats)
 	),
 
 	TickRef = make_ref(),
@@ -96,12 +92,12 @@ handle_cast({delete_all}, State = #state{}) ->
 
 handle_cast({store_incoming_msg_stats, OutputId, MsgInfo, Time}, State = #state{}) ->
 	F = fun() ->
-			Rec = #incoming_msg_stats{
-				output_id = OutputId,
+			Rec = #msg_stats{
+				id = OutputId,
 				msg_info = MsgInfo,
 				time = Time
 			},
-			mnesia:write(Rec)
+			mnesia:write(?TABLE, Rec, write)
 		end,
 	ok = try
 			mnesia:activity(sync_dirty, F)
@@ -117,7 +113,7 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{}) -
 
 	F = fun() ->
 			Records = mnesia:select(?TABLE, ets:fun2ms(
-				fun(Record = #incoming_msg_stats{time = Time})
+				fun(Record = #msg_stats{time = Time})
 					when Time >= Start andalso Time =< End ->
 						Record
 				end
@@ -127,7 +123,11 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{}) -
 			ok = k_statistic_util:write_term_to_file(Records, ReportPath),
 
 			%% delete stored records.
-			lists:foreach(fun mnesia:delete_object/1, Records)
+			lists:foreach(
+				fun(Record) ->
+					mnesia:delete_object(?TABLE, Record, write)
+				end,
+				Records)
 		end,
 	ok =
 		try

@@ -39,7 +39,7 @@ store_status_stats(InputId, OutputId, MsgInfo, MsgStatus, Time) ->
 
 -spec store_incoming_msg_stats(msg_id(), #msg_info{}, unix_epoch()) -> ok | {error, any()}.
 store_incoming_msg_stats(OutputId, MsgInfo = #msg_info{}, Time) ->
-	k_statistic_incoming_msg_stats:store_incoming_msg_stats(OutputId, MsgInfo, Time).
+	k_statistic_incoming_msg_stats:store_msg_stats(OutputId, MsgInfo, Time).
 
 %% ===================================================================
 %% Reports API

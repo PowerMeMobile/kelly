@@ -19,6 +19,7 @@
 ]).
 
 -include("application.hrl").
+-include("msg_stats.hrl").
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/storages.hrl").
@@ -35,14 +36,8 @@
 	manifest :: #msg_stats_manifest{}
 }).
 
--record(msg_stats, {
-	input_id  :: msg_id(),
-	msg_info  :: #msg_info{},
-	time  :: integer()
-}).
-
 -define(SERVER, ?MODULE).
--define(TABLE, msg_stats).
+-define(TABLE, outgoing_msg_stats).
 
 %% ===================================================================
 %% API
@@ -54,7 +49,7 @@ start_link() ->
 
 -spec store_msg_stats(msg_id(), #msg_info{}, integer()) -> ok | {error, any()}.
 store_msg_stats(InputId, MsgInfo, Time) ->
-	gen_server:cast(?SERVER, {store_msg_stats, InputId, MsgInfo, Time}).
+	gen_server:cast(?SERVER, {store_outgoing_msg_stats, InputId, MsgInfo, Time}).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -65,7 +60,8 @@ init([]) ->
 
 	ok = k_mnesia_schema:ensure_table(
 		?TABLE,
-		record_info(fields, ?TABLE)
+		msg_stats,
+		record_info(fields, msg_stats)
 	),
 
 	TickRef = make_ref(),
@@ -83,14 +79,14 @@ init([]) ->
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
 
-handle_cast({store_msg_stats, InputId, MsgInfo, Time}, State = #state{}) ->
+handle_cast({store_outgoing_msg_stats, InputId, MsgInfo, Time}, State = #state{}) ->
 	F = fun() ->
 			Rec = #msg_stats{
-				input_id = InputId,
+				id = InputId,
 				msg_info = MsgInfo,
 				time = Time
 			},
-			mnesia:write(Rec)
+			mnesia:write(?TABLE, Rec, write)
 		end,
 	ok = try
 			mnesia:activity(sync_dirty, F)
@@ -155,7 +151,11 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{
 			%?log_debug("Msg stats report2: ~p", [Report2]),
 
 			%% delete stored records.
-			lists:foreach(fun mnesia:delete_object/1, Records),
+			lists:foreach(
+				fun(Record) ->
+					mnesia:delete_object(?TABLE, Record, write)
+				end,
+				Records),
 
 			{ok, NewPrefixNetworkIdMap}
 		end,
