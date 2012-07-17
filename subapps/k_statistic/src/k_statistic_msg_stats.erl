@@ -154,9 +154,8 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{
 			ok = k_statistic_util:write_term_to_file(Report2, ReportPath2),
 			%?log_debug("Msg stats report2: ~p", [Report2]),
 
-			lists:foreach(fun(Record) ->
-				mnesia:delete_object(Record)
-			end, Records),
+			%% delete stored records.
+			lists:foreach(fun mnesia:delete_object/1, Records),
 
 			{ok, NewPrefixNetworkIdMap}
 		end,

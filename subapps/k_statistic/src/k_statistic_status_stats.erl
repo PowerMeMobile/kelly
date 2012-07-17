@@ -122,9 +122,8 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State) ->
 			%% store raw generic records.
 			ok = k_statistic_util:write_term_to_file(Records, ReportPath),
 
-			lists:foreach(fun(Record) ->
-				mnesia:delete_object(Record)
-			end, Records)
+			%% delete stored records.
+			lists:foreach(fun mnesia:delete_object/1, Records)
 		end,
 	ok =
 		try

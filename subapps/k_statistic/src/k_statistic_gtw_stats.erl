@@ -109,23 +109,22 @@ handle_cast({build_report_and_delete_interval, Start, End}, State = #state{}) ->
 	ReportPath = k_statistic_util:gtw_stats_file_path(Filename),
 
 	F = fun() ->
-			GtwStatsRecs = mnesia:select(?TABLE, ets:fun2ms(
+			Records = mnesia:select(?TABLE, ets:fun2ms(
 				fun(Record = #gtw_stats{init_time = Time})
 					when Time >= Start andalso Time =< End ->
 						Record
 				end
 			)),
 
-			%?log_debug("Raw gtw stats report: ~p", [GtwStatsRecs]),
+			%?log_debug("Raw gtw stats report: ~p", [Records]),
 
 			%% build & store the report.
-			Report = k_statistic_reports:gtw_stats_report(GtwStatsRecs),
+			Report = k_statistic_reports:gtw_stats_report(Records),
 			ok = k_statistic_util:write_term_to_file(Report, ReportPath),
 			%?log_debug("Gtw report: ~p", [Report]),
 
-			lists:foreach(fun(GtwStatsRec) ->
-				mnesia:delete_object(GtwStatsRec)
-			end, GtwStatsRecs)
+			%% delete stored records.
+			lists:foreach(fun mnesia:delete_object/1, Records)
 		end,
 	ok = try
 			mnesia:activity(sync_dirty, F)
