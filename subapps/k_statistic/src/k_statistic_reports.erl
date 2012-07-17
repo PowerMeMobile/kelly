@@ -25,8 +25,11 @@ stats_report_frequency() ->
 
 -spec msg_stats_report(ReportType::integer(), From::os:timestamp(), To::os:timestamp()) -> {ok, term()} | {error, Reason::any()}.
 msg_stats_report(ReportType, From, To) when From < To ->
-	{FromFloor, ToCeiling} = align_time_range(From, To),
-	Filenames = get_msg_stats_file_list(ReportType, FromFloor, ToCeiling),
+	Filenames = get_file_list(From, To,
+		fun(Timestamp) ->
+			k_statistic_util:msg_stats_file_path(
+				io_lib:format("~p-~p.dat", [Timestamp, ReportType]))
+		end),
 	Reports =
 		lists:foldr(
 		  fun(Filename, SoFar) ->
@@ -114,15 +117,6 @@ msg_stats_report(KeyN, Records) ->
 	List = orddict:to_list(Dict),
 	List.
 
--spec get_msg_stats_file_list(ReportType::integer(), From::os:timestamp(), To::os:timestamp()) -> [file:filename()].
-get_msg_stats_file_list(ReportType, From, To) when From < To ->
-	Timestamps = get_timestamp_list(From, To),
-	lists:map(
-		fun(Timestamp) ->
-			k_statistic_util:msg_stats_file_path(
-				io_lib:format("~p-~p.dat", [Timestamp, ReportType]))
-		 end, Timestamps).
-
 %% ===================================================================
 %% Gateway Stats
 %% ===================================================================
@@ -136,8 +130,7 @@ gtw_stats_report(Records) ->
 
 -spec gtw_stats_report(From::os:timestamp(), To::os:timestamp()) -> {ok, term()} | {error, Reason::any()}.
 gtw_stats_report(From, To) when From < To ->
-	{FromFloor, ToCeiling} = align_time_range(From, To),
-	Timestamps = get_timestamp_list(FromFloor, ToCeiling),
+	Timestamps = get_timestamp_list(From, To),
 	Reports =
 		lists:foldr(
 			fun(Timestamp, SoFar) ->
@@ -255,8 +248,11 @@ transform_addr(#full_addr_ref_num{
 %% usage: k_statistic:status_stats_report({{2012,7,9},{0,0,0}}, {{2012,7,9},{23,59,0}}, rejected).
 -spec status_stats_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [tuple()].
 status_stats_report(From, To, Status) ->
-	{FromFloor, ToCeiling} = align_time_range(From, To),
-	Filenames = get_status_stats_file_list(FromFloor, ToCeiling),
+	Filenames = get_file_list(From, To,
+		fun(Timestamp) ->
+			k_statistic_util:status_stats_file_path(
+				io_lib:format("~p.dat", [Timestamp]))
+		end),
 	AllRecords =
 		lists:foldr(
 			fun(Filename, SoFar) ->
@@ -275,14 +271,6 @@ status_stats_report(From, To, Status) ->
 	Report = status_stats_report(AllRecords, Status),
 	{ok, Report}.
 
--spec get_status_stats_file_list(From::os:timestamp(), To::os:timestamp()) -> [file:filename()].
-get_status_stats_file_list(From, To) when From < To ->
-	Timestamps = get_timestamp_list(From, To),
-	lists:map(
-		fun(Timestamp) ->
-			k_statistic_util:status_stats_file_path(
-				io_lib:format("~p.dat", [Timestamp]))
-		 end, Timestamps).
 
 %% ===================================================================
 %% Internal
@@ -290,8 +278,9 @@ get_status_stats_file_list(From, To) when From < To ->
 
 -spec get_timestamp_list(From::os:timestamp(), To::os:timestamp()) -> [os:timestamp()].
 get_timestamp_list(From, To) when From < To ->
+	{FromFloor, ToCeiling} = align_time_range(From, To),
 	Step = stats_report_frequency(),
-	lists:seq(From, To, Step).
+	lists:seq(FromFloor, ToCeiling, Step).
 
 -spec align_time_range(From::os:timestamp(), To::os:timestamp()) ->
 	{FromFloor::os:timestamp(), ToCeiling::os:timestamp()}.
@@ -302,6 +291,15 @@ align_time_range(From, To) ->
 					Rem -> To - Rem + stats_report_frequency()
 				end,
 	{FromFloor, ToCeiling}.
+
+-spec get_file_list(
+	From::os:timestamp(),
+	To::os:timestamp(),
+	Fun::fun((Timestamp::os:timestamp()) -> file:filename())
+) -> [file:filename()].
+get_file_list(From, To, Fun) when From < To ->
+	Timestamps = get_timestamp_list(From, To),
+	lists:map(Fun, Timestamps).
 
 %% make_pair(2, {a,b,c}) ==> {b,{a,c}}
 %% make_pair(1, {a,b}) ==> {a,b}
