@@ -5,7 +5,8 @@
 %% API
 -export([
 	start_link/0,
-	store_gtw_stats/3
+	store_gtw_stats/3,
+	delete_all/0
 ]).
 
 %% gen_server callbacks
@@ -22,7 +23,7 @@
 -include_lib("k_common/include/storages.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
--include_lib("stdlib/include/qlc.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -record(gtw_stats, {
 	gateway_id :: gateway_id(),
@@ -35,6 +36,8 @@
 }).
 
 -define(SERVER, ?MODULE).
+-define(TABLE, gtw_stats).
+
 
 %% ===================================================================
 %% API
@@ -48,6 +51,10 @@ start_link() ->
 store_gtw_stats(GatewayId, Number, Time) ->
 	gen_server:cast(?SERVER, {store_gtw_stats, GatewayId, Number, Time}).
 
+-spec delete_all() -> ok.
+delete_all() ->
+	gen_server:cast(?SERVER, {delete_all}).
+
 %% ===================================================================
 %% gen_server callbacks
 %% ===================================================================
@@ -56,8 +63,8 @@ init([]) ->
 	?log_debug("init", []),
 
 	ok = k_mnesia_schema:ensure_table(
-		gtw_stats,
-		record_info(fields, gtw_stats)
+		?TABLE,
+		record_info(fields, ?TABLE)
 	),
 
 	TickRef = make_ref(),
@@ -71,9 +78,17 @@ init([]) ->
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
 
+handle_cast({delete_all}, State = #state{}) ->
+	F = fun() ->
+			Tab = ?TABLE,
+			[mnesia:delete(Tab, Key, sticky_write) || Key <- mnesia:all_keys(Tab)]
+		end,
+	mnesia:transaction(F),
+	{noreply, State};
+
 handle_cast({store_gtw_stats, GatewayId, Number, Time}, State = #state{}) ->
 	F = fun() ->
-			NewGtwStats = case mnesia:read(gtw_stats, GatewayId, write) of
+			NewGtwStats = case mnesia:read(?TABLE, GatewayId, write) of
 							[] ->
 								#gtw_stats{
 									gateway_id = GatewayId,
@@ -89,10 +104,14 @@ handle_cast({store_gtw_stats, GatewayId, Number, Time}, State = #state{}) ->
 	{atomic, ok} = mnesia:transaction(F),
 	{noreply, State};
 
-handle_cast({build_report_and_delete_interval, _Start, _End, ReportPath}, State = #state{}) ->
+handle_cast({build_report_and_delete_interval, Start, End, ReportPath}, State = #state{}) ->
 	F = fun() ->
-			Query = qlc:q([GtwStats || GtwStats <- mnesia:table(gtw_stats)]),
-			GtwStatsRecs = qlc:e(Query),
+			GtwStatsRecs = mnesia:select(?TABLE, ets:fun2ms(
+				fun(Record = #gtw_stats{init_time = Time})
+					when Time >= Start andalso Time =< End ->
+						Record
+				end
+			)),
 
 			%?log_debug("Raw gtw stats report: ~p", [GtwStatsRecs]),
 
@@ -102,16 +121,15 @@ handle_cast({build_report_and_delete_interval, _Start, _End, ReportPath}, State 
 			ok = k_statistic_util:write_term_to_file(Report, ReportPath),
 
 			lists:foreach(fun(GtwStatsRec) ->
-							mnesia:delete_object(GtwStatsRec)
-						  end, GtwStatsRecs)
+				mnesia:delete_object(GtwStatsRec)
+			end, GtwStatsRecs)
 		end,
-
-		try
+	ok = try
 			mnesia:activity(sync_dirty, F)
-		catch
+		 catch
 			exit:Reason ->
 				{error, Reason}
-		end,
+		 end,
 	{noreply, State#state{}};
 
 handle_cast(Request, State = #state{}) ->

@@ -24,7 +24,7 @@
 -include_lib("k_common/include/storages.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
--include_lib("stdlib/include/qlc.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -record(msg_stats_manifest, {
 }).
@@ -42,6 +42,7 @@
 }).
 
 -define(SERVER, ?MODULE).
+-define(TABLE, msg_stats).
 
 %% ===================================================================
 %% API
@@ -63,8 +64,8 @@ init([]) ->
 	?log_debug("init", []),
 
 	ok = k_mnesia_schema:ensure_table(
-		msg_stats,
-		record_info(fields, msg_stats)
+		?TABLE,
+		record_info(fields, ?TABLE)
 	),
 
 	TickRef = make_ref(),
@@ -103,11 +104,12 @@ handle_cast({build_reports_and_delete_interval, Start, End, ReportPath1, ReportP
 	prefix_network_id_map = PrefixNetworkIdMap
 }) ->
 	F = fun() ->
-			MatchHead = #msg_stats{req_time = '$1', _ = '_'},
-	        GuardStart = {'>=', '$1', Start},
-			GuardEnd = {'=<', '$1', End},
-	        Result = '$_',
-    	    MsgInfoRecs = mnesia:select(msg_stats, [{MatchHead, [GuardStart, GuardEnd], [Result]}]),
+			Records = mnesia:select(?TABLE, ets:fun2ms(
+				fun(Record = #msg_stats{req_time = Time})
+					when Time >= Start andalso Time =< End ->
+						Record
+				end
+		    )),
 
 			{RawReport, NewPrefixNetworkIdMap} = lists:foldl(
 				fun(#msg_stats{msg_info = MsgInfo}, {SoFar, Map}) ->
@@ -129,7 +131,7 @@ handle_cast({build_reports_and_delete_interval, Start, End, ReportPath1, ReportP
 									{SoFar, Map}
 							end
 					end
-				end, {[], PrefixNetworkIdMap}, MsgInfoRecs),
+				end, {[], PrefixNetworkIdMap}, Records),
 			%?log_debug("Raw msg stats report: ~p", [RawReport]),
 
 			Report1 = k_statistic_reports:msg_stats_report1(RawReport),
@@ -141,9 +143,9 @@ handle_cast({build_reports_and_delete_interval, Start, End, ReportPath1, ReportP
 			ok = k_statistic_util:write_term_to_file(Report1, ReportPath1),
 			ok = k_statistic_util:write_term_to_file(Report2, ReportPath2),
 
-			lists:foreach(fun(MsgInfoRec) ->
-							mnesia:delete_object(MsgInfoRec)
-						  end, MsgInfoRecs),
+			lists:foreach(fun(Record) ->
+							mnesia:delete_object(Record)
+						  end, Records),
 			{ok, NewPrefixNetworkIdMap}
 		end,
 	{ok, NewPrefixNetworkIdMap} =

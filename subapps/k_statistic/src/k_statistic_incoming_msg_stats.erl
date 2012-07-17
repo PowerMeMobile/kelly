@@ -5,7 +5,8 @@
 %% API
 -export([
 	start_link/0,
-	store_incoming_msg_stats/3
+	store_incoming_msg_stats/3,
+	delete_all/0
 ]).
 
 %% gen_server callbacks
@@ -24,7 +25,7 @@
 -include_lib("k_common/include/storages.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
--include_lib("stdlib/include/qlc.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -record(msg_stats_manifest, {
 }).
@@ -41,6 +42,7 @@
 }).
 
 -define(SERVER, ?MODULE).
+-define(TABLE, incoming_msg_stats).
 
 %% ===================================================================
 %% API
@@ -53,6 +55,10 @@ start_link() ->
 -spec store_incoming_msg_stats(msg_id(), #msg_info{}, integer()) -> ok | {error, any()}.
 store_incoming_msg_stats(OutputId, MsgInfo, Time) ->
 	gen_server:cast(?SERVER, {store_incoming_msg_stats, OutputId, MsgInfo, Time}).
+
+-spec delete_all() -> ok.
+delete_all() ->
+	gen_server:cast(?SERVER, {delete_all}).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -79,6 +85,14 @@ init([]) ->
 
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
+
+handle_cast({delete_all}, State = #state{}) ->
+	F = fun() ->
+			Tab = ?TABLE,
+			[mnesia:delete(Tab, Key, sticky_write) || Key <- mnesia:all_keys(Tab)]
+		end,
+	mnesia:transaction(F),
+	{noreply, State};
 
 handle_cast({store_incoming_msg_stats, OutputId, MsgInfo, Time}, State = #state{}) ->
 	F = fun() ->

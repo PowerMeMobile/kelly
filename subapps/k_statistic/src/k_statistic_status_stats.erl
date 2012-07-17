@@ -25,7 +25,6 @@
 -include("status_stats.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
--include_lib("stdlib/include/qlc.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
 -record(status_stats_manifest, {
@@ -51,6 +50,7 @@ start_link() ->
 store_status_stats(InputId, OutputId, MsgInfo, Status, Time) ->
 	gen_server:cast(?SERVER, {store_status_stats, InputId, OutputId, MsgInfo, Status, Time}).
 
+-spec delete_all() -> ok.
 delete_all() ->
 	gen_server:cast(?SERVER, {delete_all}).
 
