@@ -69,9 +69,11 @@ status_stats_report(From, To, Status) when From < To ->
 	ToUnix = k_datetime:datetime_to_unix_epoch(To),
 	k_statistic_reports:status_stats_report(FromUnix, ToUnix, Status).
 
+-spec uplink_report() -> {ok, Report::term()} | {error, Reason::term()}.
 uplink_report() ->
 	k_statistic_uplink_stats:get_stats().
 
+-spec downlink_report() -> {ok, Report::term()} | {error, Reason::term()}.
 downlink_report() ->
 	k_statistic_downlink_stats:get_stats().
 
