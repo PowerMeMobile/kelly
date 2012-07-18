@@ -171,7 +171,7 @@ annotate_gtw_stats_report(Timestamp, Records) ->
 %% Status stats
 %% ===================================================================
 
--spec status_stats_report(Records::[tuple()], Status::atom()) -> [tuple()].
+-spec status_stats_report(Records::[#status_stats{}], Status::atom()) -> [tuple()].
 status_stats_report(Records, undefined) ->
 	Groups = group(lists:sort(lists:map(
 		fun(#status_stats{msg_status = #msg_status{status = Status}}) ->
@@ -319,6 +319,7 @@ remove(_, []) -> [];
 remove(1, [_|T]) -> T;
 remove(N, [H|T]) -> [H | remove(N-1, T)].
 
+%% group("Mississippi") ==> ["M","i","ss","i","ss","i","pp","i"]
 -spec group([A]) -> [[A]].
 group(List) ->
 	groupwith(fun erlang:'=:='/2, List).
