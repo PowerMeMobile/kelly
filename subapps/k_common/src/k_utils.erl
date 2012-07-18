@@ -15,6 +15,17 @@
 	success_pattern() | [success_pattern()],
 	failure_pattern() | [failure_pattern()]
 ) -> ok | failure().
+
+%% process_item(Item) when is_integer(Item) ->
+%% 	{integer, Item};
+%% process_item(Item) when is_list(Item) ->
+%% 	{list, Item};
+%% process_item(Item) ->
+%% 	{error, {unknown, Item}}.
+
+%% safe_foreach(fun process_item/1, [1, "2", 3], [{integer, '_'}, {list, '_'}], {error, '_'}). ==> ok
+%% safe_foreach(fun process_item/1, [1, a, "2", 3, b], [{integer, '_'}, {list, '_'}], {error, '_'}). ==> {error, {unknown,a}}
+
 safe_foreach(_, [], _, _) ->
 	ok;
 safe_foreach(Fun, [H|T], SuccessPattern, FailurePattern) ->
