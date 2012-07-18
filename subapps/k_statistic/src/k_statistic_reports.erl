@@ -10,10 +10,16 @@
 	gtw_stats_report/1,
 	gtw_stats_report/2,
 
-	status_stats_report/3
+	status_stats_report/3,
+
+	detailed_msg_stats_report/3
 ]).
 
+-compile(export_all).
+
 -include("status_stats.hrl").
+-include("msg_stats.hrl").
+-include_lib("k_common/include/storages.hrl").
 
 -spec stats_report_frequency() -> integer().
 stats_report_frequency() ->
@@ -271,6 +277,132 @@ status_stats_report(From, To, Status) ->
 	Report = status_stats_report(AllRecords, Status),
 	{ok, Report}.
 
+%% ===================================================================
+%% Detailed msg stats
+%% ===================================================================
+
+-spec detailed_msg_stats_report(
+	From::calendar:datetime(),
+	To::calendar:datetime(),
+	SliceLength::pos_integer()
+) -> {ok, Report::term()} | {error, Reason::term()}.
+detailed_msg_stats_report(From, To, SliceLength) when From < To ->
+	SliceRanges = get_timestamp_ranges(From, To, SliceLength),
+	OutgoingFilenames = get_file_list(From, To,
+		fun(Timestamp) ->
+			k_statistic_util:msg_stats_file_path(
+				io_lib:format("~p.dat", [Timestamp]))
+		end),
+	OutgoingRecords = get_msg_stats_records(OutgoingFilenames),
+	OutgoingReport = detailed_msg_stats_report(OutgoingRecords, SliceRanges),
+
+	IncomingFilenames = get_file_list(From, To,
+		fun(Timestamp) ->
+			k_statistic_util:incoming_msg_stats_file_path(
+				io_lib:format("~p.dat", [Timestamp]))
+		end),
+	IncomingRecords = get_msg_stats_records(IncomingFilenames),
+	IncomingReport = detailed_msg_stats_report(IncomingRecords, SliceRanges),
+
+	{ok, {reports, [
+		{outgoing, OutgoingReport},
+		{incoming, IncomingReport}
+	]}}.
+
+-spec get_msg_stats_records([file:filename()]) -> [{gateway_id(), os:timestamp()}].
+get_msg_stats_records(Filenames) ->
+	lists:foldr(
+		fun(Filename, SoFar) ->
+			case k_statistic_util:read_term_from_file(Filename) of
+				{ok, []} ->
+					SoFar;
+				{ok, Records} ->
+					StripedRecords = strip_msg_stats(Records),
+					StripedRecords ++ SoFar;
+				{error, _Reason} ->
+					%?log_debug("Missing msg stats report: ~p", [Filename])
+					SoFar
+			end
+		end,
+		[],
+		Filenames).
+
+-spec strip_msg_stats([#msg_stats{}]) -> [{gateway_id(), os:timestamp()}].
+strip_msg_stats(Records) ->
+	lists:map(
+		fun(#msg_stats{
+			msg_info = #msg_info{gateway_id = GatewayId},
+			time = Time
+		}) ->
+			{GatewayId, Time}
+		end,
+		Records).
+
+-spec detailed_msg_stats_report(
+	Records::[{gateway_id(), os:timestamp()}],
+	SliceRanges::[{os:timestamp(), os:timestamp()}]
+) -> [tuple()].
+detailed_msg_stats_report(Records, SliceRanges) ->
+	Total = length(Records),
+	Dict = build_gateway_id_to_timestamps_dict(Records),
+	GatewayIds = dict:fetch_keys(Dict),
+	[
+		{total, Total},
+		{gateways,
+			[
+				lists:map(
+					fun(GatewayId) ->
+						Timestamps = dict:fetch(GatewayId, Dict),
+						Frequencies = make_frequencies(Timestamps),
+						GatewayTotal = length(Timestamps),
+						[
+							{gateway_id, GatewayId},
+							{total, GatewayTotal},
+							{slices,
+								lists:map(
+									fun({F, T}) ->
+										SliceFreqs = get_frequencies_from_to(Frequencies, F, T),
+										SliceTotal = lists:sum(SliceFreqs),
+										SliceAvg = SliceTotal / (T - F),
+										SlicePeak = if
+											SliceTotal =:= 0 -> 0.0;
+											true -> lists:max(SliceFreqs) * 1.0
+										end,
+										[
+											{from, F},
+											{to, T},
+											{total, SliceTotal},
+											{avg, SliceAvg},
+											{peak, SlicePeak}
+										]
+									end,
+									SliceRanges)
+							}
+						]
+					end,
+				GatewayIds)
+			]
+		}
+	].
+
+-spec build_gateway_id_to_timestamps_dict([{gateway_id(), os:timestamp()}]) -> dict().
+build_gateway_id_to_timestamps_dict(Records) ->
+	lists:foldl(
+		fun({GatewayId, Timestamp}, Dict) ->
+			dict:append(GatewayId, Timestamp, Dict)
+		end,
+		dict:new(),
+		Records).
+
+-spec get_frequencies_from_to(
+	Frequencies::[{os:timestamp(), pos_integer()}],
+	From::os:timestamp(),
+	To::os:timestamp()
+) -> [pos_integer()].
+get_frequencies_from_to(Frequencies, From, To) ->
+	MoreThenFrom = lists:dropwhile(fun({Timestamp, _}) -> Timestamp < From end, Frequencies),
+	LessThenTo = lists:takewhile(fun({Timestamp, _}) -> Timestamp < To end, MoreThenFrom),
+	lists:map(fun({_, Fr}) -> Fr end, LessThenTo).
 
 %% ===================================================================
 %% Internal
@@ -278,17 +410,35 @@ status_stats_report(From, To, Status) ->
 
 -spec get_timestamp_list(From::os:timestamp(), To::os:timestamp()) -> [os:timestamp()].
 get_timestamp_list(From, To) when From < To ->
-	{FromFloor, ToCeiling} = align_time_range(From, To),
 	Step = stats_report_frequency(),
-	lists:seq(FromFloor, ToCeiling, Step).
+	get_timestamp_list(From, To, Step).
+
+-spec get_timestamp_list(From::os:timestamp(), To::os:timestamp(), Step::pos_integer()) -> [os:timestamp()].
+get_timestamp_list(From, To, Step) when From < To ->
+	{FromFloor, ToCeiling} = align_time_range(From, To),
+	List = lists:seq(FromFloor, ToCeiling, Step),
+	case lists:last(List) < To of
+		true -> List ++ [To];
+		false -> List
+	end.
+
+get_timestamp_ranges(From, To, Step) when From < To ->
+	Timestamps = get_timestamp_list(From, To, Step),
+	make_ranges(Timestamps).
 
 -spec align_time_range(From::os:timestamp(), To::os:timestamp()) ->
 	{FromFloor::os:timestamp(), ToCeiling::os:timestamp()}.
 align_time_range(From, To) ->
-	FromFloor = From - From rem stats_report_frequency(),
-	ToCeiling = case To rem stats_report_frequency() of
+	Step = stats_report_frequency(),
+	align_time_range(From, To, Step).
+
+-spec align_time_range(From::os:timestamp(), To::os:timestamp(), Step::pos_integer()) ->
+	{FromFloor::os:timestamp(), ToCeiling::os:timestamp()}.
+align_time_range(From, To, Step) ->
+	FromFloor = From - From rem Step,
+	ToCeiling = case To rem Step of
 					0 -> To;
-					Rem -> To - Rem + stats_report_frequency()
+					Rem -> To - Rem + Step
 				end,
 	{FromFloor, ToCeiling}.
 
@@ -330,3 +480,22 @@ groupwith(_, []) ->
 groupwith(Eq, [X|XS]) ->
 	{YS, ZS} = lists:splitwith(fun(I) -> Eq(X, I) end, XS),
 	[[X|YS] | groupwith(Eq, ZS)].
+
+%% make_ranges([1,2,3,4,5]) ==> [{1,2},{2,3},{3,4},{4,5}]
+-spec make_ranges([A]) -> [{A,A}].
+make_ranges(List) ->
+	make_ranges(List, []).
+make_ranges([_|[]], Ranges) ->
+	lists:reverse(Ranges);
+make_ranges([F,S|T], Ranges) ->
+	make_ranges([S|T], [{F,S}|Ranges]).
+
+%% make_frequencies([1,2,3,2,3,3]) ==> [{1,1},{2,2},{3,3}]
+-spec make_frequencies([A]) -> [{A, pos_integer()}].
+make_frequencies(Timestamps) ->
+	Groups = group(lists:sort(Timestamps)),
+	lists:map(
+		fun([H|_] = L) ->
+			{H, length(L)}
+		end,
+		Groups).
