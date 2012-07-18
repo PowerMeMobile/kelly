@@ -30,22 +30,12 @@ process_sms_response(SmsResponse = #'SmsResponse'{}) ->
 	?log_debug("got request: ~p", [SmsResponse]),
 	MsgResps = sms_response_to_msg_resp_list(SmsResponse),
 	ok = store_gtw_stats(SmsResponse),
-	case safe_foreach(fun process_msg_resp/1, MsgResps) of
+	case k_utils:safe_foreach(fun process_msg_resp/1, MsgResps, ok, {error, '_'}) of
 		ok ->
 			{ok, []};
 		%% abnormal case, sms request isn't handled yet.
 		{error, no_entry} ->
 			{error, not_enough_data_to_proceed};
-		Error ->
-			Error
-	end.
-
-safe_foreach(_, []) ->
-	ok;
-safe_foreach(Fun, [H | T]) ->
-	case Fun(H) of
-		ok ->
-			safe_foreach(Fun, T);
 		Error ->
 			Error
 	end.

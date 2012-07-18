@@ -24,19 +24,9 @@ process_sms_request(SmsRequest = #'SmsRequest'{}) ->
 	?log_debug("Got request: ~p", [SmsRequest]),
 	MsgInfos = sms_request_to_msg_info_list(SmsRequest),
 	%?log_debug("~p", [MsgInfos]),
-	case safe_foreach(fun process_msg_info/1, MsgInfos) of
+	case k_utils:safe_foreach(fun process_msg_info/1, MsgInfos, ok, {error, '_'}) of
 		ok ->
 			{ok, []};
-		Error ->
-			Error
-	end.
-
-safe_foreach(_, []) ->
-	ok;
-safe_foreach(Fun, [H | T]) ->
-	case Fun(H) of
-		ok ->
-			safe_foreach(Fun, T);
 		Error ->
 			Error
 	end.
