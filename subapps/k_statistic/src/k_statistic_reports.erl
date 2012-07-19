@@ -145,8 +145,7 @@ gtw_stats_report(From, To) when From < To ->
 
 -spec annotate_gtw_stats_report(Timestamp::os:timestamp(), Records::[term()]) -> [term()].
 annotate_gtw_stats_report(Timestamp, Records) ->
-	Datetime = k_datetime:datetime_to_iso_8601(
-					k_datetime:unix_epoch_to_datetime(Timestamp)),
+	Datetime = timestamp_to_iso_8601(Timestamp),
 	[
 		{datetime, Datetime},
 		{gateways,
@@ -208,8 +207,7 @@ status_stats_report(Records, Status) ->
 				},
 				time = Timestamp
 			}) ->
-			Datetime = k_datetime:datetime_to_iso_8601(
-					k_datetime:unix_epoch_to_datetime(Timestamp)),
+			Datetime = timestamp_to_iso_8601(Timestamp),
 			[
 				{datetime, Datetime},
 				{message_id, MessageId},
@@ -438,6 +436,11 @@ align_time_range(From, To, Step) ->
 get_file_list(From, To, Fun) when From < To ->
 	Timestamps = get_timestamp_list(From, To),
 	lists:map(Fun, Timestamps).
+
+-spec timestamp_to_iso_8601(Timestamp::os:timestamp()) -> string().
+timestamp_to_iso_8601(Timestamp) ->
+	k_datetime:datetime_to_iso_8601(
+		k_datetime:unix_epoch_to_datetime(Timestamp)).
 
 %% make_pair(2, {a,b,c}) ==> {b,{a,c}}
 %% make_pair(1, {a,b}) ==> {a,b}
