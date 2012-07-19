@@ -140,13 +140,13 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{
 				end, {[], PrefixNetworkIdMap}, Records),
 			%?log_debug("Raw msg stats report: ~p", [RawReport]),
 
-			%% build & store report 1.
-			Report1 = k_statistic_reports:msg_stats_report1(RawReport),
+			%% build & store customers report.
+			Report1 = k_statistic_reports:build_msg_stats_report(customers, RawReport),
 			ok = k_statistic_util:write_term_to_file(Report1, ReportPath1),
 			%?log_debug("Msg stats report1: ~p", [Report1]),
 
-			%% build & store report 2.
-			Report2 = k_statistic_reports:msg_stats_report2(RawReport),
+			%% build & store networks report.
+			Report2 = k_statistic_reports:build_msg_stats_report(networks, RawReport),
 			ok = k_statistic_util:write_term_to_file(Report2, ReportPath2),
 			%?log_debug("Msg stats report2: ~p", [Report2]),
 

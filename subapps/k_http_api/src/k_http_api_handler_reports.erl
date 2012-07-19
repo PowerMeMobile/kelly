@@ -8,7 +8,7 @@
 -include_lib("k_common/include/logging.hrl").
 
 -record(state, {
-	id
+	type
 }).
 
 %%% REST parameters
@@ -17,19 +17,21 @@
 	to = {mandatory, <<"to">>, binary}
 }).
 
-init(_Req, 'GET', [<<"report">>, BinId]) ->
-	Id = list_to_integer(binary_to_list(BinId)),
-	{ok, #get{}, #state{id = Id}};
+init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"customers">>]) ->
+	{ok, #get{}, #state{type = customers}};
+
+init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"networks">>]) ->
+	{ok, #get{}, #state{type = networks}};
 
 init(_Req, HttpMethod, Path) ->
 	?log_debug("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
 	{error, bad_request}.
 
 %% format time: YYYY-MM-DDThh:mm
-handle(_Req, #get{from = HttpFrom, to = HttpTo}, State = #state{id = ReportId}) ->
+handle(_Req, #get{from = HttpFrom, to = HttpTo}, State = #state{type = ReportType}) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
-	{ok, Response} = k_statistic:msg_stats_report(ReportId, From, To),
+	{ok, Response} = k_statistic:msg_stats_report(ReportType, From, To),
 	{ok, Response, State}.
 
 terminate(_Req, _State = #state{}) ->

@@ -3,8 +3,7 @@
 -export([
 	stats_report_frequency/0,
 
-	msg_stats_report1/1,
-	msg_stats_report2/1,
+	build_msg_stats_report/2,
 	msg_stats_report/3,
 
 	gtw_stats_report/1,
@@ -29,12 +28,15 @@ stats_report_frequency() ->
 %% Message Stats
 %% ===================================================================
 
--spec msg_stats_report(ReportType::integer(), From::os:timestamp(), To::os:timestamp()) -> {ok, term()} | {error, Reason::any()}.
+report_type_to_index(customers) -> 1;
+report_type_to_index(networks) -> 2.
+
+-spec msg_stats_report(ReportType::atom(), From::os:timestamp(), To::os:timestamp()) -> {ok, term()} | {error, Reason::any()}.
 msg_stats_report(ReportType, From, To) when From < To ->
 	Filenames = get_file_list(From, To,
 		fun(Timestamp) ->
 			k_statistic_util:msg_stats_file_path(
-				io_lib:format("~p-~p.dat", [Timestamp, ReportType]))
+				io_lib:format("~p-~p.dat", [Timestamp, report_type_to_index(ReportType)]))
 		end),
 	Reports =
 		lists:foldr(
@@ -50,23 +52,11 @@ msg_stats_report(ReportType, From, To) when From < To ->
 						  SoFar
 				  end
 		  end, [], Filenames),
-	AnnotatedReport = annotate_msg_stats_report_bunch(ReportType, Reports),
+	AnnotatedReport = {ReportType, Reports},
 	{ok, AnnotatedReport}.
 
--spec annotate_msg_stats_report_bunch(ReportType::integer(), Records::[tuple()]) -> {term(), Records::[tuple()]}.
-annotate_msg_stats_report_bunch(1, Records) ->
-	{customers, Records};
-annotate_msg_stats_report_bunch(2, Records) ->
-	{networks, Records}.
-
--spec annotate_msg_stats_report(ReportType::integer(), Records::[tuple()]) -> [tuple()].
-annotate_msg_stats_report(1, Records) ->
-	annotate_msg_stats_report1(Records);
-annotate_msg_stats_report(2, Records) ->
-	annotate_msg_stats_report2(Records).
-
--spec annotate_msg_stats_report1(Customers::[tuple()]) -> [tuple()].
-annotate_msg_stats_report1(Customers) ->
+-spec annotate_msg_stats_report(ReportType::atom(), Records::[tuple()]) -> [tuple()].
+annotate_msg_stats_report(customers, Customers) ->
 	lists:map(
 		fun(Customer) ->
 			{CustomerId, Networks} = Customer,
@@ -83,10 +73,9 @@ annotate_msg_stats_report1(Customers) ->
 						Networks)}
 			]
 		end,
-		Customers).
+		Customers);
 
--spec annotate_msg_stats_report2(Networks::[tuple()]) -> [tuple()].
-annotate_msg_stats_report2(Networks) ->
+annotate_msg_stats_report(networks, Networks) ->
 	lists:map(
 		fun({NetworkId, Customers}) ->
 			[
@@ -104,14 +93,13 @@ annotate_msg_stats_report2(Networks) ->
 		end,
 		Networks).
 
--spec msg_stats_report1(Records::[tuple()]) -> [tuple()].
-msg_stats_report1(Records) ->
+-spec build_msg_stats_report(ReportType::atom(), Records::[tuple()]) -> [tuple()].
+build_msg_stats_report(customers, Records) ->
 	GroupByCustomer = msg_stats_report(1, Records),
 	GroupByCustomerAndNetwork = lists:map(fun({K, List}) -> {K, msg_stats_report(1, List)} end, GroupByCustomer),
-	GroupByCustomerAndNetwork.
+	GroupByCustomerAndNetwork;
 
--spec msg_stats_report2(Records::[tuple()]) -> [tuple()].
-msg_stats_report2(Records) ->
+build_msg_stats_report(networks, Records) ->
 	GroupByNetwork = msg_stats_report(2, Records),
 	GroupByNetworkAndCustomer = lists:map(fun({K, List}) -> {K, msg_stats_report(1, List)} end, GroupByNetwork),
 	GroupByNetworkAndCustomer.
