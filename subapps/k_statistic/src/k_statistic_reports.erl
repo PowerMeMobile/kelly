@@ -14,8 +14,6 @@
 	detailed_msg_stats_report/3
 ]).
 
--compile(export_all).
-
 -include("status_stats.hrl").
 -include("msg_stats.hrl").
 -include_lib("k_common/include/storages.hrl").
