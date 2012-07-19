@@ -1,4 +1,4 @@
--module(k_http_api_handler_reports).
+-module(k_http_api_handler_msg_stats).
 
 -behaviour(gen_cowboy_restful).
 
