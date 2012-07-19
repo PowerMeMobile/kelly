@@ -24,19 +24,9 @@ process_sms_request(SmsRequest = #'SmsRequest'{}) ->
 	?log_debug("Got request: ~p", [SmsRequest]),
 	MsgInfos = sms_request_to_msg_info_list(SmsRequest),
 	%?log_debug("~p", [MsgInfos]),
-	case safe_foreach(fun process_msg_info/1, MsgInfos) of
+	case k_utils:safe_foreach(fun process_msg_info/1, MsgInfos, ok, {error, '_'}) of
 		ok ->
 			{ok, []};
-		Error ->
-			Error
-	end.
-
-safe_foreach(_, []) ->
-	ok;
-safe_foreach(Fun, [H | T]) ->
-	case Fun(H) of
-		ok ->
-			safe_foreach(Fun, T);
 		Error ->
 			Error
 	end.
@@ -98,6 +88,7 @@ get_param_by_name(Name, Params) ->
 -spec sms_request_to_msg_info_list(#'SmsRequest'{}) -> [#msg_info{}].
 sms_request_to_msg_info_list(#'SmsRequest'{
 	id = _Id,
+	gatewayId = GatewayId,
 	customerId = CustomerId,
 	type = Type,
 	message = Message,
@@ -125,6 +116,7 @@ sms_request_to_msg_info_list(#'SmsRequest'{
 	lists:map(fun({DestAddr, MessageId}) ->
 				#msg_info{
 					id = MessageId,
+					gateway_id = GatewayId,
 					customer_id = CustomerId,
 					type = Type,
 					encoding = Encoding,

@@ -8,7 +8,7 @@
 					stdlib,
 					gproc,
 					cowboy,
-%					rfc4627_jsonrpc,
+					jsx,
 					k_common
                  ]},
   {mod, {k_http_api_app, []}},

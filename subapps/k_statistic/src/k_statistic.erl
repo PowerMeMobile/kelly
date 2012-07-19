@@ -12,6 +12,8 @@
 	status_stats_report/2,
 	status_stats_report/3,
 
+	detailed_msg_stats_report/3,
+
 	uplink_report/0,
 	downlink_report/0
 ]).
@@ -39,7 +41,7 @@ store_status_stats(InputId, OutputId, MsgInfo, MsgStatus, Time) ->
 
 -spec store_incoming_msg_stats(msg_id(), #msg_info{}, unix_epoch()) -> ok | {error, any()}.
 store_incoming_msg_stats(OutputId, MsgInfo = #msg_info{}, Time) ->
-	k_statistic_incoming_msg_stats:store_incoming_msg_stats(OutputId, MsgInfo, Time).
+	k_statistic_incoming_msg_stats:store_msg_stats(OutputId, MsgInfo, Time).
 
 %% ===================================================================
 %% Reports API
@@ -69,9 +71,20 @@ status_stats_report(From, To, Status) when From < To ->
 	ToUnix = k_datetime:datetime_to_unix_epoch(To),
 	k_statistic_reports:status_stats_report(FromUnix, ToUnix, Status).
 
+-spec uplink_report() -> {ok, Report::term()} | {error, Reason::term()}.
 uplink_report() ->
 	k_statistic_uplink_stats:get_stats().
 
+-spec downlink_report() -> {ok, Report::term()} | {error, Reason::term()}.
 downlink_report() ->
 	k_statistic_downlink_stats:get_stats().
 
+-spec detailed_msg_stats_report(
+	From::calendar:datetime(),
+	To::calendar:datetime(),
+	SliceLength::pos_integer()
+) -> {ok, Report::term()} | {error, Reason::term()}.
+detailed_msg_stats_report(From, To, SliceLength) when From < To ->
+	FromUnix = k_datetime:datetime_to_unix_epoch(From),
+	ToUnix = k_datetime:datetime_to_unix_epoch(To),
+	k_statistic_reports:detailed_msg_stats_report(FromUnix, ToUnix, SliceLength).

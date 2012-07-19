@@ -100,13 +100,71 @@ Result:
 	</item>
 </connections>
 
+Statistical interface for Messages
+
+REST call:
+GET /report/messages/details?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&slice_length=LEN
+Where
+	ReportType - report type: customers - customer's networks, networks - network's customers
+	YYYY - year
+	MM - month
+	DD - day
+	hh - hours
+	mm - minutes
+	LEN - Slice length - seconds, default is 60, possible prefixes: S - seconds, M - minutes, H - hours
+
+Example:
+http://localhost:8080/report/messages/customers?from=2012-05-20T00:00&to=2012-05-25T00:00&slice_length=M60
+
+Result:
+<messages>
+	<outgoing>
+		<total>100</total>
+		<gateways>
+			<item>
+				<gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+				<gateway_name>test_gtw</gateway_name>
+				<total>100</total>
+				<slices>
+					<item>
+						<from>2012-07-19T13:00:00</from>
+						<to>2012-07-19T14:00:00</to>
+						<total>100</total>
+						<avg>0.0</avg>
+						<peak>28.0</peak>
+					</item>
+				</slices>
+			</item>
+		</gateways>
+	</outgoing>
+	<incoming>
+		<total>100</total>
+		<gateways>
+			<item>
+				<gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+				<gateway_name>test_gtw</gateway_name>
+				<total>100</total>
+				<slices>
+					<item>
+						<from>2012-07-19T13:00:00</from>
+						<to>2012-07-19T14:00:00</to>
+						<total>100</total>
+						<avg>0.0</avg>
+						<peak>15.0</peak>
+					</item>
+				</slices>
+			</item>
+		</gateways>
+	</incoming>
+</messages>
+
 
 Statistical interface for Customers, Networks, Gateways
 
 REST call:
-GET /report/ReportID?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+GET /report/messages/ReportType?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
 Where
-	ReportID - report type, 1 - customer's networks, 2 - network's customers
+	ReportType - report type: customers - customer's networks, networks - network's customers
 	YYYY - year
 	MM - month
 	DD - day
@@ -114,7 +172,7 @@ Where
 	mm - minutes
 
 Example:
-http://localhost:8080/report/1?from=2012-05-20T00:00&to=2012-05-25T00:00
+http://localhost:8080/report/messages/customers?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
 <customers>
@@ -134,7 +192,7 @@ Result:
 </customers>
 
 Example:
-http://localhost:8080/report/2?from=2012-05-20T00:00&to=2012-05-25T00:00
+http://localhost:8080/report/messages/networks?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
 <networks>

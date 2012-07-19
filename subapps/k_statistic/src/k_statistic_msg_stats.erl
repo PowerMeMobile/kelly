@@ -19,12 +19,13 @@
 ]).
 
 -include("application.hrl").
+-include("msg_stats.hrl").
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/storages.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
--include_lib("stdlib/include/qlc.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -record(msg_stats_manifest, {
 }).
@@ -35,13 +36,8 @@
 	manifest :: #msg_stats_manifest{}
 }).
 
--record(msg_stats, {
-	input_id  :: msg_id(),
-	msg_info  :: #msg_info{},
-	req_time  :: integer()
-}).
-
 -define(SERVER, ?MODULE).
+-define(TABLE, outgoing_msg_stats).
 
 %% ===================================================================
 %% API
@@ -53,7 +49,7 @@ start_link() ->
 
 -spec store_msg_stats(msg_id(), #msg_info{}, integer()) -> ok | {error, any()}.
 store_msg_stats(InputId, MsgInfo, Time) ->
-	gen_server:cast(?SERVER, {store_msg_stats, InputId, MsgInfo, Time}).
+	gen_server:cast(?SERVER, {store_outgoing_msg_stats, InputId, MsgInfo, Time}).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -63,6 +59,7 @@ init([]) ->
 	?log_debug("init", []),
 
 	ok = k_mnesia_schema:ensure_table(
+		?TABLE,
 		msg_stats,
 		record_info(fields, msg_stats)
 	),
@@ -82,14 +79,14 @@ init([]) ->
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
 
-handle_cast({store_msg_stats, InputId, MsgInfo, Time}, State = #state{}) ->
+handle_cast({store_outgoing_msg_stats, InputId, MsgInfo, Time}, State = #state{}) ->
 	F = fun() ->
 			Rec = #msg_stats{
-				input_id = InputId,
+				id = InputId,
 				msg_info = MsgInfo,
-				req_time = Time
+				time = Time
 			},
-			mnesia:write(Rec)
+			mnesia:write(?TABLE, Rec, write)
 		end,
 	ok = try
 			mnesia:activity(sync_dirty, F)
@@ -99,15 +96,26 @@ handle_cast({store_msg_stats, InputId, MsgInfo, Time}, State = #state{}) ->
 		end,
 	{noreply, State};
 
-handle_cast({build_reports_and_delete_interval, Start, End, ReportPath1, ReportPath2}, State = #state{
+handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{
 	prefix_network_id_map = PrefixNetworkIdMap
 }) ->
+	Filename = io_lib:format("~p.dat", [Start]),
+	Filename1 = io_lib:format("~p-1.dat", [Start]),
+	Filename2 = io_lib:format("~p-2.dat", [Start]),
+	ReportPath = k_statistic_util:msg_stats_file_path(Filename),
+	ReportPath1 = k_statistic_util:msg_stats_file_path(Filename1),
+	ReportPath2 = k_statistic_util:msg_stats_file_path(Filename2),
+
 	F = fun() ->
-			MatchHead = #msg_stats{req_time = '$1', _ = '_'},
-	        GuardStart = {'>=', '$1', Start},
-			GuardEnd = {'=<', '$1', End},
-	        Result = '$_',
-    	    MsgInfoRecs = mnesia:select(msg_stats, [{MatchHead, [GuardStart, GuardEnd], [Result]}]),
+			Records = mnesia:select(?TABLE, ets:fun2ms(
+				fun(Record = #msg_stats{time = Time})
+					when Time >= Start andalso Time =< End ->
+						Record
+				end
+		    )),
+
+			%% store raw generic records.
+			ok = k_statistic_util:write_term_to_file(Records, ReportPath),
 
 			{RawReport, NewPrefixNetworkIdMap} = lists:foldl(
 				fun(#msg_stats{msg_info = MsgInfo}, {SoFar, Map}) ->
@@ -129,21 +137,26 @@ handle_cast({build_reports_and_delete_interval, Start, End, ReportPath1, ReportP
 									{SoFar, Map}
 							end
 					end
-				end, {[], PrefixNetworkIdMap}, MsgInfoRecs),
+				end, {[], PrefixNetworkIdMap}, Records),
 			%?log_debug("Raw msg stats report: ~p", [RawReport]),
 
-			Report1 = k_statistic_reports:msg_stats_report1(RawReport),
+			%% build & store customers report.
+			Report1 = k_statistic_reports:build_msg_stats_report(customers, RawReport),
+			ok = k_statistic_util:write_term_to_file(Report1, ReportPath1),
 			%?log_debug("Msg stats report1: ~p", [Report1]),
 
-			Report2 = k_statistic_reports:msg_stats_report2(RawReport),
+			%% build & store networks report.
+			Report2 = k_statistic_reports:build_msg_stats_report(networks, RawReport),
+			ok = k_statistic_util:write_term_to_file(Report2, ReportPath2),
 			%?log_debug("Msg stats report2: ~p", [Report2]),
 
-			ok = k_statistic_util:write_term_to_file(Report1, ReportPath1),
-			ok = k_statistic_util:write_term_to_file(Report2, ReportPath2),
+			%% delete stored records.
+			lists:foreach(
+				fun(Record) ->
+					mnesia:delete_object(?TABLE, Record, write)
+				end,
+				Records),
 
-			lists:foreach(fun(MsgInfoRec) ->
-							mnesia:delete_object(MsgInfoRec)
-						  end, MsgInfoRecs),
 			{ok, NewPrefixNetworkIdMap}
 		end,
 	{ok, NewPrefixNetworkIdMap} =
@@ -188,18 +201,14 @@ on_tick(State = #state{}) ->
 	To = Current - Current rem Frequency,
 	From = To - Frequency,
 	%?log_debug("~p-~p", [From, To]),
-	Filename1 = io_lib:format("~p-1.dat", [From]),
-	Filename2 = io_lib:format("~p-2.dat", [From]),
-	Path1 = k_statistic_util:msg_stats_file_path(Filename1),
-	Path2 = k_statistic_util:msg_stats_file_path(Filename2),
-	build_reports_and_delete_interval(From, To, Path1, Path2),
+	build_reports_and_delete_interval(From, To),
 	{ok, State}.
 
 read_manifest() ->
 	{ok, #msg_stats_manifest{}}.
 
-build_reports_and_delete_interval(Start, End, ReportPath1, ReportPath2) ->
-	gen_server:cast(?SERVER, {build_reports_and_delete_interval, Start, End, ReportPath1, ReportPath2}).
+build_reports_and_delete_interval(Start, End) ->
+	gen_server:cast(?SERVER, {build_reports_and_delete_interval, Start, End}).
 
 -spec match_addr(AddrRec::#full_addr{} | #full_addr_ref_num{}) -> Addr::string().
 match_addr(AddrRec) ->

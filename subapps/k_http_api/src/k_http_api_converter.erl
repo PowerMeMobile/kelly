@@ -36,6 +36,8 @@ xml_preprocess(Atom) when is_atom(Atom) ->
 	[atom_to_list(Atom)];
 xml_preprocess(Integer) when is_integer(Integer) ->
 	[integer_to_list(Integer)];
+xml_preprocess(Float) when is_float(Float) ->
+	[float_to_list(Float)];
 xml_preprocess(List = [{_Key, _Value} | _Rest]) ->
 	[{K, xml_preprocess(V)} || {K, V} <- List];
 xml_preprocess(ObjectList = [ [{_K,_V} | _RestObjectProps] | _RestObjectList]) ->
@@ -89,4 +91,3 @@ json_preprocess(List = [E | _Rest]) when is_atom(E) ->
 	[json_preprocess(Element) || Element <- List];
 json_preprocess(List) when is_list(List) ->
 	list_to_binary(List).
-
