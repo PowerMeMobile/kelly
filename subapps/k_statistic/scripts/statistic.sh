@@ -9,11 +9,11 @@ To="${Today}T23:59"
 #
 
 # All
-curl "http://localhost:8080/report/status?from=${From}&to=${To}"
+curl "http://localhost:8080/report/statuses?from=${From}&to=${To}"
 echo; echo
 
 # By status
-curl "http://localhost:8080/report/status?from=${From}&to=${To}&status=delivered"
+curl "http://localhost:8080/report/statuses?from=${From}&to=${To}&status=delivered"
 echo; echo
 
 #

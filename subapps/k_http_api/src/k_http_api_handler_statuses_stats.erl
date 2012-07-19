@@ -1,4 +1,4 @@
--module(k_http_api_handler_status_stats).
+-module(k_http_api_handler_statuses_stats).
 
 -behaviour(gen_cowboy_restful).
 
@@ -17,7 +17,7 @@
 	status = {optional, <<"status">>, binary}
 }).
 
-init(_Req, 'GET', [<<"report">>, <<"status">>]) ->
+init(_Req, 'GET', [<<"report">>, <<"statuses">>]) ->
 	{ok, #get{}, #state{}};
 
 init(_Req, HttpMethod, Path) ->

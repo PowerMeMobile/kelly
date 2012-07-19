@@ -5,7 +5,7 @@ Default is `json'.
 Statistical interface for statuses
 
 REST call:
-GET /report/status?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
 Where
 	YYYY - year
 	MM - month
@@ -14,7 +14,7 @@ Where
 	mm - minutes
 
 Example:
-http://localhost:8080/report/status?from=2012-05-20T00:00&to=2012-05-25T00:00
+http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
 <statuses>

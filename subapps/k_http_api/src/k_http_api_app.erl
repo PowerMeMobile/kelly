@@ -37,7 +37,7 @@ start(_StartType, _StartArgs) ->
 			{[<<"report">>, <<"gateways">>], gen_cowboy_restful, [k_http_api_handler_gtw_stats]},
 			{[<<"report">>, <<"uplink">>], gen_cowboy_restful, [k_http_api_handler_uplink_stats]},
 			{[<<"report">>, <<"downlink">>], gen_cowboy_restful, [k_http_api_handler_downlink_stats]},
-			{[<<"report">>, <<"status">>], gen_cowboy_restful, [k_http_api_handler_status_stats]},
+			{[<<"report">>, <<"statuses">>], gen_cowboy_restful, [k_http_api_handler_statuses_stats]},
             {[<<"report">>, <<"messages">>, '_'], gen_cowboy_restful, [k_http_api_handler_msg_stats]},
 		    {[<<"addr2cust">>], gen_cowboy_restful, [k_http_api_handler_addr2cust]},
             {[<<"gui">>, '...'], gen_cowboy_restful, [k_http_api_handler_gui]},
