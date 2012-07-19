@@ -12,7 +12,7 @@
 	status_stats_report/2,
 	status_stats_report/3,
 
-	detailed_msg_stats_report/2,
+	detailed_msg_stats_report/3,
 
 	uplink_report/0,
 	downlink_report/0
@@ -79,8 +79,12 @@ uplink_report() ->
 downlink_report() ->
 	k_statistic_downlink_stats:get_stats().
 
--spec detailed_msg_stats_report(From::calendar:datetime(), To::calendar:datetime()) -> {ok, Report::term()} | {error, Reason::term()}.
-detailed_msg_stats_report(From, To) when From < To ->
+-spec detailed_msg_stats_report(
+	From::calendar:datetime(),
+	To::calendar:datetime(),
+	SliceLength::pos_integer()
+) -> {ok, Report::term()} | {error, Reason::term()}.
+detailed_msg_stats_report(From, To, SliceLength) when From < To ->
 	FromUnix = k_datetime:datetime_to_unix_epoch(From),
 	ToUnix = k_datetime:datetime_to_unix_epoch(To),
-	k_statistic_reports:detailed_msg_stats_report(FromUnix, ToUnix).
+	k_statistic_reports:detailed_msg_stats_report(FromUnix, ToUnix, SliceLength).

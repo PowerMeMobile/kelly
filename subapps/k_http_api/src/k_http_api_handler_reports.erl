@@ -14,7 +14,8 @@
 %%% REST parameters
 -record(get, {
 	from = {mandatory, <<"from">>, binary},
-	to = {mandatory, <<"to">>, binary}
+	to = {mandatory, <<"to">>, binary},
+	slice_length = {optional, <<"slice_length">>, list}
 }).
 
 init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"customers">>]) ->
@@ -23,11 +24,21 @@ init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"customers">>]) ->
 init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"networks">>]) ->
 	{ok, #get{}, #state{type = networks}};
 
+init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"details">>]) ->
+	{ok, #get{}, #state{type = details}};
+
 init(_Req, HttpMethod, Path) ->
 	?log_debug("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
 	{error, bad_request}.
 
 %% format time: YYYY-MM-DDThh:mm
+handle(_Req, #get{from = HttpFrom, to = HttpTo, slice_length = SliceLength}, State = #state{type = details}) ->
+	From = convert_http_datetime_to_term(HttpFrom),
+	To = convert_http_datetime_to_term(HttpTo),
+	SliceLengthSecs = convert_slice_length(SliceLength),
+	{ok, Response} = k_statistic:detailed_msg_stats_report(From, To, SliceLengthSecs),
+	{ok, Response, State};
+
 handle(_Req, #get{from = HttpFrom, to = HttpTo}, State = #state{type = ReportType}) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
@@ -48,3 +59,14 @@ convert_http_datetime_to_term(DateTime) ->
 	end, DateTimeBinList),
 	[Year, Month, Day, Hour, Minute] = Result,
 	{{Year, Month, Day}, {Hour, Minute, 0}}.
+
+convert_slice_length(undefined) ->
+	60;
+convert_slice_length("S" ++ Length) ->
+	list_to_integer(Length);
+convert_slice_length("M" ++ Length) ->
+	60 * list_to_integer(Length);
+convert_slice_length("H" ++ Length) ->
+	60 * 60 * list_to_integer(Length);
+convert_slice_length(Length) ->
+	list_to_integer(Length).
