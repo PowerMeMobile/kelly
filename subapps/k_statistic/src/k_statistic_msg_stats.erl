@@ -99,9 +99,9 @@ handle_cast({store_outgoing_msg_stats, InputId, MsgInfo, Time}, State = #state{}
 handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{
 	prefix_network_id_map = PrefixNetworkIdMap
 }) ->
-	ReportPath = k_statistic_util:msg_stats_slice_path(Start),
-	ReportPath1 = k_statistic_util:msg_stats_slice_path(Start, customers),
-	ReportPath2 = k_statistic_util:msg_stats_slice_path(Start, networks),
+	ReportPath = k_statistic_utils:msg_stats_slice_path(Start),
+	ReportPath1 = k_statistic_utils:msg_stats_slice_path(Start, customers),
+	ReportPath2 = k_statistic_utils:msg_stats_slice_path(Start, networks),
 
 	F = fun() ->
 			Records = mnesia:select(?TABLE, ets:fun2ms(
@@ -112,7 +112,7 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{
 		    )),
 
 			%% store raw generic records.
-			ok = k_statistic_util:write_term_to_file(Records, ReportPath),
+			ok = k_statistic_utils:write_term_to_file(Records, ReportPath),
 
 			{RawReport, NewPrefixNetworkIdMap} = lists:foldl(
 				fun(#msg_stats{msg_info = MsgInfo}, {SoFar, Map}) ->
@@ -138,13 +138,13 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{
 			%?log_debug("Raw msg stats report: ~p", [RawReport]),
 
 			%% build & store customers report.
-			Report1 = k_statistic_reports:build_msg_stats_report(customers, RawReport),
-			ok = k_statistic_util:write_term_to_file(Report1, ReportPath1),
+			Report1 = k_statistic_msg_stats_report:build_msg_stats_report(customers, RawReport),
+			ok = k_statistic_utils:write_term_to_file(Report1, ReportPath1),
 			%?log_debug("Msg stats report1: ~p", [Report1]),
 
 			%% build & store networks report.
-			Report2 = k_statistic_reports:build_msg_stats_report(networks, RawReport),
-			ok = k_statistic_util:write_term_to_file(Report2, ReportPath2),
+			Report2 = k_statistic_msg_stats_report:build_msg_stats_report(networks, RawReport),
+			ok = k_statistic_utils:write_term_to_file(Report2, ReportPath2),
 			%?log_debug("Msg stats report2: ~p", [Report2]),
 
 			%% delete stored records.

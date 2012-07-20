@@ -108,7 +108,7 @@ handle_cast({store_incoming_msg_stats, OutputId, MsgInfo, Time}, State = #state{
 	{noreply, State};
 
 handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{}) ->
-	ReportPath = k_statistic_util:incoming_msg_stats_slice_path(Start),
+	ReportPath = k_statistic_utils:incoming_msg_stats_slice_path(Start),
 
 	F = fun() ->
 			Records = mnesia:select(?TABLE, ets:fun2ms(
@@ -119,7 +119,7 @@ handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{}) -
 		    )),
 
 			%% store raw generic records.
-			ok = k_statistic_util:write_term_to_file(Records, ReportPath),
+			ok = k_statistic_utils:write_term_to_file(Records, ReportPath),
 
 			%% delete stored records.
 			lists:foreach(

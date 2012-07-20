@@ -1,4 +1,4 @@
--module(k_statistic_downlink_stats).
+-module(k_statistic_downlink_stats_report).
 
 -export([get_stats/0]).
 

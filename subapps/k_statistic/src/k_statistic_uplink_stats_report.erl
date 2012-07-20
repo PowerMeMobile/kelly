@@ -1,4 +1,4 @@
--module(k_statistic_uplink_stats).
+-module(k_statistic_uplink_stats_report).
 
 -export([get_stats/0]).
 
