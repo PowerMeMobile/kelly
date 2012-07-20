@@ -188,12 +188,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% ===================================================================
 
 setup_alarm(TickRef) ->
-	TimerInterval = k_statistic_reports:stats_report_frequency() * 1000,
+	TimerInterval = k_statistic_utils:stats_report_frequency() * 1000,
 	timer:send_after(TimerInterval, self(), {tick, TickRef}).
 
 on_tick(State = #state{}) ->
 	Current = k_datetime:utc_unix_epoch(),
-	Frequency = k_statistic_reports:stats_report_frequency(),
+	Frequency = k_statistic_utils:stats_report_frequency(),
 	%% Align time by frequency.
 	To = Current - Current rem Frequency,
 	From = To - Frequency,
