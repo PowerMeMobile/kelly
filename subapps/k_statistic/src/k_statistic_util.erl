@@ -4,7 +4,6 @@
 	msg_stats_slice_path/1,
 	msg_stats_slice_path/2,
 
-	gtw_stats_slice_path/1,
 	status_stats_slice_path/1,
 
 	incoming_msg_stats_slice_path/1,
@@ -37,10 +36,6 @@ report_type_to_index(networks) -> 2.
 -spec msg_stats_slice_path(os:timestamp(), atom()) -> file:filename().
 msg_stats_slice_path(Timestamp, ReportType) ->
 	slice_path("msg-stats/~p-~p.dat", [Timestamp, report_type_to_index(ReportType)]).
-
--spec gtw_stats_slice_path(os:timestamp()) -> file:filename().
-gtw_stats_slice_path(Timestamp) ->
-	slice_path("gtw-stats/~p.dat", [Timestamp]).
 
 -spec status_stats_slice_path(os:timestamp()) -> file:filename().
 status_stats_slice_path(Timestamp) ->

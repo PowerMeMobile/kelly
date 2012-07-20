@@ -31,8 +31,6 @@ init([]) ->
 		{one_for_one, 5, 10}, [
 			{k_statistic_msg_stats,
 				{k_statistic_msg_stats, start_link, []}, permanent, 1000000, worker, [k_statistic_msg_stats]},
-			{k_statistic_gtw_stats,
-				{k_statistic_gtw_stats, start_link, []}, permanent, 1000000, worker, [k_statistic_gtw_stats]},
 			{k_statistic_status_stats,
 				{k_statistic_status_stats, start_link, []}, permanent, 1000000, worker, [k_statistic_status_stats]},
 			{k_statistic_incoming_msg_stats,

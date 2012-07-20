@@ -6,9 +6,6 @@
 	build_msg_stats_report/2,
 	msg_stats_report/3,
 
-	gtw_stats_report/1,
-	gtw_stats_report/2,
-
 	status_stats_report/3,
 
 	detailed_msg_stats_report/3
@@ -104,55 +101,6 @@ msg_stats_report(KeyN, Records) ->
 	Dict = lists:foldl(fun({K, V}, Dict) -> orddict:append_list(K, [V], Dict) end, orddict:new(), Pairs),
 	List = orddict:to_list(Dict),
 	List.
-
-%% ===================================================================
-%% Gateway Stats
-%% ===================================================================
-
--spec gtw_stats_report(Records::[tuple()]) -> [tuple()].
-gtw_stats_report(Records) ->
-	lists:map(
-		fun({gtw_stats, GatewayId, Number, _}) ->
-			{GatewayId, Number}
-		end, Records).
-
--spec gtw_stats_report(From::os:timestamp(), To::os:timestamp()) -> {ok, term()} | {error, Reason::any()}.
-gtw_stats_report(From, To) when From < To ->
-	Timestamps = get_timestamp_list(From, To),
-	Reports =
-		lists:foldr(
-			fun(Timestamp, SoFar) ->
-				Filename = k_statistic_util:gtw_stats_slice_path(Timestamp),
-				case k_statistic_util:read_term_from_file(Filename) of
-					{ok, []} ->
-						SoFar;
-					{ok, Records} ->
-						AnnotatedRecords = annotate_gtw_stats_report(Timestamp, Records),
-						[AnnotatedRecords | SoFar];
-					{error, _Reason} ->
-						%?log_debug("Missing gtw stats report: ~p", [Filename])
-						SoFar
-				end
-			end, [], Timestamps),
-	AnnotatedReport = {slices, Reports},
-	{ok, AnnotatedReport}.
-
--spec annotate_gtw_stats_report(Timestamp::os:timestamp(), Records::[term()]) -> [term()].
-annotate_gtw_stats_report(Timestamp, Records) ->
-	Datetime = timestamp_to_iso_8601(Timestamp),
-	[
-		{datetime, Datetime},
-		{gateways,
-			lists:map(
-				fun({GatewayId, Number}) ->
-					[
-						{id, GatewayId},
-						{count, Number}
-					]
-				end,
-				Records)
-		}
-	].
 
 %% ===================================================================
 %% Status stats

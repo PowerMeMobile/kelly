@@ -159,7 +159,7 @@ Result:
 </messages>
 
 
-Statistical interface for Customers, Networks, Gateways
+Statistical interface for Customers, Networks
 
 REST call:
 GET /report/messages/ReportType?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
@@ -210,31 +210,6 @@ Result:
         </customers>
     </item>
 </networks>
-
-REST call:
-GET /report/gateways?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
-Where
-	YYYY - year
-	MM - month
-	DD - day
-	hh - hours
-	mm - minutes
-
-Example:
-http://localhost:8080/report/gateways?from=2012-05-01T06:00&to=2012-05-25T00:00
-
-Result:
-<slices>
-	<item>
-		<datetime>2012-05-24T13:22:00</value>
-		<gateways>
-			<item>
-				<id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
-				<count>1</count>
-			</item>
-		</gateways>
-	</item>
-</slices>
 
 Message status request.
 
