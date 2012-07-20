@@ -5,39 +5,73 @@
 ]).
 
 -include("status_stats.hrl").
+-include("msg_stats.hrl").
 
 %% ===================================================================
 %% API
 %% ===================================================================
 
--spec get_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [tuple()].
-get_report(From, To, Status) ->
-	Filenames = k_statistic_utils:get_file_list_with(
+-spec get_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [any()].
+get_report(From, To, undefined) ->
+	OutgoingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:status_stats_slice_path/1),
-	AllRecords =
-		lists:foldr(
-			fun(Filename, SoFar) ->
-				case k_statistic_utils:read_term_from_file(Filename) of
-					{ok, []} ->
-						SoFar;
-					{ok, Records} ->
-						Records ++ SoFar;
-					{error, _Reason} ->
-						%?log_debug("Missing msg stats report: ~p", [Filename])
-						SoFar
-				end
-			end,
-			[],
-			Filenames),
-	Report = status_stats_report(AllRecords, Status),
-	{ok, Report}.
+	OutgoingRecords = read_records(OutgoingFilenames),
+	OutgoingReport = outgoing_agregated_report(OutgoingRecords),
+
+	IncomingFilenames = k_statistic_utils:get_file_list_with(
+		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
+	IncomingRecords = read_records(IncomingFilenames),
+	IncomingReport = incoming_agregated_report(IncomingRecords),
+
+	Reports = merge_agregated_reports(OutgoingReport, IncomingReport),
+	{ok, {statuses, Reports}};
+
+get_report(From, To, received) ->
+	IncomingFilenames = k_statistic_utils:get_file_list_with(
+		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
+	IncomingRecords = read_records(IncomingFilenames),
+	IncomingReport = incoming_extended_report(IncomingRecords),
+	{ok, {statuses, IncomingReport}};
+
+get_report(From, To, Status) ->
+	OutgoingFilenames = k_statistic_utils:get_file_list_with(
+		From, To, fun k_statistic_utils:status_stats_slice_path/1),
+	OutgoingRecords = read_records(OutgoingFilenames),
+	OutgoingReport = outgoing_extended_report(OutgoingRecords, Status),
+
+	{ok, {statuses, OutgoingReport}}.
 
 %% ===================================================================
 %% Internal
 %% ===================================================================
 
--spec status_stats_report(Records::[#status_stats{}], Status::atom()) -> [tuple()].
-status_stats_report(Records, undefined) ->
+-spec merge_agregated_reports(OutgoingReport::[any()], IncomingReport::[any()]) -> [any()].
+merge_agregated_reports(OutgoingReport, IncomingReport) ->
+	lists:sort(
+		fun({LStatus, _}, {RStatus, _}) ->
+			LStatus =< RStatus
+		end,
+		OutgoingReport ++ IncomingReport).
+
+-spec read_records(Filenames::[file:filename()]) -> [#status_stats{}].
+read_records(Filenames) ->
+	lists:foldr(
+		fun(Filename, SoFar) ->
+			case k_statistic_utils:read_term_from_file(Filename) of
+				{ok, []} ->
+					SoFar;
+				{ok, Records} ->
+					Records ++ SoFar;
+				{error, _Reason} ->
+					%?log_debug("Missing report: ~p", [Filename])
+					SoFar
+			end
+		end,
+		[],
+		Filenames).
+
+-spec outgoing_agregated_report(Records::[#status_stats{}]) -> [{Status::atom(), Count::pos_integer()}].
+outgoing_agregated_report(Records) ->
 	Groups = k_statistic_utils:group(lists:sort(lists:map(
 		fun(#status_stats{msg_status = #msg_status{status = Status}}) ->
 			case Status of
@@ -47,19 +81,18 @@ status_stats_report(Records, undefined) ->
 			end
 		end,
 		Records))),
-	Freqs = lists:map(
+	lists:map(
 		fun(Group = [Status|_]) ->
 			{Status, length(Group)}
 		end,
-		Groups),
-	{statuses, Freqs};
+		Groups).
 
-status_stats_report(Records, sent) ->
-	status_stats_report(Records, success_no_delivery);
-status_stats_report(Records, sent_expected_delivery) ->
-	status_stats_report(Records, success_waiting_delivery);
-
-status_stats_report(Records, Status) ->
+-spec outgoing_extended_report(Records::[#status_stats{}], Status::atom()) -> [any()].
+outgoing_extended_report(Records, sent) ->
+	outgoing_extended_report(Records, success_no_delivery);
+outgoing_extended_report(Records, sent_expected_delivery) ->
+	outgoing_extended_report(Records, success_waiting_delivery);
+outgoing_extended_report(Records, Status) ->
 	Filtered = lists:filter(
 		fun(#status_stats{msg_status = #msg_status{status = St}}) when St =:= Status ->
 			true;
@@ -91,6 +124,38 @@ status_stats_report(Records, Status) ->
 			]
 		end,
 		Filtered),
+	{messages, Report}.
+
+-spec incoming_agregated_report(Records::[#msg_info{}]) -> [{Status::atom(), Count::pos_integer()}].
+incoming_agregated_report(Records) ->
+	[{received, length(Records)}].
+
+-spec incoming_extended_report(Records::[#status_stats{}]) -> [any()].
+incoming_extended_report(Records) ->
+	Report = lists:map(
+		fun(#msg_stats{
+			msg_info = #msg_info{
+				id = MessageId,
+				gateway_id = GatewayId,
+				customer_id = CustomerId,
+				src_addr = SrcAddr,
+				dst_addr = DstAddr,
+				body = BinText
+   			},
+				time = Timestamp
+			}) ->
+			Datetime = k_statistic_utils:timestamp_to_iso_8601(Timestamp),
+			[
+				{datetime, Datetime},
+				{message_id, MessageId},
+				{gateway_id, GatewayId},
+				{customer_id, CustomerId},
+				{src_addr, transform_addr(SrcAddr)},
+				{dst_addr, transform_addr(DstAddr)},
+				{message_text, binary_to_list(BinText)}
+			]
+		end,
+		Records),
 	{messages, Report}.
 
 transform_addr(#full_addr{
