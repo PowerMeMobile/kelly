@@ -49,7 +49,7 @@ get_msg_stats_records(Filenames) ->
 					StripedRecords = strip_msg_stats(Records),
 					StripedRecords ++ SoFar;
 				{error, _Reason} ->
-					%?log_debug("Missing msg stats report: ~p", [Filename])
+					%?log_debug("Missing file: ~p", [Filename])
 					SoFar
 			end
 		end,

@@ -29,7 +29,7 @@ get_report(ReportType, From, To) when From < To ->
 						  AnnotatedRecords = annotate_msg_stats_report(ReportType, Records),
 						  AnnotatedRecords ++ SoFar;
 					  {error, _Reason} ->
-						  %?log_debug("Missing msg stats report: ~p", [Filename])
+						  %?log_debug("Missing file: ~p", [Filename])
 						  SoFar
 				  end
 		  end, [], Filenames),

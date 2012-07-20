@@ -63,7 +63,7 @@ read_records(Filenames) ->
 				{ok, Records} ->
 					Records ++ SoFar;
 				{error, _Reason} ->
-					%?log_debug("Missing report: ~p", [Filename])
+					%?log_debug("Missing file: ~p", [Filename])
 					SoFar
 			end
 		end,
