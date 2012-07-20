@@ -1,10 +1,12 @@
 -module(k_statistic).
 
 -export([
+	%% store
 	store_msg_stats/3,
 	store_status_stats/5,
 	store_incoming_msg_stats/3,
 
+	%% reports
 	msg_stats_report/3,
 
 	status_stats_report/2,
@@ -63,7 +65,7 @@ store_incoming_msg_stats(OutputId, MsgInfo, Time) ->
 msg_stats_report(ReportType, From, To) when From < To ->
 	FromUnix = k_datetime:datetime_to_unix_epoch(From),
 	ToUnix = k_datetime:datetime_to_unix_epoch(To),
-	k_statistic_msg_stats_report:msg_stats_report(ReportType, FromUnix, ToUnix).
+	k_statistic_msg_stats_report:get_report(ReportType, FromUnix, ToUnix).
 
 -spec status_stats_report(
 	From::calendar:datetime(),
@@ -72,7 +74,7 @@ msg_stats_report(ReportType, From, To) when From < To ->
 status_stats_report(From, To) when From < To ->
 	FromUnix = k_datetime:datetime_to_unix_epoch(From),
 	ToUnix = k_datetime:datetime_to_unix_epoch(To),
-	k_statistic_status_stats_report:status_stats_report(FromUnix, ToUnix, undefined).
+	k_statistic_status_stats_report:get_report(FromUnix, ToUnix, undefined).
 
 -spec status_stats_report(
 	From::calendar:datetime(),
@@ -82,15 +84,15 @@ status_stats_report(From, To) when From < To ->
 status_stats_report(From, To, Status) when From < To ->
 	FromUnix = k_datetime:datetime_to_unix_epoch(From),
 	ToUnix = k_datetime:datetime_to_unix_epoch(To),
-	k_statistic_status_stats_report:status_stats_report(FromUnix, ToUnix, Status).
+	k_statistic_status_stats_report:get_report(FromUnix, ToUnix, Status).
 
 -spec uplink_report() -> {ok, Report::term()} | {error, Reason::term()}.
 uplink_report() ->
-	k_statistic_uplink_stats_report:get_stats().
+	k_statistic_uplink_stats_report:get_report().
 
 -spec downlink_report() -> {ok, Report::term()} | {error, Reason::term()}.
 downlink_report() ->
-	k_statistic_downlink_stats_report:get_stats().
+	k_statistic_downlink_stats_report:get_report().
 
 -spec detailed_msg_stats_report(
 	From::calendar:datetime(),
@@ -100,4 +102,4 @@ downlink_report() ->
 detailed_msg_stats_report(From, To, SliceLength) when From < To ->
 	FromUnix = k_datetime:datetime_to_unix_epoch(From),
 	ToUnix = k_datetime:datetime_to_unix_epoch(To),
-	k_statistic_detailed_msg_stats_report:detailed_msg_stats_report(FromUnix, ToUnix, SliceLength).
+	k_statistic_detailed_msg_stats_report:get_report(FromUnix, ToUnix, SliceLength).

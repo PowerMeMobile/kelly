@@ -1,7 +1,7 @@
 -module(k_statistic_detailed_msg_stats_report).
 
 -export([
-	detailed_msg_stats_report/3
+	get_report/3
 ]).
 
 -include("msg_stats.hrl").
@@ -11,12 +11,12 @@
 %% API
 %% ===================================================================
 
--spec detailed_msg_stats_report(
+-spec get_report(
 	From::calendar:datetime(),
 	To::calendar:datetime(),
 	SliceLength::pos_integer()
 ) -> {ok, Report::term()} | {error, Reason::term()}.
-detailed_msg_stats_report(From, To, SliceLength) when From < To ->
+get_report(From, To, SliceLength) when From < To ->
 	SliceRanges = k_statistic_utils:get_timestamp_ranges(From, To, SliceLength),
 
 	OutgoingFilenames = k_statistic_utils:get_file_list_with(

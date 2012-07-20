@@ -1,7 +1,7 @@
 -module(k_statistic_status_stats_report).
 
 -export([
-	status_stats_report/3
+	get_report/3
 ]).
 
 -include("status_stats.hrl").
@@ -10,8 +10,8 @@
 %% API
 %% ===================================================================
 
--spec status_stats_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [tuple()].
-status_stats_report(From, To, Status) ->
+-spec get_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [tuple()].
+get_report(From, To, Status) ->
 	Filenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:status_stats_slice_path/1),
 	AllRecords =

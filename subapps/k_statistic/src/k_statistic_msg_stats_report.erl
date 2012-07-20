@@ -1,7 +1,7 @@
 -module(k_statistic_msg_stats_report).
 
 -export([
-	msg_stats_report/3,
+	get_report/3,
 	build_msg_stats_report/2
 ]).
 
@@ -9,12 +9,12 @@
 %% API
 %% ===================================================================
 
--spec msg_stats_report(
+-spec get_report(
 	ReportType::atom(),
 	From::os:timestamp(),
 	To::os:timestamp()
 ) -> {ok, term()} | {error, Reason::any()}.
-msg_stats_report(ReportType, From, To) when From < To ->
+get_report(ReportType, From, To) when From < To ->
 	Filenames = k_statistic_utils:get_file_list_with(From, To,
 		fun(Timestamp) ->
 			k_statistic_utils:msg_stats_slice_path(Timestamp, ReportType)
