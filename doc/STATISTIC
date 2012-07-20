@@ -20,6 +20,7 @@ Result:
 <statuses>
 	<accepted>5</accepted>
 	<delivered>177</delivered>
+	<received>100</received>
 	<rejected>7</rejected>
 	<sent>500</sent>
 	<undeliverable>11</undeliverable>
