@@ -21,12 +21,12 @@ get_report(From, To, SliceLength) when From < To ->
 
 	OutgoingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:msg_stats_slice_path/1),
-	OutgoingRecords = get_msg_stats_records(OutgoingFilenames),
+	OutgoingRecords = k_statistic_utils:read_terms_from_files_with(OutgoingFilenames, fun strip_msg_stats/1),
 	OutgoingReport = detailed_msg_stats_report(OutgoingRecords, SliceRanges),
 
 	IncomingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
-	IncomingRecords = get_msg_stats_records(IncomingFilenames),
+	IncomingRecords = k_statistic_utils:read_terms_from_files_with(IncomingFilenames, fun strip_msg_stats/1),
 	IncomingReport = detailed_msg_stats_report(IncomingRecords, SliceRanges),
 
 	{ok, {messages, [
@@ -38,34 +38,12 @@ get_report(From, To, SliceLength) when From < To ->
 %% Internal
 %% ===================================================================
 
--spec get_msg_stats_records([file:filename()]) -> [{gateway_id(), os:timestamp()}].
-get_msg_stats_records(Filenames) ->
-	lists:foldr(
-		fun(Filename, SoFar) ->
-			case k_statistic_utils:read_term_from_file(Filename) of
-				{ok, []} ->
-					SoFar;
-				{ok, Records} ->
-					StripedRecords = strip_msg_stats(Records),
-					StripedRecords ++ SoFar;
-				{error, _Reason} ->
-					%?log_debug("Missing file: ~p", [Filename])
-					SoFar
-			end
-		end,
-		[],
-		Filenames).
-
--spec strip_msg_stats([#msg_stats{}]) -> [{gateway_id(), os:timestamp()}].
-strip_msg_stats(Records) ->
-	lists:map(
-		fun(#msg_stats{
-			msg_info = #msg_info{gateway_id = GatewayId},
-			time = Time
-		}) ->
-			{GatewayId, Time}
-		end,
-		Records).
+-spec strip_msg_stats(#msg_stats{}) -> {gateway_id(), os:timestamp()}.
+strip_msg_stats(#msg_stats{
+	msg_info = #msg_info{gateway_id = GatewayId},
+	time = Time
+}) ->
+	{GatewayId, Time}.
 
 -spec detailed_msg_stats_report(
 	Records::[{gateway_id(), os:timestamp()}],

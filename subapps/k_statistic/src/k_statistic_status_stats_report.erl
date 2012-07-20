@@ -29,14 +29,14 @@ get_report(From, To, undefined) ->
 get_report(From, To, received) ->
 	IncomingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
-	IncomingRecords = read_records(IncomingFilenames),
+	IncomingRecords = k_statistic_utils:read_terms_from_files(IncomingFilenames),
 	IncomingReport = incoming_extended_report(IncomingRecords),
 	{ok, {statuses, IncomingReport}};
 
 get_report(From, To, Status) ->
 	OutgoingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:status_stats_slice_path/1),
-	OutgoingRecords = read_records(OutgoingFilenames),
+	OutgoingRecords = k_statistic_utils:read_terms_from_files(OutgoingFilenames),
 	OutgoingReport = outgoing_extended_report(OutgoingRecords, Status),
 
 	{ok, {statuses, OutgoingReport}}.
@@ -52,23 +52,6 @@ merge_agregated_reports(OutgoingReport, IncomingReport) ->
 			LStatus =< RStatus
 		end,
 		OutgoingReport ++ IncomingReport).
-
--spec read_records(Filenames::[file:filename()]) -> [#status_stats{}].
-read_records(Filenames) ->
-	lists:foldr(
-		fun(Filename, SoFar) ->
-			case k_statistic_utils:read_term_from_file(Filename) of
-				{ok, []} ->
-					SoFar;
-				{ok, Records} ->
-					Records ++ SoFar;
-				{error, _Reason} ->
-					%?log_debug("Missing file: ~p", [Filename])
-					SoFar
-			end
-		end,
-		[],
-		Filenames).
 
 -spec outgoing_agregated_report(Records::[#status_stats{}]) -> [{Status::atom(), Count::pos_integer()}].
 outgoing_agregated_report(Records) ->
