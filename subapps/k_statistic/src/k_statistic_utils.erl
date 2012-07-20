@@ -12,6 +12,7 @@
 	%% read/write term
 	write_term_to_file/2,
 	read_term_from_file/1,
+	read_terms_from_files/1,
 
 	%% statistic utils
 	get_timestamp_list/2,
@@ -91,6 +92,23 @@ read_term_from_file(Filename) ->
 		Error ->
 			Error
 	end.
+
+-spec read_terms_from_files(Filenames::[file:filename()]) -> [any()].
+read_terms_from_files(Filenames) ->
+	lists:foldr(
+		fun(Filename, Acc) ->
+			case k_statistic_utils:read_term_from_file(Filename) of
+				{ok, []} ->
+					Acc;
+				{ok, Records} ->
+					Records ++ Acc;
+				{error, _Reason} ->
+					%?log_debug("Missing file: ~p", [Filename])
+					Acc
+			end
+		end,
+		[],
+		Filenames).
 
 %% ===================================================================
 %% Statistic utils
