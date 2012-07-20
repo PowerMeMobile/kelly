@@ -108,8 +108,7 @@ handle_cast({store_incoming_msg_stats, OutputId, MsgInfo, Time}, State = #state{
 	{noreply, State};
 
 handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{}) ->
-	Filename = io_lib:format("~p.dat", [Start]),
-	ReportPath = k_statistic_util:incoming_msg_stats_file_path(Filename),
+	ReportPath = k_statistic_util:incoming_msg_stats_slice_path(Start),
 
 	F = fun() ->
 			Records = mnesia:select(?TABLE, ets:fun2ms(

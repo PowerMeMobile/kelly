@@ -26,15 +26,11 @@ stats_report_frequency() ->
 %% Message Stats
 %% ===================================================================
 
-report_type_to_index(customers) -> 1;
-report_type_to_index(networks) -> 2.
-
 -spec msg_stats_report(ReportType::atom(), From::os:timestamp(), To::os:timestamp()) -> {ok, term()} | {error, Reason::any()}.
 msg_stats_report(ReportType, From, To) when From < To ->
 	Filenames = get_file_list(From, To,
 		fun(Timestamp) ->
-			k_statistic_util:msg_stats_file_path(
-				io_lib:format("~p-~p.dat", [Timestamp, report_type_to_index(ReportType)]))
+			k_statistic_util:msg_stats_slice_path(Timestamp, ReportType)
 		end),
 	Reports =
 		lists:foldr(
@@ -126,7 +122,7 @@ gtw_stats_report(From, To) when From < To ->
 	Reports =
 		lists:foldr(
 			fun(Timestamp, SoFar) ->
-				Filename = k_statistic_util:gtw_stats_file_path(io_lib:format("~p.dat", [Timestamp])),
+				Filename = k_statistic_util:gtw_stats_slice_path(Timestamp),
 				case k_statistic_util:read_term_from_file(Filename) of
 					{ok, []} ->
 						SoFar;
@@ -238,11 +234,7 @@ transform_addr(#full_addr_ref_num{
 %% usage: k_statistic:status_stats_report({{2012,7,9},{0,0,0}}, {{2012,7,9},{23,59,0}}, rejected).
 -spec status_stats_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [tuple()].
 status_stats_report(From, To, Status) ->
-	Filenames = get_file_list(From, To,
-		fun(Timestamp) ->
-			k_statistic_util:status_stats_file_path(
-				io_lib:format("~p.dat", [Timestamp]))
-		end),
+	Filenames = get_file_list(From, To, fun k_statistic_util:status_stats_slice_path/1),
 	AllRecords =
 		lists:foldr(
 			fun(Filename, SoFar) ->
@@ -272,19 +264,11 @@ status_stats_report(From, To, Status) ->
 ) -> {ok, Report::term()} | {error, Reason::term()}.
 detailed_msg_stats_report(From, To, SliceLength) when From < To ->
 	SliceRanges = get_timestamp_ranges(From, To, SliceLength),
-	OutgoingFilenames = get_file_list(From, To,
-		fun(Timestamp) ->
-			k_statistic_util:msg_stats_file_path(
-				io_lib:format("~p.dat", [Timestamp]))
-		end),
+	OutgoingFilenames = get_file_list(From, To, fun k_statistic_util:msg_stats_slice_path/1),
 	OutgoingRecords = get_msg_stats_records(OutgoingFilenames),
 	OutgoingReport = detailed_msg_stats_report(OutgoingRecords, SliceRanges),
 
-	IncomingFilenames = get_file_list(From, To,
-		fun(Timestamp) ->
-			k_statistic_util:incoming_msg_stats_file_path(
-				io_lib:format("~p.dat", [Timestamp]))
-		end),
+	IncomingFilenames = get_file_list(From, To, fun k_statistic_util:incoming_msg_stats_slice_path/1),
 	IncomingRecords = get_msg_stats_records(IncomingFilenames),
 	IncomingReport = detailed_msg_stats_report(IncomingRecords, SliceRanges),
 

@@ -105,8 +105,7 @@ handle_cast({store_gtw_stats, GatewayId, Number, Time}, State = #state{}) ->
 	{noreply, State};
 
 handle_cast({build_report_and_delete_interval, Start, End}, State = #state{}) ->
-	Filename = io_lib:format("~p.dat", [Start]),
-	ReportPath = k_statistic_util:gtw_stats_file_path(Filename),
+	ReportPath = k_statistic_util:gtw_stats_slice_path(Start),
 
 	F = fun() ->
 			Records = mnesia:select(?TABLE, ets:fun2ms(

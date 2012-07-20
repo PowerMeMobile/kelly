@@ -1,10 +1,13 @@
 -module(k_statistic_util).
 
 -export([
-	msg_stats_file_path/1,
-	gtw_stats_file_path/1,
-	status_stats_file_path/1,
-	incoming_msg_stats_file_path/1,
+	msg_stats_slice_path/1,
+	msg_stats_slice_path/2,
+
+	gtw_stats_slice_path/1,
+	status_stats_slice_path/1,
+
+	incoming_msg_stats_slice_path/1,
 
 	write_term_to_file/2,
 	read_term_from_file/1
@@ -12,29 +15,44 @@
 
 -include("application.hrl").
 
--spec msg_stats_file_path(string()) -> string().
-msg_stats_file_path(Filename) ->
+%% ===================================================================
+%% Slice Paths
+%% ===================================================================
+
+-spec slice_path(string(), [any()]) -> file:filename().
+slice_path(Fmt, Args) ->
 	{ok, CWD} = file:get_cwd(),
-	Path = lists:flatten(io_lib:format("data/time-slices.d/msg-stats/~s", [Filename])),
+	Path = lists:flatten(
+		io_lib:format(
+			"data/time-slices.d/" ++ Fmt, Args)),
 	filename:join(CWD, Path).
 
--spec gtw_stats_file_path(string()) -> string().
-gtw_stats_file_path(Filename) ->
-	{ok, CWD} = file:get_cwd(),
-	Path = lists:flatten(io_lib:format("data/time-slices.d/gtw-stats/~s", [Filename])),
-	filename:join(CWD, Path).
+-spec msg_stats_slice_path(os:timestamp()) -> file:filename().
+msg_stats_slice_path(Timestamp) ->
+	slice_path("msg-stats/~p.dat", [Timestamp]).
 
--spec status_stats_file_path(string()) -> string().
-status_stats_file_path(Filename) ->
-	{ok, CWD} = file:get_cwd(),
-	Path = lists:flatten(io_lib:format("data/time-slices.d/status-stats/~s", [Filename])),
-	filename:join(CWD, Path).
+report_type_to_index(customers) -> 1;
+report_type_to_index(networks) -> 2.
 
--spec incoming_msg_stats_file_path(string()) -> string().
-incoming_msg_stats_file_path(Filename) ->
-	{ok, CWD} = file:get_cwd(),
-	Path = lists:flatten(io_lib:format("data/time-slices.d/incoming-msg-stats/~s", [Filename])),
-	filename:join(CWD, Path).
+-spec msg_stats_slice_path(os:timestamp(), atom()) -> file:filename().
+msg_stats_slice_path(Timestamp, ReportType) ->
+	slice_path("msg-stats/~p-~p.dat", [Timestamp, report_type_to_index(ReportType)]).
+
+-spec gtw_stats_slice_path(os:timestamp()) -> file:filename().
+gtw_stats_slice_path(Timestamp) ->
+	slice_path("gtw-stats/~p.dat", [Timestamp]).
+
+-spec status_stats_slice_path(os:timestamp()) -> file:filename().
+status_stats_slice_path(Timestamp) ->
+	slice_path("status-stats/~p.dat", [Timestamp]).
+
+-spec incoming_msg_stats_slice_path(os:timestamp()) -> file:filename().
+incoming_msg_stats_slice_path(Timestamp) ->
+	slice_path("incoming-msg-stats/~p.dat", [Timestamp]).
+
+%% ===================================================================
+%% Read/Write term
+%% ===================================================================
 
 -type filename() :: string().
 -spec write_term_to_file(Term::term(), Filename::filename()) -> ok | {error, any()}.

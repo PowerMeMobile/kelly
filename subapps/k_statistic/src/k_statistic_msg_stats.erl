@@ -99,12 +99,9 @@ handle_cast({store_outgoing_msg_stats, InputId, MsgInfo, Time}, State = #state{}
 handle_cast({build_reports_and_delete_interval, Start, End}, State = #state{
 	prefix_network_id_map = PrefixNetworkIdMap
 }) ->
-	Filename = io_lib:format("~p.dat", [Start]),
-	Filename1 = io_lib:format("~p-1.dat", [Start]),
-	Filename2 = io_lib:format("~p-2.dat", [Start]),
-	ReportPath = k_statistic_util:msg_stats_file_path(Filename),
-	ReportPath1 = k_statistic_util:msg_stats_file_path(Filename1),
-	ReportPath2 = k_statistic_util:msg_stats_file_path(Filename2),
+	ReportPath = k_statistic_util:msg_stats_slice_path(Start),
+	ReportPath1 = k_statistic_util:msg_stats_slice_path(Start, customers),
+	ReportPath2 = k_statistic_util:msg_stats_slice_path(Start, networks),
 
 	F = fun() ->
 			Records = mnesia:select(?TABLE, ets:fun2ms(
