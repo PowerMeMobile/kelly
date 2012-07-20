@@ -219,22 +219,11 @@ match_addr(AddrRec) ->
 -spec cache_lookup_network_id(Address::string(), CacheMap::[{Prefix::string(), NetworkId::network_id()}]) ->
 	{value, NetworkId::network_id()} | false.
 cache_lookup_network_id(Address, CacheMap) ->
-	case findwith(fun({Prefix, _}) -> lists:prefix(Prefix, Address) end, CacheMap) of
+	case k_statistic_utils:findwith(fun({Prefix, _}) -> lists:prefix(Prefix, Address) end, CacheMap) of
 		{value, {_, NetworkId}} ->
 			{value, NetworkId};
 		false ->
 			false
-	end.
-
--spec findwith(fun((A::term()) -> boolean()), [A::term()]) -> {value, A::term()} | false.
-findwith(_, []) ->
-	false;
-findwith(Pred, [H|T]) ->
-	case Pred(H) of
-		true ->
-			{value, H};
-		false ->
-			findwith(Pred, T)
 	end.
 
 -spec get_network_id(CustomerId::customer_id(), Address::string()) -> {ok, {Prefix::string(), network_id()}} | {error, Reason::any()}.
@@ -281,7 +270,7 @@ does_address_match_network(Address, #network{
 	CodeAndPrefixes = lists:map(fun(Prefix) ->
 									CountryCode ++ Prefix
 								end, Prefixes),
-	case findwith(fun(CodeAndPrefix) -> lists:prefix(CodeAndPrefix, Address) end, CodeAndPrefixes) of
+	case k_statistic_utils:findwith(fun(CodeAndPrefix) -> lists:prefix(CodeAndPrefix, Address) end, CodeAndPrefixes) of
 		{value, Prefix} ->
 			{true, Prefix};
 		false ->

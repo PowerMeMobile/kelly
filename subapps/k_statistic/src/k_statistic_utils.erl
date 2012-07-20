@@ -27,6 +27,7 @@
 	remove/2,
 	group/1,
 	groupwith/2,
+	findwith/2,
 	make_ranges/1,
 	make_frequencies/1
 ]).
@@ -161,6 +162,17 @@ make_pair(KeyN, Tuple) ->
 remove(_, []) -> [];
 remove(1, [_|T]) -> T;
 remove(N, [H|T]) -> [H | remove(N-1, T)].
+
+-spec findwith(fun((A::term()) -> boolean()), [A::term()]) -> {value, A::term()} | false.
+findwith(_, []) ->
+	false;
+findwith(Pred, [H|T]) ->
+	case Pred(H) of
+		true ->
+			{value, H};
+		false ->
+			findwith(Pred, T)
+	end.
 
 %% group("Mississippi") ==> ["M","i","ss","i","ss","i","pp","i"]
 -spec group([A]) -> [[A]].
