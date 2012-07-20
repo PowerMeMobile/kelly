@@ -19,12 +19,12 @@
 detailed_msg_stats_report(From, To, SliceLength) when From < To ->
 	SliceRanges = k_statistic_utils:get_timestamp_ranges(From, To, SliceLength),
 
-	OutgoingFilenames = k_statistic_utils:get_file_list(
+	OutgoingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:msg_stats_slice_path/1),
 	OutgoingRecords = get_msg_stats_records(OutgoingFilenames),
 	OutgoingReport = detailed_msg_stats_report(OutgoingRecords, SliceRanges),
 
-	IncomingFilenames = k_statistic_utils:get_file_list(
+	IncomingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
 	IncomingRecords = get_msg_stats_records(IncomingFilenames),
 	IncomingReport = detailed_msg_stats_report(IncomingRecords, SliceRanges),

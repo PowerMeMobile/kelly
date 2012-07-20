@@ -15,7 +15,7 @@
 	To::os:timestamp()
 ) -> {ok, term()} | {error, Reason::any()}.
 msg_stats_report(ReportType, From, To) when From < To ->
-	Filenames = k_statistic_utils:get_file_list(From, To,
+	Filenames = k_statistic_utils:get_file_list_with(From, To,
 		fun(Timestamp) ->
 			k_statistic_utils:msg_stats_slice_path(Timestamp, ReportType)
 		end),

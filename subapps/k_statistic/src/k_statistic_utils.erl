@@ -19,7 +19,7 @@
 	get_timestamp_ranges/3,
 	align_time_range/2,
 	align_time_range/3,
-	get_file_list/3, % rename to get_file_list_with
+	get_file_list_with/3,
 	timestamp_to_iso_8601/1,
 
 	%% common utils
@@ -130,12 +130,12 @@ align_time_range(From, To, Step) ->
 				end,
 	{FromFloor, ToCeiling}.
 
--spec get_file_list(
+-spec get_file_list_with(
 	From::os:timestamp(),
 	To::os:timestamp(),
 	Fun::fun((Timestamp::os:timestamp()) -> file:filename())
 ) -> [file:filename()].
-get_file_list(From, To, Fun) when From < To ->
+get_file_list_with(From, To, Fun) when From < To ->
 	Timestamps = get_timestamp_list(From, To),
 	lists:map(Fun, Timestamps).
 
