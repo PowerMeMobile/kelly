@@ -29,7 +29,6 @@ process(_ContentType, Message) ->
 process_sms_response(SmsResponse = #'SmsResponse'{}) ->
 	?log_debug("got request: ~p", [SmsResponse]),
 	MsgResps = sms_response_to_msg_resp_list(SmsResponse),
-	ok = store_gtw_stats(SmsResponse),
 	case k_utils:safe_foreach(fun process_msg_resp/1, MsgResps, ok, {error, '_'}) of
 		ok ->
 			{ok, []};
@@ -109,12 +108,3 @@ sms_response_to_msg_resp_list(#'SmsResponse'{
 						output_id = {GatewayId, MessageId},
 						status = Status
 					} end, Statuses).
-
--spec store_gtw_stats(#'SmsResponse'{}) -> ok | {error, any()}.
-store_gtw_stats(#'SmsResponse'{
-	gatewayId = GatewayId,
-	statuses = Statuses
-}) ->
-	Number = length(Statuses),
-	Time = k_datetime:utc_unix_epoch(),
-	k_statistic:store_gtw_stats(GatewayId, Number, Time).
