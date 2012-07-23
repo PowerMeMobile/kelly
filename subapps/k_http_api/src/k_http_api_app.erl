@@ -18,11 +18,12 @@ start(_StartType, _StartArgs) ->
     %% {Host, list({Path, Handler, Opts})}
     	{'_', [
             {[<<"message_status">>, '_', <<"customer">>, '_'], gen_cowboy_restful, [k_http_api_handler_message_status]},
-            {[<<"gateway">>, '_', <<"connection">>, '_'], gen_cowboy_restful, [k_http_api_handler_connections]},
-            {[<<"gateway">>, '_', <<"connection">>], gen_cowboy_restful, [k_http_api_handler_connections]},
-            {[<<"gateway">>, '_'], gen_cowboy_restful, [k_http_api_handler_gateways]},
-            {[<<"gateway">>], gen_cowboy_restful, [k_http_api_handler_gateways]},
+
+            {[<<"gateways">>, '_'], gen_cowboy_restful, [k_http_api_handler_gateways]},
             {[<<"gateways">>], gen_cowboy_restful, [k_http_api_handler_gateways]},
+            {[<<"gateways">>, '_', <<"connections">>, '_'], gen_cowboy_restful, [k_http_api_handler_connections]},
+            {[<<"gateways">>, '_', <<"connections">>], gen_cowboy_restful, [k_http_api_handler_connections]},
+
             {[<<"customer">>, '_', <<"user">>, '_'], gen_cowboy_restful, [k_http_api_handler_users]},
             {[<<"customer">>, '_', <<"user">>], gen_cowboy_restful, [k_http_api_handler_users]},
             {[<<"customer">>, '_'], gen_cowboy_restful, [k_http_api_handler_customers]},
