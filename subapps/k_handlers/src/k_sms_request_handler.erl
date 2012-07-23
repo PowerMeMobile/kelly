@@ -73,7 +73,7 @@ update_msg_status(InputId, DefaultStatus, ReqTime) ->
 -spec store_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
 store_msg_info(InputId, MsgInfo, Time) ->
 	ok = k_storage:set_msg_info(InputId, MsgInfo),
-	ok = k_statistic:store_msg_stats(InputId, MsgInfo, Time).
+	ok = k_statistic:store_outgoing_msg_stats(InputId, MsgInfo, Time).
 
 -spec get_param_by_name(string(), [#'Param'{}]) -> {ok, #'Param'{}} | {error, no_entry}.
 get_param_by_name(Name, Params) ->

@@ -35,7 +35,7 @@ curl "http://localhost:8080/report/messages/details?from=${From}&to=${To}&slice_
 echo; echo
 
 #
-# Statistical interface for Customers, Networks, Gateways
+# Statistical interface for Customers, Networks
 #
 
 # Customers
@@ -44,11 +44,6 @@ echo; echo
 
 # Networks
 curl "http://localhost:8080/report/messages/networks?from=${From}&to=${To}"
-echo; echo
-
-# Gateways
-
-curl "http://localhost:8080/report/gateways?from=${From}&to=${To}"
 echo; echo
 
 #
