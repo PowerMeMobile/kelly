@@ -110,6 +110,8 @@ outgoing_extended_report(Records, Status) ->
 	{messages, Report}.
 
 -spec incoming_agregated_report(Records::[#msg_info{}]) -> [{Status::atom(), Count::pos_integer()}].
+incoming_agregated_report([]) ->
+	[];
 incoming_agregated_report(Records) ->
 	[{received, length(Records)}].
 
