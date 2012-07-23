@@ -15,12 +15,12 @@
 get_report(From, To, undefined) ->
 	OutgoingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:status_stats_slice_path/1),
-	OutgoingRecords = read_records(OutgoingFilenames),
+	OutgoingRecords = k_statistic_utils:read_terms_from_files(OutgoingFilenames),
 	OutgoingReport = outgoing_agregated_report(OutgoingRecords),
 
 	IncomingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
-	IncomingRecords = read_records(IncomingFilenames),
+	IncomingRecords = k_statistic_utils:read_terms_from_files(IncomingFilenames),
 	IncomingReport = incoming_agregated_report(IncomingRecords),
 
 	Reports = merge_agregated_reports(OutgoingReport, IncomingReport),
