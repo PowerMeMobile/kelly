@@ -2,9 +2,9 @@
 
 -export([
 	%% store
-	store_msg_stats/3,
-	store_status_stats/5,
+	store_outgoing_msg_stats/3,
 	store_incoming_msg_stats/3,
+	store_status_stats/5,
 
 	%% reports
 	msg_stats_report/3,
@@ -27,13 +27,13 @@
 %% Store API
 %% ===================================================================
 
--spec store_msg_stats(
+-spec store_outgoing_msg_stats(
 	InputId::msg_id(),
 	MsgInfo ::#msg_info{},
 	Time :: unix_epoch()
 ) -> ok | {error, Reason::any()}.
-store_msg_stats(InputId, MsgInfo, Time) ->
-	k_statistic_msg_stats:store_msg_stats(InputId, MsgInfo, Time).
+store_outgoing_msg_stats(InputId, MsgInfo, Time) ->
+	k_statistic_stats:store_outgoing_msg_stats(InputId, MsgInfo, Time).
 
 -spec store_status_stats(
 	InputId::msg_id(),
@@ -43,7 +43,7 @@ store_msg_stats(InputId, MsgInfo, Time) ->
 	Time::unix_epoch()
 ) -> ok | {error, Reason::any()}.
 store_status_stats(InputId, OutputId, MsgInfo, MsgStatus, Time) ->
-	k_statistic_status_stats:store_status_stats(InputId, OutputId, MsgInfo, MsgStatus, Time).
+	k_statistic_stats:store_status_stats(InputId, OutputId, MsgInfo, MsgStatus, Time).
 
 -spec store_incoming_msg_stats(
 	OutputId::msg_id(),
@@ -51,7 +51,7 @@ store_status_stats(InputId, OutputId, MsgInfo, MsgStatus, Time) ->
 	Time::unix_epoch()
 ) -> ok | {error, Reason::any()}.
 store_incoming_msg_stats(OutputId, MsgInfo, Time) ->
-	k_statistic_incoming_msg_stats:store_msg_stats(OutputId, MsgInfo, Time).
+	k_statistic_stats:store_incoming_msg_stats(OutputId, MsgInfo, Time).
 
 %% ===================================================================
 %% Reports API
