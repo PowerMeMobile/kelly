@@ -25,12 +25,12 @@
 -include_lib("k_common/include/gen_server_spec.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
--record(status_stats_manifest, {
+-record(stats_manifest, {
 }).
 
 -record(state, {
 	tick_ref :: reference(),
-	manifest :: #status_stats_manifest{}
+	manifest :: #stats_manifest{}
 }).
 
 -define(SERVER, ?MODULE).
@@ -170,8 +170,7 @@ on_tick(State = #state{}) ->
 	{ok, State}.
 
 read_manifest() ->
-	{ok, #status_stats_manifest{}}.
+	{ok, #stats_manifest{}}.
 
 build_reports_and_delete_interval(Start, End) ->
 	gen_server:cast(?SERVER, {build_reports_and_delete_interval, Start, End}).
-
