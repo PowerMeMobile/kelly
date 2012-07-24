@@ -128,7 +128,7 @@ terminate(_Req, _State = #state{}) ->
 %% Local Functions Definitions
 %% ===================================================================
 
-update_connection(Req, Update, State = #state{cnnid = ConnectionID, gtw = Gtw, gtwid = GtwID}) ->
+update_connection(_Req, Update, State = #state{cnnid = ConnectionID, gtw = Gtw, gtwid = GtwID}) ->
 	#gateway{connections = Connections} = Gtw,
 	case get_connection(ConnectionID, Connections) of
 		undefined -> {exception, 'svc0003', [], State};
@@ -218,7 +218,7 @@ get_connection(ID, [Conn = #connection{id = ID} | _Tail]) ->
 get_connection(ID, [_Conn | Tail]) ->
 	get_connection(ID, Tail).
 
-create_connection(Req, #create{
+create_connection(_Req, #create{
 						id 			= CnnId,
 						type 		= Type,
 						addr 		= Addr,
