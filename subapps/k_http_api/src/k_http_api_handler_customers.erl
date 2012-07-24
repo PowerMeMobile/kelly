@@ -104,8 +104,8 @@ handle(_Req, #create{
 		name = Name,
 		priority = Priority,
 		rps = Rps,
-		allowedSources = decode_addr(AddrString),
-		defaultSource = DefaultSource,
+		allowedSources = decode_addrs(AddrString),
+		defaultSource = decode_addr(DefaultSource),
 		networks = decode_networks(NetworksString),
 		defaultProviderId = DefaultProviderId,
 		receiptsAllowed = ReceiptsAllowed,
@@ -203,19 +203,22 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 	?log_debug("CustomerPropList: ~p", [CustomerPropList]),
 	prepare(Rest, [CustomerPropList | Acc]).
 
-
 %% convert "addr,ton,npi;addr,ton,npi" to [#addr{}]
+decode_addrs(AddrsString) ->
+	AddrList = string:tokens(AddrsString, ";"),
+	lists:map(fun decode_addr/1, AddrList).
+
+%% convert "addr,ton,npi" to #addr{}
+decode_addr(undefined) ->
+	undefined;
 decode_addr(AddrString) ->
-	AddrList = string:tokens(AddrString, ";"),
-	lists:map(fun(Source)->
-		[Addr, Ton, Npi] = string:tokens(Source, ","),
-		#addr{
-			addr = Addr,
-			%%% Roma. Here badarg exception may occure if Value contains a bad representation of an integer
-			ton = list_to_integer(Ton),
-			npi = list_to_integer(Npi)
-		}
-	end, AddrList).
+	[Addr, Ton, Npi] = string:tokens(AddrString, ","),
+	#addr{
+		addr = Addr,
+		%%% Roma. Here badarg exception may occure if Value contains a bad representation of an integer
+		ton = list_to_integer(Ton),
+		npi = list_to_integer(Npi)
+	}.
 
 %% convert "uuid1,uuid2" to ["uuid1", "uuid2"]
 decode_networks(NetworksString) ->
