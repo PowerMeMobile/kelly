@@ -132,7 +132,7 @@ convert(undefined, _Type) ->
 	undefined;
 convert(UUID, string_uuid) ->
 	UUIDstr = binary_to_list(UUID),
-	case k_uuid:is_v4(UUIDstr) of
+	case k_uuid:is_valid(UUIDstr) of
 		true ->
 			UUIDstr;
 		false ->
