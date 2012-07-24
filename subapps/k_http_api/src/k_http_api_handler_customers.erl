@@ -82,38 +82,38 @@ handle(_Req, #get{}, State = #state{id = CustSysID}) ->
 	end;
 
 handle(_Req, #create{
-			id = Id,
-			uuid = UUID,
-			name = Name,
-			priority = Priority,
-			rps = Rps,
-			allowedSources = AddrString,
-			defaultSource = DefaultSource,
-			networks = NetworksString,
-			defaultProviderId = DefaultProviderId,
-			receiptsAllowed = ReceiptsAllowed,
-			noRetry = NoRetry,
-			defaultValidity = DefaultValidity,
-			maxValidity = MaxValidity,
-			state = CustState
-					}, State = #state{}) ->
+	id = Id,
+	uuid = UUID,
+	name = Name,
+	priority = Priority,
+	rps = Rps,
+	allowedSources = AddrString,
+	defaultSource = DefaultSource,
+	networks = NetworksString,
+	defaultProviderId = DefaultProviderId,
+	receiptsAllowed = ReceiptsAllowed,
+	noRetry = NoRetry,
+	defaultValidity = DefaultValidity,
+	maxValidity = MaxValidity,
+	state = CustState
+}, State = #state{}) ->
 
 	Customer = #customer{
-			id = Id,
-			uuid = UUID,
-			name = Name,
-			priority = Priority,
-			rps = Rps,
-			allowedSources = decode_addr(AddrString),
-			defaultSource = DefaultSource,
-			networks = decode_networks(NetworksString),
-			defaultProviderId = DefaultProviderId,
-			receiptsAllowed = ReceiptsAllowed,
-			noRetry = NoRetry,
-			defaultValidity = DefaultValidity,
-			maxValidity = MaxValidity,
-			users = [],
-			state = CustState
+		id = Id,
+		uuid = UUID,
+		name = Name,
+		priority = Priority,
+		rps = Rps,
+		allowedSources = decode_addrs(AddrString),
+		defaultSource = decode_addr(DefaultSource),
+		networks = decode_networks(NetworksString),
+		defaultProviderId = DefaultProviderId,
+		receiptsAllowed = ReceiptsAllowed,
+		noRetry = NoRetry,
+		defaultValidity = DefaultValidity,
+		maxValidity = MaxValidity,
+		users = [],
+		state = CustState
 	},
 
 	k_snmp:set_row(cst, UUID, [
@@ -151,24 +151,26 @@ prepare(Item) ->
 prepare([], Acc) ->
 	{ok, Acc};
 prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
-	 #customer{
+	#customer{
 		allowedSources = OriginatorsList,
-		defaultSource = DefaultSource, %addr() | undefined, ????????
+		defaultSource = DefaultSource, %% addr() | undefined
 		users = UsersList
-			} = Customer,
+	} = Customer,
 
 	%% convert users records to proplists
 	UserFun = ?record_to_proplist(user),
-	UsersPropList = lists:map(fun(User)->
-		UserPropList = UserFun(User),
-		proplists:delete(pswd_hash, UserPropList)
+	UsersPropList = lists:map(
+		fun(User)->
+			UserPropList = UserFun(User),
+			proplists:delete(pswd_hash, UserPropList)
 		end, UsersList),
 
-	%% originators constuctor
+	%% originators constructor
 	AddrFun = ?record_to_proplist(addr),
 
-	OriginatorsPropList = lists:map(fun(Originator)->
-		AddrFun(Originator)
+	OriginatorsPropList = lists:map(
+		fun(Originator)->
+			AddrFun(Originator)
 		end, OriginatorsList),
 
     %% MSISDNS constructor
@@ -181,7 +183,6 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 				AddrFun(MSISDN)
 			end, MSISDNSList)}
 	end,
-
 
 	%% defaultSource field validation
 	DefSourcePropList =
@@ -202,19 +203,22 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 	?log_debug("CustomerPropList: ~p", [CustomerPropList]),
 	prepare(Rest, [CustomerPropList | Acc]).
 
-
 %% convert "addr,ton,npi;addr,ton,npi" to [#addr{}]
+decode_addrs(AddrsString) ->
+	AddrList = string:tokens(AddrsString, ";"),
+	lists:map(fun decode_addr/1, AddrList).
+
+%% convert "addr,ton,npi" to #addr{}
+decode_addr(undefined) ->
+	undefined;
 decode_addr(AddrString) ->
-	AddrList = string:tokens(AddrString, ";"),
-	lists:map(fun(Source)->
-		[Addr, Ton, Npi] = string:tokens(Source, ","),
-		#addr{
-			addr = Addr,
-			%%% Roma. Here badarg exception may occure if Value contains a bad representation of an integer
-			ton = list_to_integer(Ton),
-			npi = list_to_integer(Npi)
-		}
-	end, AddrList).
+	[Addr, Ton, Npi] = string:tokens(AddrString, ","),
+	#addr{
+		addr = Addr,
+		%%% Roma. Here badarg exception may occure if Value contains a bad representation of an integer
+		ton = list_to_integer(Ton),
+		npi = list_to_integer(Npi)
+	}.
 
 %% convert "uuid1,uuid2" to ["uuid1", "uuid2"]
 decode_networks(NetworksString) ->
