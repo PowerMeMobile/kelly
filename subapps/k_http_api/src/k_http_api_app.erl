@@ -32,9 +32,9 @@ start(_StartType, _StartArgs) ->
             {[<<"network">>, '_'], gen_cowboy_restful, [k_http_api_handler_networks]},
             {[<<"network">>], gen_cowboy_restful, [k_http_api_handler_networks]},
             {[<<"networks">>], gen_cowboy_restful, [k_http_api_handler_networks]},
-            {[<<"provider">>, '_'], gen_cowboy_restful, [k_http_api_handler_providers]},
-            {[<<"provider">>], gen_cowboy_restful, [k_http_api_handler_providers]},
-            {[<<"providers">>], gen_cowboy_restful, [k_http_api_handler_providers]},
+
+            {[<<"providers">>, '...'], gen_cowboy_restful, [k_http_api_handler_providers]},
+
 			{[<<"report">>, <<"uplink">>], gen_cowboy_restful, [k_http_api_handler_uplink_stats]},
 			{[<<"report">>, <<"downlink">>], gen_cowboy_restful, [k_http_api_handler_downlink_stats]},
 			{[<<"report">>, <<"statuses">>], gen_cowboy_restful, [k_http_api_handler_statuses_stats]},
