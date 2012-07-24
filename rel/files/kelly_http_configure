@@ -8,14 +8,19 @@ OUTPUT_SMPP_PORT=8001
 #OUTPUT_SMPP_PORT=2775
 
 #
+# PUT
+#
+# curl --request PUT --header "Content-Length: 0" http://localhost:8080/gateways/10c7dbc3-8ae5-45b4-998e-a6f9226169e9?name=test_gtw22&rps=12009
+
+#
 # Gateways
 #
-echo -n 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=test_gtw&rps=10000' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateway; echo
+echo -n 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=test_gtw&rps=10000' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways; echo
 
 #
 # Connections
 #
-echo -n "id=0&type=1&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient1&pass=password&sys_type=smppclient1&addr_ton=1&addr_npi=0&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateway/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connection; echo
+echo -n "id=0&type=1&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient1&pass=password&sys_type=smppclient1&addr_ton=1&addr_npi=0&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections; echo
 
 echo -n "id=1&type=2&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient2&pass=password&sys_type=smppclient2&addr_ton=1&addr_npi=0&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateway/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connection; echo
 
