@@ -36,11 +36,7 @@ function usage() {
    echo "Example: 31 = 1+2+4+8+16"
 }
 
-# generate random $Length chars sequence.
-function generate_random_body() {
-	cat /dev/urandom | tr -dc '0-9a-zA-Z' | head -c $Length
-}
-
+# generate random To address or use provided.
 function get_destination_address() {
 	if [ $SameTo -eq 1 ]; then
 		## remove leading `+'.
@@ -54,6 +50,24 @@ function get_destination_address() {
 		Number=$(shuf -i 1111111-9999999 -n 1)
 		echo $Network$Number
 	fi
+}
+
+# generate random $Length chars sequence.
+function generate_random_body() {
+	cat /dev/urandom | tr -dc '0-9a-zA-Z' | head -c $Length
+}
+
+# generate random Body or use provided.
+function get_body() {
+	if [ $Same -eq 1 ]; then
+		## if body is not yet set - generate random once
+		if [ -z $Body ]; then
+			Body=$(generate_random_body)
+		fi
+	else
+		Body=$(generate_random_body)
+	fi
+	echo "$Body"
 }
 
 # parse arguments.
@@ -80,23 +94,15 @@ if [ $Count -eq 0 ]; then
 	exit 1
 fi
 
-# generate random body used for all messages.
-if [ $Same -eq 1 ] && [ -z "$Body" ]; then
-	Body=$(generate_random_body)
-fi
-
 Index=1
 while [ $Index -lt $Count ] || [ $Index -eq $Count ]; do
 	if [ -z $Quiet ]; then
 		printf "#%s\n" $Index
 	fi
 
-	## if not the same message, then generate it every time.
-	if [ $Same -eq 0 ]; then
-		Body=$(generate_random_body)
-	fi
-
 	To=$(get_destination_address)
+
+	Body=$(get_body)
 
 	## build sed patterns list.
 	Patterns="s/{{HOST}}/$Host/;s/{{PORT}}/$Port/;s/{{USERNAME}}/$Username/;s/{{PASSWORD}}/$Password/;s/{{TO}}/$To/;s/{{BODY}}/$Body/;s/{{DRLMASK}}/$DlrMask/"
