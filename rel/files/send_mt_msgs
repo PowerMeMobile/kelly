@@ -1,6 +1,6 @@
 #!/bin/bash
 
-UrlFmt="http://{{HOST}}:{{PORT}}/cgi-bin/sendsms?username={{USERNAME}}&password={{PASSWORD}}&to=%2B{{NETWORK}}{{NUMBER}}&text={{BODY}}&dlr-mask={{DRLMASK}}"
+UrlFmt="http://{{HOST}}:{{PORT}}/cgi-bin/sendsms?username={{USERNAME}}&password={{PASSWORD}}&to={{TO}}&text={{BODY}}&dlr-mask={{DRLMASK}}"
 Host=localhost
 Port=13003
 Username=test
@@ -83,8 +83,12 @@ while [ $Index -lt $Count ] || [ $Index -eq $Count ]; do
 	if [ $Same -eq 0 ]; then
 		Body=$(generate_random_body)
 	fi
+
+	## build To
+	To="%2B$Network$Number"
+
 	## build sed patterns list.
-	Patterns="s/{{HOST}}/$Host/;s/{{PORT}}/$Port/;s/{{USERNAME}}/$Username/;s/{{PASSWORD}}/$Password/;s/{{NETWORK}}/$Network/;s/{{NUMBER}}/$Number/;s/{{BODY}}/$Body/;s/{{DRLMASK}}/$DlrMask/"
+	Patterns="s/{{HOST}}/$Host/;s/{{PORT}}/$Port/;s/{{USERNAME}}/$Username/;s/{{PASSWORD}}/$Password/;s/{{TO}}/$To/;s/{{BODY}}/$Body/;s/{{DRLMASK}}/$DlrMask/"
 	## build the url.
 	Url=$(echo $UrlFmt | sed -e $Patterns)
 	wget $Url $Quiet -O /dev/null
