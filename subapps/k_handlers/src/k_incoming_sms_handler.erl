@@ -40,49 +40,59 @@ process_incoming_sms_request(IncomingSmsRequest = #'IncomingSm'{
 		ton = TON,
 		npi = NPI
 	} = DestAddr,
-	case k_addr2cust:resolve(#addr{addr = Addr, ton = TON, npi = NPI}) of
-		{ok, CustomerId, UserId} ->
-			?log_debug("Got incoming message for [cust:~p; user: ~p] (addr:~p, ton:~p, npi:~p)",
-				[CustomerId, UserId, Addr, TON, NPI] ),
-			Encoding = case DataCoding of
-			   -1 -> {text, default};
-				0 -> {text, gsm0338};
-				1 -> {text, ascii};
-				3 -> {text, latin1};
-				8 -> {text, ucs2};
-				_ -> {other, DataCoding}
-			end,
-			%% generate new id.
-			ItemId = k_uuid:to_string(k_uuid:newid()),
-			%% register it to futher sending.
-			Batch = k_funnel_asn_helper:render_outgoing_batch(
-				ItemId, SourceAddr, DestAddr, MessageBody, Encoding),
-			k_mailbox:register_incoming_item(
-				ItemId, CustomerId, UserId, <<"OutgoingBatch">>, Batch),
-			?log_debug("Incomming message registered [item:~p]", [ItemId]),
-			%% build OutputId.
-			OutputId = {GatewayId, ItemId},
-			%% build msg_info out of available data
-			MsgInfo = #msg_info{
-				id = ItemId,
-				customer_id = CustomerId,
-				type = regular,
-				encoding = Encoding,
-				body = iolist_to_binary(MessageBody),
-				src_addr = transform_addr(SourceAddr),
-				dst_addr = transform_addr(DestAddr),
-				registered_delivery = false
-			},
-			?log_debug("~p", [MsgInfo]),
-			%% determine receiving time.
-			Time = k_datetime:utc_unix_epoch(),
-			%% store it.
-			store_incoming_msg_info(OutputId, MsgInfo, Time),
-			?log_debug("Incoming message stored: out:~p", [OutputId]);
-	    Result ->
-			?log_debug("Resolve result: ~p", [Result]),
-			?log_debug("Could not resolve incoming message to (addr:~p, ton:~p, npi:~p)", [Addr, TON, NPI])
+	%% generate new id.
+	ItemId = k_uuid:to_string(k_uuid:newid()),
+	%% transform encoding.
+	Encoding = case DataCoding of
+	   -1 -> {text, default};
+		0 -> {text, gsm0338};
+		1 -> {text, ascii};
+		3 -> {text, latin1};
+		8 -> {text, ucs2};
+		_ -> {other, DataCoding}
 	end,
+	%% try to determine customer id and user id,
+	%% this will return either valid customer id or `undefined'.
+	%% i think it makes sense to store even partly filled message.
+	CustomerId =
+		case k_addr2cust:resolve(#addr{addr = Addr, ton = TON, npi = NPI}) of
+			{ok, CustId, UserId} ->
+				?log_debug("Got incoming message for [cust:~p; user: ~p] (addr:~p, ton:~p, npi:~p)",
+					[CustId, UserId, Addr, TON, NPI] ),
+				%% register it to futher sending.
+				Batch = k_funnel_asn_helper:render_outgoing_batch(
+					ItemId, SourceAddr, DestAddr, MessageBody, Encoding),
+				k_mailbox:register_incoming_item(
+					ItemId, CustId, UserId, <<"OutgoingBatch">>, Batch),
+				?log_debug("Incomming message registered [item:~p]", [ItemId]),
+				%% return valid customer.
+				CustId;
+	    Error ->
+			?log_debug("Address resolution failed with: ~p", [Error]),
+			?log_debug("Could not resolve incoming message to (addr:~p, ton:~p, npi:~p)", [Addr, TON, NPI]),
+			%% return `undefined' customer.
+			undefined
+	end,
+	%% build OutputId.
+	OutputId = {GatewayId, ItemId},
+	%% build msg_info out of available data
+	MsgInfo = #msg_info{
+		id = ItemId,
+		gateway_id = GatewayId,
+		customer_id = CustomerId,
+		type = regular,
+		encoding = Encoding,
+		body = iolist_to_binary(MessageBody),
+		src_addr = transform_addr(SourceAddr),
+		dst_addr = transform_addr(DestAddr),
+		registered_delivery = false
+	},
+	?log_debug("~p", [MsgInfo]),
+	%% determine receiving time.
+	Time = k_datetime:utc_unix_epoch(),
+	%% store it.
+	store_incoming_msg_info(OutputId, MsgInfo, Time),
+	?log_debug("Incoming message stored: out:~p", [OutputId]),
 	{ok, []}.
 
 transform_addr(#'FullAddr'{

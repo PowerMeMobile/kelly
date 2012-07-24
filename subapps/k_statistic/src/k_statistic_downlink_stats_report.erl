@@ -1,6 +1,8 @@
--module(k_statistic_downlink_stats).
+-module(k_statistic_downlink_stats_report).
 
--export([get_stats/0]).
+-export([
+	get_report/0
+]).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("k_common/include/FunnelAsn.hrl").
@@ -9,8 +11,8 @@
 %% API
 %% ===================================================================
 
--spec get_stats() -> {ok, Report::term()} | {error, Reason::term()}.
-get_stats() ->
+-spec get_report() -> {ok, Report::term()} | {error, Reason::term()}.
+get_report() ->
 	%% connect and make channel.
 	Params = #amqp_params_network{
 		host = "127.0.0.1",

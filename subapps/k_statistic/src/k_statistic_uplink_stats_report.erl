@@ -1,6 +1,8 @@
--module(k_statistic_uplink_stats).
+-module(k_statistic_uplink_stats_report).
 
--export([get_stats/0]).
+-export([
+	get_report/0
+]).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
@@ -9,8 +11,8 @@
 %% API
 %% ===================================================================
 
--spec get_stats() -> {ok, Report::term()} | {error, Reason::term()}.
-get_stats() ->
+-spec get_report() -> {ok, Report::term()} | {error, Reason::term()}.
+get_report() ->
 	case k_config:get_gateways() of
 		{ok, GtwList} ->
 			{ok, GtwPropLists} = prepare_gtws(GtwList),

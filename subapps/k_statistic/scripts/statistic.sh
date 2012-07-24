@@ -1,15 +1,19 @@
 #!/bin/bash
 
+Today=`date +%Y-%m-%d`
+From="${Today}T00:00"
+To="${Today}T23:59"
+
 #
 # Statistical interface for statuses
 #
 
 # All
-curl "http://localhost:8080/report/status?from=2012-07-13T00:00&to=2012-07-13T23:59"
+curl "http://localhost:8080/report/statuses?from=${From}&to=${To}"
 echo; echo
 
 # By status
-curl "http://localhost:8080/report/status?from=2012-07-13T00:00&to=2012-07-13T23:59&status=delivered"
+curl "http://localhost:8080/report/statuses?from=${From}&to=${To}&status=delivered"
 echo; echo
 
 #
@@ -25,20 +29,21 @@ curl "http://localhost:8080/report/downlink"
 echo; echo
 
 #
-# Statistical interface for Customers, Networks, Gateways
+# Statistical interface for Messages
+#
+curl "http://localhost:8080/report/messages/details?from=${From}&to=${To}&slice_length=M60"
+echo; echo
+
+#
+# Statistical interface for Customers, Networks
 #
 
 # Customers
-curl "http://localhost:8080/report/1?from=2012-07-13T00:00&to=2012-07-13T23:59"
+curl "http://localhost:8080/report/messages/customers?from=${From}&to=${To}"
 echo; echo
 
 # Networks
-curl "http://localhost:8080/report/2?from=2012-07-13T00:00&to=2012-07-13T23:59"
-echo; echo
-
-# Gateways
-
-curl "http://localhost:8080/report/gateways?from=2012-07-13T00:00&to=2012-07-13T23:59"
+curl "http://localhost:8080/report/messages/networks?from=${From}&to=${To}"
 echo; echo
 
 #

@@ -6,7 +6,8 @@
 -export([
 	start_link/0,
 	get_nodes/0,
-	ensure_table/2
+	ensure_table/2,
+	ensure_table/3
 ]).
 
 %% gen_server callbacks
@@ -37,16 +38,28 @@ get_nodes() ->
 	{ok, Nodes} = gen_server:call(?MODULE, get_nodes),
 	Nodes.
 
-ensure_table(Tab, RecordInfo) ->
-	ok = case mnesia:create_table(Tab, [
+ensure_table(TableName, RecordInfo) ->
+	ok = case mnesia:create_table(TableName, [
 					{disc_copies, get_nodes()},
 					{attributes, RecordInfo}]) of
 			{atomic, ok} ->
 				ok;
-			{aborted, {already_exists, Tab}} ->
+			{aborted, {already_exists, TableName}} ->
 				ok
 		 end,
-    ok = mnesia:wait_for_tables([Tab], infinity).
+    ok = mnesia:wait_for_tables([TableName], infinity).
+
+ensure_table(TableName, RecordName, RecordInfo) ->
+	ok = case mnesia:create_table(TableName, [
+					{disc_copies, get_nodes()},
+					{record_name, RecordName},
+					{attributes, RecordInfo}]) of
+			{atomic, ok} ->
+				ok;
+			{aborted, {already_exists, TableName}} ->
+				ok
+		 end,
+    ok = mnesia:wait_for_tables([TableName], infinity).
 
 %% ===================================================================
 %% gen_server callbacks
