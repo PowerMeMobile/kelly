@@ -99,7 +99,7 @@ handle(Req, Update = #update{}, State = #state{id = GtwUUID}) ->
 handle(_Req, #delete{}, State = #state{id = Id}) ->
 	k_snmp:del_row(gtw, Id),
 	ok = k_config:del_gateway(Id),
-	{ok, {http_code, 204}, State}.
+	{http_code, 204, State}.
 
 terminate(_Req, _State = #state{}) ->
     ok.
