@@ -116,7 +116,7 @@ allowedSources ->
 
 example:
 127.0.0.1:8080/customer
-request body: id=test-sys-id&uuid=feda5822-5271-11e1-bd27-001d0947ec73&priority=1&rps=300&allowed_sources=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200
+request body: id=test-sys-id&uuid=feda5822-5271-11e1-bd27-001d0947ec73&priority=1&rps=300&allowed_sources=375296662323,0,0&default_source=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200
 
 PUT     /customer/:id     update customer, exclude customer user (not implemented yet)
 
