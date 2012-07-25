@@ -47,25 +47,25 @@
 -record(delete, {
 }).
 
-init(_Req, 'GET', [<<"gateways">>, GtwIDBin, <<"connections">>]) ->
+init(_Req, 'GET', [_, GtwIDBin, _]) ->
 	GtwID = binary_to_list(GtwIDBin),
 	{ok, #get{}, #state{gtwid = GtwID, cnnid = all}};
 
-init(_Req, 'GET', [<<"gateways">>, GtwIDBin, <<"connections">>, ConnIDBin]) ->
+init(_Req, 'GET', [_, GtwIDBin, _, ConnIDBin]) ->
 	GtwID = binary_to_list(GtwIDBin),
 	ConnID = list_to_integer(binary_to_list(ConnIDBin)),
 	{ok, #get{}, #state{gtwid = GtwID, cnnid = ConnID}};
 
-init(_Req, 'POST', [<<"gateways">>, GtwIDBin, <<"connections">>]) ->
+init(_Req, 'POST', [_, GtwIDBin, _]) ->
 	GtwID = binary_to_list(GtwIDBin),
 	{ok, #create{}, #state{gtwid = GtwID}};
 
-init(_Req, 'PUT', [<<"gateways">>, GtwIDBin, <<"connections">>, ConnIDBin]) ->
+init(_Req, 'PUT', [_, GtwIDBin, _, ConnIDBin]) ->
 	GtwID = binary_to_list(GtwIDBin),
 	ConnID = list_to_integer(binary_to_list(ConnIDBin)),
 	{ok, #update{}, #state{gtwid = GtwID, cnnid = ConnID}};
 
-init(_Req, 'DELETE', [<<"gateways">>, GtwIDBin, <<"connections">>, ConnIDBin]) ->
+init(_Req, 'DELETE', [_, GtwIDBin, _, ConnIDBin]) ->
 	GtwID = binary_to_list(GtwIDBin),
 	ConnID = list_to_integer(binary_to_list(ConnIDBin)),
 	{ok, #delete{}, #state{gtwid = GtwID, cnnid = ConnID}};
