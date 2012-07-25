@@ -81,12 +81,18 @@ handle(_Req, #get{}, State = #state{id = CustSysID}) ->
 			{ok, {error, io_lib:format("~p", [Any])}, State}
 	end;
 
+%% customer's `rps' setting is disabled.
+%% see http://extranet.powermemobile.com/issues/17465 for detail.
+handle(_Req, #create{rps = RPS}, State) when RPS =/= undefined ->
+	Res = {error, rps_setting_unavailable_in_open_alley},
+	{ok, {result, io_lib:format("~p", [Res])}, State};
+
 handle(_Req, #create{
 	id = Id,
 	uuid = UUID,
 	name = Name,
 	priority = Priority,
-	rps = Rps,
+	rps = RPS,
 	allowedSources = AddrString,
 	defaultSource = DefaultSource,
 	networks = NetworksString,
@@ -96,14 +102,14 @@ handle(_Req, #create{
 	defaultValidity = DefaultValidity,
 	maxValidity = MaxValidity,
 	state = CustState
-}, State = #state{}) ->
+}, State = #state{}) when RPS =:= undefined ->
 
 	Customer = #customer{
 		id = Id,
 		uuid = UUID,
 		name = Name,
 		priority = Priority,
-		rps = Rps,
+		rps = RPS,
 		allowedSources = decode_addrs(AddrString),
 		defaultSource = decode_addr(DefaultSource),
 		networks = decode_networks(NetworksString),
@@ -117,7 +123,8 @@ handle(_Req, #create{
 	},
 
 	k_snmp:set_row(cst, UUID, [
-		{cstRPS, Rps},
+		%% rps is disabled, see above
+		%% {cstRPS, RPS},
 		{cstPriority, Priority}]),
 
 	Res = k_aaa:set_customer(Id, Customer),
