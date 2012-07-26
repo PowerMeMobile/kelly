@@ -52,25 +52,25 @@ get_customer_by_id(CustomerId) ->
 del_customer(CustomerId) ->
 	k_aaa_customers:del_customer(CustomerId).
 
--spec get_customer_user(#customer{}, string()) -> {ok, #user{}} | {error, no_entry} | {error, term()}.
-get_customer_user(#customer{users = UserList}, UserName) ->
-	find_user(UserList, UserName).
+-spec get_customer_user(#customer{}, UserID :: string()) -> {ok, #user{}} | {error, no_entry} | {error, term()}.
+get_customer_user(#customer{users = UserList}, UserID) ->
+	find_user(UserList, UserID).
 
 -spec set_customer_user(#user{}, customer_id()) -> ok | {error, no_entry} | {error, term()}.
-set_customer_user(User = #user{id = UserId}, SystemId) ->
-	case get_customer_by_system_id(SystemId) of
+set_customer_user(User = #user{id = UserId}, CustomerUUID) ->
+	case get_customer_by_id(CustomerUUID) of
 		{ok, Customer = #customer{users = Users}} ->
-			NewUsers = lists:keydelete(UserId, 2, Users),
-			set_customer(SystemId, Customer#customer{users = [User | NewUsers]});
+			NewUsers = lists:keydelete(UserId, #user.id, Users),
+			k_aaa_customers:set_customer(CustomerUUID, Customer#customer{users = [User | NewUsers]});
 		Error -> Error
 	end.
 
 -spec del_customer_user(customer_id(), user_id()) -> ok | {error, no_entry} | {error, term()}.
-del_customer_user(SysCustomerId, UserId) ->
-	case get_customer_by_system_id(SysCustomerId) of
+del_customer_user(CustomerUUID, UserId) ->
+	case get_customer_by_id(CustomerUUID) of
 		{ok, Customer = #customer{users = Users}} ->
 			NewUsers = delete_user(Users, UserId),
-			set_customer(SysCustomerId, Customer#customer{users = NewUsers});
+			k_aaa_customers:set_customer(CustomerUUID, Customer#customer{users = NewUsers});
 		Error ->
 			Error
 	end.

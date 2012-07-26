@@ -49,7 +49,9 @@ handle(Req, State = #state{
 	{Method, _} = cowboy_http_req:method(Req),
 	ReqPropList =
 		case Method of
-			'POST' ->
+			Method when Method == 'POST'
+						orelse
+						Method == 'PUT' ->
 				{BodyQs, _} = cowboy_http_req:body_qs(Req),
 				{QsVals, _} = cowboy_http_req:qs_vals(Req),
 				BodyQs ++ QsVals;
