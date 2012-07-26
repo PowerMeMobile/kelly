@@ -22,7 +22,7 @@
 	system_id = {mandatory, <<"system_id">>, list},
 	name = {mandatory, <<"name">>, list},
 	%% priority = {optional, <<"priority">>, integer}, %% obsolete
-	rps = {mandatory, <<"rps">>, integer},
+	rps = {optional, <<"rps">>, integer},
 	originators = {mandatory, <<"originators">>, list},
 	default_originator = {mandatory, <<"default_originator">>, list},
 	networks = {mandatory, <<"networks">>, list},
@@ -97,6 +97,13 @@ handle(_Req, #get{}, State = #state{id = CustSysID}) ->
 			{http_code, 500, State}
 	end;
 
+%% customer's `rps' setting is disabled.
+%% see http://extranet.powermemobile.com/issues/17465 for detail.
+handle(_Req, #create{rps = RPS}, State) when RPS =/= undefined ->
+	{http_code, 500, [{error, "RPS setting unavailable in OpenAlley"}], State};
+handle(_Req, #update{rps = RPS}, State) when RPS =/= undefined ->
+	{http_code, 500, [{error, "RPS setting unavailable in OpenAlley"}], State};
+
 handle(Req, Create = #create{id = undefined}, State) ->
 	UUID = k_uuid:to_string(k_uuid:newid()),
 	create_customer(Req, Create#create{id = UUID}, State);
@@ -121,8 +128,6 @@ handle(Req, Update = #update{}, State = #state{id = ID}) ->
 			?log_debug("Unexpected error: ~p", [Error]),
 			{http_code, 500, State}
 	end;
-
-	%% {ok, {result, error}, State};
 
 handle(_Req, #delete{}, State = #state{id = UUID}) ->
 	case k_aaa:get_customer_by_id(UUID) of
@@ -168,10 +173,9 @@ update_customer(_Req, Update, State = #state{customer = Customer}) ->
 		maxValidity = NewMaxValidity,
 		users = Customer#customer.users
 	},
-	Priority = 0,
-	k_snmp:set_row(cst, Customer#customer.uuid, [
-		{cstRPS, NewRPS},
-		{cstPriority, Priority}]),
+	%% k_snmp:set_row(cst, Customer#customer.uuid, [
+	%% 	{cstRPS, NewRPS},
+	%% 	{cstPriority, Priority}]),
 	ok = k_aaa:set_customer(Customer#customer.id, NewCustomer),
 	{ok, [CustPropList]} = prepare({Customer#customer.uuid, NewCustomer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
@@ -185,7 +189,6 @@ resolve(NewValue, _Value) ->
 create_customer(_Req, Create, State) ->
 	UUID = Create#create.id,
 	RPS = Create#create.rps,
-	Priority = 0,
 	System_id = Create#create.system_id,
 	Customer = #customer{
 		id = System_id,
@@ -203,9 +206,9 @@ create_customer(_Req, Create, State) ->
 		maxValidity = Create#create.max_validity,
 		users = []
 	},
-	k_snmp:set_row(cst, UUID, [
-		{cstRPS, RPS},
-		{cstPriority, Priority}]),
+	%% k_snmp:set_row(cst, UUID, [
+	%% 	{cstRPS, RPS},
+	%% 	{cstPriority, Priority}]),
 	ok = k_aaa:set_customer(System_id, Customer),
 	{ok, [CustPropList]} = prepare({UUID, Customer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
@@ -233,35 +236,25 @@ prepare([{_UUID, Customer = #customer{}} | Rest], Acc) ->
 		allowedSources = OriginatorsList,
 		defaultSource = DefaultSource,
 		users = UsersList
-			} = Customer,
+	} = Customer,
 
 	%% convert users records to proplists
 	UserFun = ?record_to_proplist(user),
-	UsersPropList = lists:map(fun(User)->
-		UserPropList = UserFun(User),
-		proplists:delete(pswd_hash, UserPropList)
+	UsersPropList = lists:map(
+		fun(User)->
+			UserPropList = UserFun(User),
+			proplists:delete(pswd_hash, UserPropList)
 		end, UsersList),
 
-	%% originators constuctor
+	%% originators constructor
 	AddrFun = ?record_to_proplist(addr),
 
-	OriginatorsPropList = lists:map(fun(Originator)->
-		AddrFun(Originator)
+	OriginatorsPropList = lists:map(
+		fun(Originator)->
+			AddrFun(Originator)
 		end, OriginatorsList),
 
-    %% MSISDNS constructor
-	%% UserID = undefined,
-    %% {ok, MSISDNSPropLists} =
-    %% case k_addr2cust:available_addresses(UUID, UserID) of
-	%% 	{ok, []} -> {ok, null};
-	%%     {ok, MSISDNSList} ->
-	%% 		{ok, lists:map(fun(MSISDN)->
-	%% 			AddrFun(MSISDN)
-	%% 		end, MSISDNSList)}
-	%% end,
-
-
-	%% defaultSource field validation
+ 	%% defaultSource field validation
 	DefSourcePropList =
 		case DefaultSource of
 			undefined ->
@@ -279,7 +272,6 @@ prepare([{_UUID, Customer = #customer{}} | Rest], Acc) ->
 											}),
 	?log_debug("CustomerPropList: ~p", [CustomerPropList]),
 	prepare(Rest, [translate(CustomerPropList) | Acc]).
-
 
 %% convert "addr,ton,npi;addr,ton,npi" to [#addr{}]
 decode_address(undefined) ->
