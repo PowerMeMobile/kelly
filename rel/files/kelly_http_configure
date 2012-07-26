@@ -40,7 +40,7 @@ echo -n 'id=3b25cd8e-5eca-11e1-bf77-00269e42f7a5&country_code=375&numbers_len=12
 #
 
 # kannel
-echo -n 'name=test-sys-id&state=1&id=test-sys-id&uuid=feda5822-5271-11e1-bd27-001d0947ec73&priority=1&rps=2000&allowed_sources=375296662323,1,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer; echo
+echo -n 'name=test-sys-id&system_id=test-sys-id&id=feda5822-5271-11e1-bd27-001d0947ec73&rps=2000&originators=375296662323,1,0&networks=920a009a-5270-11e1-b961-001d0947ec73,3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=70000&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296662323,1,0' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
 
 # kannel's users
 echo -n 'id=user&pswd=password&permitted_smpp_types=transmitter,receiver,transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customer/test-sys-id/user; echo

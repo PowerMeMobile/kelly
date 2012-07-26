@@ -116,15 +116,19 @@ parse_params([{mandatory, Pattern, Type} | Tail], Accum, ReqPropList) ->
 	end;
 
 parse_params([{optional, Pattern, Type} | Tail], Accum, ReqPropList) ->
-	Value = proplists:get_value(Pattern, ReqPropList, undefined),
-		try
-			Converted = convert(Value, Type),
-			parse_params(Tail, [Converted | Accum], ReqPropList)
-		catch
-			_:_ ->
-				?log_error("Invalid [~s] parameter value", [binary_to_list(Pattern)]),
-				{exception, 'svc0001', [Pattern]}
-		end.
+	case proplists:get_value(Pattern, ReqPropList, undefined) of
+		undefined ->
+			parse_params(Tail, [undefined | Accum], ReqPropList);
+		Value ->
+			try
+				Converted = convert(Value, Type),
+				parse_params(Tail, [Converted | Accum], ReqPropList)
+			catch
+				_:_ ->
+					?log_error("Invalid [~s] parameter value", [binary_to_list(Pattern)]),
+					{exception, 'svc0001', [Pattern]}
+			end
+	end.
 
 convert(Any, boolean) ->
 	convert_boolean(Any);
