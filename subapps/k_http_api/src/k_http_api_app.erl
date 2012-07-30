@@ -19,12 +19,12 @@ start(_StartType, _StartArgs) ->
     	{'_', [
             {[<<"message_status">>, '_', <<"customer">>, '...'], gen_cowboy_restful, [k_http_api_handler_message_status]},
 
-            {[<<"gateways">>, '_', <<"connections">>, '...'], gen_cowboy_restful, [k_http_api_handler_connections]},
-            {[<<"gateways">>, '...'], gen_cowboy_restful, [k_http_api_handler_gateways]},
+            {[<<"gateways">>, '_', <<"connections">>, '...'], gen_cowboy_crud, [k_http_api_handler_connections]},
+            {[<<"gateways">>, '...'], gen_cowboy_crud, [k_http_api_handler_gateways]},
             {[<<"customers">>, '_', <<"users">>, '...'], gen_cowboy_restful, [k_http_api_handler_users]},
             {[<<"customers">>, '...'], gen_cowboy_restful, [k_http_api_handler_customers]},
             {[<<"networks">>, '...'], gen_cowboy_restful, [k_http_api_handler_networks]},
-            {[<<"providers">>, '...'], gen_cowboy_restful, [k_http_api_handler_providers]},
+            {[<<"providers">>, '...'], gen_cowboy_crud, [k_http_api_handler_providers]},
 
 			{[<<"report">>, <<"uplink">>], gen_cowboy_restful, [k_http_api_handler_uplink_stats]},
 			{[<<"report">>, <<"downlink">>], gen_cowboy_restful, [k_http_api_handler_downlink_stats]},

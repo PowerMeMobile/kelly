@@ -1,149 +1,154 @@
 
 -module(k_http_api_handler_gateways).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("gen_cowboy_restful_spec.hrl").
+-include("crud.hrl").
 
--record(state, {
-	id :: list() | all
-}).
+init() ->
 
-%%% REST parameters
--record(get, {
-}).
+	Read = [#method_spec{
+				path = [<<"gateways">>, id],
+				params = [#param{name = id, mandatory = true, repeated = false, type = string_uuid}]},
+			#method_spec{
+				path = [<<"gateways">>],
+				params = []}],
 
--record(create, {
-		id = {optional, <<"id">>, string_uuid},
-		name = {mandatory, <<"name">>, list},
-		rps = {mandatory, <<"rps">>, integer}
-}).
+	UpdateParams = [
+		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = name,	mandatory = false, repeated = false, type = string},
+		#param{name = rps, mandatory = fasle, repeated = false, type = integer}
+	],
+	Update = #method_spec{
+				path = [<<"gateways">>, id],
+				params = UpdateParams},
 
--record(update, {
-		name = {optional, <<"name">>, list},
-		rps = {optional, <<"rps">>, integer}
-}).
+	DeleteParams = [
+		#param{name = id, mandatory = true, repeated = false, type = string_uuid}
+	],
+	Delete = #method_spec{
+				path = [<<"gateways">>, id],
+				params = DeleteParams},
 
--record(delete, {
-}).
+	CreateParams = [
+		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
+		#param{name = name,	mandatory = true, repeated = false,	type = string},
+		#param{name = rps, mandatory = true, repeated = false, type = integer}
+	],
+	Create = #method_spec{
+				path = [<<"gateways">>],
+				params = CreateParams},
 
-init(_Req, 'GET', [<<"gateways">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #get{}, #state{id = Id}};
+		{ok, #specs{
+			create = Create,
+			read = Read,
+			update = Update,
+			delete = Delete
+		}}.
 
-init(_Req, 'GET', [<<"gateways">>]) ->
-	{ok, #get{}, #state{id = all}};
+read(Params) ->
+	UUID = ?gv(id, Params),
+	case UUID of
+		undefined -> read_all();
+		_ -> read_id(UUID)
+	end.
 
-init(_Req, 'POST', [<<"gateways">>]) ->
-	{ok, #create{}, #state{}};
+create(Params) ->
+	case ?gv(id, Params) of
+		undefined ->
+			UUID = k_uuid:to_string(k_uuid:newid()),
+			create_gtw(lists:keyreplace(id, 1, Params, {id, UUID}));
+		_Value ->
+			is_exist(Params)
+	end.
 
-init(_Req, 'PUT', [<<"gateways">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #update{}, #state{id = Id}};
-
-init(_Req, 'DELETE', [<<"gateways">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #delete{}, #state{id = Id}};
-
-init(_Req, HttpMethod, Path) ->
-	?log_warn("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
-
-handle(_Req, #get{}, State = #state{id = all}) ->
-	case k_config:get_gateways() of
-		{ok, GtwList} ->
-			{ok, GtwPropLists} = prepare_gtws(GtwList),
-			?log_debug("GtwPropLists: ~p", [GtwPropLists]),
-			{ok, {gateways, GtwPropLists}, State};
-		{error, no_entry} ->
-			{exception, 'svc0003', [], State}
-   	end;
-
-handle(_Req, #get{}, State = #state{id = GtwUUID}) ->
-	case k_config:get_gateway(GtwUUID) of
-		{ok, Gtw = #gateway{}} ->
-			{ok, [GtwPropList]} = prepare_gtws([{GtwUUID, Gtw}]),
-			?log_debug("GtwPropList: ~p", [GtwPropList]),
-			{ok, GtwPropList, State};
-		{error, no_entry} ->
-			{exception, 'svc0003', [], State}
-	end;
-
-handle(Req, Params = #create{id = undefined}, State = #state{}) ->
-	UUID = k_uuid:to_string(k_uuid:newid()),
-	create_gtw(Req, Params#create{id=UUID}, State);
-handle(Req, Params = #create{id = UUID}, State = #state{}) ->
+update(Params) ->
+	UUID = ?gv(id, Params),
 	case k_config:get_gateway(UUID) of
-		{ok, #gateway{}} ->
-			?log_warn("Gateway already exist. Abort.", []),
-			{exception, 'svc0004', [], State};
-		{error, no_entry} ->
-			create_gtw(Req, Params, State)
-	end;
-
-handle(Req, Update = #update{}, State = #state{id = GtwUUID}) ->
-	case k_config:get_gateway(GtwUUID) of
 		{ok, Gtw = #gateway{}} ->
-			update_gtw(Req, Update, Gtw, State);
-			%% {ok, [GtwPropList]} = prepare_gtws([{GtwUUID, Gtw}]),
-			%% ?log_debug("GtwPropList: ~p", [GtwPropList]),
-			%% {ok, GtwPropList, State};
+			update_gtw(Gtw, Params);
 		{error, no_entry} ->
-			{exception, 'svc0004', [], State}
-	end;
+			{exception, 'svc0004'}
+	end.
 
-handle(_Req, #delete{}, State = #state{id = Id}) ->
-	k_snmp:del_row(gtw, Id),
-	ok = k_config:del_gateway(Id),
-	{http_code, 204, State}.
-
-terminate(_Req, _State = #state{}) ->
-    ok.
+delete(Params) ->
+	UUID = ?gv(id, Params),
+	k_snmp:del_row(gtw, UUID),
+	ok = k_config:del_gateway(UUID),
+	{http_code, 204}.
 
 %% ===================================================================
 %% Local Functions Definitions
 %% ===================================================================
 
-update_gtw(_Req, Update, Gtw, State = #state{id = UUID}) ->
-	#update{
-		rps = ReqRPS,
-		name = ReqName} = Update,
-	?log_debug("Update: ~p", [Update]),
+read_all() ->
+	case k_config:get_gateways() of
+		{ok, GtwList} ->
+			{ok, GtwPropLists} = prepare_gtws(GtwList),
+			?log_debug("GtwPropLists: ~p", [GtwPropLists]),
+			{ok, {gateways, GtwPropLists}};
+		{error, no_entry} ->
+			{exception, 'svc0003'}
+   	end.
+
+read_id(GtwUUID) ->
+	case k_config:get_gateway(GtwUUID) of
+		{ok, Gtw = #gateway{}} ->
+			{ok, [GtwPropList]} = prepare_gtws([{GtwUUID, Gtw}]),
+			?log_debug("GtwPropList: ~p", [GtwPropList]),
+			{ok, GtwPropList};
+		{error, no_entry} ->
+			{exception, 'svc0003'}
+	end.
+
+is_exist(Params) ->
+	UUID = ?gv(id, Params),
+	case k_config:get_gateway(UUID) of
+		{ok, #gateway{}} ->
+			?log_warn("Gateway already exist. Abort.", []),
+			{exception, 'svc0004'};
+		{error, no_entry} ->
+			create_gtw(Params)
+	end.
+
+update_gtw(Gtw, Params) ->
+	UUID = ?gv(id, Params),
 	#gateway{rps = RPS, name = Name, connections = Conns} = Gtw,
-	NewRPS = resolve_parameter(ReqRPS, RPS),
-	NewName = resolve_parameter(ReqName, Name),
+	NewRPS = resolve(rps, Params, RPS),
+	?log_debug("NewRPS: ~p", [NewRPS]),
+	NewName = resolve(name, Params, Name),
 	NewGtw = #gateway{rps = NewRPS, name = NewName, connections = Conns},
 	?log_debug("New gtw: ~p", [NewGtw]),
-	%% Gateway = #gateway{rps = RPS, name = Name},
 	k_snmp:set_row(gtw, UUID, [{gtwName, NewName}, {gtwRPS, NewRPS}]),
 	ok = k_config:set_gateway(UUID, NewGtw),
 	case k_config:get_gateway(UUID) of
 		{ok, NewGtw = #gateway{}} ->
+			?log_debug("NewGtw: ~p", [NewGtw]),
 			{ok, [GtwPropList]} = prepare_gtws([{UUID, Gtw}]),
 			?log_debug("GtwPropList: ~p", [GtwPropList]),
-			{http_code, 201, GtwPropList, State};
+			{http_code, 201, GtwPropList};
 		{error, no_entry} ->
 			?log_warn("Gateway not found after creation [~p]", [UUID]),
-			{http_code, 500, State};
+			{http_code, 500};
 		Any ->
 			?log_error("Unexpected error: ~p", [Any]),
-			{http_code, 500, State}
+			{http_code, 500}
 	end.
 
-resolve_parameter(undefined, ExistingValue) ->
-	ExistingValue;
-resolve_parameter(NewValue, _ExistingValue) ->
-	NewValue.
-
-create_gtw(_Req, Create, State) ->
-	#create{
-		id = UUID,
-		rps = RPS,
-		name = Name} = Create,
+create_gtw(Params) ->
+	RPS = ?gv(rps, Params),
+	Name = ?gv(name, Params),
+	UUID = ?gv(id, Params),
 	Gateway = #gateway{rps = RPS, name = Name},
 	k_snmp:set_row(gtw, UUID, [{gtwName, Name}, {gtwRPS, RPS}]),
 	ok = k_config:set_gateway(UUID, Gateway),
@@ -151,13 +156,13 @@ create_gtw(_Req, Create, State) ->
 		{ok, Gtw = #gateway{}} ->
 			{ok, [GtwPropList]} = prepare_gtws([{UUID, Gtw}]),
 			?log_debug("GtwPropList: ~p", [GtwPropList]),
-			{http_code, 201, GtwPropList, State};
+			{http_code, 201, GtwPropList};
 		{error, no_entry} ->
 			?log_warn("Gateway not found after creation [~p]", [UUID]),
-			{http_code, 500, State};
+			{http_code, 500};
 		Any ->
 			?log_error("Unexpected error: ~p", [Any]),
-			{http_code, 500, State}
+			{http_code, 500}
 	end.
 
 prepare_gtws(GtwList) when is_list(GtwList) ->

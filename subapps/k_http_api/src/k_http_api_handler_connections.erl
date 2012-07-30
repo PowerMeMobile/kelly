@@ -1,147 +1,160 @@
 -module(k_http_api_handler_connections).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("gen_cowboy_restful_spec.hrl").
+-include("crud_specs.hrl").
 
--record(state, {
-	gtwid :: string(),
-	cnnid :: integer(),
-	gtw :: #gateway{},
-	conn :: #connection{}
-}).
+%% ===================================================================
+%% API Functions
+%% ===================================================================
 
-%%% REST parameters
+init() ->
 
--record(get, {}).
+	Read = [#method_spec{
+				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid},
+						  #param{name = id, mandatory = true, repeated = false, type = integer}]},
+			#method_spec{
+				path = [<<"gateways">>, gateway_id, <<"connections">>],
+				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid}]}],
 
--record(create, {
-	id 			= {optional, <<"id">>, integer},
-	type 		= {mandatory, <<"type">>, integer},
-	addr 		= {mandatory, <<"addr">>, list},
-	port 		= {mandatory, <<"port">>, integer},
-	sys_id 		= {mandatory, <<"sys_id">>, list},
-	pass 		= {mandatory, <<"pass">>, list},
-	sys_type 	= {mandatory, <<"sys_type">>, list},
-	addr_ton 	= {mandatory, <<"addr_ton">>, integer},
-	addr_npi 	= {mandatory, <<"addr_npi">>, integer},
-	addr_range	= {mandatory, <<"addr_range">>, list}
-}).
+	UpdateParams = [
+		#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = integer},
+		#param{name = type, mandatory = false, repeated = false, type = integer},
+		#param{name = addr,	mandatory = false, repeated = false,	type = string},
+		#param{name = port, mandatory = fasle, repeated = false, type = integer},
+		#param{name = sys_id, mandatory = fasle, repeated = false, type = string},
+		#param{name = pass, mandatory = fasle, repeated = false, type = string},
+		#param{name = sys_type, mandatory = fasle, repeated = false, type = string},
+		#param{name = addr_ton, mandatory = fasle, repeated = false, type = integer},
+		#param{name = addr_npi, mandatory = fasle, repeated = false, type = integer},
+		#param{name = addr_range, mandatory = fasle, repeated = false, type = string}
+	],
+	Update = #method_spec{
+				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+				params = UpdateParams},
 
--record(update, {
-	type 		= {optional, <<"type">>, integer},
-	addr 		= {optional, <<"addr">>, list},
-	port 		= {optional, <<"port">>, integer},
-	sys_id 		= {optional, <<"sys_id">>, list},
-	pass 		= {optional, <<"pass">>, list},
-	sys_type 	= {optional, <<"sys_type">>, list},
-	addr_ton 	= {optional, <<"addr_ton">>, integer},
-	addr_npi 	= {optional, <<"addr_npi">>, integer},
-	addr_range	= {optional, <<"addr_range">>, list}
-}).
+	DeleteParams = [
+		#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = integer}
+	],
+	Delete = #method_spec{
+				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+				params = DeleteParams},
 
--record(delete, {
-}).
+	CreateParams = [
+		#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = id, mandatory = false, repeated = false, type = integer},
+		#param{name = type, mandatory = true, repeated = false, type = integer},
+		#param{name = addr,	mandatory = true, repeated = false,	type = string},
+		#param{name = port, mandatory = true, repeated = false, type = integer},
+		#param{name = sys_id, mandatory = true, repeated = false, type = string},
+		#param{name = pass, mandatory = true, repeated = false, type = string},
+		#param{name = sys_type, mandatory = true, repeated = false, type = string},
+		#param{name = addr_ton, mandatory = true, repeated = false, type = integer},
+		#param{name = addr_npi, mandatory = true, repeated = false, type = integer},
+		#param{name = addr_range, mandatory = true, repeated = false, type = string}
+	],
+	Create = #method_spec{
+				path = [<<"gateways">>, gateway_id, <<"connections">>],
+				params = CreateParams},
 
-init(_Req, 'GET', [_, GtwIDBin, _]) ->
-	GtwID = binary_to_list(GtwIDBin),
-	{ok, #get{}, #state{gtwid = GtwID, cnnid = all}};
+		{ok, #specs{
+			create = Create,
+			read = Read,
+			update = Update,
+			delete = Delete
+		}}.
 
-init(_Req, 'GET', [_, GtwIDBin, _, ConnIDBin]) ->
-	GtwID = binary_to_list(GtwIDBin),
-	ConnID = list_to_integer(binary_to_list(ConnIDBin)),
-	{ok, #get{}, #state{gtwid = GtwID, cnnid = ConnID}};
+read(Params) ->
+	ID = ?gv(id, Params),
+	case ID of
+		undefined -> read_all(?gv(gateway_id, Params));
+		_ -> read_id(?gv(gateway_id, Params),ID)
+	end.
 
-init(_Req, 'POST', [_, GtwIDBin, _]) ->
-	GtwID = binary_to_list(GtwIDBin),
-	{ok, #create{}, #state{gtwid = GtwID}};
+create(Params) ->
+	GtwUUID = ?gv(gateway_id, Params),
+	case k_config:get_gateway(GtwUUID) of
+		{ok, Gtw = #gateway{}} ->
+			check_connection_id(Gtw, Params);
+		{error, no_entry} ->
+			{exception, 'svc0003'}
+   	end.
 
-init(_Req, 'PUT', [_, GtwIDBin, _, ConnIDBin]) ->
-	GtwID = binary_to_list(GtwIDBin),
-	ConnID = list_to_integer(binary_to_list(ConnIDBin)),
-	{ok, #update{}, #state{gtwid = GtwID, cnnid = ConnID}};
+update(Params) ->
+	GtwUUID = ?gv(gateway_id, Params),
+	case k_config:get_gateway(GtwUUID) of
+		{ok, Gtw = #gateway{}} ->
+			update_connection(Gtw, Params);
+		{error, no_entry} ->
+			{exception, 'svc0003'}
+   	end.
 
-init(_Req, 'DELETE', [_, GtwIDBin, _, ConnIDBin]) ->
-	GtwID = binary_to_list(GtwIDBin),
-	ConnID = list_to_integer(binary_to_list(ConnIDBin)),
-	{ok, #delete{}, #state{gtwid = GtwID, cnnid = ConnID}};
+delete(Params) ->
+	GtwUUID = ?gv(gateway_id, Params),
+	ConnectionID = ?gv(id, Params),
+	ok = k_config:del_gateway_connection(GtwUUID, ConnectionID),
+	k_snmp:del_row(cnn, GtwUUID ++ [ConnectionID]),
+	{http_code, 204}.
 
-init(_Req, HttpMethod, Path) ->
-	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
+%% ===================================================================
+%% Local Functions
+%% ===================================================================
 
-handle(_Req, #get{}, State = #state{gtwid = GtwId, cnnid = all}) ->
-	case k_config:get_gateway(GtwId) of
+read_all(GatewayID) ->
+	case k_config:get_gateway(GatewayID) of
 		{ok, #gateway{connections = Connections}} ->
 			{ok, ConnsPropList} = prepare_connections(Connections),
 			?log_debug("ConnsPropList: ~p", [ConnsPropList]),
-			{http_code, 200, {connections, ConnsPropList}, State};
+			{http_code, 200, {connections, ConnsPropList}};
 		{error, no_entry} ->
-			{exception, 'svc0003', [], State}
-   	end;
+			{exception, 'svc0003'}
+   	end.
 
-handle(_Req, #get{}, State = #state{gtwid = GtwID, cnnid = ConnID}) ->
-	case k_config:get_gateway(GtwID) of
+read_id(GatewayID, ConnectionID) ->
+	case k_config:get_gateway(GatewayID) of
 		{ok, #gateway{connections = Connections}} ->
-			case get_connection(ConnID, Connections) of
+			case get_connection(ConnectionID, Connections) of
 				undefined ->
-					?log_debug("Connection [~p] not found", [ConnID]),
-					{exception, 'svc0003', [], State};
+					?log_debug("Connection [~p] not found", [ConnectionID]),
+					{exception, 'svc0003'};
 				Connection = #connection{} ->
 					{ok, [ConnPropList]} = prepare_connections(Connection),
 					?log_debug("ConnPropList: ~p", [ConnPropList]),
-					{http_code, 200, ConnPropList, State}
+					{http_code, 200, ConnPropList}
 			end;
 		{error, no_entry} ->
-			{exception, 'svc0003', [], State}
-   	end;
+			{exception, 'svc0003'}
+   	end.
 
-handle(Req, Create = #create{}, State = #state{gtwid = GtwId}) ->
-	case k_config:get_gateway(GtwId) of
-		{ok, Gtw = #gateway{}} ->
-			get_connection(Req, Create, State#state{gtw = Gtw});
-		{error, no_entry} ->
-			{exception, 'svc0003', [], State}
-   	end;
-
-handle(Req, Update = #update{}, State = #state{gtwid = GtwID}) ->
-	case k_config:get_gateway(GtwID) of
-		{ok, Gtw = #gateway{}} ->
-			update_connection(Req, Update, State#state{gtw = Gtw});
-		{error, no_entry} ->
-			{exception, 'svc0003', [], State}
-   	end;
-
-handle(_Req, #delete{}, State = #state{gtwid = GtwId, cnnid = ConnId}) ->
-	ok = k_config:del_gateway_connection(GtwId, ConnId),
-	k_snmp:del_row(cnn, GtwId ++ [ConnId]),
-	{http_code, 204, State}.
-
-terminate(_Req, _State = #state{}) ->
-    ok.
-
-%% ===================================================================
-%% Local Functions Definitions
-%% ===================================================================
-
-update_connection(_Req, Update, State = #state{cnnid = ConnectionID, gtw = Gtw, gtwid = GtwID}) ->
+update_connection(Gtw, Params) ->
+	ConnectionID = ?gv(id, Params),
+	GtwID = ?gv(gateway_id, Params),
 	#gateway{connections = Connections} = Gtw,
 	case get_connection(ConnectionID, Connections) of
-		undefined -> {exception, 'svc0003', [], State};
+		undefined -> {exception, 'svc0003'};
 		Conn = #connection{} ->
-			NewType = resolve(Update#update.type, Conn#connection.type),
-			NewAddr = resolve(Update#update.addr, Conn#connection.addr),
-			NewPort = resolve(Update#update.port, Conn#connection.port),
-			NewSysId = resolve(Update#update.sys_id, Conn#connection.sys_id),
-			NewPass = resolve(Update#update.pass, Conn#connection.pass),
-			NewSysType = resolve(Update#update.sys_type, Conn#connection.sys_type),
-			NewAddrTon = resolve(Update#update.addr_ton, Conn#connection.addr_ton),
-			NewAddrNpi = resolve(Update#update.addr_npi, Conn#connection.addr_npi),
-			NewAddrRange = resolve(Update#update.addr_range, Conn#connection.addr_range),
+			NewType = resolve(type, Params, Conn#connection.type),
+			NewAddr = resolve(addr, Params, Conn#connection.addr),
+			NewPort = resolve(port, Params, Conn#connection.port),
+			NewSysId = resolve(sys_id, Params, Conn#connection.sys_id),
+			NewPass = resolve(pass, Params, Conn#connection.pass),
+			NewSysType = resolve(sys_type, Params, Conn#connection.sys_type),
+			NewAddrTon = resolve(addr_ton, Params, Conn#connection.addr_ton),
+			NewAddrNpi = resolve(addr_npi, Params, Conn#connection.addr_npi),
+			NewAddrRange = resolve(addr_range, Params, Conn#connection.addr_range),
 			NewConnection =
 				#connection{
 					id = ConnectionID,
@@ -171,7 +184,7 @@ update_connection(_Req, Update, State = #state{cnnid = ConnectionID, gtw = Gtw, 
 			    ]),
 			{ok, [ConnPropList]} = prepare_connections(NewConnection),
 			?log_debug("ConnPropList: ~p", [ConnPropList]),
-			{http_code, 200, ConnPropList, State}
+			{http_code, 200, ConnPropList}
 	end.
 
 replace_connection(NewConnection, Connections) ->
@@ -183,10 +196,6 @@ replace_connection(NewConn = #connection{id = ID}, [#connection{id = ID} | Tail]
 replace_connection(NewConn, [Conn | Tail], Acc) ->
 	replace_connection(NewConn, Tail, [Conn | Acc]).
 
-resolve(undefined, Value) ->
-	Value;
-resolve(NewValue, _Value) ->
-	NewValue.
 
 get_next_connection_id(Connections) ->
 	get_next_connection_id(Connections, 0).
@@ -197,19 +206,26 @@ get_next_connection_id([#connection{id = ID} | Tail], MaxID) when ID > MaxID ->
 get_next_connection_id([_ | Tail], MaxID) ->
 	get_next_connection_id(Tail, MaxID).
 
-get_connection(Req, Create = #create{id = undefined}, State = #state{gtw = Gtw}) ->
-	#gateway{connections = Connections} = Gtw,
-	{ok, NextID} = get_next_connection_id(Connections),
-	?log_debug("Next connection id: ~p", [NextID]),
-	create_connection(Req, Create#create{id = NextID}, State);
-get_connection(Req, Create = #create{id = Id}, State = #state{gtw = Gtw}) ->
-	#gateway{connections = Conns} = Gtw,
-	case get_connection(Id, Conns) of
-		Conn = #connection{} ->
-			?log_debug("Connection [~p] already exist", [Id]),
-			{exception, 'svc0004', [], State#state{conn = Conn}};
-		undefined -> create_connection(Req, Create, State)
+check_connection_id(Gtw = #gateway{connections = Connections}, Params) ->
+	case ?gv(id, Params) of
+		undefined ->
+			{ok, NextID} = get_next_connection_id(Connections),
+			?log_debug("Next connection id: ~p", [NextID]),
+			create_connection(lists:keyreplace(id, 1, Params, {id, NextID}));
+		_ ->
+			is_connections_exist(Gtw, Params)
 	end.
+
+is_connections_exist(#gateway{connections = Connections}, Params) ->
+	ConnectionID = ?gv(id, Params),
+	case get_connection(ConnectionID, Connections) of
+		#connection{} ->
+			?log_debug("Connection [~p] already exist", [ConnectionID]),
+			{exception, 'svc0004'};
+		undefined ->
+			create_connection(Params)
+	end.
+
 
 get_connection(_ID, []) ->
 	undefined;
@@ -218,48 +234,47 @@ get_connection(ID, [Conn = #connection{id = ID} | _Tail]) ->
 get_connection(ID, [_Conn | Tail]) ->
 	get_connection(ID, Tail).
 
-create_connection(_Req, #create{
-						id 			= CnnId,
-						type 		= Type,
-						addr 		= Addr,
-						port 		= Port,
-						sys_id 		= SysId,
-						pass 		= Pass,
-						sys_type 	= SysType,
-						addr_ton 	= AddrTon,
-						addr_npi 	= AddrNpi,
-						addr_range	= AddrRange
-					}, State = #state{gtwid = GtwId}) ->
-
+create_connection(Params) ->
+	ConnectionID = ?gv(id, Params),
+	Type = ?gv(type, Params),
+	Addr = ?gv(addr, Params),
+	Port = ?gv(port, Params),
+	SysID = ?gv(sys_id, Params),
+	Pass = ?gv(pass, Params),
+	SysType = ?gv(sys_type, Params),
+	AddrTON = ?gv(addr_ton, Params),
+	AddrNPI= ?gv(addr_npi, Params),
+	AddrRange = ?gv(addr_range, Params),
 	Connection = #connection{
-		id 			= CnnId,
+		id 			= ConnectionID,
 		type 		= Type,
 		addr 		= Addr,
 		port 		= Port,
-		sys_id 		= SysId,
+		sys_id 		= SysID,
 		pass 		= Pass,
 		sys_type 	= SysType,
-		addr_ton 	= AddrTon,
-		addr_npi 	= AddrNpi,
+		addr_ton 	= AddrTON,
+		addr_npi 	= AddrNPI,
 		addr_range	= AddrRange
 	},
-	k_config:set_gateway_connection(GtwId, Connection),
+	GtwUUID = ?gv(gateway_id, Params),
+	k_config:set_gateway_connection(GtwUUID, Connection),
 
-	SnmpConnId = GtwId ++ [CnnId],
+	SnmpConnId = GtwUUID ++ [ConnectionID],
 	k_snmp:set_row(cnn, SnmpConnId,
 		[{cnnType, Type},
 		{cnnAddr, convert_to_snmp_ip(Addr)},
 		{cnnPort, Port},
-		{cnnSystemId, SysId},
+		{cnnSystemId, SysID},
 		{cnnPassword, Pass},
 		{cnnSystemType, SysType},
-		{cnnAddrTon, AddrTon},
-		{cnnAddrNpi, AddrNpi},
+		{cnnAddrTon, AddrTON},
+		{cnnAddrNpi, AddrNPI},
 		{cnnAddrRange, AddrRange}
 	    ]),
 	{ok, [ConnPropList]} = prepare_connections(Connection),
 	?log_debug("ConnPropList: ~p", [ConnPropList]),
-	{http_code, 201, ConnPropList, State}.
+	{http_code, 201, ConnPropList}.
 
 prepare_connections(ConnectionsList) when is_list(ConnectionsList) ->
 	prepare_connections(ConnectionsList, []);
@@ -279,7 +294,6 @@ prepare_connections([Connection = #connection{} | Rest], Acc) ->
 %% convert "127.0.0.1" to [127,0,0,1]
 convert_to_snmp_ip(Addr) when is_list(Addr) ->
 	Tokens = string:tokens(Addr, "."),
-	IP = lists:map(fun(Token)->
+	lists:map(fun(Token)->
 		list_to_integer(Token)
-	end, Tokens),
-	IP.
+	end, Tokens).
