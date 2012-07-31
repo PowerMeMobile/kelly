@@ -194,6 +194,8 @@ process_req(State = #state{req = Req, handler_params = Params, view = V, handler
 
 convert(undefined, _Type) ->
 	undefined;
+convert(SMPPType, smpp_type) ->
+	convert_smpp_type(SMPPType);
 convert(Value, addr) ->
 	?log_debug("Addr: ~p", [Value]),
 	decode_address(Value);
@@ -233,6 +235,13 @@ decode_address(AddrBin) ->
 		ton = list_to_integer(Ton),
 		npi = list_to_integer(Npi)
 	}.
+
+convert_smpp_type(Type) ->
+	case Type of
+		<<"transmitter">> -> transmitter;
+		<<"receiver">> -> receiver;
+		<<"transceiver">> -> transceiver
+	end.
 
 %% ===================================================================
 %% HTTP Response Codes

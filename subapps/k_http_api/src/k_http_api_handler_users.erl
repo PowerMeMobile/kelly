@@ -1,130 +1,121 @@
 -module(k_http_api_handler_users).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("gen_cowboy_restful_spec.hrl").
+-include("crud_specs.hrl").
 
--record(state, {
-	cstid :: string(),
-	usrid :: string(),
-	customer :: #customer{}
-}).
+%% ===================================================================
+%% Callback Functions
+%% ===================================================================
 
-%%% REST parameters
+init() ->
 
--record(get, {}).
+	Read = [#method_spec{
+				path = [<<"customers">>, customer_id, <<"users">>, id],
+				params = [#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid},
+						  #param{name = id, mandatory = true, repeated = false, type = string}]},
+			#method_spec{
+				path = [<<"customers">>, customer_id, <<"users">>],
+				params = [#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid}]}],
 
--record(create, {
-	id			= {mandatory, <<"id">>, list},
-	pswd		= {mandatory, <<"pswd">>, list},
-	smpp_types 	= {mandatory, <<"smpp_types">>, list} %% "transmitter,receiver,transceiver"
-}).
+	UpdateParams = [
+		#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = string},
+		#param{name = pswd, mandatory = false, repeated = false, type = string},
+		#param{name = smpp_type, mandatory = false, repeated = true, type = smpp_type}
+	],
+	Update = #method_spec{
+				path = [<<"customers">>, customer_id, <<"users">>, id],
+				params = UpdateParams},
 
--record(update, {
-	pswd		= {optional, <<"pswd">>, list},
-	smpp_types 	= {optional, <<"smpp_types">>, list} %% "transmitter,receiver,transceiver"
-}).
+	DeleteParams = [
+		#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = string}
+	],
+	Delete = #method_spec{
+				path = [<<"customers">>, customer_id, <<"users">>, id],
+				params = DeleteParams},
 
--record(delete, {}).
+	CreateParams = [
+		#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = string},
+		#param{name = pswd, mandatory = true, repeated = false, type = string},
+		#param{name = smpp_type, mandatory = true, repeated = true, type = smpp_type}
+	],
+	Create = #method_spec{
+				path = [<<"customers">>, customer_id, <<"users">>],
+				params = CreateParams},
 
-init(_Req, 'GET', [_, CstIdBin, _]) ->
-	CstId = binary_to_list(CstIdBin),
-	{ok, #get{}, #state{cstid = CstId, usrid = all}};
+		{ok, #specs{
+			create = Create,
+			read = Read,
+			update = Update,
+			delete = Delete
+		}}.
 
-init(_Req, 'GET', [_, CstIdBin, _, UserIdBin]) ->
-	UserId = binary_to_list(UserIdBin),
-	CstId = binary_to_list(CstIdBin),
-	{ok, #get{}, #state{cstid = CstId, usrid = UserId}};
-
-init(_Req, 'POST', [_, CstIdBin, _]) ->
-	CstId = binary_to_list(CstIdBin),
-	{ok, #create{}, #state{cstid = CstId}};
-
-init(_Req, 'PUT', [_, CstIdBin, _, UserIdBin]) ->
-	CstId = binary_to_list(CstIdBin),
-	UserId = binary_to_list(UserIdBin),
-	{ok, #update{}, #state{cstid = CstId, usrid = UserId}};
-
-init(_Req, 'DELETE', [_, CstIdBin, _, UserIdBin]) ->
-	CstId = binary_to_list(CstIdBin),
-	UserId = binary_to_list(UserIdBin),
-	{ok, #delete{}, #state{cstid = CstId, usrid = UserId}};
-
-init(_Req, HttpMethod, Path) ->
-	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
-
-handle(Req, #get{}, State = #state{cstid = CustID}) ->
+create(Params) ->
+	CustID = ?gv(customer_id, Params),
 	case k_aaa:get_customer_by_id(CustID) of
 		{ok, Customer = #customer{}} ->
-	   		get_customer_user(Req, State#state{customer = Customer});
+	   		create_user(Customer, Params);
 		{error, no_entry} ->
-			{exception, 'svc0003', [], State};
+			{exception, 'svc0003'};
 		Error ->
 			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
-	end;
+			{http_code, 500}
+	end.
 
-handle(Req, Create = #create{}, State = #state{cstid = CustID}) ->
+read(Params) ->
+	CustID = ?gv(customer_id, Params),
 	case k_aaa:get_customer_by_id(CustID) of
 		{ok, Customer = #customer{}} ->
-	   		create_user(Req, Create, State#state{customer = Customer});
+	   		get_customer_user(Customer, ?gv(id, Params));
 		{error, no_entry} ->
-			{exception, 'svc0003', [], State};
+			{exception, 'svc0003'};
 		Error ->
 			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
-	end;
+			{http_code, 500}
+	end.
 
-handle(Req, Update = #update{}, State = #state{cstid = CustID}) ->
+update(Params) ->
+	CustID = ?gv(customer_id, Params),
 	case k_aaa:get_customer_by_id(CustID) of
 		{ok, Customer = #customer{}} ->
-	   		update_user(Req, Update, State#state{customer = Customer});
+	   		update_user(Customer, Params);
 		{error, no_entry} ->
-			{exception, 'svc0003', [], State};
+			{exception, 'svc0003'};
 		Error ->
 			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
-	end;
+			{http_code, 500}
+	end.
 
-handle(_Req, #delete{}, State = #state{cstid = CstId, usrid = UserId}) ->
-	case k_aaa:del_customer_user(CstId, UserId) of
+delete(Params) ->
+	CustID = ?gv(customer_id, Params),
+	UserID = ?gv(id, Params),
+	case k_aaa:del_customer_user(CustID, UserID) of
 		{error, no_entry} ->
-			?log_warn("Customer [~p] not found", [CstId]),
-			{exception, 'svc0003', [], State};
+			?log_warn("Customer [~p] not found", [CustID]),
+			{exception, 'svc0003'};
 		ok ->
-			{http_code, 204, State};
+			{http_code, 204};
 		Error ->
 			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
+			{http_code, 500}
 	end.
 
-terminate(_Req, _State = #state{}) ->
-    ok.
-
-%%% Local functions
-
-%% convert "transmitter,receiver,transceiver"
-%% to [transmitter, receiver, transmitter]
-convert(undefined) -> undefined;
-convert(SmppTypesString) ->
-	Tokens = string:tokens(SmppTypesString, ","),
-	convert(Tokens, []).
-
-convert([], Acc) ->
-	Acc;
-convert([Type | Rest], Acc) ->
-	case Type of
-		"transmitter" -> convert(Rest, [transmitter | Acc]);
-		"receiver" -> convert(Rest, [receiver | Acc]);
-		"transceiver" -> convert(Rest, [transceiver | Acc]);
-		_Any -> convert(Rest, Acc)
-	end.
-
+%% ===================================================================
+%% Local Functions
+%% ===================================================================
 
 translate(Proplist) ->
 	translate(Proplist, []).
@@ -145,74 +136,67 @@ prepare_users(Users) ->
 		translate(proplists:delete(pswd_hash, UserPropList))
 		end, Users)}.
 
-create_user(_Req, Create = #create{id = UserID}, State = #state{customer = Customer}) ->
+create_user(Customer, Params) ->
+	UserID = ?gv(id, Params),
 	case k_aaa:get_customer_user(Customer, UserID) of
 		{ok, #user{}} ->
-			{exception, 'svc0004', [], State};
+			{exception, 'svc0004'};
 		{error, no_entry} ->
-			#create{
-				pswd		= Pass,
-				smpp_types 	= TypesString
-				} = Create,
+			Pass = ?gv(pswd, Params),
+			SMPPTypes = ?gv(smpp_type, Params),
 			User = #user{
 				id 						= UserID,
 				pswd_hash 				= crypto:sha(Pass),
-				permitted_smpp_types 	= convert(TypesString)
+				permitted_smpp_types 	= SMPPTypes
 				},
 			ok = k_aaa:set_customer_user(User, Customer#customer.uuid),
 			{ok, UserPropList} = prepare_users([User]),
 			?log_debug("UserPropList: ~p", [UserPropList]),
-			{http_code, 201, UserPropList, State};
+			{http_code, 201, UserPropList};
 		Error ->
 			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
+			{http_code, 500}
 	end.
 
-update_user(_Req, Update, State = #state{usrid = UserID, customer = Customer}) ->
-
+update_user(Customer, Params) ->
+	UserID = ?gv(id, Params),
 	case k_aaa:get_customer_user(Customer, UserID) of
 		{ok, User} ->
 			Updated = #user{
 				id = UserID,
-				pswd_hash = resolve_pass(Update#update.pswd, User#user.pswd_hash),
-				permitted_smpp_types = resolve(convert(Update#update.smpp_types), User#user.permitted_smpp_types)
+				pswd_hash = resolve_pass(?gv(pswd, Params), User#user.pswd_hash),
+				permitted_smpp_types = resolve(smpp_type, Params, User#user.permitted_smpp_types)
 			},
 			ok = k_aaa:set_customer_user(Updated, Customer#customer.uuid),
 			{ok, [UserPropList]} = prepare_users([Updated]),
 			?log_debug("UserPropList: ~p", [UserPropList]),
-			{ok, UserPropList, State};
+			{ok, UserPropList};
    	  	{error, no_entry} ->
-			{exception, 'svc0003', [], State};
+			{exception, 'svc0003'};
 		Error ->
 			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
+			{http_code, 500}
 	end.
 
-get_customer_user(_Req, State = #state{usrid = all, customer = Customer}) ->
+get_customer_user(Customer, undefined) ->
 	#customer{users = Users} = Customer,
 	{ok, UserPropList} = prepare_users(Users),
 	?log_debug("UserPropList: ~p", [UserPropList]),
-	{ok, UserPropList, State};
-
-get_customer_user(_Req, State = #state{usrid = UserID, customer = Customer}) ->
+	{ok, UserPropList};
+get_customer_user(Customer, UserID) ->
 	case k_aaa:get_customer_user(Customer, UserID) of
 		{ok, User} ->
 			{ok, [UserPropList]} = prepare_users([User]),
 			?log_debug("UserPropList: ~p", [UserPropList]),
-			{ok, UserPropList, State};
+			{ok, UserPropList};
    	  	{error, no_entry} ->
-			{exception, 'svc0003', [], State};
+			{exception, 'svc0003'};
 		Error ->
 			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
+			{http_code, 500}
 	end.
 
 resolve_pass(undefined, Pass) ->
 	Pass;
 resolve_pass(NewPass, _Pass) ->
 	crypto:sha(NewPass).
-
-resolve(undefined, Value) ->
-	Value;
-resolve(NewValue, _Value) ->
-	NewValue.
