@@ -78,10 +78,10 @@ init() ->
 		}}.
 
 read(Params) ->
-	ID = ?gv(id, Params),
-	case ID of
+	ConnectionID = ?gv(id, Params),
+	case ConnectionID of
 		undefined -> read_all(?gv(gateway_id, Params));
-		_ -> read_id(?gv(gateway_id, Params),ID)
+		_ -> read_id(?gv(gateway_id, Params), ConnectionID)
 	end.
 
 create(Params) ->

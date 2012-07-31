@@ -23,7 +23,7 @@ start(_StartType, _StartArgs) ->
             {[<<"gateways">>, '...'], gen_cowboy_crud, [k_http_api_handler_gateways]},
             {[<<"customers">>, '_', <<"users">>, '...'], gen_cowboy_restful, [k_http_api_handler_users]},
             {[<<"customers">>, '...'], gen_cowboy_restful, [k_http_api_handler_customers]},
-            {[<<"networks">>, '...'], gen_cowboy_restful, [k_http_api_handler_networks]},
+            {[<<"networks">>, '...'], gen_cowboy_crud, [k_http_api_handler_networks]},
             {[<<"providers">>, '...'], gen_cowboy_crud, [k_http_api_handler_providers]},
 
 			{[<<"report">>, <<"uplink">>], gen_cowboy_restful, [k_http_api_handler_uplink_stats]},

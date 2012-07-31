@@ -183,6 +183,8 @@ process_req(State = #state{req = Req, handler_params = Params, view = V, handler
 
 convert(undefined, _Type) ->
 	undefined;
+convert(Prefixes, prefixes) ->
+	convert_prefixes(binary_to_list(Prefixes));
 convert(Any, boolean) ->
 	convert_boolean(Any);
 convert(UUID, string_uuid) ->
@@ -206,6 +208,11 @@ convert_boolean(<<"false">>) ->
 	false;
 convert_boolean(Any) ->
 	erlang:error({not_boolean, Any}).
+
+
+%% converts "29,33,44" to ["29", "33", "44"]
+convert_prefixes(Prefixes) ->
+	string:tokens(Prefixes, ",").
 
 %% ===================================================================
 %% HTTP Response Codes
