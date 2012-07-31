@@ -264,32 +264,6 @@ prepare([{_UUID, Customer = #customer{}} | Rest], Acc) ->
 	?log_debug("CustomerPropList: ~p", [CustomerPropList]),
 	prepare(Rest, [translate(CustomerPropList) | Acc]).
 
-%% convert "addr,ton,npi;addr,ton,npi" to [#addr{}]
-%% decode_address(undefined) ->
-%% 	undefined;
-%% decode_address(AddrString) ->
-%% 	[Addr] = decode_addresses(AddrString),
-%% 	Addr.
-
-%% decode_addresses(undefined) ->
-%% 	undefined;
-%% decode_addresses(AddrString) ->
-%% 	AddrList = string:tokens(AddrString, ";"),
-%% 	lists:map(fun(Source)->
-%% 		[Addr, Ton, Npi] = string:tokens(Source, ","),
-%% 		#addr{
-%% 			addr = Addr,
-%% 			%%% Here badarg exception may occure if Value contains a bad representation of an integer
-%% 			ton = list_to_integer(Ton),
-%% 			npi = list_to_integer(Npi)
-%% 		}
-%% 	end, AddrList).
-
-%% convert "uuid1,uuid2" to ["uuid1", "uuid2"]
-decode_networks(undefined) ->
-	undefined;
-decode_networks(NetworksString) ->
-	string:tokens(NetworksString, ",").
 
 translate(Proplist) ->
 	translate(Proplist, []).
