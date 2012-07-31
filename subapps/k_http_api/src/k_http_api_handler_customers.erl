@@ -1,162 +1,163 @@
 -module(k_http_api_handler_customers).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
--include("gen_cowboy_restful_spec.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
+-include("crud_specs.hrl").
 
--record(state, {
-	id :: list() | all,
-	customer :: #customer{}
-}).
+init() ->
 
-%%% REST parameters
--record(get, {
-}).
+	Read = [#method_spec{
+				path = [<<"customers">>, id],
+				params = [#param{name = id, mandatory = true, repeated = false, type = string_uuid}]},
+			#method_spec{
+				path = [<<"customers">>],
+				params = []}],
 
--record(create, {
-	id = {optional, <<"id">>, string_uuid},
-	system_id = {mandatory, <<"system_id">>, list},
-	name = {mandatory, <<"name">>, list},
-	%% priority = {optional, <<"priority">>, integer}, %% obsolete
-	rps = {optional, <<"rps">>, integer},
-	originators = {mandatory, <<"originators">>, list},
-	default_originator = {mandatory, <<"default_originator">>, list},
-	networks = {mandatory, <<"networks">>, list},
-	default_provider_id = {mandatory, <<"default_provider_id">>, list},
-	receipts_allowed = {mandatory, <<"receipts_allowed">>, boolean},
-	%% no_retry = {optional, <<"no_retry">>, boolean}, %% obsolete
-	default_validity = {mandatory, <<"default_validity">>, integer},
-	max_validity = {mandatory, <<"max_validity">>, integer}
-}).
+	UpdateParams = [
+		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = system_id, mandatory = false, repeated = false, type = string},
+		#param{name = name, mandatory = fasle, repeated = false, type = string},
+		#param{name = rps, mandatory = fasle, repeated = false, type = disabled},
+		#param{name = originator, mandatory = fasle, repeated = true, type = addr},
+		#param{name = default_originator, mandatory = false, repeated = false, type = addr},
+		#param{name = network, mandatory = fasle, repeated = true, type = string_uuid},
+		#param{name = default_provider_id, mandatory = false, repeated = false, type = string_uuid},
+		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
+		#param{name = default_validity, mandatory = fasle, repeated = false, type = integer},
+		#param{name = max_validity, mandatory = fasle, repeated = false, type = integer}
+	],
+	Update = #method_spec{
+				path = [<<"customers">>, id],
+				params = UpdateParams},
 
--record(update, {
-	system_id = {optional, <<"id">>, list},
-	name = {optional, <<"name">>, list},
-	%% priority = {optional, <<"priority">>, integer}, %% obsolete
-	rps = {optional, <<"rps">>, integer},
-	originators = {optional, <<"allowed_sources">>, list},
-	default_originator = {optional, <<"default_source">>, list},
-	networks = {optional, <<"networks">>, list},
-	default_provider_id = {optional, <<"default_provider_id">>, list},
-	receipts_allowed = {optional, <<"receipts_allowed">>, boolean},
-	%% no_retry = {optional, <<"no_retry">>, boolean}, %% obsolete
-	default_validity = {optional, <<"default_validity">>, integer},
-	max_validity = {optional, <<"max_validity">>, integer}
-}).
+	DeleteParams = [
+		#param{name = id, mandatory = true, repeated = false, type = string_uuid}
+	],
+	Delete = #method_spec{
+				path = [<<"customers">>, id],
+				params = DeleteParams},
 
--record(delete, {
-}).
+	CreateParams = [
+		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
+		#param{name = system_id, mandatory = true, repeated = false, type = string},
+		#param{name = name, mandatory = true, repeated = false, type = string},
+		#param{name = rps, mandatory = false, repeated = false, type = disabled},
+		#param{name = originator, mandatory = true, repeated = true, type = addr},
+		#param{name = default_originator, mandatory = true, repeated = false, type = addr},
+		#param{name = network, mandatory = true, repeated = true, type = string_uuid},
+		#param{name = default_provider_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
+		#param{name = default_validity, mandatory = true, repeated = false, type = integer},
+		#param{name = max_validity, mandatory = true, repeated = false, type = integer}
+	],
+	Create = #method_spec{
+				path = [<<"customers">>],
+				params = CreateParams},
 
-init(_Req, 'GET', [_, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #get{}, #state{id = Id}};
+		{ok, #specs{
+			create = Create,
+			read = Read,
+			update = Update,
+			delete = Delete
+		}}.
 
-init(_Req, 'GET', [_]) ->
-	{ok, #get{}, #state{id = all}};
+create(Params) ->
+	case ?gv(id, Params) of
+		undefined ->
+			UUID = k_uuid:to_string(k_uuid:newid()),
+			create_customer(lists:keyreplace(id, 1, Params, {id, UUID}));
+		_ ->
+			is_exist(Params)
+	end.
 
-init(_Req, 'POST', [_]) ->
-	{ok, #create{}, #state{}};
+is_exist(Params) ->
+	UUID = ?gv(id, Params),
+	case k_aaa:get_customer_by_id(UUID) of
+		{ok, #customer{}} ->
+			{exception, 'svc0004'};
+		{error, no_entry} ->
+			create_customer(Params);
+		Error ->
+			?log_debug("Unexpected error: ~p", [Error]),
+			{http_code, 500}
+	end.
 
-init(_Req, 'PUT', [_, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #update{}, #state{id = Id}};
+read(Params) ->
+	UUID = ?gv(id, Params),
+	case UUID of
+		undefined ->
+			read_all();
+		_ ->
+			read_id(UUID)
+	end.
 
-init(_Req, 'DELETE', [_, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #delete{}, #state{id = Id}};
-
-init(_Req, HttpMethod, Path) ->
-	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
-
-handle(_Req, #get{}, State = #state{id = all}) ->
+read_all() ->
 	case k_aaa:get_customers() of
  		{ok, CustList} ->
 			{ok, CustPropLists} = prepare(CustList),
 			?log_debug("CustPropLists: ~p", [CustPropLists]),
-			{ok, {customers, CustPropLists}, State};
+			{ok, {customers, CustPropLists}};
 		{error, Error} ->
 			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
-	end;
-
-handle(_Req, #get{}, State = #state{id = CustSysID}) ->
-	case k_aaa:get_customer_by_id(CustSysID) of
-		{ok, Customer = #customer{uuid = UUID}} ->
-			{ok, [CustPropList]} = prepare({UUID, Customer}),
-			?log_debug("CustPropList: ~p", [CustPropList]),
-			{ok, {customer, CustPropList}, State};
-		{error, no_entry} ->
-			{exception, 'svc0003', [], State};
-		Error ->
-			?log_error("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
-	end;
-
-%% customer's `rps' setting is disabled.
-%% see http://extranet.powermemobile.com/issues/17465 for detail.
-handle(_Req, #create{rps = RPS}, State) when RPS =/= undefined ->
-	{http_code, 500, [{error, "RPS setting unavailable in OpenAlley"}], State};
-handle(_Req, #update{rps = RPS}, State) when RPS =/= undefined ->
-	{http_code, 500, [{error, "RPS setting unavailable in OpenAlley"}], State};
-
-handle(Req, Create = #create{id = undefined}, State) ->
-	UUID = k_uuid:to_string(k_uuid:newid()),
-	create_customer(Req, Create#create{id = UUID}, State);
-handle(Req, Create = #create{id = ID}, State = #state{}) ->
-	case k_aaa:get_customer_by_id(ID) of
-		{ok, #customer{}} ->
-			{exception, 'svc0004', [], State};
-		{error, no_entry} ->
-			create_customer(Req, Create, State);
-		Error ->
-			?log_debug("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
-	end;
-
-handle(Req, Update = #update{}, State = #state{id = ID}) ->
-	case k_aaa:get_customer_by_id(ID) of
-		{ok, Customer = #customer{}} ->
-			update_customer(Req, Update, State#state{customer = Customer});
-		{error, no_entry} ->
-			{exception, 'svc0003', [], State};
-		Error ->
-			?log_debug("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
-	end;
-
-handle(_Req, #delete{}, State = #state{id = UUID}) ->
-	case k_aaa:get_customer_by_id(UUID) of
-		{ok, #customer{id = SystemID}} ->
-			k_snmp:del_row(cst, UUID),
-			ok = k_aaa:del_customer(SystemID),
-			{http_code, 204, State};
-		Error ->
-			?log_debug("Unexpected error: ~p", [Error]),
-			{http_code, 500, State}
+			{http_code, 500}
 	end.
 
-terminate(_Req, _State = #state{}) ->
-    ok.
+read_id(UUID) ->
+	case k_aaa:get_customer_by_id(UUID) of
+		{ok, Customer = #customer{}} ->
+			{ok, [CustPropList]} = prepare({UUID, Customer}),
+			?log_debug("CustPropList: ~p", [CustPropList]),
+			{ok, CustPropList};
+		{error, no_entry} ->
+			{exception, 'svc0003'};
+		Error ->
+			?log_error("Unexpected error: ~p", [Error]),
+			{http_code, 500}
+	end.
+
+update(Params) ->
+	UUID = ?gv(id, Params),
+	case k_aaa:get_customer_by_id(UUID) of
+		{ok, Customer = #customer{}} ->
+			update_customer(Customer, Params);
+		{error, no_entry} ->
+			{exception, 'svc0003'};
+		Error ->
+			?log_debug("Unexpected error: ~p", [Error]),
+			{http_code, 500}
+	end.
+
+
+delete(Params) ->
+	UUID = ?gv(id, Params),
+	k_snmp:del_row(cst, UUID),
+	ok = k_aaa:del_customer(UUID),
+	{http_code, 204}.
 
 %% ===================================================================
 %% Local Functions Definitions
 %% ===================================================================
 
-update_customer(_Req, Update, State = #state{customer = Customer}) ->
-	NewRPS = resolve(Update#update.rps, Customer#customer.rps),
-	NewName = resolve(Update#update.name, Customer#customer.name),
-	NewOriginators = resolve(decode_addresses(Update#update.originators), Customer#customer.allowedSources),
-	NewDefaultOriginator = resolve(decode_address(Update#update.default_originator), Customer#customer.defaultSource),
-	NewNetworks = resolve(decode_networks(Update#update.networks), Customer#customer.networks),
-	NewDefaultProviderId = resolve(Update#update.default_provider_id, Customer#customer.defaultProviderId),
-	NewReceiptsAllowed = resolve(Update#update.receipts_allowed, Customer#customer.receiptsAllowed),
-	NewDefaultValidity = resolve(Update#update.default_validity, Customer#customer.defaultValidity),
-	NewMaxValidity = resolve(Update#update.max_validity, Customer#customer.maxValidity),
+update_customer(Customer, Params) ->
+	NewRPS = resolve(rps, Params, Customer#customer.rps),
+	NewName = resolve(name, Params, Customer#customer.name),
+	NewOriginators = resolve(originator, Params, Customer#customer.allowedSources),
+	NewDefaultOriginator = resolve(default_originator, Params, Customer#customer.defaultSource),
+	NewNetworks = resolve(networks, Params, Customer#customer.networks),
+	NewDefaultProviderId = resolve(default_provider_id, Params, Customer#customer.defaultProviderId),
+	NewReceiptsAllowed = resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
+	NewDefaultValidity = resolve(default_validity, Params, Customer#customer.defaultValidity),
+	NewMaxValidity = resolve(max_validity, Params, Customer#customer.maxValidity),
 	NewCustomer = #customer{
 		id = Customer#customer.id,
 		uuid = Customer#customer.uuid,
@@ -179,31 +180,31 @@ update_customer(_Req, Update, State = #state{customer = Customer}) ->
 	ok = k_aaa:set_customer(Customer#customer.id, NewCustomer),
 	{ok, [CustPropList]} = prepare({Customer#customer.uuid, NewCustomer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
-	{http_code, 200, CustPropList, State}.
+	{http_code, 200, CustPropList}.
 
 resolve(undefined, Value) ->
 	Value;
 resolve(NewValue, _Value) ->
 	NewValue.
 
-create_customer(_Req, Create, State) ->
-	UUID = Create#create.id,
-	RPS = Create#create.rps,
-	System_id = Create#create.system_id,
+create_customer(Params) ->
+	UUID = ?gv(id, Params),
+	RPS = ?gv(rps, Params),
+	System_id = ?gv(system_id, Params),
 	Customer = #customer{
 		id = System_id,
 		uuid = UUID,
-		name = Create#create.name,
+		name = ?gv(name, Params),
 		priority = undefined,
 		rps = RPS,
-		allowedSources = decode_addresses(Create#create.originators),
-		defaultSource = decode_address(Create#create.default_originator),
-		networks = decode_networks(Create#create.networks),
-		defaultProviderId = Create#create.default_provider_id,
-		receiptsAllowed = Create#create.receipts_allowed,
+		allowedSources = ?gv(originator, Params),
+		defaultSource = ?gv(default_originator, Params),
+		networks = ?gv(network, Params),
+		defaultProviderId = ?gv(default_provider_id, Params),
+		receiptsAllowed = ?gv(receipts_allowed, Params),
 		noRetry = undefined,
-		defaultValidity = Create#create.default_validity,
-		maxValidity = Create#create.max_validity,
+		defaultValidity = ?gv(default_validity, Params),
+		maxValidity = ?gv(max_validity, Params),
 		users = []
 	},
 	%% k_snmp:set_row(cst, UUID, [
@@ -212,17 +213,7 @@ create_customer(_Req, Create, State) ->
 	ok = k_aaa:set_customer(System_id, Customer),
 	{ok, [CustPropList]} = prepare({UUID, Customer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
-	{http_code, 201, CustPropList, State}.
-
-%% snmp_update(UUID, RPS, Priority) ->
-%% 	Parameters = lists:filter(fun({_ColumnName, Value}) ->
-%% 		case Value of
-%% 			undefined -> false;
-%% 			_ -> true
-%% 		end
-%% 	end, [{cstRPS, RPS}, {cstPriority, Priority}]),
-%% 	?log_debug("Parameters: ~p", [Parameters]),
-%% 	k_snmp:set_row(cst, UUID, Parameters).
+	{http_code, 201, CustPropList}.
 
 prepare(ItemList) when is_list(ItemList) ->
 	prepare(ItemList, []);
@@ -274,25 +265,25 @@ prepare([{_UUID, Customer = #customer{}} | Rest], Acc) ->
 	prepare(Rest, [translate(CustomerPropList) | Acc]).
 
 %% convert "addr,ton,npi;addr,ton,npi" to [#addr{}]
-decode_address(undefined) ->
-	undefined;
-decode_address(AddrString) ->
-	[Addr] = decode_addresses(AddrString),
-	Addr.
+%% decode_address(undefined) ->
+%% 	undefined;
+%% decode_address(AddrString) ->
+%% 	[Addr] = decode_addresses(AddrString),
+%% 	Addr.
 
-decode_addresses(undefined) ->
-	undefined;
-decode_addresses(AddrString) ->
-	AddrList = string:tokens(AddrString, ";"),
-	lists:map(fun(Source)->
-		[Addr, Ton, Npi] = string:tokens(Source, ","),
-		#addr{
-			addr = Addr,
-			%%% Here badarg exception may occure if Value contains a bad representation of an integer
-			ton = list_to_integer(Ton),
-			npi = list_to_integer(Npi)
-		}
-	end, AddrList).
+%% decode_addresses(undefined) ->
+%% 	undefined;
+%% decode_addresses(AddrString) ->
+%% 	AddrList = string:tokens(AddrString, ";"),
+%% 	lists:map(fun(Source)->
+%% 		[Addr, Ton, Npi] = string:tokens(Source, ","),
+%% 		#addr{
+%% 			addr = Addr,
+%% 			%%% Here badarg exception may occure if Value contains a bad representation of an integer
+%% 			ton = list_to_integer(Ton),
+%% 			npi = list_to_integer(Npi)
+%% 		}
+%% 	end, AddrList).
 
 %% convert "uuid1,uuid2" to ["uuid1", "uuid2"]
 decode_networks(undefined) ->

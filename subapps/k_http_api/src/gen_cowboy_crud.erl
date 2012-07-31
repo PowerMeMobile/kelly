@@ -10,6 +10,12 @@
 -include_lib("k_common/include/logging.hrl").
 -include("crud.hrl").
 
+-record(addr, {
+	addr :: string(),
+	ton :: integer(),
+	npi :: integer()
+}).
+
 -record(state, {
 	handler :: atom(),
 	req :: term(),
@@ -120,7 +126,9 @@ process_method_params([ParamSpec | Tail], ReqParamsPL, Acc, State = #state{req =
 		{error, invalid, Name} ->
 			exception('svc0001', [Name], Req, State);
 		{error, invalid, Name, Range} ->
-			exception('svc0002', [Name, Range], Req, State)
+			exception('svc0002', [Name, Range], Req, State);
+		{error, disabled, <<"rps">>} ->
+			exception('svc0008', [], Req, State)
 	end.
 
 get_parameter(Spec = #param{name = Name, repeated = true}, ReqParamsPL) ->
@@ -156,7 +164,10 @@ validate(Value, Spec) ->
 		Converted = convert(Value, Spec#param.type),
 		{ok, {Spec#param.name, Converted}}
 	catch
-		_:_ ->
+		error:disabled ->
+			?log_warn("Disabled parameter found [~p]", [Spec#param.name]),
+			{error, disabled, atom_to_binary(Spec#param.name, utf8)};
+		error:_ ->
 			?log_error("Invalid [~s] parameter value", [Spec#param.name]),
 			{error, invalid, atom_to_binary(Spec#param.name, utf8)}
 	end.
@@ -183,6 +194,11 @@ process_req(State = #state{req = Req, handler_params = Params, view = V, handler
 
 convert(undefined, _Type) ->
 	undefined;
+convert(Value, addr) ->
+	?log_debug("Addr: ~p", [Value]),
+	decode_address(Value);
+convert(_Value, disabled) ->
+	erlang:error(disabled);
 convert(Prefixes, prefixes) ->
 	convert_prefixes(binary_to_list(Prefixes));
 convert(Any, boolean) ->
@@ -213,6 +229,18 @@ convert_boolean(Any) ->
 %% converts "29,33,44" to ["29", "33", "44"]
 convert_prefixes(Prefixes) ->
 	string:tokens(Prefixes, ",").
+
+
+%% convert "addr,ton,npi" to #addr{}
+
+decode_address(AddrBin) ->
+	AddrString = binary_to_list(AddrBin),
+	[Addr, Ton, Npi] = string:tokens(AddrString, ","),
+	#addr{
+		addr = Addr,
+		ton = list_to_integer(Ton),
+		npi = list_to_integer(Npi)
+	}.
 
 %% ===================================================================
 %% HTTP Response Codes
@@ -313,6 +341,13 @@ exception_body_and_code('svc0006', Variables) ->
 exception_body_and_code('svc0007', Variables) ->
 	MessageID = <<"SVC0007">>,
 	Text = <<"Error in path">>,
+	0 = length(Variables),
+	{ok, Body} = exception_body(MessageID, Text, Variables),
+	{ok, Body, 400};
+
+exception_body_and_code('svc0008', Variables) ->
+	MessageID = <<"SVC0008">>,
+	Text = <<"Customer's \"rps\" setting is disabled. See http://extranet.powermemobile.com/issues/17465 for detail.">>,
 	0 = length(Variables),
 	{ok, Body} = exception_body(MessageID, Text, Variables),
 	{ok, Body, 400};
