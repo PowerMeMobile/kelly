@@ -199,8 +199,6 @@ convert(Value, addr) ->
 	decode_address(Value);
 convert(_Value, disabled) ->
 	erlang:error(disabled);
-convert(Prefixes, prefixes) ->
-	convert_prefixes(binary_to_list(Prefixes));
 convert(Any, boolean) ->
 	convert_boolean(Any);
 convert(UUID, string_uuid) ->
@@ -226,13 +224,7 @@ convert_boolean(Any) ->
 	erlang:error({not_boolean, Any}).
 
 
-%% converts "29,33,44" to ["29", "33", "44"]
-convert_prefixes(Prefixes) ->
-	string:tokens(Prefixes, ",").
-
-
-%% convert "addr,ton,npi" to #addr{}
-
+%% convert "addr,ton,npi" to #addr{addr, ton, npi}
 decode_address(AddrBin) ->
 	AddrString = binary_to_list(AddrBin),
 	[Addr, Ton, Npi] = string:tokens(AddrString, ","),

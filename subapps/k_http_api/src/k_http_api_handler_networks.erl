@@ -31,7 +31,7 @@ init() ->
 		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
 		#param{name = country_code, mandatory = false, repeated = false, type = integer},
 		#param{name = numbers_len,	mandatory = false, repeated = false, type = integer},
-		#param{name = prefixes, mandatory = fasle, repeated = false, type = prefixes},
+		#param{name = prefix, mandatory = fasle, repeated = true, type = string},
 		#param{name = provider_id, mandatory = fasle, repeated = false, type = string_uuid}
 	],
 	Update = #method_spec{
@@ -49,7 +49,7 @@ init() ->
 		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
 		#param{name = country_code, mandatory = true, repeated = false, type = integer},
 		#param{name = numbers_len,	mandatory = true, repeated = false, type = integer},
-		#param{name = prefixes, mandatory = true, repeated = false, type = prefixes},
+		#param{name = prefix, mandatory = true, repeated = true, type = string},
 		#param{name = provider_id, mandatory = true, repeated = false, type = string_uuid}
 	],
 	Create = #method_spec{
@@ -152,7 +152,7 @@ create_network(Params) ->
 	ID = ?gv(id, Params),
 	CountryCode = ?gv(country_code, Params),
 	NumbersLen = ?gv(numbers_len, Params),
-	Prefixes = ?gv(prefixes, Params),
+	Prefixes = ?gv(prefix, Params),
 	ProviderId = ?gv(provider_id, Params),
  	Network = #network{
 		countryCode = CountryCode,
