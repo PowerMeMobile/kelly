@@ -170,7 +170,21 @@ prepare([], Acc) ->
 	{ok, Acc};
 prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
 	PrvFun = ?record_to_proplist(provider),
-	PrvPropList = [{id, PrvUUID}] ++ PrvFun(Prv),
+	PrvPropList = translate([{id, PrvUUID}] ++ PrvFun(Prv)),
 	prepare(Rest, [PrvPropList | Acc]).
 
 
+
+translate(Proplist) ->
+	translate(Proplist, []).
+translate([], Acc) ->
+	lists:reverse(Acc);
+translate([{Name, Value} | Tail], Acc) ->
+	translate(Tail, [{translate_name(Name), Value} | Acc]).
+
+translate_name(bulkGateway) ->
+	bulk_gateway;
+translate_name(receiptsSupported) ->
+	receipts_supported;
+translate_name(Name) ->
+	Name.
