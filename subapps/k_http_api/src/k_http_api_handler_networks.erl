@@ -1,106 +1,170 @@
 -module(k_http_api_handler_networks).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("gen_cowboy_restful_spec.hrl").
+-include("crud_specs.hrl").
 
--record(state, {
-	id :: list() | all
-}).
+%% ===================================================================
+%% Callback Functions
+%% ===================================================================
 
-%%% REST parameters
--record(get, {
-}).
+init() ->
 
--record(create, {
-	id = {mandatory, <<"id">>, list},
-	countryCode = {mandatory, <<"country_code">>, list},
-	numbersLen = {mandatory, <<"numbers_len">>, integer},
-	prefixes = {mandatory, <<"prefixes">>, list},
-	providerId = {mandatory, <<"provider_id">>, list}
-}).
+	Read = [#method_spec{
+				path = [<<"networks">>, id],
+				params = [#param{name = id, mandatory = true, repeated = false, type = string_uuid}]},
+			#method_spec{
+				path = [<<"networks">>],
+				params = []}],
 
--record(update, {
-}).
+	UpdateParams = [
+		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = country_code, mandatory = false, repeated = false, type = integer},
+		#param{name = numbers_len,	mandatory = false, repeated = false, type = integer},
+		#param{name = prefix, mandatory = fasle, repeated = true, type = string},
+		#param{name = provider_id, mandatory = fasle, repeated = false, type = string_uuid}
+	],
+	Update = #method_spec{
+				path = [<<"networks">>, id],
+				params = UpdateParams},
 
--record(delete, {
-}).
+	DeleteParams = [
+		#param{name = id, mandatory = true, repeated = false, type = string_uuid}
+	],
+	Delete = #method_spec{
+				path = [<<"networks">>, id],
+				params = DeleteParams},
 
-init(_Req, 'GET', [<<"network">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #get{}, #state{id = Id}};
+	CreateParams = [
+		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
+		#param{name = country_code, mandatory = true, repeated = false, type = integer},
+		#param{name = numbers_len,	mandatory = true, repeated = false, type = integer},
+		#param{name = prefix, mandatory = true, repeated = true, type = string},
+		#param{name = provider_id, mandatory = true, repeated = false, type = string_uuid}
+	],
+	Create = #method_spec{
+				path = [<<"networks">>],
+				params = CreateParams},
 
-init(_Req, 'GET', [<<"networks">>]) ->
-	{ok, #get{}, #state{id = all}};
+		{ok, #specs{
+			create = Create,
+			read = Read,
+			update = Update,
+			delete = Delete
+		}}.
 
-init(_Req, 'POST', [<<"network">>]) ->
-	{ok, #create{}, #state{}};
+read(Params) ->
+	NetworkUUID = ?gv(id, Params),
+	case NetworkUUID of
+		undefined ->
+			read_all();
+		_ -> read_id(NetworkUUID)
+	end.
 
-init(_Req, 'PUT', [<<"network">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #update{}, #state{id = Id}};
+create(Params) ->
+	case ?gv(id, Params) of
+		undefined ->
+			UUID = k_uuid:to_string(k_uuid:newid()),
+			create_network(lists:keyreplace(id, 1, Params, {id, UUID}));
+		_ ->
+			is_exist(Params)
+	end.
 
-init(_Req, 'DELETE', [<<"network">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #delete{}, #state{id = Id}};
+update(Params) ->
+	ID = ?gv(id, Params),
+	case k_config:get_network(ID) of
+		{ok, Network = #network{}} ->
+			update_network(Network, Params);
+		{error, no_entry} ->
+			{exception, 'svc0003'}
+	end.
 
-init(_Req, HttpMethod, Path) ->
-	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
+delete(Params) ->
+	NetworkId = ?gv(id, Params),
+	ok = k_config:del_network(NetworkId),
+	{http_code, 204}.
 
-handle(_Req, #get{}, State = #state{id = all}) ->
+%% ===================================================================
+%% Local Functions
+%% ===================================================================
+
+read_all() ->
 	case k_config:get_networks() of
 		{ok, NtwList} ->
 			{ok, NtwPropLists} = prepare_ntws(NtwList),
 			?log_debug("NtwPropLists: ~p", [NtwPropLists]),
-			{ok, {networks, NtwPropLists}, State};
+			{http_code, 200, {networks, NtwPropLists}};
 		{error, Error} ->
-			{ok, Error, State}
-	end;
+			?log_error("Unexpected error: ~p", [Error]),
+			{http_code, 500};
+		Error ->
+			?log_error("Unexpected error: ~p", [Error]),
+			{http_code, 500}
+	end.
 
-handle(_Req, #get{}, State = #state{id = NtwUUID}) ->
+read_id(NtwUUID) ->
 	case k_config:get_network(NtwUUID) of
 		{ok, Ntw = #network{}} ->
 			{ok, [NtwPropList]} = prepare_ntws({NtwUUID, Ntw}),
 			?log_debug("NtwPropList: ~p", [NtwPropList]),
-			{ok, {network, NtwPropList}, State};
-		Error ->
-			{ok, Error, State}
-	end;
+			{http_code, 200, NtwPropList};
+		{error, no_entry} ->
+			{exception, 'svc0003'}
+	end.
 
-handle(_Req, #create{
-	id = Id,
-	countryCode = CountryCode,
-	numbersLen = NumbersLen,
-	prefixes = Prefixes,
-	providerId = ProviderId
-}, State = #state{}) ->
-	Network = #network{
-			countryCode = CountryCode,
-			numbersLen = NumbersLen,
-			prefixes = split(Prefixes),
-			providerId = ProviderId
+is_exist(Params) ->
+	UUID = ?gv(id, Params),
+	case k_config:get_network(UUID) of
+		{ok, #network{}} ->
+			{exception, 'svc0004'};
+		{error, no_entry} ->
+			create_network(Params)
+	end.
+
+update_network(Network, Params) ->
+	ID = ?gv(id, Params),
+ 	NewCountryCode = resolve(country_code, Params, Network#network.countryCode),
+	NewNumbersLen = resolve(numbers_len, Params, Network#network.numbersLen),
+	NewPrefixes = resolve(prefixes, Params, Network#network.prefixes),
+	NewProviderId = resolve(provider_id, Params, Network#network.providerId),
+	Updated = #network{
+		countryCode = NewCountryCode,
+		numbersLen = NewNumbersLen,
+		prefixes = NewPrefixes,
+		providerId = NewProviderId
 	},
-	Res = k_config:set_network(Id, Network),
-	{ok, {result, Res}, State};
+	ok = k_config:set_network(ID, Updated),
+	{ok, [NtwPropList]} = prepare_ntws({ID, Updated}),
+	?log_debug("NtwPropList: ~p", [NtwPropList]),
+	{http_code, 200, NtwPropList}.
 
-handle(_Req, #update{}, State = #state{}) ->
-	{ok, {result, error}, State};
+create_network(Params) ->
+	ID = ?gv(id, Params),
+	CountryCode = ?gv(country_code, Params),
+	NumbersLen = ?gv(numbers_len, Params),
+	Prefixes = ?gv(prefix, Params),
+	ProviderId = ?gv(provider_id, Params),
+ 	Network = #network{
+		countryCode = CountryCode,
+		numbersLen = NumbersLen,
+		prefixes = Prefixes,
+		providerId = ProviderId
+	},
+	ok = k_config:set_network(ID, Network),
+	{ok, [NtwPropList]} = prepare_ntws({ID, Network}),
+	?log_debug("NtwPropList: ~p", [NtwPropList]),
+	{http_code, 201, NtwPropList}.
 
-handle(_Req, #delete{}, State = #state{id = NetworkId}) ->
-	Res = k_config:del_network(NetworkId),
-	{ok, {result, Res}, State}.
-
-terminate(_Req, _State = #state{}) ->
-    ok.
-
-%% ===================================================================
-%% Local Functions Definitions
-%% ===================================================================
 
 prepare_ntws(NtwList) when is_list(NtwList) ->
 	prepare_ntws(NtwList, []);
@@ -111,9 +175,21 @@ prepare_ntws([], Acc) ->
 	{ok, Acc};
 prepare_ntws([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
 	NtwFun = ?record_to_proplist(network),
-	NtwPropList = [{uuid, NtwUUID}] ++ NtwFun(Ntw),
+	NtwPropList = translate([{id, NtwUUID}] ++ NtwFun(Ntw)),
 	prepare_ntws(Rest, [NtwPropList | Acc]).
 
-%% split "29,33,44" to ["29", "33", "44"]
-split(Prefixes) ->
-	string:tokens(Prefixes, ",").
+translate(Proplist) ->
+	translate(Proplist, []).
+translate([], Acc) ->
+	lists:reverse(Acc);
+translate([{Name, Value} | Tail], Acc) ->
+	translate(Tail, [{translate_name(Name), Value} | Acc]).
+
+translate_name(providerId) ->
+	provider_id;
+translate_name(numbersLen) ->
+	numbers_len;
+translate_name(countryCode) ->
+	country_code;
+translate_name(Name) ->
+	Name.

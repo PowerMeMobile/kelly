@@ -1,103 +1,165 @@
 -module(k_http_api_handler_providers).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("gen_cowboy_restful_spec.hrl").
+-include("crud_specs.hrl").
 
--record(state, {
-	id :: list() | all
-}).
+%% ===================================================================
+%% Callback Functions
+%% ===================================================================
 
-%%% REST parameters
--record(get, {
-}).
+init() ->
 
--record(create, {
-	id = {mandatory, <<"id">>, list},
-	gateway = {mandatory, <<"gateway">>, list},
-	bulkGateway = {mandatory, <<"bulk_gateway">>, list},
-	receiptsSupported = {optional, <<"receipts_supported">>, boolean}
-}).
+	Read = [#method_spec{
+				path = [<<"providers">>, id],
+				params = [#param{name = id, mandatory = true, repeated = false, type = string_uuid}]},
+			#method_spec{
+				path = [<<"providers">>],
+				params = []}
+			],
 
--record(update, {
-}).
+	UpdateParams = [
+		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = gateway, mandatory = false, repeated = false, type = string_uuid},
+		#param{name = bulk_gateway,	mandatory = false, repeated = false, type = string_uuid},
+		#param{name = receipts_supported, mandatory = fasle, repeated = false, type = boolean}
+	],
+	Update = #method_spec{
+				path = [<<"providers">>, id],
+				params = UpdateParams},
 
--record(delete, {
-}).
+	DeleteParams = [
+		#param{name = id, mandatory = true, repeated = false, type = string_uuid}
+	],
+	Delete = #method_spec{
+				path = [<<"providers">>, id],
+				params = DeleteParams},
 
-init(_Req, 'GET', [<<"provider">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #get{}, #state{id = Id}};
+	CreateParams = [
+		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
+		#param{name = gateway, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = bulk_gateway, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = receipts_supported, mandatory = true, repeated = false, type = boolean}
+	],
+	Create = #method_spec{
+				path = [<<"providers">>],
+				params = CreateParams},
 
-init(_Req, 'GET', [<<"providers">>]) ->
-	{ok, #get{}, #state{id = all}};
+		{ok, #specs{
+			create = Create,
+			read = Read,
+			update = Update,
+			delete = Delete
+		}}.
 
-init(_Req, 'POST', [<<"provider">>]) ->
-	{ok, #create{}, #state{}};
+read(Params) ->
+	UUID = ?gv(id, Params),
+	case UUID of
+		undefined -> read_all();
+		_ -> read_id(UUID)
+	end.
 
-init(_Req, 'PUT', [<<"provider">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #update{}, #state{id = Id}};
+create(Params) ->
+	case ?gv(id, Params) of
+		undefined ->
+			UUID = k_uuid:to_string(k_uuid:newid()),
+			create_provider(lists:keyreplace(id, 1, Params, {id, UUID}));
+		_ ->
+			is_exist(Params)
+	end.
 
-init(_Req, 'DELETE', [<<"provider">>, BinId]) ->
-	Id = binary_to_list(BinId),
-	{ok, #delete{}, #state{id = Id}};
+update(Params) ->
+	case k_config:get_provider(?gv(id, Params)) of
+		{ok, Provider = #provider{}} ->
+			update_provider(Provider, Params);
+		{error, no_entry} ->
+			{exception, 'svc0003'};
+		{error, Error} ->
+			?log_error("Unexpected error: ~p", [Error]),
+			{http_code, 500}
+	end.
 
-init(_Req, HttpMethod, Path) ->
-	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
+delete(Params) ->
+	ok = k_config:del_provider(?gv(id, Params)),
+	{http_code, 204}.
 
-handle(_Req, #get{}, State = #state{id = all}) ->
+%% ===================================================================
+%% Local Functions
+%% ===================================================================
+
+is_exist(Params) ->
+	case k_config:get_provider(?gv(id, Params)) of
+		{ok, #provider{}} ->
+			{exception, 'svc0004'};
+		{error, no_entry} ->
+			create_provider(Params);
+		{error, Error} ->
+			?log_error("Unexpected error: ~p", [Error]),
+			{http_code, 500}
+	end.
+
+read_all() ->
 	case k_config:get_providers() of
 		{ok, PrvList} ->
 			{ok, PrvPropLists} = prepare(PrvList),
 			?log_debug("PrvPropLists: ~p", [PrvPropLists]),
-			{ok, {providers, PrvPropLists}, State};
+			{http_code, 200, {providers, PrvPropLists}};
 		{error, Error} ->
-			{ok, Error, State}
-	end;
+			?log_error("Unexpected error: ~p", [Error]),
+			{http_code, 500}
+	end.
 
-handle(_Req, #get{}, State = #state{id = PrvUUID}) ->
+read_id(PrvUUID) ->
 	case k_config:get_provider(PrvUUID) of
 		{ok, Prv = #provider{}} ->
 			{ok, [PrvPropList]} = prepare({PrvUUID, Prv}),
 			?log_debug("PrvPropList: ~p", [PrvPropList]),
-			{ok, {provider, PrvPropList}, State};
+			{http_code, 200, PrvPropList};
+		{error, no_entry} ->
+			{exception, 'svc0003', []};
 		{error, Error} ->
-			{ok, Error, State}
-	end;
+			?log_error("Unexpected error: ~p", [Error]),
+			{http_code, 500}
+	end.
 
-handle(_Req, #create{
-	id = Id,
-	gateway = Gateway,
-	bulkGateway = BulkGateway,
-	receiptsSupported = ReceiptsSupported
-}, State = #state{}) ->
+update_provider(Provider, Params) ->
+	ID = ?gv(id, Params),
+	Gateway = resolve(gateway, Params, Provider#provider.gateway),
+	BulkGateway = resolve(bulk_gateway, Params, Provider#provider.bulkGateway),
+	ReceiptsSupported = resolve(receipts_supported, Params, Provider#provider.receiptsSupported),
+	Updated = #provider{
+		gateway = Gateway,
+		bulkGateway = BulkGateway,
+		receiptsSupported = ReceiptsSupported},
+	ok = k_config:set_provider(ID, Updated),
+	{ok, [PrvPropList]} = prepare({ID, Updated}),
+	?log_debug("PrvPropList: ~p", [PrvPropList]),
+	{http_code, 200, PrvPropList}.
+
+create_provider(Params) ->
+	UUID = ?gv(id, Params),
+	Gateway = ?gv(gateway, Params),
+	BulkGateway = ?gv(bulk_gateway, Params),
+	ReceiptsSupported = ?gv(receipts_supported, Params),
 	Provider = #provider{
 		gateway = Gateway,
 		bulkGateway = BulkGateway,
 		receiptsSupported = ReceiptsSupported
 	},
-	Res = k_config:set_provider(Id, Provider),
-	{ok, {result, Res}, State};
-
-handle(_Req, #update{}, State = #state{}) ->
-	{ok, {result, error}, State};
-
-handle(_Req, #delete{}, State = #state{id = ProviderId}) ->
-	Res = k_config:del_provider(ProviderId),
-	{ok, {result, Res}, State}.
-
-terminate(_Req, _State = #state{}) ->
-    ok.
-
-%% ===================================================================
-%% Local Functions Definitions
-%% ===================================================================
+	ok = k_config:set_provider(UUID, Provider),
+	{ok, [PrvPropList]} = prepare({UUID, Provider}),
+	?log_debug("PrvPropList: ~p", [PrvPropList]),
+	{http_code, 201, PrvPropList}.
 
 prepare(PrvList) when is_list(PrvList) ->
 	prepare(PrvList, []);
@@ -108,7 +170,21 @@ prepare([], Acc) ->
 	{ok, Acc};
 prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
 	PrvFun = ?record_to_proplist(provider),
-	PrvPropList = [{uuid, PrvUUID}] ++ PrvFun(Prv),
+	PrvPropList = translate([{id, PrvUUID}] ++ PrvFun(Prv)),
 	prepare(Rest, [PrvPropList | Acc]).
 
 
+
+translate(Proplist) ->
+	translate(Proplist, []).
+translate([], Acc) ->
+	lists:reverse(Acc);
+translate([{Name, Value} | Tail], Acc) ->
+	translate(Tail, [{translate_name(Name), Value} | Acc]).
+
+translate_name(bulkGateway) ->
+	bulk_gateway;
+translate_name(receiptsSupported) ->
+	receipts_supported;
+translate_name(Name) ->
+	Name.

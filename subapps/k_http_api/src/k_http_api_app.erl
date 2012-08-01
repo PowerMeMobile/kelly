@@ -17,30 +17,22 @@ start(_StartType, _StartArgs) ->
 	Dispatch = [
     %% {Host, list({Path, Handler, Opts})}
     	{'_', [
-            {[<<"message_status">>, '_', <<"customer">>, '_'], gen_cowboy_restful, [k_http_api_handler_message_status]},
-            {[<<"gateway">>, '_', <<"connection">>, '_'], gen_cowboy_restful, [k_http_api_handler_connections]},
-            {[<<"gateway">>, '_', <<"connection">>], gen_cowboy_restful, [k_http_api_handler_connections]},
-            {[<<"gateway">>, '_'], gen_cowboy_restful, [k_http_api_handler_gateways]},
-            {[<<"gateway">>], gen_cowboy_restful, [k_http_api_handler_gateways]},
-            {[<<"gateways">>], gen_cowboy_restful, [k_http_api_handler_gateways]},
-            {[<<"customer">>, '_', <<"user">>, '_'], gen_cowboy_restful, [k_http_api_handler_users]},
-            {[<<"customer">>, '_', <<"user">>], gen_cowboy_restful, [k_http_api_handler_users]},
-            {[<<"customer">>, '_'], gen_cowboy_restful, [k_http_api_handler_customers]},
-            {[<<"customer">>], gen_cowboy_restful, [k_http_api_handler_customers]},
-            {[<<"customers">>], gen_cowboy_restful, [k_http_api_handler_customers]},
-            {[<<"network">>, '_'], gen_cowboy_restful, [k_http_api_handler_networks]},
-            {[<<"network">>], gen_cowboy_restful, [k_http_api_handler_networks]},
-            {[<<"networks">>], gen_cowboy_restful, [k_http_api_handler_networks]},
-            {[<<"provider">>, '_'], gen_cowboy_restful, [k_http_api_handler_providers]},
-            {[<<"provider">>], gen_cowboy_restful, [k_http_api_handler_providers]},
-            {[<<"providers">>], gen_cowboy_restful, [k_http_api_handler_providers]},
+            {[<<"message_status">>, '_', <<"customer">>, '...'], gen_cowboy_restful, [k_http_api_handler_message_status]},
+
+            {[<<"gateways">>, '_', <<"connections">>, '...'], gen_cowboy_crud, [k_http_api_handler_connections]},
+            {[<<"gateways">>, '...'], gen_cowboy_crud, [k_http_api_handler_gateways]},
+            {[<<"customers">>, '_', <<"users">>, '...'], gen_cowboy_crud, [k_http_api_handler_users]},
+            {[<<"customers">>, '...'], gen_cowboy_crud, [k_http_api_handler_customers]},
+            {[<<"networks">>, '...'], gen_cowboy_crud, [k_http_api_handler_networks]},
+            {[<<"providers">>, '...'], gen_cowboy_crud, [k_http_api_handler_providers]},
+
 			{[<<"report">>, <<"uplink">>], gen_cowboy_restful, [k_http_api_handler_uplink_stats]},
 			{[<<"report">>, <<"downlink">>], gen_cowboy_restful, [k_http_api_handler_downlink_stats]},
 			{[<<"report">>, <<"statuses">>], gen_cowboy_restful, [k_http_api_handler_statuses_stats]},
             {[<<"report">>, <<"messages">>, '_'], gen_cowboy_restful, [k_http_api_handler_msg_stats]},
-		    {[<<"addr2cust">>], gen_cowboy_restful, [k_http_api_handler_addr2cust]},
+		    {[<<"addr2cust">>, '...'], gen_cowboy_crud, [k_http_api_handler_addr2cust]},
             {[<<"gui">>, '...'], gen_cowboy_restful, [k_http_api_handler_gui]},
-    		{'_', error_request_handler, []}
+    		{'...', error_request_handler, []}
     	]}
 	],
 	%% Name, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts
