@@ -30,7 +30,7 @@ start(_StartType, _StartArgs) ->
 			{[<<"report">>, <<"downlink">>], gen_cowboy_restful, [k_http_api_handler_downlink_stats]},
 			{[<<"report">>, <<"statuses">>], gen_cowboy_restful, [k_http_api_handler_statuses_stats]},
             {[<<"report">>, <<"messages">>, '_'], gen_cowboy_restful, [k_http_api_handler_msg_stats]},
-		    {[<<"addr2cust">>], gen_cowboy_restful, [k_http_api_handler_addr2cust]},
+		    {[<<"addr2cust">>, '...'], gen_cowboy_crud, [k_http_api_handler_addr2cust]},
             {[<<"gui">>, '...'], gen_cowboy_restful, [k_http_api_handler_gui]},
     		{'...', error_request_handler, []}
     	]}

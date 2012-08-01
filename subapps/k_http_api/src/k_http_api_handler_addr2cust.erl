@@ -1,84 +1,85 @@
 -module(k_http_api_handler_addr2cust).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_mailbox/include/address.hrl").
--include("gen_cowboy_restful_spec.hrl").
+-include("crud_specs.hrl").
 
--record(state, {
-}).
+%% ===================================================================
+%% Callback Functions
+%% ===================================================================
 
-%%% REST parameters
--record(get, {
-	addr = {mandatory, <<"addr">>, list},
-	ton = {mandatory, <<"ton">>, integer},
-	npi = {mandatory, <<"npi">>, integer}
-}).
+init() ->
 
--record(create, {
-	addr = {mandatory, <<"addr">>, list},
-	ton = {mandatory, <<"ton">>, integer},
-	npi = {mandatory, <<"npi">>, integer},
-	cid = {mandatory, <<"cid">>, list},
-	user = {mandatory, <<"user">>, list}
-}).
+	Read = #method_spec{
+				path = [<<"addr2cust">>, msisdn],
+				params = [#param{name = msisdn, mandatory = true, repeated = false, type = addr}]},
 
--record(update, {
-}).
+	DeleteParams = [
+		#param{name = msisdn, mandatory = true, repeated = false, type = addr}
+	],
+	Delete = #method_spec{
+				path = [<<"addr2cust">>, msisdn],
+				params = DeleteParams},
 
--record(delete, {
-	addr = {mandatory, <<"addr">>, list},
-	ton = {mandatory, <<"ton">>, integer},
-	npi = {mandatory, <<"npi">>, integer}
-}).
+	CreateParams = [
+		#param{name = msisdn, mandatory = true, repeated = false, type = addr},
+		#param{name = customer,	mandatory = true, repeated = false,	type = string_uuid},
+		#param{name = user, mandatory = true, repeated = false, type = string}
+	],
+	Create = #method_spec{
+				path = [<<"addr2cust">>],
+				params = CreateParams},
 
-init(_Req, 'GET', _Path) ->
-	{ok, #get{}, #state{}};
+		{ok, #specs{
+			create = Create,
+			read = Read,
+			update = undefined,
+			delete = Delete
+		}}.
+read(Params) ->
+	?log_debug("Params: ~p", [Params]),
+	Msisdn = ?gv(msisdn, Params),
+	case k_addr2cust:resolve(Msisdn) of
+		{error, addr_not_used} ->
+			{exception, 'svc0003'};
+		{ok, CustomerID, UserID} ->
+			Response = prepare(CustomerID, UserID, Msisdn),
+			{ok, Response}
+	end.
 
-init(_Req, 'POST', _Path) ->
-	{ok, #create{}, #state{}};
+create(Params) ->
+	Msisdn = ?gv(msisdn, Params),
+	CustomerID = ?gv(customer, Params),
+	UserID = ?gv(user, Params),
+	case k_addr2cust:link(Msisdn, CustomerID, UserID) of
+		ok ->
+			Response = prepare(CustomerID, UserID, Msisdn),
+			{http_code, 201, Response};
+		{error, addr_in_use} ->
+			{exception, 'svc0004'}
+	end.
 
-init(_Req, 'PUT', _Path) ->
-	{ok, #update{}, #state{}};
+update(_Params) ->
+	ok.
 
-init(_Req, 'DELETE', _Path) ->
-	{ok, #delete{}, #state{}};
+delete(Params) ->
+	Msisdn = ?gv(msisdn, Params),
+	k_addr2cust:unlink(Msisdn),
+	{http_code, 204}.
 
-init(_Req, HttpMethod, Path) ->
-	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
+%% ===================================================================
+%% Local Functions
+%% ===================================================================
 
-handle(_Req, #get{
-				addr = Addr,
-				ton = Ton,
-				npi = Npi
-			}, State = #state{}) ->
-	Response = k_addr2cust:resolve(#addr{addr=Addr, ton=Ton, npi=Npi}),
-	{ok, Response, State};
-
-handle(_Req, #create{
-				addr = Addr,
-				ton = Ton,
-				npi = Npi,
-				cid = CustID
-					}, State = #state{}) ->
-	UserID = undefined,
-	Result = k_addr2cust:link(#addr{addr=Addr, ton=Ton, npi=Npi}, CustID, UserID),
-	{ok, {result, Result}, State};
-
-handle(_Req, #update{}, State = #state{}) ->
-	{ok, {result, error}, State};
-
-handle(_Req, #delete{
-				addr = Addr,
-				ton = Ton,
-				npi = Npi
-					}, State = #state{}) ->
-	Result = k_addr2cust:unlink(#addr{addr=Addr, ton=Ton, npi=Npi}),
-	{ok, {result, Result}, State}.
-
-terminate(_Req, _State = #state{}) ->
-    ok.
+prepare(CustomerID, UserID, Msisdn) ->
+	[{msisdn, [{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}]}, {customer, CustomerID}, {user, UserID}].
