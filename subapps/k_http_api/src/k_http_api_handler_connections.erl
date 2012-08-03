@@ -33,13 +33,13 @@ init() ->
 		#param{name = id, mandatory = true, repeated = false, type = integer},
 		#param{name = type, mandatory = false, repeated = false, type = integer},
 		#param{name = addr,	mandatory = false, repeated = false,	type = string},
-		#param{name = port, mandatory = fasle, repeated = false, type = integer},
-		#param{name = sys_id, mandatory = fasle, repeated = false, type = string},
-		#param{name = pass, mandatory = fasle, repeated = false, type = string},
-		#param{name = sys_type, mandatory = fasle, repeated = false, type = string},
-		#param{name = addr_ton, mandatory = fasle, repeated = false, type = integer},
-		#param{name = addr_npi, mandatory = fasle, repeated = false, type = integer},
-		#param{name = addr_range, mandatory = fasle, repeated = false, type = string}
+		#param{name = port, mandatory = false, repeated = false, type = integer},
+		#param{name = sys_id, mandatory = false, repeated = false, type = string},
+		#param{name = pass, mandatory = false, repeated = false, type = string},
+		#param{name = sys_type, mandatory = false, repeated = false, type = string},
+		#param{name = addr_ton, mandatory = false, repeated = false, type = integer},
+		#param{name = addr_npi, mandatory = false, repeated = false, type = integer},
+		#param{name = addr_range, mandatory = false, repeated = false, type = string}
 	],
 	Update = #method_spec{
 				path = [<<"gateways">>, gateway_id, <<"connections">>, id],

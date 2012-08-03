@@ -26,15 +26,15 @@ init() ->
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
 		#param{name = system_id, mandatory = false, repeated = false, type = string},
-		#param{name = name, mandatory = fasle, repeated = false, type = string},
-		#param{name = rps, mandatory = fasle, repeated = false, type = disabled},
-		#param{name = originator, mandatory = fasle, repeated = true, type = addr},
+		#param{name = name, mandatory = false, repeated = false, type = string},
+		#param{name = rps, mandatory = false, repeated = false, type = disabled},
+		#param{name = originator, mandatory = false, repeated = true, type = addr},
 		#param{name = default_originator, mandatory = false, repeated = false, type = addr},
-		#param{name = network, mandatory = fasle, repeated = true, type = string_uuid},
+		#param{name = network, mandatory = false, repeated = true, type = string_uuid},
 		#param{name = default_provider_id, mandatory = false, repeated = false, type = string_uuid},
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
-		#param{name = default_validity, mandatory = fasle, repeated = false, type = integer},
-		#param{name = max_validity, mandatory = fasle, repeated = false, type = integer}
+		#param{name = default_validity, mandatory = false, repeated = false, type = integer},
+		#param{name = max_validity, mandatory = false, repeated = false, type = integer}
 	],
 	Update = #method_spec{
 				path = [<<"customers">>, id],

@@ -32,7 +32,7 @@ init() ->
 		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
 		#param{name = gateway, mandatory = false, repeated = false, type = string_uuid},
 		#param{name = bulk_gateway,	mandatory = false, repeated = false, type = string_uuid},
-		#param{name = receipts_supported, mandatory = fasle, repeated = false, type = boolean}
+		#param{name = receipts_supported, mandatory = false, repeated = false, type = boolean}
 	],
 	Update = #method_spec{
 				path = [<<"providers">>, id],

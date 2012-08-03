@@ -31,8 +31,8 @@ init() ->
 		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
 		#param{name = country_code, mandatory = false, repeated = false, type = integer},
 		#param{name = numbers_len,	mandatory = false, repeated = false, type = integer},
-		#param{name = prefix, mandatory = fasle, repeated = true, type = string},
-		#param{name = provider_id, mandatory = fasle, repeated = false, type = string_uuid}
+		#param{name = prefix, mandatory = false, repeated = true, type = string},
+		#param{name = provider_id, mandatory = false, repeated = false, type = string_uuid}
 	],
 	Update = #method_spec{
 				path = [<<"networks">>, id],

@@ -31,7 +31,7 @@ init() ->
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
 		#param{name = name,	mandatory = false, repeated = false, type = string},
-		#param{name = rps, mandatory = fasle, repeated = false, type = integer}
+		#param{name = rps, mandatory = false, repeated = false, type = integer}
 	],
 	Update = #method_spec{
 				path = [<<"gateways">>, id],
