@@ -33,7 +33,7 @@ init() ->
 		#param{name = network, mandatory = false, repeated = true, type = string_uuid},
 		#param{name = default_provider_id, mandatory = false, repeated = false, type = string_uuid},
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
-		#param{name = default_validity, mandatory = false, repeated = false, type = integer},
+		#param{name = default_validity, mandatory = false, repeated = false, type = string},
 		#param{name = max_validity, mandatory = false, repeated = false, type = integer}
 	],
 	Update = #method_spec{
@@ -57,7 +57,7 @@ init() ->
 		#param{name = network, mandatory = true, repeated = true, type = string_uuid},
 		#param{name = default_provider_id, mandatory = true, repeated = false, type = string_uuid},
 		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
-		#param{name = default_validity, mandatory = true, repeated = false, type = integer},
+		#param{name = default_validity, mandatory = true, repeated = false, type = string},
 		#param{name = max_validity, mandatory = true, repeated = false, type = integer}
 	],
 	Create = #method_spec{
@@ -162,14 +162,14 @@ update_customer(Customer, Params) ->
 		id = Customer#customer.id,
 		uuid = Customer#customer.uuid,
 		name = NewName,
-		priority = undefined,
+		priority = 0,
 		rps = NewRPS,
 		allowedSources = NewOriginators,
 		defaultSource = NewDefaultOriginator,
 		networks = NewNetworks,
 		defaultProviderId = NewDefaultProviderId,
 		receiptsAllowed = NewReceiptsAllowed,
-		noRetry = undefined,
+		noRetry = false,
 		defaultValidity = NewDefaultValidity,
 		maxValidity = NewMaxValidity,
 		users = Customer#customer.users
@@ -195,14 +195,14 @@ create_customer(Params) ->
 		id = System_id,
 		uuid = UUID,
 		name = ?gv(name, Params),
-		priority = undefined,
+		priority = 0,
 		rps = RPS,
 		allowedSources = ?gv(originator, Params),
 		defaultSource = ?gv(default_originator, Params),
 		networks = ?gv(network, Params),
 		defaultProviderId = ?gv(default_provider_id, Params),
 		receiptsAllowed = ?gv(receipts_allowed, Params),
-		noRetry = undefined,
+		noRetry = false,
 		defaultValidity = ?gv(default_validity, Params),
 		maxValidity = ?gv(max_validity, Params),
 		users = []

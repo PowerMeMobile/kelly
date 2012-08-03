@@ -29,7 +29,7 @@ init() ->
 
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
-		#param{name = country_code, mandatory = false, repeated = false, type = integer},
+		#param{name = country_code, mandatory = false, repeated = false, type = string},
 		#param{name = numbers_len,	mandatory = false, repeated = false, type = integer},
 		#param{name = prefix, mandatory = false, repeated = true, type = string},
 		#param{name = provider_id, mandatory = false, repeated = false, type = string_uuid}
@@ -47,7 +47,7 @@ init() ->
 
 	CreateParams = [
 		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
-		#param{name = country_code, mandatory = true, repeated = false, type = integer},
+		#param{name = country_code, mandatory = true, repeated = false, type = string},
 		#param{name = numbers_len,	mandatory = true, repeated = false, type = integer},
 		#param{name = prefix, mandatory = true, repeated = true, type = string},
 		#param{name = provider_id, mandatory = true, repeated = false, type = string_uuid}
