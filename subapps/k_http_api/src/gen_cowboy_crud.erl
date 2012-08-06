@@ -203,14 +203,13 @@ convert(_Value, disabled) ->
 	erlang:error(disabled);
 convert(Any, boolean) ->
 	convert_boolean(Any);
+convert(UUID, binary_uuid) ->
+	UUIDstr = binary_to_list(UUID),
+	UUIDbin = k_uuid:to_binary(UUIDstr),
+	validate_uuid(UUIDbin);
 convert(UUID, string_uuid) ->
 	UUIDstr = binary_to_list(UUID),
-	case k_uuid:is_valid(UUIDstr) of
-		true ->
-			UUIDstr;
-		false ->
-			erlang:error(bad_uuid)
-	end;
+	validate_uuid(UUIDstr);
 convert(Value, binary) ->
 	Value;
 convert(Value, string) ->
@@ -225,6 +224,13 @@ convert_boolean(<<"false">>) ->
 convert_boolean(Any) ->
 	erlang:error({not_boolean, Any}).
 
+validate_uuid(UUID) ->
+	case k_uuid:is_valid(UUID) of
+		true ->
+			UUID;
+		false ->
+			erlang:error(bad_uuid)
+	end.
 
 %% convert "addr,ton,npi" to #addr{addr, ton, npi}
 decode_address(AddrBin) ->
