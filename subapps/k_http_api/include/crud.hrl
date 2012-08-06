@@ -48,11 +48,11 @@
 		end
 	end).
 
-resolve(Key, List, ActualValue) ->
+resolve(Key, List, DefaultValue) ->
 	TmpValue = ?gv(Key, List),
-		case TmpValue of
-			undefined -> ActualValue;
-			_ -> TmpValue
-		end.
+	case TmpValue of
+		undefined -> DefaultValue;
+		_ -> TmpValue
+	end.
 
 -endif.

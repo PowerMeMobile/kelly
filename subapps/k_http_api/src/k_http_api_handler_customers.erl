@@ -182,11 +182,6 @@ update_customer(Customer, Params) ->
 	?log_debug("CustPropList: ~p", [CustPropList]),
 	{http_code, 200, CustPropList}.
 
-resolve(undefined, Value) ->
-	Value;
-resolve(NewValue, _Value) ->
-	NewValue.
-
 create_customer(Params) ->
 	UUID = ?gv(id, Params),
 	RPS = ?gv(rps, Params),
