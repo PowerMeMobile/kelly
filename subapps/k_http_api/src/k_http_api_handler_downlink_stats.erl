@@ -1,33 +1,49 @@
 -module(k_http_api_handler_downlink_stats).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+%% gen_cowboy_crud callbacks
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
+-include("crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
--include("gen_cowboy_restful_spec.hrl").
 
--record(state, {
-}).
+%% ===================================================================
+%% gen_cowboy_crud callbacks
+%% ===================================================================
 
-%%% REST parameters
--record(get, {
-}).
+init() ->
+	Read = #method_spec{
+				path = [<<"report">>, <<"downlink">>],
+				params = []},
 
-init(_Req, 'GET', [<<"report">>, <<"downlink">>]) ->
-	{ok, #get{}, #state{}};
+	{ok, #specs{
+		create = undefined,
+		read = Read,
+		update = undefined,
+		delete = undefined
+	}}.
 
-init(_Req, HttpMethod, Path) ->
-	?log_error("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
-
-handle(_Req, #get{}, State = #state{}) ->
+read(Params) ->
 	case k_statistic:downlink_report() of
 		{ok, Report} ->
-			{ok, Report, State};
+			{ok, Report};
 		{error, Error} ->
-			{ok, {error, io_lib:format("~p", [Error])}, State}
+			?log_debug("Downlink report failed with: ~p", [Error]),
+			{exception, 'svc0003'}
 	end.
 
-terminate(_Req, _State = #state{}) ->
-    ok.
+create(_Params) ->
+	ok.
+
+update(_Params) ->
+	ok.
+
+delete(_Params) ->
+	ok.
