@@ -21,7 +21,7 @@
 
 init() ->
 	Read = #method_spec{
-				path  =[<<"message_status">>, message_id, <<"customer">>, customer_id],
+				path = [<<"message_status">>, message_id, <<"customer">>, customer_id],
 				params = [
 					#param{name = message_id, mandatory = true, repeated = false, type = string},
 					#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid}
