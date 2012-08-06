@@ -14,6 +14,8 @@
 -include_lib("k_common/include/storages.hrl").
 -include("crud_specs.hrl").
 
+-define(DEFAULT_PRIORITY, 1).
+
 init() ->
 
 	Read = [#method_spec{
@@ -27,6 +29,7 @@ init() ->
 		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
 		#param{name = system_id, mandatory = false, repeated = false, type = string},
 		#param{name = name, mandatory = false, repeated = false, type = string},
+		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
 		#param{name = originator, mandatory = false, repeated = true, type = addr},
 		#param{name = default_originator, mandatory = false, repeated = false, type = addr},
@@ -51,6 +54,7 @@ init() ->
 		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
 		#param{name = system_id, mandatory = true, repeated = false, type = string},
 		#param{name = name, mandatory = true, repeated = false, type = string},
+		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
 		#param{name = originator, mandatory = true, repeated = true, type = addr},
 		#param{name = default_originator, mandatory = true, repeated = false, type = addr},
@@ -149,6 +153,7 @@ delete(Params) ->
 %% ===================================================================
 
 update_customer(Customer, Params) ->
+	NewPriority = resolve(priority, Params, Customer#customer.priority),
 	NewRPS = resolve(rps, Params, Customer#customer.rps),
 	NewName = resolve(name, Params, Customer#customer.name),
 	NewOriginators = resolve(originator, Params, Customer#customer.allowedSources),
@@ -162,7 +167,7 @@ update_customer(Customer, Params) ->
 		id = Customer#customer.id,
 		uuid = Customer#customer.uuid,
 		name = NewName,
-		priority = 0,
+		priority = NewPriority,
 		rps = NewRPS,
 		allowedSources = NewOriginators,
 		defaultSource = NewDefaultOriginator,
@@ -174,9 +179,10 @@ update_customer(Customer, Params) ->
 		maxValidity = NewMaxValidity,
 		users = Customer#customer.users
 	},
-	%% k_snmp:set_row(cst, Customer#customer.uuid, [
-	%% 	{cstRPS, NewRPS},
-	%% 	{cstPriority, Priority}]),
+	k_snmp:set_row(cst, Customer#customer.uuid, [
+		%% {cstRPS, NewRPS},
+		%% Priority is a must have setting
+		{cstPriority, NewPriority}]),
 	ok = k_aaa:set_customer(Customer#customer.id, NewCustomer),
 	{ok, [CustPropList]} = prepare({Customer#customer.uuid, NewCustomer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
@@ -184,13 +190,14 @@ update_customer(Customer, Params) ->
 
 create_customer(Params) ->
 	UUID = ?gv(id, Params),
+	Priority = resolve(priority, Params, ?DEFAULT_PRIORITY),
 	RPS = ?gv(rps, Params),
 	System_id = ?gv(system_id, Params),
 	Customer = #customer{
 		id = System_id,
 		uuid = UUID,
 		name = ?gv(name, Params),
-		priority = 0,
+		priority = Priority,
 		rps = RPS,
 		allowedSources = ?gv(originator, Params),
 		defaultSource = ?gv(default_originator, Params),
@@ -202,9 +209,10 @@ create_customer(Params) ->
 		maxValidity = ?gv(max_validity, Params),
 		users = []
 	},
-	%% k_snmp:set_row(cst, UUID, [
-	%% 	{cstRPS, RPS},
-	%% 	{cstPriority, Priority}]),
+	k_snmp:set_row(cst, UUID, [
+		%% {cstRPS, RPS},
+		%% Priority is a must have setting
+		{cstPriority, Priority}]),
 	ok = k_aaa:set_customer(System_id, Customer),
 	{ok, [CustPropList]} = prepare({UUID, Customer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),

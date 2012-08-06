@@ -8,7 +8,7 @@ OUTPUT_SMPP_PORT=8001
 #OUTPUT_SMPP_PORT=2775
 
 ###
-# Be aware that customer's `rps' setting is disabled, due to http://extranet.powermemobile.com/issues/17465
+# Be aware that customer's `priority' and `rps' settings are disabled, due to http://extranet.powermemobile.com/issues/17465
 ###
 
 #
