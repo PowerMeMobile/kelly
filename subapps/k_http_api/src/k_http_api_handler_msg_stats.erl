@@ -1,65 +1,93 @@
 -module(k_http_api_handler_msg_stats).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+%% gen_cowboy_crud callbacks
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
--include("gen_cowboy_restful_spec.hrl").
+-include("crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
 
--record(state, {
-	type
-}).
+%% ===================================================================
+%% gen_cowboy_crud callbacks
+%% ===================================================================
 
-%%% REST parameters
--record(get, {
-	from = {mandatory, <<"from">>, binary},
-	to = {mandatory, <<"to">>, binary},
-	slice_length = {optional, <<"slice_length">>, list}
-}).
+init() ->
+	Read = #method_spec{
+				path = [<<"report">>, <<"messages">>, type],
+				params = [
+					#param{name = from, mandatory = true, repeated = false, type = string},
+					#param{name = to, mandatory = true, repeated = false, type = string},
+					#param{name = type, mandatory = true, repeated = false, type = string},
+					#param{name = slice_length, mandatory = false, repeated = false, type = string}
+				]},
 
-init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"customers">>]) ->
-	{ok, #get{}, #state{type = customers}};
+	{ok, #specs{
+		create = undefined,
+		read = Read,
+		update = undefined,
+		delete = undefined
+	}}.
 
-init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"networks">>]) ->
-	{ok, #get{}, #state{type = networks}};
-
-init(_Req, 'GET', [<<"report">>, <<"messages">>, <<"details">>]) ->
-	{ok, #get{}, #state{type = details}};
-
-init(_Req, HttpMethod, Path) ->
-	?log_debug("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
-
-%% format time: YYYY-MM-DDThh:mm
-handle(_Req, #get{from = HttpFrom, to = HttpTo, slice_length = SliceLength}, State = #state{type = details}) ->
+read(Params) ->
+	?log_debug("Params: ~p", [Params]),
+	HttpFrom = ?gv(from, Params),
+	HttpTo = ?gv(to, Params),
+	HttpType = ?gv(type, Params),
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
-	SliceLengthSecs = convert_slice_length(SliceLength),
-	{ok, Response} = k_statistic:detailed_msg_stats_report(From, To, SliceLengthSecs),
-	{ok, Response, State};
+	Type = list_to_existing_atom(HttpType),
+	case build_report(From, To, Type, Params) of
+		{ok, Report} ->
+			{ok, Report};
+		{error, Error} ->
+			?log_debug("Messages stats report failed with: ~p", [Error]),
+			{exception, 'svc0003'}
+	end.
 
-handle(_Req, #get{from = HttpFrom, to = HttpTo}, State = #state{type = ReportType}) ->
-	From = convert_http_datetime_to_term(HttpFrom),
-	To = convert_http_datetime_to_term(HttpTo),
-	{ok, Response} = k_statistic:msg_stats_report(ReportType, From, To),
-	{ok, Response, State}.
+create(_Params) ->
+	ok.
 
-terminate(_Req, _State = #state{}) ->
-    ok.
+update(_Params) ->
+	ok.
 
-%%% Local functions
+delete(_Params) ->
+	ok.
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
+
+build_report(From, To, customers, _Params) ->
+	k_statistic:msg_stats_report(customers, From, To);
+
+build_report(From, To, networks, _Params) ->
+	k_statistic:msg_stats_report(networks, From, To);
+
+build_report(From, To, details, Params) ->
+	HttpSliceLength = ?gv(slice_length, Params),
+	SliceLengthSecs = convert_slice_length(HttpSliceLength),
+	k_statistic:detailed_msg_stats_report(From, To, SliceLengthSecs).
 
 -spec convert_http_datetime_to_term(string()) -> calendar:datetime().
 convert_http_datetime_to_term(DateTime) ->
-	DateTimeBinList = binary:split(DateTime, [<<"T">>, <<":">>, <<"-">>], [global]),
-	Result =
-	lists:map(fun(Bin)->
-		list_to_integer(binary_to_list(Bin))
-	end, DateTimeBinList),
+	DateTimeList = string:tokens(DateTime, [$T, $:, $-]),
+	Result = lists:map(
+		fun(List)->
+			list_to_integer(List)
+		end,
+		DateTimeList),
 	[Year, Month, Day, Hour, Minute] = Result,
 	{{Year, Month, Day}, {Hour, Minute, 0}}.
 
+convert_slice_length([]) ->
+	60;
 convert_slice_length(undefined) ->
 	60;
 convert_slice_length("S" ++ Length) ->

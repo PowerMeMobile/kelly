@@ -1,55 +1,84 @@
 -module(k_http_api_handler_statuses_stats).
 
--behaviour(gen_cowboy_restful).
+-behaviour(gen_cowboy_crud).
 
--export([init/3, handle/3, terminate/2]).
+%% gen_cowboy_crud callbacks
+-export([
+	init/0,
+	create/1,
+	read/1,
+	update/1,
+	delete/1
+]).
 
--include("gen_cowboy_restful_spec.hrl").
+-include("crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
 
--record(state, {
-}).
+%% ===================================================================
+%% gen_cowboy_crud callbacks
+%% ===================================================================
 
-%%% REST parameters
--record(get, {
-	from = {mandatory, <<"from">>, binary},
-	to = {mandatory, <<"to">>, binary},
-	status = {optional, <<"status">>, binary}
-}).
+init() ->
+	Read = #method_spec{
+				path = [<<"report">>, <<"statuses">>],
+				params = [
+					#param{name = from, mandatory = true, repeated = false, type = string},
+					#param{name = to, mandatory = true, repeated = false, type = string},
+					#param{name = status, mandatory = false, repeated = false, type = string}
+				]},
 
-init(_Req, 'GET', [<<"report">>, <<"statuses">>]) ->
-	{ok, #get{}, #state{}};
+	{ok, #specs{
+		create = undefined,
+		read = Read,
+		update = undefined,
+		delete = undefined
+	}}.
 
-init(_Req, HttpMethod, Path) ->
-	?log_debug("bad_request~nHttpMethod: ~p~nPath: ~p", [HttpMethod, Path]),
-	{error, bad_request}.
+read(Params) ->
+	?log_debug("Params: ~p", [Params]),
+	HttpFrom = ?gv(from, Params),
+	HttpTo = ?gv(to, Params),
+	HttpStatus = ?gv(status, Params),
+	case build_report(HttpFrom, HttpTo, HttpStatus) of
+		{ok, Report} ->
+			{ok, Report};
+		{error, Error} ->
+			?log_debug("Statuses stats report failed with: ~p", [Error]),
+			{exception, 'svc0003'}
+	end.
 
-%% format time: YYYY-MM-DDThh:mm
-handle(_Req, #get{from = HttpFrom, to = HttpTo, status = undefined}, State = #state{}) ->
+create(_Params) ->
+	ok.
+
+update(_Params) ->
+	ok.
+
+delete(_Params) ->
+	ok.
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
+
+build_report(HttpFrom, HttpTo, undefined) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
-	{ok, Response} = k_statistic:status_stats_report(From, To),
-	{ok, Response, State};
+	k_statistic:status_stats_report(From, To);
 
-handle(_Req, #get{from = HttpFrom, to = HttpTo, status = HttpStatus}, State = #state{}) ->
+build_report(HttpFrom, HttpTo, HttpStatus) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
-	Status = list_to_atom(binary_to_list(HttpStatus)),
-	{ok, Response} = k_statistic:status_stats_report(From, To, Status),
-	{ok, Response, State}.
-
-terminate(_Req, _State = #state{}) ->
-    ok.
-
-%%% Local functions
+	k_statistic:status_stats_report(From, To),
+ 	Status = list_to_existing_atom(HttpStatus),
+ 	k_statistic:status_stats_report(From, To, Status).
 
 -spec convert_http_datetime_to_term(string()) -> calendar:datetime().
 convert_http_datetime_to_term(DateTime) ->
-	DateTimeBinList = binary:split(DateTime, [<<"T">>, <<":">>, <<"-">>], [global]),
+	DateTimeList = string:tokens(DateTime, [$T, $:, $-]),
 	Result = lists:map(
-		fun(Bin)->
-			list_to_integer(binary_to_list(Bin))
+		fun(List)->
+			list_to_integer(List)
 		end,
-		DateTimeBinList),
+		DateTimeList),
 	[Year, Month, Day, Hour, Minute] = Result,
 	{{Year, Month, Day}, {Hour, Minute, 0}}.

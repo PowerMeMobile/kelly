@@ -49,5 +49,5 @@ echo; echo
 #
 # Message status request.
 #
-curl "http://localhost:8080/message_status/83986/customer/feda5822-5271-11e1-bd27-001d0947ec73"
+curl "http://localhost:8080/message_status/1/customer/feda5822-5271-11e1-bd27-001d0947ec73"
 echo; echo
