@@ -29,7 +29,7 @@ start(_StartType, _StartArgs) ->
             {[<<"message_status">>, '_', <<"customer">>, '...'], gen_cowboy_crud, [k_http_api_handler_message_status]},
 			{[<<"report">>, <<"uplink">>], gen_cowboy_crud, [k_http_api_handler_uplink_stats]},
 			{[<<"report">>, <<"downlink">>], gen_cowboy_crud, [k_http_api_handler_downlink_stats]},
-			{[<<"report">>, <<"statuses">>], gen_cowboy_restful, [k_http_api_handler_statuses_stats]},
+			{[<<"report">>, <<"statuses">>], gen_cowboy_crud, [k_http_api_handler_statuses_stats]},
             {[<<"report">>, <<"messages">>, '_'], gen_cowboy_restful, [k_http_api_handler_msg_stats]},
 			%% GUI
             {[<<"gui">>, '...'], gen_cowboy_restful, [k_http_api_handler_gui]},
