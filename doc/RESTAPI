@@ -114,6 +114,12 @@ allowedSources ->
     separated by a semicolon (source1;source2) sources where sorce:
         comma-delimited list of: addr(string), ton(integer), npi(integer). Example: allowed_sources=375296662323,0,0
 
+defaultValidity ->
+	The validity_period parameter indicates the SMSC expiration time, after which the message
+should be discarded if not delivered to the destination. It can be defined in absolute time format
+or relative time format. The encoding of absolute and relative time format is specified in Section
+7.1.1 of SMPP v3.4. Example: 000003000000000R - 3 days relative to SMSC time.
+
 example:
 127.0.0.1:8080/customer
 request body: id=test-sys-id&uuid=feda5822-5271-11e1-bd27-001d0947ec73&priority=1&rps=300&allowed_sources=375296662323,0,0&default_source=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73&receipts_allowed=true&no_retry=true&default_validity=&max_validity=259200
