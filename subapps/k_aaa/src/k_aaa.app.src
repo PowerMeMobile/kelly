@@ -7,7 +7,7 @@
                   kernel,
                   stdlib,
                   k_common,
-                  k_gen_storage
+                  kv_storage
                  ]},
   {mod, {k_aaa_app, []} },
   {env, []}
