@@ -25,7 +25,7 @@
 
 -define(TIMER_INTERVAL, 10000).
 
--type handle() :: k_gen_storage:handle().
+-type handle() :: kv_storage:handle().
 
 -record(state, {
 	storage_name :: atom(),
@@ -70,7 +70,7 @@ handle_call(perform_rotation, _From, State = #state{}) ->
 handle_call({set, Key, Value}, _From, State = #state{
 	parts = [Part|_]
 }) ->
-	Res = k_gen_storage:write(Part, Key, Value),
+	Res = kv_storage:write(Part, Key, Value),
 	{reply, Res, State};
 
 handle_call({get, Key}, _From, State = #state{
@@ -147,7 +147,7 @@ close_old_partitions(State = #state{
 	lists:map(
 		fun(Part) ->
 			?log_debug("closing old partition(~p) ~p", [StorageName, Part]),
-			ok = k_gen_storage:close(Part)
+			ok = kv_storage:close(Part)
 		end,
 		PartsToClose),
 	?log_debug("rotation[closing old parts] complete(~p)", [StorageName]),
@@ -189,7 +189,7 @@ add_partition_to_manifest(StorageName, Manifest = #manifest{
 
 -spec add_tomorrow_partition(atom(), [handle()], string()) -> {ok, [handle()], [handle()]}.
 add_tomorrow_partition(StorageName, Parts, TomorrowPartName) ->
-	{ok, NewPart} = k_gen_storage:open(TomorrowPartName),
+	{ok, NewPart} = kv_storage:open(TomorrowPartName),
 	?log_debug("Opened tomorrow partition: (~p)[~p]", [StorageName, NewPart]),
 
 	NewParts = [NewPart|Parts],
@@ -235,7 +235,7 @@ open_parts(StorageName) ->
 			OpenParts =
 				lists:map(
 					fun(#daily_cfg{name = Name}) ->
-						{ok, Part} = k_gen_storage:open(Name),
+						{ok, Part} = kv_storage:open(Name),
 						?log_debug("Opened partition: (~p)[~p]", [StorageName, Part]),
 						Part
 					end,
@@ -245,7 +245,7 @@ open_parts(StorageName) ->
 			%% manifest doesn't exist yet.
 			Seq = 1,
 			Name = build_name(Seq, StorageName),
-			{ok, Part} = k_gen_storage:open(Name),
+			{ok, Part} = kv_storage:open(Name),
 			?log_debug("Created partition: (~p)[~p]", [StorageName, Part]),
 
 			Manifest = #manifest{
@@ -296,7 +296,7 @@ manifest_file_path(StorageName) when is_atom(StorageName) ->
 find_by_id(_ID, []) ->
 	{error, no_entry};
 find_by_id(ID, [Part|SoFar]) ->
-	case k_gen_storage:read(Part, ID) of
+	case kv_storage:read(Part, ID) of
 		{ok, Entry} ->
 			{ok, Entry};
 		{error, no_entry} ->
@@ -309,7 +309,7 @@ find_by_id(ID, [Part|SoFar]) ->
 delete_by_id(_ID, []) ->
 	{error, no_entry};
 delete_by_id(ID, [Part|SoFar]) ->
-	case k_gen_storage:delete(Part, ID) of
+	case kv_storage:delete(Part, ID) of
 		ok ->
 			ok;
 		{error, no_entry} ->
