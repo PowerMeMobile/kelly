@@ -22,35 +22,35 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"networks">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = string_uuid}]},
+				params = [#param{name = id, mandatory = true, repeated = false, type = binary_uuid}]},
 			#method_spec{
 				path = [<<"networks">>],
 				params = []}],
 
 	UpdateParams = [
-		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
-		#param{name = country_code, mandatory = false, repeated = false, type = string},
+		#param{name = id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = country_code, mandatory = false, repeated = false, type = binary},
 		#param{name = numbers_len,	mandatory = false, repeated = false, type = integer},
-		#param{name = prefix, mandatory = false, repeated = true, type = string},
-		#param{name = provider_id, mandatory = false, repeated = false, type = string_uuid}
+		#param{name = prefix, mandatory = false, repeated = true, type = binary},
+		#param{name = provider_id, mandatory = false, repeated = false, type = binary_uuid}
 	],
 	Update = #method_spec{
 				path = [<<"networks">>, id],
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = id, mandatory = true, repeated = false, type = string_uuid}
+		#param{name = id, mandatory = true, repeated = false, type = binary_uuid}
 	],
 	Delete = #method_spec{
 				path = [<<"networks">>, id],
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
-		#param{name = country_code, mandatory = true, repeated = false, type = string},
+		#param{name = id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = country_code, mandatory = true, repeated = false, type = binary},
 		#param{name = numbers_len,	mandatory = true, repeated = false, type = integer},
-		#param{name = prefix, mandatory = true, repeated = true, type = string},
-		#param{name = provider_id, mandatory = true, repeated = false, type = string_uuid}
+		#param{name = prefix, mandatory = true, repeated = true, type = binary},
+		#param{name = provider_id, mandatory = true, repeated = false, type = binary_uuid}
 	],
 	Create = #method_spec{
 				path = [<<"networks">>],
@@ -74,7 +74,7 @@ read(Params) ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = k_uuid:to_string(k_uuid:newid()),
+			UUID = k_uuid:newid(),
 			create_network(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_ ->
 			is_exist(Params)
@@ -175,8 +175,9 @@ prepare_ntws([], Acc) ->
 	{ok, Acc};
 prepare_ntws([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
 	NtwFun = ?record_to_proplist(network),
-	NtwPropList = translate([{id, NtwUUID}] ++ NtwFun(Ntw)),
-	prepare_ntws(Rest, [NtwPropList | Acc]).
+	NtwPropList = NtwFun(Ntw),
+	Result = translate([{id, list_to_binary(k_uuid:to_string(NtwUUID))}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, list_to_binary(k_uuid:to_string(?gv(providerId, NtwPropList)))})),
+	prepare_ntws(Rest, [Result | Acc]).
 
 translate(Proplist) ->
 	translate(Proplist, []).
