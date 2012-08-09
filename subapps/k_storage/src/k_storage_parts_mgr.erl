@@ -18,10 +18,10 @@
 ]).
 
 -include("application.hrl").
--include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/gen_server_spec.hrl").
 -include("daily_cfg.hrl").
 -include("manifest.hrl").
+-include_lib("k_common/include/logging.hrl").
+-include_lib("k_common/include/gen_server_spec.hrl").
 
 -define(TIMER_INTERVAL, 10000).
 
