@@ -140,7 +140,7 @@ update_gtw(Gtw, Params) ->
 			?log_debug("NewGtw: ~p", [NewGtw]),
 			{ok, [GtwPropList]} = prepare_gtws([{UUID, Gtw}]),
 			?log_debug("GtwPropList: ~p", [GtwPropList]),
-			{http_code, 201, GtwPropList};
+			{http_code, 200, GtwPropList};
 		{error, no_entry} ->
 			?log_warn("Gateway not found after creation [~p]", [UUID]),
 			{http_code, 500};
