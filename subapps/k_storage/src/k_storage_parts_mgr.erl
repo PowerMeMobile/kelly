@@ -50,7 +50,8 @@ start_link(StorageName) ->
 init([StorageName]) ->
 	?log_debug("init(~p)", [StorageName]),
 
-	{ok, Parts, Manifest} = open_parts(StorageName),
+	{ok, StoragePluginInfo} = get_storage_plugin_info(),
+	{ok, Parts, Manifest} = open_parts(StorageName, StoragePluginInfo),
 
 	TickRef = make_ref(),
 	setup_alarm(TickRef),
@@ -187,9 +188,14 @@ add_partition_to_manifest(StorageName, Manifest = #manifest{
 			partitions = PartitionsLeft
 		}, Tomorrow}.
 
--spec add_tomorrow_partition(atom(), [handle()], string()) -> {ok, [handle()], [handle()]}.
-add_tomorrow_partition(StorageName, Parts, TomorrowPartName) ->
-	{ok, NewPart} = kv_storage:open(TomorrowPartName),
+-spec add_tomorrow_partition(
+	StorageName::atom(),
+	StoragePluginInfo::[tuple()],
+	Parts::[handle()],
+	TomorrowPartName::string()) ->
+	{ok, [handle()], [handle()]}.
+add_tomorrow_partition(StorageName, StoragePluginInfo, Parts, TomorrowPartName) ->
+	{ok, NewPart} = kv_storage:open(TomorrowPartName, StoragePluginInfo),
 	?log_debug("Opened tomorrow partition: (~p)[~p]", [StorageName, NewPart]),
 
 	NewParts = [NewPart|Parts],
@@ -221,21 +227,23 @@ add_partition(State = #state{
 	?log_debug("New manifest written (~p)[~p]", [StorageName, NewManifest#manifest.last_rotated]),
 
 	TomorrowPartName = Tomorrow#daily_cfg.name,
-	{ok, NewParts, PartsToClose} = add_tomorrow_partition(StorageName, Parts, TomorrowPartName),
+	{ok, StoragePluginInfo} = get_storage_plugin_info(),
+	{ok, NewParts, PartsToClose} = add_tomorrow_partition(StorageName, StoragePluginInfo, Parts, TomorrowPartName),
 	{ok, State#state{
 		manifest = NewManifest,
 		parts = NewParts,
 		parts_to_close = PartsToClose
 	}, NewParts}.
 
--spec open_parts(atom()) -> {ok, [handle()], #manifest{}} | {error, Reason::term()}.
-open_parts(StorageName) ->
+-spec open_parts(StorageName::atom(), PluginInfo::[tuple()]) ->
+	{ok, [handle()], #manifest{}} | {error, Reason::term()}.
+open_parts(StorageName, StoragePluginInfo) ->
 	case read_manifest(StorageName) of
 		{ok, Manifest = #manifest{partitions = Partitions}} ->
 			OpenParts =
 				lists:map(
 					fun(#daily_cfg{name = Name}) ->
-						{ok, Part} = kv_storage:open(Name),
+						{ok, Part} = kv_storage:open(Name, StoragePluginInfo),
 						?log_debug("Opened partition: (~p)[~p]", [StorageName, Part]),
 						Part
 					end,
@@ -245,7 +253,7 @@ open_parts(StorageName) ->
 			%% manifest doesn't exist yet.
 			Seq = 1,
 			Name = build_name(Seq, StorageName),
-			{ok, Part} = kv_storage:open(Name),
+			{ok, Part} = kv_storage:open(Name, StoragePluginInfo),
 			?log_debug("Created partition: (~p)[~p]", [StorageName, Part]),
 
 			Manifest = #manifest{
@@ -316,4 +324,14 @@ delete_by_id(ID, [Part|SoFar]) ->
 			delete_by_id(ID, SoFar);
 		Other ->
 			{error, Other}
+	end.
+
+-spec get_storage_plugin_info() ->
+	{ok, StoragePluginInfo::[tuple()]} | {error, no_entry}.
+get_storage_plugin_info() ->
+	case application:get_env(?APP, kv_storage) of
+		undefined ->
+			{error, no_entry};
+		{ok, StoragePluginInfo} ->
+			{ok, StoragePluginInfo}
 	end.
