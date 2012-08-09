@@ -9,6 +9,32 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
 
+-define(addr(Addr),
+	apply(fun() ->
+		NewAddr = binary_to_list(Addr#addr.addr),
+		Addr#addr{addr = NewAddr}
+	 end, [])).
+
+-define(uuid(UUID),
+	apply(fun() ->
+		k_uuid:to_string(UUID)
+	end, [])).
+
+-define(addrs(Addrs),
+	apply(fun()->
+		lists:map(fun(Addr) -> ?addr(Addr) end, Addrs)
+	end, [])).
+
+-define(string(Bin),
+	apply(fun() ->
+		binary_to_list(Bin)
+	end, [])).
+
+-define(strings(List),
+	apply(fun() ->
+		lists:map(fun(Element) -> ?string(Element) end, List)
+	end, [])).
+
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_ContentType, Message) ->
 	% ?log_debug("got message...", []),
@@ -42,10 +68,12 @@ authenticate(BindReq = #'BindRequest'{
 	userId = UserId
 }) ->
 	?log_debug("got request: ~p", [BindReq]),
-	case k_aaa:get_customer_by_system_id(SystemId) of
+	BinSystemID = list_to_binary(SystemId),
+
+	case k_aaa:get_customer_by_system_id(BinSystemID) of
 		{ok, Customer} ->
 			?log_debug("Customer found: ~p", [Customer]),
-			case k_aaa:get_customer_user(Customer, UserId) of
+			case k_aaa:get_customer_user(Customer, list_to_binary(UserId)) of
 				{ok, User = #user{}} ->
 					?log_debug("User found: ~p", [User]),
 					Checks = [
@@ -110,8 +138,8 @@ build_customer_response(#'BindRequest'{
 
 	%%% validation optional values %%%
 	RPS = validate_optional_asn_value(RPSt),
-	DS = validate_optional_asn_value(DSt),
-	DP = validate_optional_asn_value(DPt),
+	DS = validate_optional_asn_value(?addr(DSt)),
+	DP = validate_optional_asn_value(?uuid(DPt)),
 	%%% END of validation %%%
 
 	Addrs = lists:map(
@@ -122,8 +150,7 @@ build_customer_response(#'BindRequest'{
 				npi = NPI
 			}
 		end,
-		AddrList),
-	% ?log_debug("built Addr: ~p", [Addrs]),
+		?addrs(AddrList)),
 
 	{Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
 		%%%NETWORK SECTION%%%
@@ -135,11 +162,11 @@ build_customer_response(#'BindRequest'{
 			providerId = ProviderId
 			} = Network,
 		NNew = #'Network'{
-			id = NetworkId,
-			countryCode = CC,
+			id = ?uuid(NetworkId),
+			countryCode = ?string(CC),
 			numbersLen = NL,
-			prefixes = Pref,
-			providerId = ProviderId
+			prefixes = ?strings(Pref),
+			providerId = ?uuid(ProviderId)
 		},
 
 		%%% PROVIDER SECTION %%%
@@ -150,9 +177,9 @@ build_customer_response(#'BindRequest'{
 			receiptsSupported = RS
 		} = Provider,
 		PNew = #'Provider'{
-			id = ProviderId,
-			gateway = Gateway,
-			bulkGateway = BGateway,
+			id = ?uuid(ProviderId),
+			gateway = ?uuid(Gateway),
+			bulkGateway = ?uuid(BGateway),
 			receiptsSupported = RS
 		},
 		%%% check for Provider dublications %%%
@@ -163,12 +190,10 @@ build_customer_response(#'BindRequest'{
 				{[NNew | N], [PNew | P]}
 		end
 	end, {[], []}, NtwIdList),
-	% ?log_debug("built Networks: ~p", [Networks]),
-	% ?log_debug("built Providers: ~p", [Providers]),
 
 	Customer = #'Customer'{
 		id = CustomerId,
-		uuid = UUID,
+		uuid = ?uuid(UUID),
 		priority = Prior,
 		rps = RPS,
 		allowedSources = Addrs,
@@ -178,7 +203,7 @@ build_customer_response(#'BindRequest'{
 		defaultProviderId = DP,
 		receiptsAllowed = RA,
 		noRetry = NR,
-		defaultValidity = DV,
+		defaultValidity = ?string(DV),
 		maxValidity = MV
 	},
 	?log_debug("built Customer: ~p", [Customer]),
