@@ -237,7 +237,7 @@ decode_address(AddrBin) ->
 	AddrString = binary_to_list(AddrBin),
 	[Addr, Ton, Npi] = string:tokens(AddrString, ","),
 	#addr{
-		addr = Addr,
+		addr = list_to_binary(Addr),
 		ton = list_to_integer(Ton),
 		npi = list_to_integer(Npi)
 	}.
