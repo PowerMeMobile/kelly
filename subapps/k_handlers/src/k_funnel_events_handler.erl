@@ -15,7 +15,7 @@ process(<<"ConnectionDownEvent">>, Message) ->
 			connectionId = ConnId,
 			customerId = SystemId
 		}} ->
-			process_connection_down_event(ConnId, SystemId);
+			process_connection_down_event(list_to_binary(ConnId), list_to_binary(SystemId));
 		{error, Error} ->
 			?log_error("Failed to decode ConnectionDownEvent: ~p with error: ~p", [Message, Error]),
 			{ok, []}
@@ -28,7 +28,7 @@ process(<<"ConnectionUpEvent">>, Message) ->
 			customerId = SystemId,
 			type = ConnType
 		}} ->
-			process_connection_up_event(ConnId, SystemId, ConnType);
+			process_connection_up_event(list_to_binary(ConnId), list_to_binary(SystemId), ConnType);
 		{error, Error} ->
 			?log_error("Failed to decode ConnectionUpEvent: ~p with error: ~p", [Message, Error]),
 			{ok, []}
@@ -69,7 +69,7 @@ process_connection_up_event(ConnId, SystemId, ConnType) when
 			Subscription = #k_mb_subscription{
 					id = ConnId,
 					customer_id = CustId,
-					user_id = undefined,
+					user_id = <<"undefined">>,
 				   	type = ConnType,
 					app_type = smpp,
 					queue_name = QName
