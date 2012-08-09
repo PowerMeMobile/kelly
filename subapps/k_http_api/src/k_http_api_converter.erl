@@ -83,11 +83,7 @@ json_preprocess(Atom) when is_atom(Atom) ->
 	atom_to_binary(Atom, utf8);
 json_preprocess(List = [{_K, _V} | _Rest]) ->
 	[{json_preprocess(Key), json_preprocess(Value)} || {Key, Value} <- List];
-	%% for such values as ["string1", "string2"]
-json_preprocess(List = [E | _Rest]) when is_list(E) ->
-	?log_debug("List: ~p", [List]),
+json_preprocess(List) when is_list(List) ->
 	[json_preprocess(Element) || Element <- List];
 json_preprocess(List = [E | _Rest]) when is_atom(E) ->
-	[json_preprocess(Element) || Element <- List];
-json_preprocess(List) when is_list(List) ->
-	list_to_binary(List).
+	[json_preprocess(Element) || Element <- List].
