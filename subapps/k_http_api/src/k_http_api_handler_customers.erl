@@ -151,8 +151,6 @@ delete(Params) ->
 %% ===================================================================
 
 update_customer(Customer, Params) ->
-	NewPriority = resolve(priority, Params, Customer#customer.priority),
-	NewRPS = resolve(rps, Params, Customer#customer.rps),
 	NewName = resolve(name, Params, Customer#customer.name),
 	NewOriginators = resolve(originator, Params, Customer#customer.allowedSources),
 	NewDefaultOriginator = resolve(default_originator, Params, Customer#customer.defaultSource),
@@ -165,8 +163,8 @@ update_customer(Customer, Params) ->
 		id = Customer#customer.id,
 		uuid = Customer#customer.uuid,
 		name = NewName,
-		priority = NewPriority,
-		rps = NewRPS,
+		priority = 1,
+		rps = 10000,
 		allowedSources = NewOriginators,
 		defaultSource = NewDefaultOriginator,
 		networks = NewNetworks,
@@ -177,10 +175,6 @@ update_customer(Customer, Params) ->
 		maxValidity = NewMaxValidity,
 		users = Customer#customer.users
 	},
-	k_snmp:set_row(cst, Customer#customer.uuid, [
-		%% {cstRPS, NewRPS},
-		%% Priority is a must have setting
-		{cstPriority, NewPriority}]),
 	ok = k_aaa:set_customer(Customer#customer.id, NewCustomer),
 	{ok, [CustPropList]} = prepare({Customer#customer.uuid, NewCustomer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
@@ -188,8 +182,8 @@ update_customer(Customer, Params) ->
 
 create_customer(Params) ->
 	UUID = ?gv(id, Params),
-	Priority = resolve(priority, Params, ?DEFAULT_PRIORITY),
-	RPS = ?gv(rps, Params),
+	Priority = 1,
+	RPS = 10000,
 	System_id = ?gv(system_id, Params),
 	Customer = #customer{
 		id = System_id,
