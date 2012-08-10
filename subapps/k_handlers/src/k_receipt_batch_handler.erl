@@ -25,9 +25,10 @@ process(CT, Message) ->
 
 -spec process_receipt_batch(#'ReceiptBatch'{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_receipt_batch(ReceiptBatch = #'ReceiptBatch'{
-	gatewayId = GatewayId,
+	gatewayId = GatewayIdStr,
 	receipts = Receipts
 }) ->
+	GatewayId = k_uuid:to_binary(GatewayIdStr),
 	?log_debug("Got request: ~p", [ReceiptBatch]),
 	DlrTime = k_datetime:utc_unix_epoch(),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
@@ -43,7 +44,8 @@ process_receipt_batch(ReceiptBatch = #'ReceiptBatch'{
 traverse_delivery_receipts(_GatewayId, _DlrTime, []) ->
 	ok;
 traverse_delivery_receipts(GatewayId, DlrTime,
-	[#'DeliveryReceipt'{messageId = MessageId, messageState = MessageState} | Receipts]) ->
+	[#'DeliveryReceipt'{messageId = MessageIdStr, messageState = MessageState} | Receipts]) ->
+	MessageId = list_to_binary(MessageIdStr),
 	OutputId = {GatewayId, MessageId},
 	case k_storage:get_input_id_by_output_id(OutputId) of
 		{ok, InputId} ->
@@ -86,7 +88,7 @@ register_funnel_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
 	DstAddr = MsgInfo#msg_info.dst_addr,
 	Data = {InputId, MessageState, SrcAddr, DstAddr, DlrTime},
 	{CustomerId, BatchId, BatchBinary} = k_funnel_asn_helper:render_receipt(Data),
-	UserId = undefined,
+	UserId = <<"undefined">>,
 	ok = k_mailbox:register_incoming_item(
-		BatchId, CustomerId, UserId, <<"ReceiptBatch">>, BatchBinary
+		k_uuid:to_binary(BatchId), CustomerId, UserId, <<"ReceiptBatch">>, BatchBinary
 	).
