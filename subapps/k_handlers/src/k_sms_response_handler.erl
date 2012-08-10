@@ -89,22 +89,32 @@ map_in_to_out(InputId, OutputId) ->
 -spec sms_response_to_msg_resp_list(#'SmsResponse'{}) -> [#msg_resp{}].
 sms_response_to_msg_resp_list(#'SmsResponse'{
 	id = _Id,
-	customerId = CustomerId,
-	gatewayId = GatewayId,
+	customerId = CustomerIdStr,
+	gatewayId = GatewayIdStr,
 	timestamp = _Timestamp,
 	statuses = Statuses
 }) ->
+	CustomerId = k_uuid:to_binary(CustomerIdStr),
+	GatewayId = k_uuid:to_binary(GatewayIdStr),
 	lists:map(fun(#'SmStatus'{
-					originalId = OriginalId,
+					originalId = OriginalIdStr,
 					destAddr = _DestAddr,
 					status = Status,
 					partsTotal = _PartsTotal,
 					partIndex = _PartIndex,
-					messageId = MessageId,
+					messageId = MessageIdStr,
 					errorCode = _ErrorCode
 				 }) ->
+					OriginalId = list_to_binary(OriginalIdStr),
+					MessageId = optional_to_binary(MessageIdStr),
 					#msg_resp{
 						input_id = {CustomerId, OriginalId},
 						output_id = {GatewayId, MessageId},
 						status = Status
 					} end, Statuses).
+
+
+optional_to_binary(asn1_NOVALUE) ->
+	asn1_NOVALUE;
+optional_to_binary(Value) ->
+	list_to_binary(Value).
