@@ -41,7 +41,7 @@ process_incoming_sms_request(IncomingSmsRequest = #'IncomingSm'{
 		npi = NPI
 	} = DestAddr,
 	%% generate new id.
-	ItemId = k_uuid:to_string(k_uuid:newid()),
+	ItemId = k_uuid:newid(),
 	%% transform encoding.
 	Encoding = case DataCoding of
 	   -1 -> {text, default};
@@ -55,13 +55,13 @@ process_incoming_sms_request(IncomingSmsRequest = #'IncomingSm'{
 	%% this will return either valid customer id or `undefined'.
 	%% i think it makes sense to store even partly filled message.
 	CustomerId =
-		case k_addr2cust:resolve(#addr{addr = Addr, ton = TON, npi = NPI}) of
+		case k_addr2cust:resolve(#addr{addr = list_to_binary(Addr), ton = TON, npi = NPI}) of
 			{ok, CustId, UserId} ->
 				?log_debug("Got incoming message for [cust:~p; user: ~p] (addr:~p, ton:~p, npi:~p)",
 					[CustId, UserId, Addr, TON, NPI] ),
 				%% register it to futher sending.
 				Batch = k_funnel_asn_helper:render_outgoing_batch(
-					ItemId, SourceAddr, DestAddr, MessageBody, Encoding),
+					k_uuid:to_string(ItemId), SourceAddr, DestAddr, MessageBody, Encoding),
 				k_mailbox:register_incoming_item(
 					ItemId, CustId, UserId, <<"OutgoingBatch">>, Batch),
 				?log_debug("Incomming message registered [item:~p]", [ItemId]),
@@ -74,11 +74,11 @@ process_incoming_sms_request(IncomingSmsRequest = #'IncomingSm'{
 			undefined
 	end,
 	%% build OutputId.
-	OutputId = {GatewayId, ItemId},
+	OutputId = {k_uuid:to_binary(GatewayId), ItemId},
 	%% build msg_info out of available data
 	MsgInfo = #msg_info{
 		id = ItemId,
-		gateway_id = GatewayId,
+		gateway_id = k_uuid:to_binary(GatewayId),
 		customer_id = CustomerId,
 		type = regular,
 		encoding = Encoding,
@@ -101,7 +101,7 @@ transform_addr(#'FullAddr'{
 	npi = Npi
 }) ->
 	#full_addr{
-		addr = Addr,
+		addr = list_to_binary(Addr),
 		ton = Ton,
 		npi = Npi
 	};
