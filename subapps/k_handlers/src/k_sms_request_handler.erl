@@ -88,8 +88,8 @@ get_param_by_name(Name, Params) ->
 -spec sms_request_to_msg_info_list(#'SmsRequest'{}) -> [#msg_info{}].
 sms_request_to_msg_info_list(#'SmsRequest'{
 	id = _Id,
-	gatewayId = GatewayId,
-	customerId = CustomerId,
+	gatewayId = GatewayIdStr,
+	customerId = CustomerIdStr,
 	type = Type,
 	message = Message,
 	encoding = Encoding,
@@ -98,6 +98,8 @@ sms_request_to_msg_info_list(#'SmsRequest'{
 	destAddrs = {_, DestAddrs},
 	messageIds = MessageIds
 }) ->
+	GatewayId = k_uuid:to_binary(GatewayIdStr),
+	CustomerId = k_uuid:to_binary(CustomerIdStr),
 	%% Message ids come in ["ID1", "ID2:ID3", "ID4"], where "ID2:ID3" is a multipart message ids.
 	%% Destination addrs come in ["ADDR1", "ADDR2", "ADDR3"]. The task is to get {ADDRX, IDY} pairs
 	%% like that [{"ADDR1", "ID1"}, {"ADDR2", "ID2"}, {"ADDR2", "ID3"}, {"ADDR3", "ID4"}].
@@ -132,7 +134,7 @@ transform_addr(#'FullAddr'{
 	npi = Npi
 }) ->
 	#full_addr{
-		addr = Addr,
+		addr = list_to_binary(Addr),
 		ton = Ton,
 		npi = Npi
 	};
@@ -150,7 +152,7 @@ transform_addr(#'FullAddrAndRefNum'{
 explode(Delimiter, String) ->
 	explode(Delimiter, lists:reverse(String), [[]]).
 explode(_, [], Groups) ->
-	Groups;
+	lists:map(fun(Element) -> list_to_binary(Element) end, Groups);
 explode(Delimiter, [Delimiter | String], Groups) ->
 	explode(Delimiter, String, [[] | Groups]);
 explode(Delimiter, [Char | String], [Group | Groups]) ->
