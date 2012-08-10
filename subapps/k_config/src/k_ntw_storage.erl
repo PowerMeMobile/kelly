@@ -18,16 +18,16 @@
 
 -spec set_network(network_id(), #network{}) -> ok | {error, term()}.
 set_network(NetworkId, Network)->
-	k_gen_storage_common:write_version(networks, ?CURRENT_VERSION, NetworkId, Network).
+	kv_storage_common:write_version(networks, ?CURRENT_VERSION, NetworkId, Network).
 
 -spec get_network(network_id()) -> {ok, #network{}} | {error, no_entry} | {error, term()}.
 get_network(NetworkId) ->
-	k_gen_storage_common:read_version(networks, ?CURRENT_VERSION, NetworkId).
+	kv_storage_common:read_version(networks, ?CURRENT_VERSION, NetworkId).
 
 -spec get_networks() -> {ok, [{network_id(), #network{}}]} | {error, term()}.
 get_networks() ->
-	k_gen_storage_common:read_version(networks, ?CURRENT_VERSION).
+	kv_storage_common:read_version(networks, ?CURRENT_VERSION).
 
 -spec del_network(network_id()) -> ok | {error, no_entry} | {error, term()}.
 del_network(NetworkId) ->
-	k_gen_storage_common:delete_version(networks, ?CURRENT_VERSION, NetworkId).
+	kv_storage_common:delete_version(networks, ?CURRENT_VERSION, NetworkId).

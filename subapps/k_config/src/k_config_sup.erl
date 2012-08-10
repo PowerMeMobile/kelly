@@ -31,11 +31,11 @@ init([]) ->
     {ok, {
 		{one_for_one, 5, 10}, [
 			{gateways,
-				{k_gen_storage_common, start_link, [gateways]}, permanent, 1000000, worker, [k_gen_storage_common]},
+				{kv_storage_common, start_link, [gateways]}, permanent, 1000000, worker, [kv_storage_common]},
 			{providers,
-				{k_gen_storage_common, start_link, [providers]}, permanent, 1000000, worker, [k_gen_storage_common]},
+				{kv_storage_common, start_link, [providers]}, permanent, 1000000, worker, [kv_storage_common]},
 			{networks,
-				{k_gen_storage_common, start_link, [networks]}, permanent, 1000000, worker, [k_gen_storage_common]}
+				{kv_storage_common, start_link, [networks]}, permanent, 1000000, worker, [kv_storage_common]}
 		]}
 	}.
 

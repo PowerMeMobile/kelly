@@ -18,14 +18,14 @@
 ]).
 
 -include("application.hrl").
--include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/gen_server_spec.hrl").
 -include("daily_cfg.hrl").
 -include("manifest.hrl").
+-include_lib("k_common/include/logging.hrl").
+-include_lib("k_common/include/gen_server_spec.hrl").
 
 -define(TIMER_INTERVAL, 10000).
 
--type handle() :: k_gen_storage:handle().
+-type handle() :: kv_storage:handle().
 
 -record(state, {
 	storage_name :: atom(),
@@ -50,7 +50,8 @@ start_link(StorageName) ->
 init([StorageName]) ->
 	?log_debug("init(~p)", [StorageName]),
 
-	{ok, Parts, Manifest} = open_parts(StorageName),
+	{ok, StoragePluginInfo} = get_storage_plugin_info(),
+	{ok, Parts, Manifest} = open_parts(StorageName, StoragePluginInfo),
 
 	TickRef = make_ref(),
 	setup_alarm(TickRef),
@@ -70,7 +71,7 @@ handle_call(perform_rotation, _From, State = #state{}) ->
 handle_call({set, Key, Value}, _From, State = #state{
 	parts = [Part|_]
 }) ->
-	Res = k_gen_storage:write(Part, Key, Value),
+	Res = kv_storage:write(Part, Key, Value),
 	{reply, Res, State};
 
 handle_call({get, Key}, _From, State = #state{
@@ -147,7 +148,7 @@ close_old_partitions(State = #state{
 	lists:map(
 		fun(Part) ->
 			?log_debug("closing old partition(~p) ~p", [StorageName, Part]),
-			ok = k_gen_storage:close(Part)
+			ok = kv_storage:close(Part)
 		end,
 		PartsToClose),
 	?log_debug("rotation[closing old parts] complete(~p)", [StorageName]),
@@ -187,9 +188,14 @@ add_partition_to_manifest(StorageName, Manifest = #manifest{
 			partitions = PartitionsLeft
 		}, Tomorrow}.
 
--spec add_tomorrow_partition(atom(), [handle()], string()) -> {ok, [handle()], [handle()]}.
-add_tomorrow_partition(StorageName, Parts, TomorrowPartName) ->
-	{ok, NewPart} = k_gen_storage:open(TomorrowPartName),
+-spec add_tomorrow_partition(
+	StorageName::atom(),
+	StoragePluginInfo::[tuple()],
+	Parts::[handle()],
+	TomorrowPartName::string()) ->
+	{ok, [handle()], [handle()]}.
+add_tomorrow_partition(StorageName, StoragePluginInfo, Parts, TomorrowPartName) ->
+	{ok, NewPart} = kv_storage:open(TomorrowPartName, StoragePluginInfo),
 	?log_debug("Opened tomorrow partition: (~p)[~p]", [StorageName, NewPart]),
 
 	NewParts = [NewPart|Parts],
@@ -221,21 +227,23 @@ add_partition(State = #state{
 	?log_debug("New manifest written (~p)[~p]", [StorageName, NewManifest#manifest.last_rotated]),
 
 	TomorrowPartName = Tomorrow#daily_cfg.name,
-	{ok, NewParts, PartsToClose} = add_tomorrow_partition(StorageName, Parts, TomorrowPartName),
+	{ok, StoragePluginInfo} = get_storage_plugin_info(),
+	{ok, NewParts, PartsToClose} = add_tomorrow_partition(StorageName, StoragePluginInfo, Parts, TomorrowPartName),
 	{ok, State#state{
 		manifest = NewManifest,
 		parts = NewParts,
 		parts_to_close = PartsToClose
 	}, NewParts}.
 
--spec open_parts(atom()) -> {ok, [handle()], #manifest{}} | {error, Reason::term()}.
-open_parts(StorageName) ->
+-spec open_parts(StorageName::atom(), PluginInfo::[tuple()]) ->
+	{ok, [handle()], #manifest{}} | {error, Reason::term()}.
+open_parts(StorageName, StoragePluginInfo) ->
 	case read_manifest(StorageName) of
 		{ok, Manifest = #manifest{partitions = Partitions}} ->
 			OpenParts =
 				lists:map(
 					fun(#daily_cfg{name = Name}) ->
-						{ok, Part} = k_gen_storage:open(Name),
+						{ok, Part} = kv_storage:open(Name, StoragePluginInfo),
 						?log_debug("Opened partition: (~p)[~p]", [StorageName, Part]),
 						Part
 					end,
@@ -245,7 +253,7 @@ open_parts(StorageName) ->
 			%% manifest doesn't exist yet.
 			Seq = 1,
 			Name = build_name(Seq, StorageName),
-			{ok, Part} = k_gen_storage:open(Name),
+			{ok, Part} = kv_storage:open(Name, StoragePluginInfo),
 			?log_debug("Created partition: (~p)[~p]", [StorageName, Part]),
 
 			Manifest = #manifest{
@@ -296,7 +304,7 @@ manifest_file_path(StorageName) when is_atom(StorageName) ->
 find_by_id(_ID, []) ->
 	{error, no_entry};
 find_by_id(ID, [Part|SoFar]) ->
-	case k_gen_storage:read(Part, ID) of
+	case kv_storage:read(Part, ID) of
 		{ok, Entry} ->
 			{ok, Entry};
 		{error, no_entry} ->
@@ -309,11 +317,21 @@ find_by_id(ID, [Part|SoFar]) ->
 delete_by_id(_ID, []) ->
 	{error, no_entry};
 delete_by_id(ID, [Part|SoFar]) ->
-	case k_gen_storage:delete(Part, ID) of
+	case kv_storage:delete(Part, ID) of
 		ok ->
 			ok;
 		{error, no_entry} ->
 			delete_by_id(ID, SoFar);
 		Other ->
 			{error, Other}
+	end.
+
+-spec get_storage_plugin_info() ->
+	{ok, StoragePluginInfo::[tuple()]} | {error, no_entry}.
+get_storage_plugin_info() ->
+	case application:get_env(?APP, kv_storage) of
+		undefined ->
+			{error, no_entry};
+		{ok, StoragePluginInfo} ->
+			{ok, StoragePluginInfo}
 	end.
