@@ -48,6 +48,7 @@ init({tcp, http}, Req, [Handler]) ->
 	{ok, Req, #state{view = View, handler = Handler}}.
 
 handle(Req, State = #state{handler = Handler}) ->
+	?log_debug("Req: ~p", [Req]),
 	{ok, HandlerSpec} = Handler:init(),
 	{Path, _} = cowboy_http_req:path(Req),
 	{Method, _} = cowboy_http_req:method(Req),
@@ -76,7 +77,7 @@ get_method_spec('DELETE', #specs{delete = Spec}, State) when Spec =/= undefined 
 	process_path(State#state{method_spec = Spec, handler_func = delete});
 get_method_spec(Method, _, State = #state{req = Req}) ->
 	?log_debug("[~p] method not supported", [Method]),
-	exception('svc0006', [atom_to_binary(Method, utf8)], Req, State).
+	exception('svc0006', [Method], Req, State).
 
 process_path(State = #state{path = ReqPath, method_spec = SpecList}) when is_list(SpecList) ->
 	?log_debug("ReqPath: ~p", [ReqPath]),
@@ -296,6 +297,7 @@ resolve_body(ExternalBody, _DefaultBody) ->
 -spec exception(ExceptionTag :: atom(), Variables :: [term()], Req :: term(), State :: term()) ->
 	{ok, Req2 :: term(), State :: term()}.
 exception(Code, Variables, Req, State) ->
+	?log_debug("Code: ~p, Variables: ~p", [Code, Variables]),
 	{ok, Body, HttpCode} = exception_body_and_code(Code, Variables),
 	ContentType = <<"application/json">>,
 	Headers = [{'Content-Type', ContentType}],
@@ -365,14 +367,16 @@ exception_body_and_code(Exception, _Variables) ->
 
 
 exception_body(MessageID, Text, Variables) ->
-	Body = jsx:term_to_json([{<<"request_error">>, [{<<"service_exception">>, [
+	Body = [{<<"request_error">>, [{<<"service_exception">>, [
 													{<<"message_id">>, MessageID},
 													{<<"text">>, Text},
 													{<<"variables">>, Variables}
 													]
 											}]
-						}]),
-	{ok, Body}.
+						}],
+	{ok, Json} = k_http_api_converter:process(Body, <<"json">>),
+	?log_debug("Exception json body: ~p", [Body]),
+	{ok, Json}.
 
 get_requests_parameters(Method, Req) ->
 	Parameters =
