@@ -195,6 +195,11 @@ process_req(State = #state{req = Req, handler_params = Params, view = V, handler
 
 convert(undefined, _Type) ->
 	undefined;
+convert(State, customer_state) ->
+	case State of
+		<<"0">> -> 0;
+		<<"1">> -> 1
+	end;
 convert(SMPPType, smpp_type) ->
 	convert_smpp_type(SMPPType);
 convert(Value, addr) ->

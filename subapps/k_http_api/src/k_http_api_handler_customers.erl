@@ -35,7 +35,8 @@ init() ->
 		#param{name = default_provider_id, mandatory = false, repeated = false, type = binary_uuid},
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = false, repeated = false, type = binary},
-		#param{name = max_validity, mandatory = false, repeated = false, type = integer}
+		#param{name = max_validity, mandatory = false, repeated = false, type = integer},
+		#param{name = state, mandatory = false, repeated = false, type = customer_state}
 	],
 	Update = #method_spec{
 				path = [<<"customers">>, id],
@@ -60,7 +61,8 @@ init() ->
 		#param{name = default_provider_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = true, repeated = false, type = binary},
-		#param{name = max_validity, mandatory = true, repeated = false, type = integer}
+		#param{name = max_validity, mandatory = true, repeated = false, type = integer},
+		#param{name = state, mandatory = true, repeated = false, type = customer_state}
 	],
 	Create = #method_spec{
 				path = [<<"customers">>],
@@ -159,6 +161,7 @@ update_customer(Customer, Params) ->
 	NewReceiptsAllowed = resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
 	NewDefaultValidity = resolve(default_validity, Params, Customer#customer.defaultValidity),
 	NewMaxValidity = resolve(max_validity, Params, Customer#customer.maxValidity),
+	NewState = resolve(state, Params, Customer#customer.state),
 	NewCustomer = #customer{
 		id = Customer#customer.id,
 		uuid = Customer#customer.uuid,
@@ -173,7 +176,8 @@ update_customer(Customer, Params) ->
 		noRetry = false,
 		defaultValidity = NewDefaultValidity,
 		maxValidity = NewMaxValidity,
-		users = Customer#customer.users
+		users = Customer#customer.users,
+		state = NewState
 	},
 	ok = k_aaa:set_customer(Customer#customer.id, NewCustomer),
 	{ok, [CustPropList]} = prepare({Customer#customer.uuid, NewCustomer}),
@@ -199,7 +203,8 @@ create_customer(Params) ->
 		noRetry = false,
 		defaultValidity = ?gv(default_validity, Params),
 		maxValidity = ?gv(max_validity, Params),
-		users = []
+		users = [],
+		state = ?gv(state, Params)
 	},
 	k_snmp:set_row(cst, k_uuid:to_string(UUID), [
 		{cstRPS, RPS},
