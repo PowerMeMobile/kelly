@@ -4,50 +4,51 @@ Today=`date +%Y-%m-%d`
 From="${Today}T00:00"
 To="${Today}T23:59"
 
+function make_request() {
+	Url=$1
+	echo Request:
+	echo $Url
+	echo Result:
+	curl $Url
+	echo; echo
+}
+
 #
 # Statistical interface for statuses
 #
 
 # All
-curl "http://localhost:8080/report/statuses?from=${From}&to=${To}"
-echo; echo
+make_request "http://localhost:8080/report/statuses?from=${From}&to=${To}"
 
 # By status
-curl "http://localhost:8080/report/statuses?from=${From}&to=${To}&status=delivered"
-echo; echo
+make_request "http://localhost:8080/report/statuses?from=${From}&to=${To}&status=delivered"
 
 #
 # Statistical interface for uplink and downlink
 #
 
 # Uplink
-curl "http://localhost:8080/report/uplink"
-echo; echo
+make_request "http://localhost:8080/report/uplink"
 
 # Downlink
-curl "http://localhost:8080/report/downlink"
-echo; echo
+make_request "http://localhost:8080/report/downlink"
 
 #
 # Statistical interface for Messages
 #
-curl "http://localhost:8080/report/messages/details?from=${From}&to=${To}&slice_length=M60"
-echo; echo
+make_request "http://localhost:8080/report/messages/details?from=${From}&to=${To}&slice_length=M60"
 
 #
 # Statistical interface for Customers, Networks
 #
 
 # Customers
-curl "http://localhost:8080/report/messages/customers?from=${From}&to=${To}"
-echo; echo
+make_request "http://localhost:8080/report/messages/customers?from=${From}&to=${To}"
 
 # Networks
-curl "http://localhost:8080/report/messages/networks?from=${From}&to=${To}"
-echo; echo
+make_request "http://localhost:8080/report/messages/networks?from=${From}&to=${To}"
 
 #
 # Message status request.
 #
-curl "http://localhost:8080/message_status/1/customer/feda5822-5271-11e1-bd27-001d0947ec73"
-echo; echo
+make_request "http://localhost:8080/message_status/1/customer/feda5822-5271-11e1-bd27-001d0947ec73"
