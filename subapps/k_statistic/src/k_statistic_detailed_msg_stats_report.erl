@@ -62,7 +62,7 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 					Frequencies = k_statistic_utils:make_frequencies(Timestamps),
 					GatewayTotal = length(Timestamps),
 					[
-						{gateway_id, GatewayId},
+						{gateway_id, list_to_binary(k_uuid:to_string(GatewayId))},
 						{gateway_name, get_gateway_name(GatewayId)},
 						{total, GatewayTotal},
 						{slices,
@@ -76,8 +76,8 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 										true -> lists:max(SliceFreqs) * 1.0
 									end,
 									[
-										{from, k_statistic_utils:timestamp_to_iso_8601(F)},
-										{to, k_statistic_utils:timestamp_to_iso_8601(T)},
+										{from, list_to_binary(k_statistic_utils:timestamp_to_iso_8601(F))},
+										{to, list_to_binary(k_statistic_utils:timestamp_to_iso_8601(T))},
 										{total, SliceTotal},
 										{avg, SliceAvg},
 										{peak, SlicePeak}

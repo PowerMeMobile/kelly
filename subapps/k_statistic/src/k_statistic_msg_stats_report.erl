@@ -87,12 +87,12 @@ annotate_msg_stats_report(customers, Customers) ->
 		fun(Customer) ->
 			{CustomerId, Networks} = Customer,
 			[
-				{id, CustomerId},
+				{id, list_to_binary(k_uuid:to_string(CustomerId))},
 				{networks,
 					lists:map(
 						fun({NetworkId, MsgIds}) ->
 							[
-								{id, NetworkId},
+								{id, list_to_binary(k_uuid:to_string(NetworkId))},
 								{mids, MsgIds}
 							]
 						end,
@@ -105,12 +105,12 @@ annotate_msg_stats_report(networks, Networks) ->
 	lists:map(
 		fun({NetworkId, Customers}) ->
 			[
-				{id, NetworkId},
+				{id, list_to_binary(k_uuid:to_string(NetworkId))},
 				{customers,
 					lists:map(
 						fun({CustomerId, MsgIds}) ->
 							[
-								{id, CustomerId},
+								{id, list_to_binary(k_uuid:to_string(CustomerId))},
 								{mids, MsgIds}
 							]
 						 end,
@@ -150,7 +150,7 @@ match_addr(AddrRec) ->
 cache_lookup_network_id(Address, CacheMap) ->
 	Result = k_statistic_utils:findwith(
 		fun({Prefix, _}) ->
-			lists:prefix(Prefix, Address)
+			lists:prefix(Prefix, binary_to_list(Address))
 		end,
 		CacheMap),
 	case  Result of
@@ -207,12 +207,12 @@ does_address_match_network(Address, #network{
 }) ->
 	CodeAndPrefixes = lists:map(
 		fun(Prefix) ->
-			CountryCode ++ Prefix
+			binary_to_list(CountryCode) ++ binary_to_list(Prefix)
 		end,
 		Prefixes),
 	Result = k_statistic_utils:findwith(
 		fun(CodeAndPrefix) ->
-			lists:prefix(CodeAndPrefix, Address)
+			lists:prefix(CodeAndPrefix, binary_to_list(Address))
 		end,
 		CodeAndPrefixes),
 	case Result of

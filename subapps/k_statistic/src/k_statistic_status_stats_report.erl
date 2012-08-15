@@ -99,11 +99,11 @@ outgoing_extended_report(Records, Status) ->
 			[
 				{datetime, Datetime},
 				{message_id, MessageId},
-				{gateway_id, GatewayId},
-				{customer_id, CustomerId},
+				{gateway_id, list_to_binary(k_uuid:to_string(GatewayId))},
+				{customer_id, list_to_binary(k_uuid:to_string(CustomerId))},
 				{src_addr, transform_addr(SrcAddr)},
 				{dst_addr, transform_addr(DstAddr)},
-				{message_text, binary_to_list(BinText)}
+				{message_text, BinText}
 			]
 		end,
 		Filtered),
@@ -133,11 +133,11 @@ incoming_extended_report(Records) ->
 			[
 				{datetime, Datetime},
 				{message_id, MessageId},
-				{gateway_id, GatewayId},
-				{customer_id, CustomerId},
+				{gateway_id, list_to_binary(k_uuid:to_string(GatewayId))},
+				{customer_id, list_to_binary(k_uuid:to_string(CustomerId))},
 				{src_addr, transform_addr(SrcAddr)},
 				{dst_addr, transform_addr(DstAddr)},
-				{message_text, binary_to_list(BinText)}
+				{message_text, BinText}
 			]
 		end,
 		Records),
