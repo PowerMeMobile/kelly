@@ -68,7 +68,6 @@ build_report(HttpFrom, HttpTo, undefined) ->
 build_report(HttpFrom, HttpTo, HttpStatus) ->
 	From = convert_http_datetime_to_term(HttpFrom),
 	To = convert_http_datetime_to_term(HttpTo),
-	k_statistic:status_stats_report(From, To),
  	Status = list_to_existing_atom(HttpStatus),
  	k_statistic:status_stats_report(From, To, Status).
 
