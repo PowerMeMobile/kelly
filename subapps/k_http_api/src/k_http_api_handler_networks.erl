@@ -135,7 +135,7 @@ update_network(Network, Params) ->
 	ID = ?gv(id, Params),
  	NewCountryCode = resolve(country_code, Params, Network#network.countryCode),
 	NewNumbersLen = resolve(numbers_len, Params, Network#network.numbersLen),
-	NewPrefixes = resolve(prefixes, Params, Network#network.prefixes),
+	NewPrefixes = resolve(prefix, Params, Network#network.prefixes),
 	NewProviderId = resolve(provider_id, Params, Network#network.providerId),
 	Updated = #network{
 		countryCode = NewCountryCode,
