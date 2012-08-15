@@ -26,12 +26,12 @@ get_report() ->
 
 	%% declare `To' queue.
 	QueueTo = <<"pmm.funnel.server_control">>,
-	DeclareTo = #'queue.declare'{
-		queue = QueueTo,
-		durable = false,
-		exclusive = false,
-		auto_delete = true},
-	#'queue.declare_ok'{} = amqp_channel:call(Channel, DeclareTo),
+	%% DeclareTo = #'queue.declare'{
+	%% 	queue = QueueTo,
+	%% 	durable = false,
+	%% 	exclusive = false,
+	%% 	auto_delete = true},
+	%% #'queue.declare_ok'{} = amqp_channel:call(Channel, DeclareTo),
 	PublishMethod = #'basic.publish'{routing_key = QueueTo},
 
 	%% declate `ReplyTo' queue.
