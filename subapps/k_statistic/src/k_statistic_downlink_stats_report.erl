@@ -26,12 +26,12 @@ get_report() ->
 
 	%% declare `To' queue.
 	QueueTo = <<"pmm.funnel.server_control">>,
-	DeclareTo = #'queue.declare'{
-		queue = QueueTo,
-		durable = false,
-		exclusive = false,
-		auto_delete = true},
-	#'queue.declare_ok'{} = amqp_channel:call(Channel, DeclareTo),
+	%% DeclareTo = #'queue.declare'{
+	%% 	queue = QueueTo,
+	%% 	durable = false,
+	%% 	exclusive = false,
+	%% 	auto_delete = true},
+	%% #'queue.declare_ok'{} = amqp_channel:call(Channel, DeclareTo),
 	PublishMethod = #'basic.publish'{routing_key = QueueTo},
 
 	%% declate `ReplyTo' queue.
@@ -112,14 +112,14 @@ prepare_conns([#'Connection'{
 	errors = Errors
 } | Rest], Acc) ->
 	ConnPropList = [
-		{id, ConnectionId},
-		{remote_ip, RemoteIp},
-		{customer_id, CustomerId},
-		{user_id, UserId},
-		{connected_at, ConnectedAt},
+		{id, list_to_binary(ConnectionId)},
+		{remote_ip, list_to_binary(RemoteIp)},
+		{customer_id, list_to_binary(CustomerId)},
+		{user_id, list_to_binary(UserId)},
+		{connected_at, list_to_binary(ConnectedAt)},
 		{type, Type},
 		{msgs_received, MsgsReceived},
 		{msgs_sent, MsgsSent},
-		{errors, Errors}
+		{errors, list_to_binary(Errors)}
 	],
 	prepare_conns(Rest, [ConnPropList | Acc]).

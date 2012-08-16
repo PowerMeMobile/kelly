@@ -75,11 +75,11 @@ handle_fork_call(_Arg, {{send, Item, QName, TimeOut}, S = #state{}}, _ReplyTo, _
 		} = S,
 
 	#k_mb_pending_item{
-		item_id = ItemID,
+		item_id = ItemIDBin,
 		content_type = CT,
 		content_body = Payload
 		} = Item,
-
+	ItemID = k_uuid:to_string(ItemIDBin),
 	MesID = list_to_binary(ItemID),
 	BasicProps =
 	prepare_basic_props([{message_id, MesID}, {correlation_id, MesID}, {reply_to, ReplyTo}, {content_type, CT}]),

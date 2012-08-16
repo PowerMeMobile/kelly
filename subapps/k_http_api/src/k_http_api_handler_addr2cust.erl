@@ -32,8 +32,8 @@ init() ->
 
 	CreateParams = [
 		#param{name = msisdn, mandatory = true, repeated = false, type = addr},
-		#param{name = customer,	mandatory = true, repeated = false,	type = string_uuid},
-		#param{name = user, mandatory = true, repeated = false, type = string}
+		#param{name = customer,	mandatory = true, repeated = false,	type = binary_uuid},
+		#param{name = user, mandatory = true, repeated = false, type = binary}
 	],
 	Create = #method_spec{
 				path = [<<"addr2cust">>],
@@ -81,4 +81,4 @@ delete(Params) ->
 %% ===================================================================
 
 prepare(CustomerID, UserID, Msisdn) ->
-	[{msisdn, [{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}]}, {customer, CustomerID}, {user, UserID}].
+	[{msisdn, [{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}]}, {customer, list_to_binary(k_uuid:to_string(CustomerID))}, {user, UserID}].

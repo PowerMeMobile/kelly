@@ -22,16 +22,16 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"providers">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = string_uuid}]},
+				params = [#param{name = id, mandatory = true, repeated = false, type = binary_uuid}]},
 			#method_spec{
 				path = [<<"providers">>],
 				params = []}
 			],
 
 	UpdateParams = [
-		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
-		#param{name = gateway, mandatory = false, repeated = false, type = string_uuid},
-		#param{name = bulk_gateway,	mandatory = false, repeated = false, type = string_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = gateway, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = bulk_gateway,	mandatory = false, repeated = false, type = binary_uuid},
 		#param{name = receipts_supported, mandatory = false, repeated = false, type = boolean}
 	],
 	Update = #method_spec{
@@ -39,16 +39,16 @@ init() ->
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = id, mandatory = true, repeated = false, type = string_uuid}
+		#param{name = id, mandatory = true, repeated = false, type = binary_uuid}
 	],
 	Delete = #method_spec{
 				path = [<<"providers">>, id],
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
-		#param{name = gateway, mandatory = true, repeated = false, type = string_uuid},
-		#param{name = bulk_gateway, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = gateway, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = bulk_gateway, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = receipts_supported, mandatory = true, repeated = false, type = boolean}
 	],
 	Create = #method_spec{
@@ -72,7 +72,7 @@ read(Params) ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = k_uuid:to_string(k_uuid:newid()),
+			UUID = k_uuid:newid(),
 			create_provider(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_ ->
 			is_exist(Params)
@@ -170,8 +170,12 @@ prepare([], Acc) ->
 	{ok, Acc};
 prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
 	PrvFun = ?record_to_proplist(provider),
-	PrvPropList = translate([{id, PrvUUID}] ++ PrvFun(Prv)),
-	prepare(Rest, [PrvPropList | Acc]).
+	PrvPropList = PrvFun(Prv),
+	BulkGateway = ?gv(bulkGateway, PrvPropList),
+	Gateway = ?gv(gateway, PrvPropList),
+	ReceiptsSupported = ?gv(receiptsSupported, PrvPropList),
+	Result = translate([{id, list_to_binary(k_uuid:to_string(PrvUUID))}] ++ [{gateway, list_to_binary(k_uuid:to_string(Gateway))}] ++ [{bulk_gateway, list_to_binary(k_uuid:to_string(BulkGateway))}] ++ [{receipts_supported, ReceiptsSupported}]),
+	prepare(Rest, [Result | Acc]).
 
 
 

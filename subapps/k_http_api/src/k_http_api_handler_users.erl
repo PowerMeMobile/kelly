@@ -22,16 +22,16 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>, id],
-				params = [#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid},
-						  #param{name = id, mandatory = true, repeated = false, type = string}]},
+				params = [#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
+						  #param{name = id, mandatory = true, repeated = false, type = binary}]},
 			#method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>],
-				params = [#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid}]}],
+				params = [#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid}]}],
 
 	UpdateParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid},
-		#param{name = id, mandatory = true, repeated = false, type = string},
-		#param{name = pswd, mandatory = false, repeated = false, type = string},
+		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = binary},
+		#param{name = pswd, mandatory = false, repeated = false, type = binary},
 		#param{name = smpp_type, mandatory = false, repeated = true, type = smpp_type}
 	],
 	Update = #method_spec{
@@ -39,17 +39,17 @@ init() ->
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid},
-		#param{name = id, mandatory = true, repeated = false, type = string}
+		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>, id],
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid},
-		#param{name = id, mandatory = true, repeated = false, type = string},
-		#param{name = pswd, mandatory = true, repeated = false, type = string},
+		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = binary},
+		#param{name = pswd, mandatory = true, repeated = false, type = binary},
 		#param{name = smpp_type, mandatory = true, repeated = true, type = smpp_type}
 	],
 	Create = #method_spec{

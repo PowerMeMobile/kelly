@@ -22,31 +22,31 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
-				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid},
+				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid},
 						  #param{name = id, mandatory = true, repeated = false, type = integer}]},
 			#method_spec{
 				path = [<<"gateways">>, gateway_id, <<"connections">>],
-				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid}]}],
+				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid}]}],
 
 	UpdateParams = [
-		#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = id, mandatory = true, repeated = false, type = integer},
 		#param{name = type, mandatory = false, repeated = false, type = integer},
-		#param{name = addr,	mandatory = false, repeated = false,	type = string},
+		#param{name = addr,	mandatory = false, repeated = false, type = binary},
 		#param{name = port, mandatory = false, repeated = false, type = integer},
-		#param{name = sys_id, mandatory = false, repeated = false, type = string},
-		#param{name = pass, mandatory = false, repeated = false, type = string},
-		#param{name = sys_type, mandatory = false, repeated = false, type = string},
+		#param{name = sys_id, mandatory = false, repeated = false, type = binary},
+		#param{name = pass, mandatory = false, repeated = false, type = binary},
+		#param{name = sys_type, mandatory = false, repeated = false, type = binary},
 		#param{name = addr_ton, mandatory = false, repeated = false, type = integer},
 		#param{name = addr_npi, mandatory = false, repeated = false, type = integer},
-		#param{name = addr_range, mandatory = false, repeated = false, type = string}
+		#param{name = addr_range, mandatory = false, repeated = false, type = binary}
 	],
 	Update = #method_spec{
 				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = id, mandatory = true, repeated = false, type = integer}
 	],
 	Delete = #method_spec{
@@ -54,17 +54,17 @@ init() ->
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = gateway_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = id, mandatory = false, repeated = false, type = integer},
 		#param{name = type, mandatory = true, repeated = false, type = integer},
-		#param{name = addr,	mandatory = true, repeated = false,	type = string},
+		#param{name = addr,	mandatory = true, repeated = false,	type = binary},
 		#param{name = port, mandatory = true, repeated = false, type = integer},
-		#param{name = sys_id, mandatory = true, repeated = false, type = string},
-		#param{name = pass, mandatory = true, repeated = false, type = string},
-		#param{name = sys_type, mandatory = true, repeated = false, type = string},
+		#param{name = sys_id, mandatory = true, repeated = false, type = binary},
+		#param{name = pass, mandatory = true, repeated = false, type = binary},
+		#param{name = sys_type, mandatory = true, repeated = false, type = binary},
 		#param{name = addr_ton, mandatory = true, repeated = false, type = integer},
 		#param{name = addr_npi, mandatory = true, repeated = false, type = integer},
-		#param{name = addr_range, mandatory = true, repeated = false, type = string}
+		#param{name = addr_range, mandatory = true, repeated = false, type = binary}
 	],
 	Create = #method_spec{
 				path = [<<"gateways">>, gateway_id, <<"connections">>],
@@ -106,7 +106,7 @@ delete(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
 	ConnectionID = ?gv(id, Params),
 	ok = k_config:del_gateway_connection(GtwUUID, ConnectionID),
-	k_snmp:del_row(cnn, GtwUUID ++ [ConnectionID]),
+	k_snmp:del_row(cnn, k_uuid:to_string(GtwUUID) ++ [ConnectionID]),
 	{http_code, 204}.
 
 %% ===================================================================
@@ -170,17 +170,17 @@ update_connection(Gtw, Params) ->
 					},
  			{ok, NewConnections} = replace_connection(NewConnection, Connections),
 			ok = k_config:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
-			SnmpConnID = GtwID ++ [ConnectionID],
+			SnmpConnID = k_uuid:to_string(GtwID) ++ [ConnectionID],
 			k_snmp:set_row(cnn, SnmpConnID,
 				[{cnnType, NewType},
-				{cnnAddr, convert_to_snmp_ip(NewAddr)},
+				{cnnAddr, convert_to_snmp_ip(binary_to_list(NewAddr))},
 				{cnnPort, NewPort},
-				{cnnSystemId, NewSysId},
-				{cnnPassword, NewPass},
-				{cnnSystemType, NewSysType},
+				{cnnSystemId, binary_to_list(NewSysId)},
+				{cnnPassword, binary_to_list(NewPass)},
+				{cnnSystemType, binary_to_list(NewSysType)},
 				{cnnAddrTon, NewAddrTon},
 				{cnnAddrNpi, NewAddrNpi},
-				{cnnAddrRange, NewAddrRange}
+				{cnnAddrRange, binary_to_list(NewAddrRange)}
 			    ]),
 			{ok, [ConnPropList]} = prepare_connections(NewConnection),
 			?log_debug("ConnPropList: ~p", [ConnPropList]),
@@ -260,17 +260,17 @@ create_connection(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
 	k_config:set_gateway_connection(GtwUUID, Connection),
 
-	SnmpConnId = GtwUUID ++ [ConnectionID],
+	SnmpConnId = k_uuid:to_string(GtwUUID) ++ [ConnectionID],
 	k_snmp:set_row(cnn, SnmpConnId,
 		[{cnnType, Type},
-		{cnnAddr, convert_to_snmp_ip(Addr)},
+		{cnnAddr, convert_to_snmp_ip(binary_to_list(Addr))},
 		{cnnPort, Port},
-		{cnnSystemId, SysID},
-		{cnnPassword, Pass},
-		{cnnSystemType, SysType},
+		{cnnSystemId, binary_to_list(SysID)},
+		{cnnPassword, binary_to_list(Pass)},
+		{cnnSystemType, binary_to_list(SysType)},
 		{cnnAddrTon, AddrTON},
 		{cnnAddrNpi, AddrNPI},
-		{cnnAddrRange, AddrRange}
+		{cnnAddrRange, binary_to_list(AddrRange)}
 	    ]),
 	{ok, [ConnPropList]} = prepare_connections(Connection),
 	?log_debug("ConnPropList: ~p", [ConnPropList]),

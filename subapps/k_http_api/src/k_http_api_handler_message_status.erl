@@ -23,8 +23,8 @@ init() ->
 	Read = #method_spec{
 				path = [<<"message_status">>, message_id, <<"customer">>, customer_id],
 				params = [
-					#param{name = message_id, mandatory = true, repeated = false, type = string},
-					#param{name = customer_id, mandatory = true, repeated = false, type = string_uuid}
+					#param{name = message_id, mandatory = true, repeated = false, type = binary},
+					#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid}
 				]},
 
 	{ok, #specs{
@@ -41,7 +41,7 @@ read(Params) ->
 	case k_storage:get_msg_status({CustId, MsgId}) of
 		{ok, #msg_status{status = Status}} ->
 			{ok, {message, [
-				{customer_id, CustId},
+				{customer_id, list_to_binary(k_uuid:to_string(CustId))},
 				{message_id, MsgId},
 				{status, Status}
 			]}};

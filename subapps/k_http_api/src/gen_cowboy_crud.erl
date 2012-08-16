@@ -52,6 +52,7 @@ handle(Req, State = #state{handler = Handler}) ->
 	{Path, _} = cowboy_http_req:path(Req),
 	{Method, _} = cowboy_http_req:method(Req),
 	ReqParameters = get_requests_parameters(Method, Req),
+	?log_debug("ReqParameters: ~p", [ReqParameters]),
 	NewState = State#state{
 		req = Req,
 		handler_spec = HandlerSpec,
@@ -75,12 +76,12 @@ get_method_spec('PUT', #specs{update = Spec}, State) when Spec =/= undefined ->
 get_method_spec('DELETE', #specs{delete = Spec}, State) when Spec =/= undefined ->
 	process_path(State#state{method_spec = Spec, handler_func = delete});
 get_method_spec(Method, _, State = #state{req = Req}) ->
-	?log_debug("[~p] method not supported", [Method]),
-	exception('svc0006', [atom_to_binary(Method, utf8)], Req, State).
+	?log_warn("[~p] method not supported", [Method]),
+	exception('svc0006', [Method], Req, State).
 
 process_path(State = #state{path = ReqPath, method_spec = SpecList}) when is_list(SpecList) ->
 	?log_debug("ReqPath: ~p", [ReqPath]),
-	?log_debug("SpecList: ~p", [SpecList]),
+	?log_debug("Method spec: ~p", [SpecList]),
 	[Spec] = lists:filter(fun(#method_spec{path = Path}) ->
 		length(ReqPath) == length(Path)
 	end, SpecList),
@@ -88,11 +89,10 @@ process_path(State = #state{path = ReqPath, method_spec = SpecList}) when is_lis
 	process_path(ReqPath, MethodPath, [], State#state{method_spec = Spec});
 process_path(State = #state{path = ReqPath, method_spec = Spec}) ->
 	#method_spec{path = MethodPath} = Spec,
-	?log_debug("State [process_path]: ~p", [State]),
 	process_path(ReqPath, MethodPath, [], State).
 
 process_path([], [], Acc, State = #state{req_params = Params}) ->
-	?log_debug("New params: ~p", [Acc ++ Params]),
+	?log_debug("Req params with path: ~p", [Acc ++ Params]),
 	process_method_params(State#state{req_params = Acc ++ Params});
 process_path([Value | TailReqPath], [Name | TailMethodPath], Acc, State)
 		when is_atom(Name) ->
@@ -101,25 +101,21 @@ process_path([Value | TailReqPath], [Name | TailMethodPath], Acc, State)
 process_path([Elem | TailReqPath], [Elem | TailMethodPath], Acc, State) ->
 	process_path(TailReqPath, TailMethodPath, Acc, State);
 process_path(_, _, _, State = #state{req = Req}) ->
-	?log_debug("Error in path", []),
+	?log_warn("Error in path", []),
 	exception('svc0007', [], Req, State).
 
 
 process_method_params(State = #state{method_spec = Spec, req_params = ReqParamsPL}) ->
-	?log_debug("Spec: ~p", [Spec]),
-	?log_debug("Request parameters: ~p", [ReqParamsPL]),
 	#method_spec{params = ParamsSpec} = Spec,
-	?log_debug("ParamsSpec: ~p", [ParamsSpec]),
 	process_method_params(ParamsSpec, ReqParamsPL, [], State).
 
 process_method_params([], _, Acc, State = #state{}) ->
-	?log_debug("Acc: ~p", [Acc]),
+	?log_debug("Processed parameters: ~p", [Acc]),
 	process_req(State#state{handler_params = Acc});
 process_method_params([ParamSpec | Tail], ReqParamsPL, Acc, State = #state{req = Req}) ->
 	?log_debug("ParamSpec: ~p", [ParamSpec]),
 	case get_parameter(ParamSpec, ReqParamsPL) of
 		{ok, KeyValue} ->
-			?log_debug("KeyValue: ~p", [KeyValue]),
 			process_method_params(Tail, ReqParamsPL, [KeyValue | Acc], State);
 		{error, missing, Name} ->
 			exception('svc0005', [Name], Req, State);
@@ -132,9 +128,7 @@ process_method_params([ParamSpec | Tail], ReqParamsPL, Acc, State = #state{req =
 	end.
 
 get_parameter(Spec = #param{name = Name, repeated = true}, ReqParamsPL) ->
-	?log_debug("Process repeated param: ~p", [Name]),
 	Values = proplists:get_all_values(atom_to_binary(Name, utf8), ReqParamsPL),
-	?log_debug("~p values: ~p", [Name, Values]),
 	validate_repeated(Values, [], Spec);
 get_parameter(Spec = #param{name = Name, repeated = false}, ReqParamsPL) ->
 	Value = proplists:get_value(atom_to_binary(Name, utf8), ReqParamsPL),
@@ -147,8 +141,6 @@ validate_repeated([], [], Spec) ->
 validate_repeated([], Acc, Spec) ->
 	{ok, {Spec#param.name, Acc}};
 validate_repeated([RawValue | Tail], Acc, Spec) ->
-	?log_debug("Tail: ~p", [Tail]),
-	?log_debug("Validate result: ~p", [validate(RawValue, Spec)]),
 	case validate(RawValue, Spec) of
 		{ok, {_Key, Value}} ->
 			validate_repeated(Tail, [Value | Acc], Spec);
@@ -157,7 +149,7 @@ validate_repeated([RawValue | Tail], Acc, Spec) ->
 	end.
 
 validate(Value, Spec = #param{mandatory = true}) when Value == [] orelse Value == undefined ->
-	?log_debug("Bad request. Missing mandatory parameter [~p].", [Spec#param.name]),
+	?log_warn("Bad request. Missing mandatory parameter [~p].", [Spec#param.name]),
 	{error, missing, Spec#param.name};
 validate(Value, Spec) ->
 	try
@@ -168,7 +160,7 @@ validate(Value, Spec) ->
 			?log_warn("Disabled parameter found [~p]", [Spec#param.name]),
 			{error, disabled, atom_to_binary(Spec#param.name, utf8)};
 		error:_ ->
-			?log_error("Invalid [~s] parameter value", [Spec#param.name]),
+			?log_warn("Invalid [~s] parameter value", [Spec#param.name]),
 			{error, invalid, atom_to_binary(Spec#param.name, utf8)}
 	end.
 
@@ -194,6 +186,11 @@ process_req(State = #state{req = Req, handler_params = Params, view = V, handler
 
 convert(undefined, _Type) ->
 	undefined;
+convert(State, customer_state) ->
+	case State of
+		<<"0">> -> 0;
+		<<"1">> -> 1
+	end;
 convert(SMPPType, smpp_type) ->
 	convert_smpp_type(SMPPType);
 convert(Value, addr) ->
@@ -203,14 +200,13 @@ convert(_Value, disabled) ->
 	erlang:error(disabled);
 convert(Any, boolean) ->
 	convert_boolean(Any);
+convert(UUID, binary_uuid) ->
+	UUIDstr = binary_to_list(UUID),
+	UUIDbin = k_uuid:to_binary(UUIDstr),
+	validate_uuid(UUIDbin);
 convert(UUID, string_uuid) ->
 	UUIDstr = binary_to_list(UUID),
-	case k_uuid:is_valid(UUIDstr) of
-		true ->
-			UUIDstr;
-		false ->
-			erlang:error(bad_uuid)
-	end;
+	validate_uuid(UUIDstr);
 convert(Value, binary) ->
 	Value;
 convert(Value, string) ->
@@ -225,13 +221,20 @@ convert_boolean(<<"false">>) ->
 convert_boolean(Any) ->
 	erlang:error({not_boolean, Any}).
 
+validate_uuid(UUID) ->
+	case k_uuid:is_valid(UUID) of
+		true ->
+			UUID;
+		false ->
+			erlang:error(bad_uuid)
+	end.
 
 %% convert "addr,ton,npi" to #addr{addr, ton, npi}
 decode_address(AddrBin) ->
 	AddrString = binary_to_list(AddrBin),
 	[Addr, Ton, Npi] = string:tokens(AddrString, ","),
 	#addr{
-		addr = Addr,
+		addr = list_to_binary(Addr),
 		ton = list_to_integer(Ton),
 		npi = list_to_integer(Npi)
 	}.
@@ -290,6 +293,7 @@ resolve_body(ExternalBody, _DefaultBody) ->
 -spec exception(ExceptionTag :: atom(), Variables :: [term()], Req :: term(), State :: term()) ->
 	{ok, Req2 :: term(), State :: term()}.
 exception(Code, Variables, Req, State) ->
+	?log_debug("Code: ~p, Variables: ~p", [Code, Variables]),
 	{ok, Body, HttpCode} = exception_body_and_code(Code, Variables),
 	ContentType = <<"application/json">>,
 	Headers = [{'Content-Type', ContentType}],
@@ -359,14 +363,16 @@ exception_body_and_code(Exception, _Variables) ->
 
 
 exception_body(MessageID, Text, Variables) ->
-	Body = jsx:term_to_json([{<<"request_error">>, [{<<"service_exception">>, [
+	Body = [{<<"request_error">>, [{<<"service_exception">>, [
 													{<<"message_id">>, MessageID},
 													{<<"text">>, Text},
 													{<<"variables">>, Variables}
 													]
 											}]
-						}]),
-	{ok, Body}.
+						}],
+	{ok, Json} = k_http_api_converter:process(Body, <<"json">>),
+	?log_debug("Exception json body: ~p", [Body]),
+	{ok, Json}.
 
 get_requests_parameters(Method, Req) ->
 	Parameters =
@@ -381,5 +387,4 @@ get_requests_parameters(Method, Req) ->
 			{QsVals, _} = cowboy_http_req:qs_vals(Req),
 			QsVals
 	end,
- 	?log_debug("Request parameters: ~p", [Parameters]),
 	Parameters.

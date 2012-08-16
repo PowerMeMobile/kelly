@@ -14,55 +14,55 @@
 -include_lib("k_common/include/storages.hrl").
 -include("crud_specs.hrl").
 
--define(DEFAULT_PRIORITY, 1).
-
 init() ->
 
 	Read = [#method_spec{
 				path = [<<"customers">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = string_uuid}]},
+				params = [#param{name = id, mandatory = true, repeated = false, type = binary_uuid}]},
 			#method_spec{
 				path = [<<"customers">>],
 				params = []}],
 
 	UpdateParams = [
-		#param{name = id, mandatory = true, repeated = false, type = string_uuid},
-		#param{name = system_id, mandatory = false, repeated = false, type = string},
-		#param{name = name, mandatory = false, repeated = false, type = string},
+		#param{name = id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = system_id, mandatory = false, repeated = false, type = binary},
+		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
 		#param{name = originator, mandatory = false, repeated = true, type = addr},
 		#param{name = default_originator, mandatory = false, repeated = false, type = addr},
-		#param{name = network, mandatory = false, repeated = true, type = string_uuid},
-		#param{name = default_provider_id, mandatory = false, repeated = false, type = string_uuid},
+		#param{name = network, mandatory = false, repeated = true, type = binary_uuid},
+		#param{name = default_provider_id, mandatory = false, repeated = false, type = binary_uuid},
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
-		#param{name = default_validity, mandatory = false, repeated = false, type = string},
-		#param{name = max_validity, mandatory = false, repeated = false, type = integer}
+		#param{name = default_validity, mandatory = false, repeated = false, type = binary},
+		#param{name = max_validity, mandatory = false, repeated = false, type = integer},
+		#param{name = state, mandatory = false, repeated = false, type = customer_state}
 	],
 	Update = #method_spec{
 				path = [<<"customers">>, id],
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = id, mandatory = true, repeated = false, type = string_uuid}
+		#param{name = id, mandatory = true, repeated = false, type = binary_uuid}
 	],
 	Delete = #method_spec{
 				path = [<<"customers">>, id],
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = id, mandatory = false, repeated = false, type = string_uuid},
-		#param{name = system_id, mandatory = true, repeated = false, type = string},
-		#param{name = name, mandatory = true, repeated = false, type = string},
+		#param{name = id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = system_id, mandatory = true, repeated = false, type = binary},
+		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
 		#param{name = originator, mandatory = true, repeated = true, type = addr},
 		#param{name = default_originator, mandatory = true, repeated = false, type = addr},
-		#param{name = network, mandatory = true, repeated = true, type = string_uuid},
-		#param{name = default_provider_id, mandatory = true, repeated = false, type = string_uuid},
+		#param{name = network, mandatory = true, repeated = true, type = binary_uuid},
+		#param{name = default_provider_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
-		#param{name = default_validity, mandatory = true, repeated = false, type = string},
-		#param{name = max_validity, mandatory = true, repeated = false, type = integer}
+		#param{name = default_validity, mandatory = true, repeated = false, type = binary},
+		#param{name = max_validity, mandatory = true, repeated = false, type = integer},
+		#param{name = state, mandatory = true, repeated = false, type = customer_state}
 	],
 	Create = #method_spec{
 				path = [<<"customers">>],
@@ -78,7 +78,7 @@ init() ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = k_uuid:to_string(k_uuid:newid()),
+			UUID = k_uuid:newid(),
 			create_customer(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_ ->
 			is_exist(Params)
@@ -144,7 +144,7 @@ update(Params) ->
 
 delete(Params) ->
 	UUID = ?gv(id, Params),
-	k_snmp:del_row(cst, UUID),
+	k_snmp:del_row(cst, k_uuid:to_string(UUID)),
 	ok = k_aaa:del_customer(UUID),
 	{http_code, 204}.
 
@@ -153,8 +153,6 @@ delete(Params) ->
 %% ===================================================================
 
 update_customer(Customer, Params) ->
-	NewPriority = resolve(priority, Params, Customer#customer.priority),
-	NewRPS = resolve(rps, Params, Customer#customer.rps),
 	NewName = resolve(name, Params, Customer#customer.name),
 	NewOriginators = resolve(originator, Params, Customer#customer.allowedSources),
 	NewDefaultOriginator = resolve(default_originator, Params, Customer#customer.defaultSource),
@@ -163,12 +161,13 @@ update_customer(Customer, Params) ->
 	NewReceiptsAllowed = resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
 	NewDefaultValidity = resolve(default_validity, Params, Customer#customer.defaultValidity),
 	NewMaxValidity = resolve(max_validity, Params, Customer#customer.maxValidity),
+	NewState = resolve(state, Params, Customer#customer.state),
 	NewCustomer = #customer{
 		id = Customer#customer.id,
 		uuid = Customer#customer.uuid,
 		name = NewName,
-		priority = NewPriority,
-		rps = NewRPS,
+		priority = 1,
+		rps = 10000,
 		allowedSources = NewOriginators,
 		defaultSource = NewDefaultOriginator,
 		networks = NewNetworks,
@@ -177,12 +176,9 @@ update_customer(Customer, Params) ->
 		noRetry = false,
 		defaultValidity = NewDefaultValidity,
 		maxValidity = NewMaxValidity,
-		users = Customer#customer.users
+		users = Customer#customer.users,
+		state = NewState
 	},
-	k_snmp:set_row(cst, Customer#customer.uuid, [
-		%% {cstRPS, NewRPS},
-		%% Priority is a must have setting
-		{cstPriority, NewPriority}]),
 	ok = k_aaa:set_customer(Customer#customer.id, NewCustomer),
 	{ok, [CustPropList]} = prepare({Customer#customer.uuid, NewCustomer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
@@ -190,8 +186,8 @@ update_customer(Customer, Params) ->
 
 create_customer(Params) ->
 	UUID = ?gv(id, Params),
-	Priority = resolve(priority, Params, ?DEFAULT_PRIORITY),
-	RPS = ?gv(rps, Params),
+	Priority = 1,
+	RPS = 10000,
 	System_id = ?gv(system_id, Params),
 	Customer = #customer{
 		id = System_id,
@@ -207,11 +203,11 @@ create_customer(Params) ->
 		noRetry = false,
 		defaultValidity = ?gv(default_validity, Params),
 		maxValidity = ?gv(max_validity, Params),
-		users = []
+		users = [],
+		state = ?gv(state, Params)
 	},
-	k_snmp:set_row(cst, UUID, [
-		%% {cstRPS, RPS},
-		%% Priority is a must have setting
+	k_snmp:set_row(cst, k_uuid:to_string(UUID), [
+		{cstRPS, RPS},
 		{cstPriority, Priority}]),
 	ok = k_aaa:set_customer(System_id, Customer),
 	{ok, [CustPropList]} = prepare({UUID, Customer}),
@@ -225,7 +221,7 @@ prepare(Item) ->
 
 prepare([], Acc) ->
 	{ok, Acc};
-prepare([{_UUID, Customer = #customer{}} | Rest], Acc) ->
+prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 	 #customer{
 		allowedSources = OriginatorsList,
 		defaultSource = DefaultSource,
@@ -264,8 +260,16 @@ prepare([{_UUID, Customer = #customer{}} | Rest], Acc) ->
 								allowedSources = OriginatorsPropList,
 								defaultSource = DefSourcePropList
 											}),
+	UUIDBinStr = list_to_binary(k_uuid:to_string(UUID)),
+	DefaultProviderIDBinStr = list_to_binary(k_uuid:to_string(?gv(defaultProviderId, CustomerPropList))),
+	NetworksBinStr = lists:map(fun(Ntw) -> list_to_binary(k_uuid:to_string(Ntw)) end, ?gv(networks, CustomerPropList)),
+	Renamed = translate(CustomerPropList),
+	ConvertedID = lists:keyreplace(id, 1, Renamed, {id, UUIDBinStr}),
+	ConvertedDefaultProviderID = lists:keyreplace(default_provider_id, 1, ConvertedID, {default_provider_id, DefaultProviderIDBinStr}),
+	ConvertedNetworks = lists:keyreplace(networks, 1, ConvertedDefaultProviderID, {networks, NetworksBinStr}),
+
 	?log_debug("CustomerPropList: ~p", [CustomerPropList]),
-	prepare(Rest, [translate(CustomerPropList) | Acc]).
+	prepare(Rest, [ConvertedNetworks | Acc]).
 
 
 translate(Proplist) ->
