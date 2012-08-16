@@ -19,10 +19,14 @@
 %% ===================================================================
 
 init() ->
-	Read = #method_spec{
+	Read = [#method_spec{
 				path = [<<"addr2cust">>, msisdn],
 				params = [#param{name = msisdn, mandatory = true, repeated = false, type = addr}]},
-
+			#method_spec{
+				path = [<<"addr2cust">>],
+				params = [#param{name = customer, mandatory = true, repeated = false, type = binary_uuid},
+						  #param{name = user, mandatory = true, repeated = false, type = binary}]}
+			],
 	DeleteParams = [
 		#param{name = msisdn, mandatory = true, repeated = false, type = addr}
 	],
@@ -45,9 +49,21 @@ init() ->
 			update = undefined,
 			delete = Delete
 		}}.
+
 read(Params) ->
-	?log_debug("Params: ~p", [Params]),
-	Msisdn = ?gv(msisdn, Params),
+	case ?gv(msisdn, Params) of
+		undefined -> get_customer_user_msisdns(Params);
+		Msisdn -> get_msisdn(Msisdn)
+	end.
+
+get_customer_user_msisdns(Params) ->
+	Customer = ?gv(customer, Params),
+	User = ?gv(user, Params),
+	{ok, MsisdnsList} = k_addr2cust:available_addresses(Customer, User),
+	Response = prepare_msisdns(Customer, User, MsisdnsList),
+	{ok, Response}.
+
+get_msisdn(Msisdn) ->
 	case k_addr2cust:resolve(Msisdn) of
 		{error, addr_not_used} ->
 			{exception, 'svc0003'};
@@ -82,3 +98,6 @@ delete(Params) ->
 
 prepare(CustomerID, UserID, Msisdn) ->
 	[{msisdn, [{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}]}, {customer, list_to_binary(k_uuid:to_string(CustomerID))}, {user, UserID}].
+
+prepare_msisdns(CustomerID, UserID, Msisdns) ->
+	[{msisdns, [[{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}] || Msisdn <- Msisdns]}, {customer, list_to_binary(k_uuid:to_string(CustomerID))}, {user, UserID}].
