@@ -156,7 +156,7 @@ update_customer(Customer, Params) ->
 	NewName = resolve(name, Params, Customer#customer.name),
 	NewOriginators = resolve(originator, Params, Customer#customer.allowedSources),
 	NewDefaultOriginator = resolve(default_originator, Params, Customer#customer.defaultSource),
-	NewNetworks = resolve(networks, Params, Customer#customer.networks),
+	NewNetworks = resolve(network, Params, Customer#customer.networks),
 	NewDefaultProviderId = resolve(default_provider_id, Params, Customer#customer.defaultProviderId),
 	NewReceiptsAllowed = resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
 	NewDefaultValidity = resolve(default_validity, Params, Customer#customer.defaultValidity),
