@@ -10,6 +10,11 @@
 	delete/1
 ]).
 
+%% export helpers
+-export([
+	prepare_users/1
+]).
+
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
 -include("crud_specs.hrl").
@@ -32,7 +37,7 @@ init() ->
 		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = pswd, mandatory = false, repeated = false, type = binary},
-		#param{name = smpp_type, mandatory = false, repeated = true, type = smpp_type}
+		#param{name = smpp_types, mandatory = false, repeated = true, type = smpp_type}
 	],
 	Update = #method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>, id],
@@ -50,7 +55,7 @@ init() ->
 		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = pswd, mandatory = true, repeated = false, type = binary},
-		#param{name = smpp_type, mandatory = true, repeated = true, type = smpp_type}
+		#param{name = smpp_types, mandatory = true, repeated = true, type = smpp_type}
 	],
 	Create = #method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>],
@@ -143,7 +148,7 @@ create_user(Customer, Params) ->
 			{exception, 'svc0004'};
 		{error, no_entry} ->
 			Pass = ?gv(pswd, Params),
-			SMPPTypes = ?gv(smpp_type, Params),
+			SMPPTypes = ?gv(smpp_types, Params),
 			User = #user{
 				id 						= UserID,
 				pswd_hash 				= crypto:sha(Pass),
@@ -165,7 +170,7 @@ update_user(Customer, Params) ->
 			Updated = #user{
 				id = UserID,
 				pswd_hash = resolve_pass(?gv(pswd, Params), User#user.pswd_hash),
-				permitted_smpp_types = resolve(smpp_type, Params, User#user.permitted_smpp_types)
+				permitted_smpp_types = resolve(smpp_types, Params, User#user.permitted_smpp_types)
 			},
 			ok = k_aaa:set_customer_user(Updated, Customer#customer.uuid),
 			{ok, [UserPropList]} = prepare_users([Updated]),

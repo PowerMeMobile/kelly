@@ -29,9 +29,9 @@ init() ->
 		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
-		#param{name = originator, mandatory = false, repeated = true, type = addr},
+		#param{name = originators, mandatory = false, repeated = true, type = addr},
 		#param{name = default_originator, mandatory = false, repeated = false, type = addr},
-		#param{name = network, mandatory = false, repeated = true, type = binary_uuid},
+		#param{name = networks, mandatory = false, repeated = true, type = binary_uuid},
 		#param{name = default_provider_id, mandatory = false, repeated = false, type = binary_uuid},
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = false, repeated = false, type = binary},
@@ -55,9 +55,9 @@ init() ->
 		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
-		#param{name = originator, mandatory = true, repeated = true, type = addr},
+		#param{name = originators, mandatory = true, repeated = true, type = addr},
 		#param{name = default_originator, mandatory = true, repeated = false, type = addr},
-		#param{name = network, mandatory = true, repeated = true, type = binary_uuid},
+		#param{name = networks, mandatory = true, repeated = true, type = binary_uuid},
 		#param{name = default_provider_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = true, repeated = false, type = binary},
@@ -154,9 +154,9 @@ delete(Params) ->
 
 update_customer(Customer, Params) ->
 	NewName = resolve(name, Params, Customer#customer.name),
-	NewOriginators = resolve(originator, Params, Customer#customer.allowedSources),
+	NewOriginators = resolve(originators, Params, Customer#customer.allowedSources),
 	NewDefaultOriginator = resolve(default_originator, Params, Customer#customer.defaultSource),
-	NewNetworks = resolve(network, Params, Customer#customer.networks),
+	NewNetworks = resolve(networks, Params, Customer#customer.networks),
 	NewDefaultProviderId = resolve(default_provider_id, Params, Customer#customer.defaultProviderId),
 	NewReceiptsAllowed = resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
 	NewDefaultValidity = resolve(default_validity, Params, Customer#customer.defaultValidity),
@@ -195,9 +195,9 @@ create_customer(Params) ->
 		name = ?gv(name, Params),
 		priority = Priority,
 		rps = RPS,
-		allowedSources = ?gv(originator, Params),
+		allowedSources = ?gv(originators, Params),
 		defaultSource = ?gv(default_originator, Params),
-		networks = ?gv(network, Params),
+		networks = ?gv(networks, Params),
 		defaultProviderId = ?gv(default_provider_id, Params),
 		receiptsAllowed = ?gv(receipts_allowed, Params),
 		noRetry = false,
@@ -228,13 +228,7 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 		users = UsersList
 	} = Customer,
 
-	%% convert users records to proplists
-	UserFun = ?record_to_proplist(user),
-	UsersPropList = lists:map(
-		fun(User)->
-			UserPropList = UserFun(User),
-			proplists:delete(pswd_hash, UserPropList)
-		end, UsersList),
+	{ok, UsersPropList} = k_http_api_handler_users:prepare_users(UsersList),
 
 	%% originators constructor
 	AddrFun = ?record_to_proplist(addr),

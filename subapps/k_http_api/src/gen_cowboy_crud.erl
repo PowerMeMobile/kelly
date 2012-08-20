@@ -128,16 +128,19 @@ process_method_params([ParamSpec | Tail], ReqParamsPL, Acc, State = #state{req =
 	end.
 
 get_parameter(Spec = #param{name = Name, repeated = true}, ReqParamsPL) ->
-	Values = proplists:get_all_values(atom_to_binary(Name, utf8), ReqParamsPL),
-	validate_repeated(Values, [], Spec);
+	ValuesDelimited = proplists:get_value(atom_to_binary(Name, utf8), ReqParamsPL),
+	case ValuesDelimited of
+		undefined -> validate(undefined, Spec);
+		_ ->
+			Values = binary:split(ValuesDelimited, [<<";">>], [global, trim]),
+			validate_repeated(Values, [], Spec)
+	end;
 get_parameter(Spec = #param{name = Name, repeated = false}, ReqParamsPL) ->
 	Value = proplists:get_value(atom_to_binary(Name, utf8), ReqParamsPL),
 	validate(Value, Spec).
 
 validate_repeated([], [], Spec = #param{mandatory = true}) ->
 	{error, missing, atom_to_binary(Spec#param.name, utf8)};
-validate_repeated([], [], Spec) ->
-	{ok, {Spec#param.name, undefined}};
 validate_repeated([], Acc, Spec) ->
 	{ok, {Spec#param.name, Acc}};
 validate_repeated([RawValue | Tail], Acc, Spec) ->
