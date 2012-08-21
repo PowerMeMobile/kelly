@@ -64,13 +64,6 @@ start_link(Module, Args) ->
 	gen_server:cast(Pid, do_subscribe),
 	{ok, Pid}.
 
-% call(Pid, Msg) ->
-% 	gen_server:call(Pid, {consumer_call, Msg}, infinity).
-
-% ack(Tag)->
-% 	gen_server:cast(?MODULE, {ack, Tag}),
-% 	ok.
-
 %% ===================================================================
 %% gen_server callbacks
 %% ===================================================================
@@ -111,52 +104,19 @@ handle_cast(do_subscribe, State = #state{
 	mod_state = MState,
 	module = Mod
 }) ->
-	?log_debug("subscribing...", []),
-
-	{ok, AmqpOpts, QName, BXchg, NewMState} =
+	{ok, QoS, QName, BXchg, NewMState} =
 	case Mod:handle_subscribe(MState) of
 		{ok, Opts, Q, Xchg, S} -> {ok, Opts, Q, Xchg, S};
 		{ok, Opts, Q, S} -> {ok, Opts, Q, undefined, S}
 	end,
-
-	{ok, AmqpSpec, Qos} = parse_opts(AmqpOpts),
-
-	{ok, Connection} = amqp_connection:start(AmqpSpec),
-
-	true = link(Connection),
-
-	?log_debug("successfully connected to AMQP: ~p", [Connection]),
-	{ok, Channel} = amqp_connection:open_channel(Connection),
-
-%% for bublishing test messages
-
-			%%% FOR EXCHANGE %%%
-	% Publish = #'basic.publish'{exchange = <<"funnel.sms_request">>},
-
-			%%% FOR QUEUE %%%
-	% Publish = #'basic.publish'{routing_key = <<"pmm.funnel.bind_requests">>},
-
-	% Msg = #amqp_msg{ payload = <<"Hello world!">> },
-	% amqp_channel:cast(Channel, Publish, Msg),
-	% ?log_debug("HALT", []),
-	% halt(),
-
+	{ok, Channel} = rmql:channel_open(),
 	declare_exchange(Channel, BXchg),
-
 	declare_queue(Channel, QName),
-
 	queue_bind(Channel, QName, BXchg),
-
-	#'basic.qos_ok'{} = amqp_channel:call(Channel,#'basic.qos'{prefetch_count =Qos}),
-	?log_debug("QOS: ~p", [Qos]),
-
-	Sub = #'basic.consume'{ queue = QName },
-	#'basic.consume_ok'{consumer_tag = QTag } = amqp_channel:subscribe(Channel, Sub, self()),
-
+	ok = rmql:basic_qos(Channel, QoS),
+	{ok, QTag} = rmql:basic_consume(Channel, QName, false),
 	Dict = dict:new(),
-
 	{noreply, State#state{
-		amqp_conn = Connection,
 		amqp_chan = Channel,
 		amqp_xchg = BXchg,
 		qname = QName,
@@ -205,7 +165,6 @@ handle_info({#'basic.deliver'{delivery_tag = Tag},
 				dict = Dict,
 				mod_state = ModState,
 				module = Mod}) ->
-	% ?log_debug("got message: ~p", [Content]),
 	{ProcPid, NewState} =
 	case Mod:handle_message(ContentType, Content, Channel, ModState) of
 		{noreply, Pid, NewMState} ->
@@ -225,11 +184,9 @@ handle_info({'DOWN', MonitorRef, _Type, _Object, normal}, State = #state{
 	module = _Mod,
 	amqp_chan = Channel
 }) ->
-	Tag = dict:fetch(MonitorRef, Dict),
+	DTag = dict:fetch(MonitorRef, Dict),
 	NewDict = dict:erase(MonitorRef, Dict),
-	Ack = #'basic.ack'{delivery_tag = Tag},
-	amqp_channel:cast(Channel, Ack),
-	% ?log_debug("worker[~p] -> Acked.", [_Mod]),
+	ok = rmql:basic_ack(Channel, DTag),
 	{noreply, State#state{dict = NewDict}};
 
 handle_info({'DOWN', MonitorRef, _Type, _Object, Info}, State = #state{
@@ -239,8 +196,7 @@ handle_info({'DOWN', MonitorRef, _Type, _Object, Info}, State = #state{
 }) ->
 	Tag = dict:fetch(MonitorRef, Dict),
 	NewDict = dict:erase(MonitorRef, Dict),
-	Requeue = #'basic.reject'{delivery_tag = Tag, requeue = true},
-	ok = amqp_channel:call(Channel, Requeue),
+	rmql:basic_reject(Channel, Tag, true),
 	?log_debug("worker[~p] -> Rejected: ~p", [Mod, Info]),
 	{noreply, State#state{dict = NewDict}};
 
@@ -282,26 +238,22 @@ code_change(OldVsn, State = #state{
 
 declare_queue(Channel, QName) ->
 	?log_debug("declaring queue[~p]", [QName]),
-	QDeclare = #'queue.declare'{ queue = QName, durable = true },
-	#'queue.declare_ok'{} = amqp_channel:call(Channel, QDeclare),
+	Durable = true,
+	Exclusive = false, % default
+	AutoDelete = false, % default
+	ok = rmql:queue_declare(Channel, QName, Durable, Exclusive, AutoDelete),
 	?log_info("queue[~p] declare OK", [QName]).
 
 declare_exchange(_Channel, undefined) ->
 	ok;
 declare_exchange(Channel, Xchg) ->
-	XDeclare = #'exchange.declare'{ exchange = Xchg,
-									durable = true,
-									type = <<"fanout">> },
-	?log_debug("declaring exchange[~p]", [Xchg]),
-	#'exchange.declare_ok'{} = amqp_channel:call(Channel, XDeclare),
+	ok = rmql:exchange_declare(Channel, Xchg, fanout, true),
 	?log_info("Xchg[~p] declare OK", [Xchg]).
 
 queue_bind(_Channel, _QName, undefined) ->
 	ok;
 queue_bind(Channel, QName, Xchg) ->
-	?log_info("binding queue.. ", []),
-	QBind = #'queue.bind'{ queue = QName, exchange = Xchg },
-	#'queue.bind_ok'{} = amqp_channel:call(Channel, QBind),
+	ok = rmql:queue_bind(Channel, QName, Xchg),
 	?log_info("queue[~p] binding OK", [QName]).
 
 register(Dict, undefined, _Tag) -> 	%% must save Tag (may be reject mes
@@ -311,41 +263,3 @@ register(Dict, Pid, Tag) ->
 	MonRef = erlang:monitor(process, Pid),
 	NewDict = dict:store(MonRef, Tag, Dict),
 	{ok, NewDict}.
-
-parse_opts(undefined) ->
-	parse_opts([]);
-
-parse_opts(Opts) ->
-	DefaultPropList = 
-		case application:get_env(k_common, amqp_props) of
-			{ok, Value} -> Value;
-			undefined -> []
-		end,
-	?log_debug("DefaultPropList: ~p", [DefaultPropList]),
-	
-	%% default amqp props definition
-	DHost 		= proplists:get_value(host, DefaultPropList, "127.0.0.1"),
-	DPort 		= proplists:get_value(port, DefaultPropList, 5672),
-	DVHost 		= proplists:get_value(vhost, DefaultPropList, <<"/">>),
-	DUsername 	= proplists:get_value(username, DefaultPropList, <<"guest">>),
-	DPass 		= proplists:get_value(password, DefaultPropList, <<"guest">>),
-	DQos 		= proplists:get_value(qos, DefaultPropList, 0),
-
-	%% custom amqp props definition
-	Host    = proplists:get_value(host, Opts, DHost),
-	Port 	= proplists:get_value(port, Opts, DPort),
-	VHost 	= proplists:get_value(vhost, Opts, DVHost),
-	User 	= proplists:get_value(username, Opts, DUsername),
-	Pass 	= proplists:get_value(password, Opts, DPass),
-	Qos 	= proplists:get_value(qos, Opts, DQos),
-
-	AmqpSpec = #amqp_params_network{
-					username = User,
-					password = Pass,
-					virtual_host = VHost,
-					host = Host,
-					port = Port,
-					heartbeat = 1
-				},
-	?log_debug("AmqpSpec: ~p", [AmqpSpec]),
-	{ok, AmqpSpec, Qos}.

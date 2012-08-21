@@ -64,13 +64,15 @@ get_response(MesID, Timeout) ->
 %% ------------------------------------------------------------------
 
 init([]) ->
-	Chan = k_mb_amqp_pool:open_channel(),
+	{ok, Chan} = rmql:channel_open(),
 	link(Chan),
+	{ok, QoS} = application:get_env(rmq_qos),
+	ok = rmql:basic_qos(Chan, QoS),
 	ReplyToQName = k_mb_config:get_env(reply_to),
 	DeclareProps = [{durable, false}],
-	ok = k_mb_amqp_funs:queue_declare(Chan, ReplyToQName, DeclareProps),
+	ok = rmql:queue_declare(Chan, ReplyToQName, DeclareProps),
 	NoAck = true,
-	{ok, ConsumerTag} = k_mb_amqp_funs:basic_consume(Chan, ReplyToQName, NoAck),
+	{ok, ConsumerTag} = rmql:basic_consume(Chan, ReplyToQName, NoAck),
 	{ok, #state{tag = ConsumerTag, queue = ReplyToQName, chan = Chan}}.
 
 handle_call({get_response, MesID}, From,

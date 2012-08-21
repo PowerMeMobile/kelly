@@ -23,7 +23,6 @@
 
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("gen_wp/include/gen_wp_spec.hrl").
 -include("pending_item.hrl").
 
@@ -45,7 +44,7 @@ send(QName, Item, TimeOut) ->
 %% GenWP Callback Functions Definitions
 
 init([]) ->
-	Chan = k_mb_amqp_pool:open_channel(),
+	{ok, Chan} = rmql:channel_open(),
 	link(Chan),
 	ReplyTo = k_mb_config:get_env(reply_to),
 	{ok, #state{chan = Chan, reply_to = ReplyTo}}.
@@ -81,11 +80,9 @@ handle_fork_call(_Arg, {{send, Item, QName, TimeOut}, S = #state{}}, _ReplyTo, _
 		} = Item,
 	ItemID = k_uuid:to_string(ItemIDBin),
 	MesID = list_to_binary(ItemID),
-	BasicProps =
-	prepare_basic_props([{message_id, MesID}, {correlation_id, MesID}, {reply_to, ReplyTo}, {content_type, CT}]),
-
-	ok = k_mb_amqp_funs:basic_publish(Chan, QName, Payload, BasicProps),
-	% ?log_debug("basic_publish ok", []),
+	BasicPropsPropListn =
+		[{message_id, MesID}, {correlation_id, MesID}, {reply_to, ReplyTo}, {content_type, CT}],
+	ok = rmql:basic_publish(Chan, QName, Payload, BasicPropsPropListn),
 	Response = k_mb_amqp_consumer_srv:get_response(ItemID, TimeOut),
 	{reply, Response, normal};
 handle_fork_call(_Arg, _Msg, _ReplyTo, _WP) ->
@@ -99,19 +96,3 @@ handle_child_forked(_Task, _Child, ModState) ->
 
 handle_child_terminated(_Reason, _Task, _Child, ModState) ->
 	{noreply, ModState}.
-
-%% Internal functions
-
-prepare_basic_props(Props) ->
-	#'P_basic'{
-		message_id = proplists:get_value(message_id, Props),
-		correlation_id = proplists:get_value(correlation_id, Props),
-		content_type = proplists:get_value(content_type, Props),
-		content_encoding = proplists:get_value(content_encoding, Props),
-		% delivery_mode = proplists:get_value(delivery_mode, Props, 2),
-		reply_to = proplists:get_value(reply_to, Props),
-		expiration = proplists:get_value(expiration, Props),
-		timestamp = proplists:get_value(timestamp, Props),
-		app_id = <<"kelly">>
-		% headers,priority,type,user_id,cluster_id
-		}.

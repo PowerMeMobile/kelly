@@ -53,8 +53,8 @@ handle_subscribe(State = #state{
 	{ok, Args} = application:get_env(Request),
 	Queue = proplists:get_value(queue, Args),
 	Handler = proplists:get_value(handler, Args),
-	Options = proplists:get_value(options, Args),
-	{ok, Options, Queue, State#state{handler = Handler}}.
+	QoS = proplists:get_value(rmq_qos, Args),
+	{ok, QoS, Queue, State#state{handler = Handler}}.
 
 handle_message(ContentType, Message, Channel, State = #state{
 	handler = Handler

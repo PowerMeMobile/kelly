@@ -28,5 +28,3 @@ init([]) ->
 			{k_mnesia_schema, {k_mnesia_schema, start_link, []}, permanent, 100000, worker, [k_mnesia_schema]}
 		]}
 	}.
-
-%%% Internal

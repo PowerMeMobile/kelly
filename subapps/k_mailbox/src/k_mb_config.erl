@@ -22,7 +22,6 @@
 init() ->
 	% data type verification
 	true = is_integer(get_env(request_timeout)),
-	true = is_atom(get_env(adapter)),
 
 	% convert expiration date from hours to secs
 	ExpirationDate = convert_to_sec(get_env(expiration_date)),
@@ -49,7 +48,6 @@ default(request_timeout) 			-> 5000;
 default(repeat_delay)	 			-> 5000;
 default(max_retry)		   			-> 5;
 
-default(adapter)	     			-> k_mb_amqp;
 default(expiration_date) 	 		-> 48; % hours
 default(purge_rate)					-> 2; % hours
 
