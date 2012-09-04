@@ -7,12 +7,12 @@
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/JustAsn.hrl").
+-include_lib("alley_dto/include/adto.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"ReceiptBatch">>, Message) ->
-	%?log_debug("Got message...", []),
-	case 'JustAsn':decode('ReceiptBatch', Message) of
+	?log_debug("Got just delivery receipt", []),
+	case adto:decode(#just_delivery_receipt_dto{}, Message) of
 		{ok, ReceiptBatch} ->
 			process_receipt_batch(ReceiptBatch);
 		Error ->
@@ -23,13 +23,11 @@ process(CT, Message) ->
 	?log_warn("Got unexpected message of type ~p: ~p", [CT, Message]),
 	{ok, []}.
 
--spec process_receipt_batch(#'ReceiptBatch'{}) -> {ok, [#worker_reply{}]} | {error, any()}.
-process_receipt_batch(ReceiptBatch = #'ReceiptBatch'{
-	gatewayId = GatewayIdStr,
-	receipts = Receipts
-}) ->
-	GatewayId = k_uuid:to_binary(GatewayIdStr),
-	?log_debug("Got request: ~p", [ReceiptBatch]),
+-spec process_receipt_batch(#just_delivery_receipt_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
+process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
+	gateway_id = GatewayId,
+	receipts = Receipts }) ->
+	?log_debug("DeliveryReceipt body: ~p", [ReceiptBatch]),
 	DlrTime = k_datetime:utc_unix_epoch(),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
 		ok ->
@@ -44,8 +42,7 @@ process_receipt_batch(ReceiptBatch = #'ReceiptBatch'{
 traverse_delivery_receipts(_GatewayId, _DlrTime, []) ->
 	ok;
 traverse_delivery_receipts(GatewayId, DlrTime,
-	[#'DeliveryReceipt'{messageId = MessageIdStr, messageState = MessageState} | Receipts]) ->
-	MessageId = list_to_binary(MessageIdStr),
+	[#just_receipt_dto{message_id = MessageId, message_state = MessageState} | Receipts]) ->
 	OutputId = {GatewayId, MessageId},
 	case k_storage:get_input_id_by_output_id(OutputId) of
 		{ok, InputId} ->
@@ -87,8 +84,58 @@ register_funnel_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
 	SrcAddr = MsgInfo#msg_info.src_addr,
 	DstAddr = MsgInfo#msg_info.dst_addr,
 	Data = {InputId, MessageState, SrcAddr, DstAddr, DlrTime},
-	{CustomerId, BatchId, BatchBinary} = k_funnel_asn_helper:render_receipt(Data),
+	{CustomerId, BatchId, BatchBinary} = build_receipt(Data),
 	UserId = <<"undefined">>,
 	ok = k_mailbox:register_incoming_item(
-		k_uuid:to_binary(BatchId), CustomerId, UserId, <<"ReceiptBatch">>, BatchBinary
+		BatchId, CustomerId, UserId, <<"ReceiptBatch">>, BatchBinary
 	).
+build_receipt(Data) ->
+	{{CustomerId, InputMsgId}, MessageState, SrcAddr, DstAddr, DlrTime} = Data,
+	Receipt = #funnel_delivery_receipt_container_dto{
+		message_id = InputMsgId,
+		submit_date = list_to_binary(unix_to_utc(DlrTime)),
+		done_date = list_to_binary(unix_to_utc(DlrTime)),
+		message_state = MessageState,
+		source = addr_to_dto(SrcAddr),
+		dest = addr_to_dto(DstAddr)
+	},
+	?log_debug("Receipt: ~p", [Receipt]),
+	BatchId = k_uuid:newid(),
+	Batch = #funnel_delivery_receipt_dto{
+		id = BatchId,
+		receipts = [Receipt]
+	},
+	{ok, Binary} = adto:encode(Batch),
+	{CustomerId, BatchId, Binary}.
+
+unix_to_utc(TS) ->
+	NM = TS div 1000000,
+	NS = TS - (NM * 1000000),
+	T = {NM, NS, 0},
+	{{YY, MM, DD}, {H, M, S}} = calendar:now_to_universal_time(T),
+	lists:map(
+		fun(C) ->
+			case C of
+				$\  -> $0;
+				_ -> C
+			end
+		end,
+		lists:flatten(io_lib:format("~4B~2B~2B~2B~2B~2B", [YY, MM, DD, H, M, S]))
+	).
+
+
+addr_to_dto(undefined) ->
+	undefined;
+addr_to_dto(Addr = #full_addr{}) ->
+	#full_addr{
+		addr = Msisdn,
+		ton = TON,
+		npi = NPI
+	} = Addr,
+	#addr_dto{
+		addr = Msisdn,
+		ton = TON,
+		npi = NPI
+	};
+addr_to_dto(Addrs) ->
+	[addr_to_dto(Addr) || Addr <- Addrs].
