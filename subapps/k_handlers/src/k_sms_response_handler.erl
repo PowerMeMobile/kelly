@@ -7,7 +7,7 @@
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/JustAsn.hrl").
+-include_lib("alley_dto/include/adto.hrl").
 
 -record(msg_resp, {
 	input_id :: msg_id(),
@@ -17,17 +17,16 @@
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_ContentType, Message) ->
-	% ?log_debug("got message...", []),
-	case 'JustAsn':decode('SmsResponse', Message) of
+	case adto:decode(#just_sms_response_dto{}, Message) of
 		{ok, SmsResponse} ->
 			process_sms_response(SmsResponse);
 		Error ->
 			Error
 	end.
 
--spec process_sms_response(#'SmsResponse'{}) -> {ok, [#worker_reply{}]} | {error, any()}.
-process_sms_response(SmsResponse = #'SmsResponse'{}) ->
-	?log_debug("got request: ~p", [SmsResponse]),
+-spec process_sms_response(#just_sms_response_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
+process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
+	?log_debug("Got just sms response: ~p", [SmsResponse]),
 	MsgResps = sms_response_to_msg_resp_list(SmsResponse),
 	case k_utils:safe_foreach(fun process_msg_resp/1, MsgResps, ok, {error, '_'}) of
 		ok ->
@@ -86,27 +85,22 @@ map_in_to_out(InputId, OutputId) ->
 	ok = k_storage:map_input_id_to_output_id(InputId, OutputId),
 	ok = k_storage:map_output_id_to_input_id(OutputId, InputId).
 
--spec sms_response_to_msg_resp_list(#'SmsResponse'{}) -> [#msg_resp{}].
-sms_response_to_msg_resp_list(#'SmsResponse'{
+-spec sms_response_to_msg_resp_list(#just_sms_response_dto{}) -> [#msg_resp{}].
+sms_response_to_msg_resp_list(#just_sms_response_dto{
 	id = _Id,
-	customerId = CustomerIdStr,
-	gatewayId = GatewayIdStr,
+	customer_id = CustomerId,
+	gateway_id = GatewayId,
 	timestamp = _Timestamp,
-	statuses = Statuses
-}) ->
-	CustomerId = k_uuid:to_binary(CustomerIdStr),
-	GatewayId = k_uuid:to_binary(GatewayIdStr),
-	lists:map(fun(#'SmStatus'{
-					originalId = OriginalIdStr,
-					destAddr = _DestAddr,
+	statuses = Statuses }) ->
+	lists:map(fun(#just_sms_status_dto{
+					original_id = OriginalId,
+					dest_addr = _DestAddr,
 					status = Status,
-					partsTotal = _PartsTotal,
-					partIndex = _PartIndex,
-					messageId = MessageIdStr,
-					errorCode = _ErrorCode
+					parts_total = _PartsTotal,
+					part_index = _PartIndex,
+					message_id = MessageId,
+					error_code = _ErrorCode
 				 }) ->
-					OriginalId = list_to_binary(OriginalIdStr),
-					MessageId = optional_to_binary(MessageIdStr),
 					#msg_resp{
 						input_id = {CustomerId, OriginalId},
 						output_id = {GatewayId, MessageId},
@@ -114,7 +108,7 @@ sms_response_to_msg_resp_list(#'SmsResponse'{
 					} end, Statuses).
 
 
-optional_to_binary(asn1_NOVALUE) ->
-	asn1_NOVALUE;
-optional_to_binary(Value) ->
-	list_to_binary(Value).
+%% optional_to_binary(asn1_NOVALUE) ->
+%% 	asn1_NOVALUE;
+%% optional_to_binary(Value) ->
+%% 	list_to_binary(Value).

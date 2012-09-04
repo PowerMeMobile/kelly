@@ -103,8 +103,8 @@ handle_fork_cast(_Arg, {process_item, Item = #k_mb_pending_item{}}, _WP) ->
 
 	case k_mb_gcollector:is_expired(Expire) of
 		true ->
-			?log_debug("EXPIRED", []),
-			k_mb_db:delete_items([ItemID]);
+			k_mb_db:delete_items([ItemID]),
+			?log_debug("Pending item [~p] expired. Deleted.", [ItemID]);
 		_ -> process(Item)
 	end,
 	{noreply, normal};
@@ -139,11 +139,10 @@ process(Item) ->
 		} = Item,
 	case k_mb_map_mgr:get_subscription(CustomerID, UserID, ContentType) of
 		{ok, SubscriptionID} ->
-			?log_debug("subscription FOUND...", []),
-			?log_debug("SubscriptionID: ~p", [SubscriptionID]),
+			?log_debug("Found suitable subscription [~p]", [SubscriptionID]),
 			process(Item, SubscriptionID);
 		{error, no_subscription} ->
-			?log_debug("subscription NOT FOUND...", []),
+			?log_debug("Suitable subscription NOT FOUND", []),
 			k_mb_db:set_wait(ItemID)
 	end.
 
@@ -154,6 +153,7 @@ process(Item, SubID) ->
 
 	Timeout = k_mb_config:get_env(request_timeout),
 
-	QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [SubID])),
+	QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [k_uuid:to_string(SubID)])),
+	?log_debug("Send item to funnel queue [~p]", [QName]),
 	ok = k_mb_amqp_producer_srv:send(QName, Item, Timeout),
 	k_mb_db:delete_items([ItemID]).

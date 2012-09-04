@@ -5,75 +5,47 @@
 -define(authentication_failed, {ok, []}).
 
 -include("amqp_worker_reply.hrl").
--include_lib("k_common/include/FunnelAsn.hrl").
+-include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
 
--define(addr(Addr),
-	apply(fun() ->
-		NewAddr = binary_to_list(Addr#addr.addr),
-		Addr#addr{addr = NewAddr}
-	 end, [])).
-
--define(uuid(UUID),
-	apply(fun() ->
-		k_uuid:to_string(UUID)
-	end, [])).
-
--define(addrs(Addrs),
-	apply(fun()->
-		lists:map(fun(Addr) -> ?addr(Addr) end, Addrs)
-	end, [])).
-
--define(string(Bin),
-	apply(fun() ->
-		binary_to_list(Bin)
-	end, [])).
-
--define(strings(List),
-	apply(fun() ->
-		lists:map(fun(Element) -> ?string(Element) end, List)
-	end, [])).
-
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_ContentType, Message) ->
-	% ?log_debug("got message...", []),
-	case 'FunnelAsn':decode('BindRequest', Message) of
-		{ok, Request = #'BindRequest'{}} ->
+	case adto:decode(#funnel_auth_request_dto{}, Message) of
+		{ok, Request} ->
 			Response =
 				case authenticate(Request) of
 					{allow, Customer = #customer{}} ->
 						build_customer_response(Request, Customer);
 					{deny, Reason} ->
-						?log_error("authentication denied: ~p", [Reason]),
+						?log_notice("funnel authentication denied: ~p", [Reason]),
 						build_error_response(Request, Reason);
 					{error, Reason} ->
 						?log_error("authentication error: ~p", [Reason]),
 						build_error_response(Request, Reason)
 				end,
 			reply(Response);
-		Error ->
-			?log_error("asn decode error: ~p", [Error]),
+		{error, Error} ->
+			?log_error("Funnel auth request decode error: ~p", [Error]),
 			?authentication_failed
 	end.
 
--spec authenticate(#'BindRequest'{}) ->
+-spec authenticate(#funnel_auth_request_dto{}) ->
 	{allow, #customer{}} |
 	{error, term()} |
 	{deny, no_such_customer} |
 	{deny, password} |
 	{deny, connection_type}.
-authenticate(BindReq = #'BindRequest'{
-	customerId = SystemId,
-	userId = UserId
+authenticate(BindReq = #funnel_auth_request_dto{
+	customer_id = SystemID,
+	user_id = UserId
 }) ->
-	?log_debug("got request: ~p", [BindReq]),
-	BinSystemID = list_to_binary(SystemId),
+	?log_debug("Got funnel auth request: ~p", [BindReq]),
 
-	case k_aaa:get_customer_by_system_id(BinSystemID) of
+	case k_aaa:get_customer_by_system_id(SystemID) of
 		{ok, Customer} ->
 			?log_debug("Customer found: ~p", [Customer]),
-			case k_aaa:get_customer_user(Customer, list_to_binary(UserId)) of
+			case k_aaa:get_customer_user(Customer, UserId) of
 				{ok, User = #user{}} ->
 					?log_debug("User found: ~p", [User]),
 					Checks = [
@@ -93,7 +65,7 @@ authenticate(BindReq = #'BindRequest'{
 			Any
 	end.
 
-check_stage_password(#'BindRequest'{password = Pw}, #user{pswd_hash = PwHash}) ->
+check_stage_password(#funnel_auth_request_dto{password = Pw}, #user{pswd_hash = PwHash}) ->
 	case crypto:sha(Pw) =:= PwHash of
 		true ->
 			allow;
@@ -101,7 +73,7 @@ check_stage_password(#'BindRequest'{password = Pw}, #user{pswd_hash = PwHash}) -
 			{deny, password}
 	end.
 
-check_stage_conntype(#'BindRequest'{type = TypeRequested}, #user{permitted_smpp_types = Types}) ->
+check_stage_conntype(#funnel_auth_request_dto{type = TypeRequested}, #user{permitted_smpp_types = Types}) ->
 	case lists:any(fun(T) -> T =:= TypeRequested end, Types) of
 		true ->
 			allow;
@@ -109,8 +81,10 @@ check_stage_conntype(#'BindRequest'{type = TypeRequested}, #user{permitted_smpp_
 			{deny, connection_type}
 	end.
 
-perform_checks(_, _, [], Customer) -> {allow, Customer};
-perform_checks(BindReq = #'BindRequest'{}, User = #user{}, [Check | SoFar], Customer) ->
+perform_checks(_, _, [], Customer) ->
+	?log_debug("Funnel auth allowed", []),
+	{allow, Customer};
+perform_checks(BindReq, User = #user{}, [Check | SoFar], Customer) ->
 	case Check(BindReq, User) of
 		allow ->
 			perform_checks(BindReq, User, SoFar, Customer);
@@ -118,39 +92,21 @@ perform_checks(BindReq = #'BindRequest'{}, User = #user{}, [Check | SoFar], Cust
 			{deny, DenyReason}
 	end.
 
-build_customer_response(#'BindRequest'{
-	connectionId = ConnectionId,
-	customerId = CustomerId
+build_customer_response(#funnel_auth_request_dto{
+	connection_id = ConnectionId,
+	customer_id = CustomerId
 	}, #customer{
 			uuid = UUID,
 			priority = Prior,
-			rps = RPSt,
-			allowedSources = AddrList,
-			defaultSource = DSt,
+			rps = RPS,
+			allowedSources = AllowedSources,
+			defaultSource = DefaultSource,
 			networks = NtwIdList,
-			defaultProviderId = DPt,
+			defaultProviderId = DP,
 			receiptsAllowed = RA,
 			noRetry = NR,
 			defaultValidity = DV,
-			maxValidity = MV
-	}) ->
-	% ?log_debug("building bind customer response...", []),
-
-	%%% validation optional values %%%
-	RPS = validate_optional_asn_value(RPSt),
-	DS = validate_optional_asn_value(?addr(DSt)),
-	DP = validate_optional_asn_value(?uuid(DPt)),
-	%%% END of validation %%%
-
-	Addrs = lists:map(
-		fun(#addr{addr = Addr, ton = TON, npi = NPI})->
-			#'Addr'{
-				addr = Addr,
-				ton = TON,
-				npi = NPI
-			}
-		end,
-		?addrs(AddrList)),
+			maxValidity = MV }) ->
 
 	{Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
 		%%%NETWORK SECTION%%%
@@ -161,12 +117,12 @@ build_customer_response(#'BindRequest'{
 			prefixes = Pref,
 			providerId = ProviderId
 			} = Network,
-		NNew = #'Network'{
-			id = ?uuid(NetworkId),
-			countryCode = ?string(CC),
-			numbersLen = NL,
-			prefixes = ?strings(Pref),
-			providerId = ?uuid(ProviderId)
+		NNew = #network_dto{
+			id = NetworkId,
+			country_code = CC,
+			numbers_len = NL,
+			prefixes = Pref,
+			provider_id = ProviderId
 		},
 
 		%%% PROVIDER SECTION %%%
@@ -176,11 +132,11 @@ build_customer_response(#'BindRequest'{
 			bulkGateway = BGateway,
 			receiptsSupported = RS
 		} = Provider,
-		PNew = #'Provider'{
-			id = ?uuid(ProviderId),
-			gateway = ?uuid(Gateway),
-			bulkGateway = ?uuid(BGateway),
-			receiptsSupported = RS
+		PNew = #provider_dto{
+			id = ProviderId,
+			gateway = Gateway,
+			bulk_gateway = BGateway,
+			receipts_supported = RS
 		},
 		%%% check for Provider dublications %%%
 		case lists:member(PNew, P) of
@@ -191,52 +147,59 @@ build_customer_response(#'BindRequest'{
 		end
 	end, {[], []}, NtwIdList),
 
-	Customer = #'Customer'{
+	Customer = #funnel_auth_response_customer_dto{
 		id = CustomerId,
-		uuid = ?uuid(UUID),
+		uuid = UUID,
 		priority = Prior,
 		rps = RPS,
-		allowedSources = Addrs,
-		defaultSource = DS,
+		allowed_sources = addr_to_dto(AllowedSources),
+		default_source = addr_to_dto(DefaultSource),
 		networks = Networks,
 		providers = Providers,
-		defaultProviderId = DP,
-		receiptsAllowed = RA,
-		noRetry = NR,
-		defaultValidity = ?string(DV),
-		maxValidity = MV
+		default_provider_id = DP,
+		receipts_allowed = RA,
+		no_retry = NR,
+		default_validity = DV,
+		max_validity = MV
 	},
-	?log_debug("built Customer: ~p", [Customer]),
-
-	#'BindResponse'{
-		connectionId = ConnectionId,
+	?log_debug("Built customer: ~p", [Customer]),
+	#funnel_auth_response_dto{
+		connection_id = ConnectionId,
 		result = {customer, Customer}
 	}.
 
-build_error_response(#'BindRequest'{connectionId = ConnectionId}, Reason) ->
-	?log_debug("building bind error response...", []),
-	#'BindResponse'{
-		connectionId = ConnectionId,
+build_error_response(#funnel_auth_request_dto{connection_id = ConnectionId}, Reason) ->
+	?log_debug("Building auth error response...", []),
+	#funnel_auth_response_dto{
+		connection_id = ConnectionId,
 		result = {error, atom_to_list(Reason)}
 	}.
 
-reply(Response = #'BindResponse'{}) ->
-	case 'FunnelAsn':encode('BindResponse', Response) of
+reply(Response) ->
+	case adto:encode(Response) of
 		{ok, Binary} ->
 			Reply = #worker_reply{
 				reply_to = <<"pmm.funnel.server_control">>,
 				content_type = <<"BindResponse">>,
 				payload = Binary},
-			%?log_debug("response: ~p", [Reply]),
 			{ok, [Reply]};
 		Error ->
+			?log_warn("Unexpected funnel auth response encode error: ~p", [Error]),
 	   		Error
 	end.
 
-validate_optional_asn_value(OptionValue) ->
-	case OptionValue of
-			undefined ->
-				asn1_NOVALUE;
-			Value ->
-				Value
-	end.
+addr_to_dto(undefined) ->
+	undefined;
+addr_to_dto(Addr = #addr{}) ->
+	#addr{
+		addr = Msisdn,
+		ton = TON,
+		npi = NPI
+	} = Addr,
+	#addr_dto{
+		addr = Msisdn,
+		ton = TON,
+		npi = NPI
+	};
+addr_to_dto(Addrs) ->
+	[addr_to_dto(Addr) || Addr <- Addrs].
