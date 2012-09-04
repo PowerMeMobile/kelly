@@ -130,7 +130,7 @@ process_method_params([ParamSpec | Tail], ReqParamsPL, Acc, State = #state{req =
 get_parameter(Spec = #param{name = Name, repeated = true}, ReqParamsPL) ->
 	ValuesDelimited = proplists:get_value(atom_to_binary(Name, utf8), ReqParamsPL),
 	case ValuesDelimited of
-		undefined -> validate(undefined, Spec);
+		undefined -> {ok, {Name, []}};
 		_ ->
 			Values = binary:split(ValuesDelimited, [<<";">>], [global, trim]),
 			validate_repeated(Values, [], Spec)
