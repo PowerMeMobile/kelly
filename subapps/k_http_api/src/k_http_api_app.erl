@@ -31,8 +31,16 @@ start(_StartType, _StartArgs) ->
 			{[<<"report">>, <<"downlink">>], gen_cowboy_crud, [k_http_api_handler_downlink_stats]},
 			{[<<"report">>, <<"statuses">>], gen_cowboy_crud, [k_http_api_handler_statuses_stats]},
             {[<<"report">>, <<"messages">>, '_'], gen_cowboy_crud, [k_http_api_handler_msg_stats]},
+
 			%% GUI
-            {[<<"gui">>, '...'], gen_cowboy_restful, [k_http_api_handler_gui]},
+            {[<<"gui">>], k_http_api_gui_index_router, []}, %% redirect to Index.html
+			{[<<"gui">>, '...'], cowboy_http_static,
+				[{directory, <<"./gui">>},
+				{mimetypes, [
+					{<<".css">>, [<<"text/css">>]},
+					{<<".js">>, [<<"application/javascript">>]},
+					{<<".html">>, [<<"text/html">>]}]}]},
+
 			%% Others handler
     		{'...', error_request_handler, []}
     	]}
