@@ -9,8 +9,7 @@
                   k_storage,
                   k_aaa,
                   k_config,
-                  k_j3_support,
-                  amqp_client
+                  k_j3_support
                  ]},
   {mod, {k_statistic_app, []}},
   {env, []}

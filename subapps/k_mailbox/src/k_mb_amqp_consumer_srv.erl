@@ -65,7 +65,6 @@ get_response(MesID, Timeout) ->
 
 init([]) ->
 	{ok, Chan} = rmql:channel_open(),
-	link(Chan),
 	{ok, QoS} = application:get_env(rmq_qos),
 	ok = rmql:basic_qos(Chan, QoS),
 	ReplyToQName = k_mb_config:get_env(reply_to),

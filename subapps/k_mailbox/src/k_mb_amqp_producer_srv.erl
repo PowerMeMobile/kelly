@@ -45,7 +45,6 @@ send(QName, Item, TimeOut) ->
 
 init([]) ->
 	{ok, Chan} = rmql:channel_open(),
-	link(Chan),
 	ReplyTo = k_mb_config:get_env(reply_to),
 	{ok, #state{chan = Chan, reply_to = ReplyTo}}.
 
