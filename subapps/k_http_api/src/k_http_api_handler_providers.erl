@@ -30,6 +30,7 @@ init() ->
 
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = gateway, mandatory = false, repeated = false, type = binary_uuid},
 		#param{name = bulk_gateway,	mandatory = false, repeated = false, type = binary_uuid},
 		#param{name = receipts_supported, mandatory = false, repeated = false, type = boolean}
@@ -47,6 +48,7 @@ init() ->
 
 	CreateParams = [
 		#param{name = id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = gateway, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = bulk_gateway, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = receipts_supported, mandatory = true, repeated = false, type = boolean}
@@ -134,10 +136,12 @@ read_id(PrvUUID) ->
 
 update_provider(Provider, Params) ->
 	ID = ?gv(id, Params),
+	Name = resolve(name, Params, Provider#provider.name),
 	Gateway = resolve(gateway, Params, Provider#provider.gateway),
 	BulkGateway = resolve(bulk_gateway, Params, Provider#provider.bulkGateway),
 	ReceiptsSupported = resolve(receipts_supported, Params, Provider#provider.receiptsSupported),
 	Updated = #provider{
+		name = Name,
 		gateway = Gateway,
 		bulkGateway = BulkGateway,
 		receiptsSupported = ReceiptsSupported},
@@ -148,10 +152,12 @@ update_provider(Provider, Params) ->
 
 create_provider(Params) ->
 	UUID = ?gv(id, Params),
+	Name = ?gv(name, Params),
 	Gateway = ?gv(gateway, Params),
 	BulkGateway = ?gv(bulk_gateway, Params),
 	ReceiptsSupported = ?gv(receipts_supported, Params),
 	Provider = #provider{
+		name = Name,
 		gateway = Gateway,
 		bulkGateway = BulkGateway,
 		receiptsSupported = ReceiptsSupported
@@ -171,10 +177,11 @@ prepare([], Acc) ->
 prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
 	PrvFun = ?record_to_proplist(provider),
 	PrvPropList = PrvFun(Prv),
+	Name = ?gv(name, PrvPropList),
 	BulkGateway = ?gv(bulkGateway, PrvPropList),
 	Gateway = ?gv(gateway, PrvPropList),
 	ReceiptsSupported = ?gv(receiptsSupported, PrvPropList),
-	Result = translate([{id, list_to_binary(k_uuid:to_string(PrvUUID))}] ++ [{gateway, list_to_binary(k_uuid:to_string(Gateway))}] ++ [{bulk_gateway, list_to_binary(k_uuid:to_string(BulkGateway))}] ++ [{receipts_supported, ReceiptsSupported}]),
+	Result = translate([{id, list_to_binary(k_uuid:to_string(PrvUUID))}] ++ [{name, Name}] ++ [{gateway, list_to_binary(k_uuid:to_string(Gateway))}] ++ [{bulk_gateway, list_to_binary(k_uuid:to_string(BulkGateway))}] ++ [{receipts_supported, ReceiptsSupported}]),
 	prepare(Rest, [Result | Acc]).
 
 

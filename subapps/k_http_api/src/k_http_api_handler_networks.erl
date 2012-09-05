@@ -29,6 +29,7 @@ init() ->
 
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = country_code, mandatory = false, repeated = false, type = binary},
 		#param{name = numbers_len,	mandatory = false, repeated = false, type = integer},
 		#param{name = prefixes, mandatory = false, repeated = true, type = binary},
@@ -47,6 +48,7 @@ init() ->
 
 	CreateParams = [
 		#param{name = id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = country_code, mandatory = true, repeated = false, type = binary},
 		#param{name = numbers_len,	mandatory = true, repeated = false, type = integer},
 		#param{name = prefixes, mandatory = true, repeated = true, type = binary},
@@ -133,11 +135,13 @@ is_exist(Params) ->
 
 update_network(Network, Params) ->
 	ID = ?gv(id, Params),
+	NewName = resolve(name, Params, Network#network.name),
  	NewCountryCode = resolve(country_code, Params, Network#network.countryCode),
 	NewNumbersLen = resolve(numbers_len, Params, Network#network.numbersLen),
 	NewPrefixes = resolve(prefixes, Params, Network#network.prefixes),
 	NewProviderId = resolve(provider_id, Params, Network#network.providerId),
 	Updated = #network{
+		name = NewName,
 		countryCode = NewCountryCode,
 		numbersLen = NewNumbersLen,
 		prefixes = NewPrefixes,
@@ -150,11 +154,13 @@ update_network(Network, Params) ->
 
 create_network(Params) ->
 	ID = ?gv(id, Params),
+	Name = ?gv(name, Params),
 	CountryCode = ?gv(country_code, Params),
 	NumbersLen = ?gv(numbers_len, Params),
 	Prefixes = ?gv(prefixes, Params),
 	ProviderId = ?gv(provider_id, Params),
  	Network = #network{
+		name = Name,
 		countryCode = CountryCode,
 		numbersLen = NumbersLen,
 		prefixes = Prefixes,

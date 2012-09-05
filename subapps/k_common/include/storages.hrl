@@ -41,6 +41,7 @@
 % 	Val :: provider()
 % }
 -record(provider, {
+	name 			  :: binary(),
 	gateway 		  :: gateway_id(),
 	bulkGateway 	  :: gateway_id(),
 	receiptsSupported :: boolean()
@@ -55,6 +56,7 @@
 % 	Val :: network()
 % }
 -record(network, {
+	name :: binary(),
 	countryCode :: string(),
 	numbersLen :: integer(),
 	prefixes :: [string()],
