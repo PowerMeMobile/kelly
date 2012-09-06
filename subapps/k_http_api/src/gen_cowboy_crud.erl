@@ -246,7 +246,8 @@ convert_smpp_type(Type) ->
 	case Type of
 		<<"transmitter">> -> transmitter;
 		<<"receiver">> -> receiver;
-		<<"transceiver">> -> transceiver
+		<<"transceiver">> -> transceiver;
+		<<"oneapi">> -> oneapi
 	end.
 
 %% ===================================================================

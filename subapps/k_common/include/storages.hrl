@@ -79,7 +79,7 @@
 }).
 -type addr() :: #addr{}.
 
--type smpp_connection_type() :: transmitter | receiver | tranceiver.
+-type smpp_connection_type() :: transmitter | receiver | tranceiver | oneapi.
 -type user_id() :: string().
 -record(user, {
 	id :: user_id(),

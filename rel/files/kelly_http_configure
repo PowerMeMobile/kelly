@@ -50,7 +50,7 @@ echo -n 'name=test-sys-id&system_id=test-sys-id&id=feda5822-5271-11e1-bd27-001d0
 
 
 # kannel's users
-echo -n 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
+echo -n 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
 echo -n 'id=user2&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
 echo -n 'id=user3&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
 echo -n 'id=user4&pswd=password&smpp_types=transmitter&smpp_type=receiver&smpp_type=transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo

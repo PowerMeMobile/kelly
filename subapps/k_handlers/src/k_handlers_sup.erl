@@ -30,6 +30,8 @@ init([]) ->
 		{one_for_one, 12, 1}, [
 			{k_amqp_bind_request,
 				{k_amqp_gen_consumer, start_link, [k_amqp_bind_request]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
+			{k_k1api_auth_handler,
+				{k_amqp_gen_consumer, start_link, [k_k1api_auth_handler]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
 			{k_amqp_sms_request,
 				{k_amqp_gen_consumer, start_link, [k_amqp_sms_request]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
 			{k_amqp_sms_response,
