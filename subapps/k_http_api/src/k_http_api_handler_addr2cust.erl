@@ -1,6 +1,6 @@
 -module(k_http_api_handler_addr2cust).
 
--behaviour(gen_cowboy_crud).
+-behaviour(gen_http_api).
 
 -export([
 	init/0,
@@ -10,7 +10,7 @@
 	delete/1
 ]).
 
--include("crud_specs.hrl").
+-include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_mailbox/include/address.hrl").
 
@@ -97,7 +97,7 @@ delete(Params) ->
 %% ===================================================================
 
 prepare(CustomerID, UserID, Msisdn) ->
-	[{msisdn, [{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}]}, {customer, list_to_binary(k_uuid:to_string(CustomerID))}, {user, UserID}].
+	[{msisdn, [{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}]}, {customer, list_to_binary(uuid:to_string(CustomerID))}, {user, UserID}].
 
 prepare_msisdns(CustomerID, UserID, Msisdns) ->
-	[{msisdns, [[{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}] || Msisdn <- Msisdns]}, {customer, list_to_binary(k_uuid:to_string(CustomerID))}, {user, UserID}].
+	[{msisdns, [[{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}] || Msisdn <- Msisdns]}, {customer, list_to_binary(uuid:to_string(CustomerID))}, {user, UserID}].
