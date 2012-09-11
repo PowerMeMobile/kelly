@@ -76,7 +76,7 @@ read(Params) ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = k_uuid:newid(),
+			UUID = uuid:newid(),
 			create_network(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_ ->
 			is_exist(Params)
@@ -182,7 +182,7 @@ prepare_ntws([], Acc) ->
 prepare_ntws([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
 	NtwFun = ?record_to_proplist(network),
 	NtwPropList = NtwFun(Ntw),
-	Result = translate([{id, list_to_binary(k_uuid:to_string(NtwUUID))}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, list_to_binary(k_uuid:to_string(?gv(providerId, NtwPropList)))})),
+	Result = translate([{id, list_to_binary(uuid:to_string(NtwUUID))}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, list_to_binary(uuid:to_string(?gv(providerId, NtwPropList)))})),
 	prepare_ntws(Rest, [Result | Acc]).
 
 translate(Proplist) ->

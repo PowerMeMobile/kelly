@@ -35,7 +35,7 @@ prepare_gtws(Gtw = {_UUID, #gateway{}}) ->
 prepare_gtws([], Acc) ->
 	{ok, Acc};
 prepare_gtws([{GtwUUIDBin, #gateway{}} | Rest], Acc) ->
-	GtwUUID = k_uuid:to_string(GtwUUIDBin),
+	GtwUUID = uuid:to_string(GtwUUIDBin),
 	{ok, Name} = k_snmp:get_column_val(gtwName, GtwUUID),
 	{ok, Status} = k_snmp:get_column_val(gtwStatus, GtwUUID),
 	{ok, MaxRPS} = k_snmp:get_column_val(gtwRPS, GtwUUID),

@@ -39,7 +39,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		npi = NPI
 	} = DestAddr,
 	%% generate new id.
-	ItemId = k_uuid:newid(),
+	ItemId = uuid:newid(),
 	%% transform encoding.
 	Encoding = case DataCoding of
 	   -1 -> {text, default};

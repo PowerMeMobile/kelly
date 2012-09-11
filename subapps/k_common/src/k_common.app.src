@@ -8,7 +8,8 @@
                   stdlib,
                   lager,
 				  rmql,
-                  sync
+                  sync,
+				  uuid
                  ]},
   {mod, {k_common_app, []}},
   {env, []}

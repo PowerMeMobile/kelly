@@ -70,7 +70,7 @@ read(Params) ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = k_uuid:newid(),
+			UUID = uuid:newid(),
 			create_gtw(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_Value ->
 			is_exist(Params)
@@ -87,7 +87,7 @@ update(Params) ->
 
 delete(Params) ->
 	UUID = ?gv(id, Params),
-	k_snmp:del_row(gtw, k_uuid:to_string(UUID)),
+	k_snmp:del_row(gtw, uuid:to_string(UUID)),
 	ok = k_config:del_gateway(UUID),
 	{http_code, 204}.
 
@@ -133,7 +133,7 @@ update_gtw(Gtw, Params) ->
 	NewName = resolve(name, Params, Name),
 	NewGtw = #gateway{rps = NewRPS, name = NewName, connections = Conns},
 	?log_debug("New gtw: ~p", [NewGtw]),
-	k_snmp:set_row(gtw, k_uuid:to_string(UUID), [{gtwName, binary_to_list(NewName)}, {gtwRPS, NewRPS}]),
+	k_snmp:set_row(gtw, uuid:to_string(UUID), [{gtwName, binary_to_list(NewName)}, {gtwRPS, NewRPS}]),
 	ok = k_config:set_gateway(UUID, NewGtw),
 	case k_config:get_gateway(UUID) of
 		{ok, NewGtw = #gateway{}} ->
@@ -154,7 +154,7 @@ create_gtw(Params) ->
 	Name = ?gv(name, Params),
 	UUID = ?gv(id, Params),
 	Gateway = #gateway{rps = RPS, name = Name},
-	k_snmp:set_row(gtw, k_uuid:to_string(UUID), [{gtwName, binary_to_list(Name)}, {gtwRPS, RPS}]),
+	k_snmp:set_row(gtw, uuid:to_string(UUID), [{gtwName, binary_to_list(Name)}, {gtwRPS, RPS}]),
 	ok = k_config:set_gateway(UUID, Gateway),
 	case k_config:get_gateway(UUID) of
 		{ok, Gtw = #gateway{}} ->
@@ -184,7 +184,7 @@ prepare_gtws([{GtwUUID, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
 
 	%% convert gateway record to proplist
 	GatewayFun = ?record_to_proplist(gateway),
-	GtwPropList =  [{id, list_to_binary(k_uuid:to_string(GtwUUID))}] ++ GatewayFun(Gtw#gateway{
+	GtwPropList =  [{id, list_to_binary(uuid:to_string(GtwUUID))}] ++ GatewayFun(Gtw#gateway{
 													connections = ConnPropLists
 													}),
 	prepare_gtws(Rest, [GtwPropList | Acc]).

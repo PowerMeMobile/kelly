@@ -74,7 +74,7 @@ read(Params) ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = k_uuid:newid(),
+			UUID = uuid:newid(),
 			create_provider(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_ ->
 			is_exist(Params)
@@ -181,7 +181,7 @@ prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
 	BulkGateway = ?gv(bulkGateway, PrvPropList),
 	Gateway = ?gv(gateway, PrvPropList),
 	ReceiptsSupported = ?gv(receiptsSupported, PrvPropList),
-	Result = translate([{id, list_to_binary(k_uuid:to_string(PrvUUID))}] ++ [{name, Name}] ++ [{gateway, list_to_binary(k_uuid:to_string(Gateway))}] ++ [{bulk_gateway, list_to_binary(k_uuid:to_string(BulkGateway))}] ++ [{receipts_supported, ReceiptsSupported}]),
+	Result = translate([{id, list_to_binary(uuid:to_string(PrvUUID))}] ++ [{name, Name}] ++ [{gateway, list_to_binary(uuid:to_string(Gateway))}] ++ [{bulk_gateway, list_to_binary(uuid:to_string(BulkGateway))}] ++ [{receipts_supported, ReceiptsSupported}]),
 	prepare(Rest, [Result | Acc]).
 
 

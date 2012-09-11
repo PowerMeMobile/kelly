@@ -41,7 +41,7 @@ read(Params) ->
 	case k_storage:get_msg_status({CustId, MsgId}) of
 		{ok, #msg_status{status = Status}} ->
 			{ok, {message, [
-				{customer_id, list_to_binary(k_uuid:to_string(CustId))},
+				{customer_id, list_to_binary(uuid:to_string(CustId))},
 				{message_id, MsgId},
 				{status, Status}
 			]}};
