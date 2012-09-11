@@ -18,19 +18,19 @@ start(_StartType, _StartArgs) ->
     %% {Host, list({Path, Handler, Opts})}
     	{'_', [
 			%% REST API
-            {[<<"gateways">>, '_', <<"connections">>, '...'], gen_cowboy_crud, [k_http_api_handler_connections]},
-            {[<<"gateways">>, '...'], gen_cowboy_crud, [k_http_api_handler_gateways]},
-            {[<<"customers">>, '_', <<"users">>, '...'], gen_cowboy_crud, [k_http_api_handler_users]},
-            {[<<"customers">>, '...'], gen_cowboy_crud, [k_http_api_handler_customers]},
-            {[<<"networks">>, '...'], gen_cowboy_crud, [k_http_api_handler_networks]},
-            {[<<"providers">>, '...'], gen_cowboy_crud, [k_http_api_handler_providers]},
-		    {[<<"addr2cust">>, '...'], gen_cowboy_crud, [k_http_api_handler_addr2cust]},
+            {[<<"gateways">>, '_', <<"connections">>, '...'], gen_http_api, [k_http_api_handler_connections]},
+            {[<<"gateways">>, '...'], gen_http_api, [k_http_api_handler_gateways]},
+            {[<<"customers">>, '_', <<"users">>, '...'], gen_http_api, [k_http_api_handler_users]},
+            {[<<"customers">>, '...'], gen_http_api, [k_http_api_handler_customers]},
+            {[<<"networks">>, '...'], gen_http_api, [k_http_api_handler_networks]},
+            {[<<"providers">>, '...'], gen_http_api, [k_http_api_handler_providers]},
+		    {[<<"addr2cust">>, '...'], gen_http_api, [k_http_api_handler_addr2cust]},
 			%% STATISTIC API
-            {[<<"message_status">>, '_', <<"customer">>, '...'], gen_cowboy_crud, [k_http_api_handler_message_status]},
-			{[<<"report">>, <<"uplink">>], gen_cowboy_crud, [k_http_api_handler_uplink_stats]},
-			{[<<"report">>, <<"downlink">>], gen_cowboy_crud, [k_http_api_handler_downlink_stats]},
-			{[<<"report">>, <<"statuses">>], gen_cowboy_crud, [k_http_api_handler_statuses_stats]},
-            {[<<"report">>, <<"messages">>, '_'], gen_cowboy_crud, [k_http_api_handler_msg_stats]},
+            {[<<"message_status">>, '_', <<"customer">>, '...'], gen_http_api, [k_http_api_handler_message_status]},
+			{[<<"report">>, <<"uplink">>], gen_http_api, [k_http_api_handler_uplink_stats]},
+			{[<<"report">>, <<"downlink">>], gen_http_api, [k_http_api_handler_downlink_stats]},
+			{[<<"report">>, <<"statuses">>], gen_http_api, [k_http_api_handler_statuses_stats]},
+            {[<<"report">>, <<"messages">>, '_'], gen_http_api, [k_http_api_handler_msg_stats]},
 
 			%% GUI
             {[<<"gui">>], k_http_api_gui_index_router, []}, %% redirect to Index.html
