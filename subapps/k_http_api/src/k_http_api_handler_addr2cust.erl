@@ -1,6 +1,6 @@
 -module(k_http_api_handler_addr2cust).
 
--behaviour(gen_cowboy_crud).
+-behaviour(gen_http_api).
 
 -export([
 	init/0,
@@ -10,7 +10,7 @@
 	delete/1
 ]).
 
--include("crud_specs.hrl").
+-include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_mailbox/include/address.hrl").
 

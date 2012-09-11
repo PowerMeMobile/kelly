@@ -1,7 +1,7 @@
 
 -module(k_http_api_handler_gateways).
 
--behaviour(gen_cowboy_crud).
+-behaviour(gen_http_api).
 
 -export([
 	init/0,
@@ -13,7 +13,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("crud_specs.hrl").
+-include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
 %% Callback Functions
