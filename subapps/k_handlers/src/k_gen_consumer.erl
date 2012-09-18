@@ -104,14 +104,14 @@ handle_cast(do_subscribe, State = #state{
 	mod_state = MState,
 	module = Mod
 }) ->
-	{ok, QoS, QName, BXchg, NewMState} =
+	{ok, QoS, QName, DeclareQueue, BXchg, NewMState} =
 	case Mod:handle_subscribe(MState) of
-		{ok, Opts, Q, Xchg, S} -> {ok, Opts, Q, Xchg, S};
-		{ok, Opts, Q, S} -> {ok, Opts, Q, undefined, S}
+		{ok, Opts, Q, DQ, Xchg, S} -> {ok, Opts, Q, DQ, Xchg, S};
+		{ok, Opts, Q, DQ, S} -> {ok, Opts, Q, DQ, undefined, S}
 	end,
 	{ok, Channel} = rmql:channel_open(),
 	declare_exchange(Channel, BXchg),
-	declare_queue(Channel, QName),
+	declare_queue(Channel, QName, DeclareQueue),
 	queue_bind(Channel, QName, BXchg),
 	ok = rmql:basic_qos(Channel, QoS),
 	{ok, QTag} = rmql:basic_consume(Channel, QName, false),
@@ -236,13 +236,17 @@ code_change(OldVsn, State = #state{
 %% Local functions
 %% ===================================================================
 
-declare_queue(Channel, QName) ->
-	?log_debug("declaring queue[~p]", [QName]),
+declare_queue(_Channel, QName, false) ->
+	?log_notice("Abort to declare queue [~p]: false flag", [QName]),
+	ok;
+declare_queue(Channel, QName, DeclareQueue) when DeclareQueue == undefined orelse
+												 DeclareQueue == true ->
+	?log_debug("Try to declare queue [~p]", [QName]),
 	Durable = true,
 	Exclusive = false, % default
 	AutoDelete = false, % default
 	ok = rmql:queue_declare(Channel, QName, Durable, Exclusive, AutoDelete),
-	?log_info("queue[~p] declare OK", [QName]).
+	?log_info("Queue [~p] was successfully declared", [QName]).
 
 declare_exchange(_Channel, undefined) ->
 	ok;

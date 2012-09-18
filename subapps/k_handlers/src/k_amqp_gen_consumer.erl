@@ -26,7 +26,7 @@
 -include("gen_consumer_spec.hrl").
 
 -record(state, {
-	request :: atom(),
+	handler_spec_name :: atom(),
 	handler :: atom()
 }).
 
@@ -42,19 +42,19 @@ start_link(Request) ->
 %% k_gen_consumer callbacks
 %% ===================================================================
 
-init([Request])->
-	?log_debug("init(~p)...", [Request]),
-	{ok, #state{request = Request}}.
+init([HandlerSpecName])->
+	?log_debug("Initialize amqp handler: ~p", [HandlerSpecName]),
+	{ok, #state{handler_spec_name = HandlerSpecName}}.
 
-handle_subscribe(State = #state{
-	request = Request
-}) ->
-	?log_debug("handling subscribe(~p)...", [Request]),
-	{ok, Args} = application:get_env(Request),
+handle_subscribe(State = #state{handler_spec_name = HandlerSpecName}) ->
+	?log_debug("Handling subscribe [amqp handler: ~p]...", [HandlerSpecName]),
+	{ok, Args} = application:get_env(HandlerSpecName),
 	Queue = proplists:get_value(queue, Args),
 	Handler = proplists:get_value(handler, Args),
 	QoS = proplists:get_value(rmq_qos, Args),
-	{ok, QoS, Queue, State#state{handler = Handler}}.
+	DeclareQueue = proplists:get_value(declare_queue, Args),
+	?log_debug("Handler [~p] will declare queue [~p]: ~p", [HandlerSpecName, Queue, DeclareQueue]),
+	{ok, QoS, Queue, DeclareQueue, State#state{handler = Handler}}.
 
 handle_message(ContentType, Message, Channel, State = #state{
 	handler = Handler
