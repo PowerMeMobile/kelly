@@ -1,6 +1,6 @@
 -module(k_http_api_handler_networks).
 
--behaviour(gen_cowboy_crud).
+-behaviour(gen_http_api).
 
 -export([
 	init/0,
@@ -12,7 +12,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("crud_specs.hrl").
+-include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
 %% Callback Functions
@@ -76,7 +76,7 @@ read(Params) ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = k_uuid:newid(),
+			UUID = uuid:newid(),
 			create_network(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_ ->
 			is_exist(Params)
@@ -182,7 +182,7 @@ prepare_ntws([], Acc) ->
 prepare_ntws([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
 	NtwFun = ?record_to_proplist(network),
 	NtwPropList = NtwFun(Ntw),
-	Result = translate([{id, list_to_binary(k_uuid:to_string(NtwUUID))}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, list_to_binary(k_uuid:to_string(?gv(providerId, NtwPropList)))})),
+	Result = translate([{id, list_to_binary(uuid:to_string(NtwUUID))}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, list_to_binary(uuid:to_string(?gv(providerId, NtwPropList)))})),
 	prepare_ntws(Rest, [Result | Acc]).
 
 translate(Proplist) ->

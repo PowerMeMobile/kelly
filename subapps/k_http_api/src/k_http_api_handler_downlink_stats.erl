@@ -1,6 +1,6 @@
 -module(k_http_api_handler_downlink_stats).
 
--behaviour(gen_cowboy_crud).
+-behaviour(gen_http_api).
 
 %% gen_cowboy_crud callbacks
 -export([
@@ -11,7 +11,7 @@
 	delete/1
 ]).
 
--include("crud_specs.hrl").
+-include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
 
 %% ===================================================================

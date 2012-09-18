@@ -1,6 +1,6 @@
 -module(k_http_api_handler_connections).
 
--behaviour(gen_cowboy_crud).
+-behaviour(gen_http_api).
 
 -export([
 	init/0,
@@ -12,7 +12,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("crud_specs.hrl").
+-include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
 %% Callback Functions
@@ -106,7 +106,7 @@ delete(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
 	ConnectionID = ?gv(id, Params),
 	ok = k_config:del_gateway_connection(GtwUUID, ConnectionID),
-	k_snmp:del_row(cnn, k_uuid:to_string(GtwUUID) ++ [ConnectionID]),
+	k_snmp:del_row(cnn, uuid:to_string(GtwUUID) ++ [ConnectionID]),
 	{http_code, 204}.
 
 %% ===================================================================
@@ -170,7 +170,7 @@ update_connection(Gtw, Params) ->
 					},
  			{ok, NewConnections} = replace_connection(NewConnection, Connections),
 			ok = k_config:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
-			SnmpConnID = k_uuid:to_string(GtwID) ++ [ConnectionID],
+			SnmpConnID = uuid:to_string(GtwID) ++ [ConnectionID],
 			k_snmp:set_row(cnn, SnmpConnID,
 				[{cnnType, NewType},
 				{cnnAddr, convert_to_snmp_ip(binary_to_list(NewAddr))},
@@ -260,7 +260,7 @@ create_connection(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
 	k_config:set_gateway_connection(GtwUUID, Connection),
 
-	SnmpConnId = k_uuid:to_string(GtwUUID) ++ [ConnectionID],
+	SnmpConnId = uuid:to_string(GtwUUID) ++ [ConnectionID],
 	k_snmp:set_row(cnn, SnmpConnId,
 		[{cnnType, Type},
 		{cnnAddr, convert_to_snmp_ip(binary_to_list(Addr))},

@@ -77,7 +77,7 @@ handle_fork_call(_Arg, {{send, Item, QName, TimeOut}, S = #state{}}, _ReplyTo, _
 		content_type = CT,
 		content_body = Payload
 		} = Item,
-	ItemID = k_uuid:to_string(ItemIDBin),
+	ItemID = uuid:to_string(ItemIDBin),
 	MesID = list_to_binary(ItemID),
 	BasicPropsPropListn =
 		[{message_id, MesID}, {correlation_id, MesID}, {reply_to, ReplyTo}, {content_type, CT}],

@@ -100,7 +100,7 @@ build_receipt(Data) ->
 		dest = addr_to_dto(DstAddr)
 	},
 	?log_debug("Receipt: ~p", [Receipt]),
-	BatchId = k_uuid:newid(),
+	BatchId = uuid:newid(),
 	Batch = #funnel_delivery_receipt_dto{
 		id = BatchId,
 		receipts = [Receipt]

@@ -1,6 +1,6 @@
 -module(k_http_api_handler_customers).
 
--behaviour(gen_cowboy_crud).
+-behaviour(gen_http_api).
 
 -export([
 	init/0,
@@ -12,7 +12,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include("crud_specs.hrl").
+-include_lib("gen_http_api/include/crud_specs.hrl").
 
 init() ->
 
@@ -78,7 +78,7 @@ init() ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = k_uuid:newid(),
+			UUID = uuid:newid(),
 			create_customer(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_ ->
 			is_exist(Params)
@@ -144,7 +144,7 @@ update(Params) ->
 
 delete(Params) ->
 	UUID = ?gv(id, Params),
-	k_snmp:del_row(cst, k_uuid:to_string(UUID)),
+	k_snmp:del_row(cst, uuid:to_string(UUID)),
 	ok = k_aaa:del_customer(UUID),
 	{http_code, 204}.
 
@@ -206,7 +206,7 @@ create_customer(Params) ->
 		users = [],
 		state = ?gv(state, Params)
 	},
-	k_snmp:set_row(cst, k_uuid:to_string(UUID), [
+	k_snmp:set_row(cst, uuid:to_string(UUID), [
 		{cstRPS, RPS},
 		{cstPriority, Priority}]),
 	ok = k_aaa:set_customer(System_id, Customer),
@@ -254,9 +254,9 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 								allowedSources = OriginatorsPropList,
 								defaultSource = DefSourcePropList
 											}),
-	UUIDBinStr = list_to_binary(k_uuid:to_string(UUID)),
-	DefaultProviderIDBinStr = list_to_binary(k_uuid:to_string(?gv(defaultProviderId, CustomerPropList))),
-	NetworksBinStr = lists:map(fun(Ntw) -> list_to_binary(k_uuid:to_string(Ntw)) end, ?gv(networks, CustomerPropList)),
+	UUIDBinStr = list_to_binary(uuid:to_string(UUID)),
+	DefaultProviderIDBinStr = list_to_binary(uuid:to_string(?gv(defaultProviderId, CustomerPropList))),
+	NetworksBinStr = lists:map(fun(Ntw) -> list_to_binary(uuid:to_string(Ntw)) end, ?gv(networks, CustomerPropList)),
 	Renamed = translate(CustomerPropList),
 	ConvertedID = lists:keyreplace(id, 1, Renamed, {id, UUIDBinStr}),
 	ConvertedDefaultProviderID = lists:keyreplace(default_provider_id, 1, ConvertedID, {default_provider_id, DefaultProviderIDBinStr}),

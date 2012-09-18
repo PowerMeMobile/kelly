@@ -6,10 +6,8 @@
   {applications, [
 					kernel,
 					stdlib,
-					gproc,
-					cowboy,
-					jsx,
-					k_common
+					k_common,
+					gen_http_api
                  ]},
   {mod, {k_http_api_app, []}},
   {env, []}

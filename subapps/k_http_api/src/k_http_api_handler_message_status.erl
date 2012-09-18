@@ -1,6 +1,6 @@
 -module(k_http_api_handler_message_status).
 
--behaviour(gen_cowboy_crud).
+-behaviour(gen_http_api).
 
 %% gen_cowboy_crud callbacks
 -export([
@@ -11,7 +11,7 @@
 	delete/1
 ]).
 
--include("crud_specs.hrl").
+-include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/msg_status.hrl").
 
@@ -41,7 +41,7 @@ read(Params) ->
 	case k_storage:get_msg_status({CustId, MsgId}) of
 		{ok, #msg_status{status = Status}} ->
 			{ok, {message, [
-				{customer_id, list_to_binary(k_uuid:to_string(CustId))},
+				{customer_id, list_to_binary(uuid:to_string(CustId))},
 				{message_id, MsgId},
 				{status, Status}
 			]}};

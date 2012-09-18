@@ -62,7 +62,7 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 					Frequencies = k_statistic_utils:make_frequencies(Timestamps),
 					GatewayTotal = length(Timestamps),
 					[
-						{gateway_id, list_to_binary(k_uuid:to_string(GatewayId))},
+						{gateway_id, list_to_binary(uuid:to_string(GatewayId))},
 						{gateway_name, get_gateway_name(GatewayId)},
 						{total, GatewayTotal},
 						{slices,

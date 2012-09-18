@@ -153,7 +153,7 @@ process(Item, SubID) ->
 
 	Timeout = k_mb_config:get_env(request_timeout),
 
-	QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [k_uuid:to_string(SubID)])),
+	QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [uuid:to_string(SubID)])),
 	?log_debug("Send item to funnel queue [~p]", [QName]),
 	ok = k_mb_amqp_producer_srv:send(QName, Item, Timeout),
 	k_mb_db:delete_items([ItemID]).
