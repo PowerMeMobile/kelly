@@ -74,8 +74,8 @@ check_stage_password(#funnel_auth_request_dto{password = Pw}, #user{pswd_hash = 
 			{deny, password}
 	end.
 
-check_stage_conntype(#funnel_auth_request_dto{type = TypeRequested}, #user{}) ->
-	Types = [oneapi],
+check_stage_conntype(#funnel_auth_request_dto{}, #user{permitted_smpp_types = Types}) ->
+	TypeRequested = oneapi,
 	case lists:any(fun(T) -> T =:= TypeRequested end, Types) of
 		true ->
 			allow;
@@ -181,8 +181,8 @@ reply(Response) ->
 	case adto:encode(Response) of
 		{ok, Binary} ->
 			Reply = #worker_reply{
-				reply_to = <<"pmm.funnel.server_control">>,
-				content_type = <<"BindResponse">>,
+				reply_to = <<"pmm.k1api.auth_response">>,
+				content_type = <<"OneAPIAuthResponse">>,
 				payload = Binary},
 			{ok, [Reply]};
 		Error ->
