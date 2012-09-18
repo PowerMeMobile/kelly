@@ -10,18 +10,23 @@
 -include_lib("alley_dto/include/adto.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(_ContentType, Message) ->
+process(ContentType, Message) ->
 	case adto:decode(#just_sms_request_dto{}, Message) of
 		{ok, SmsRequest} ->
-			process_sms_request(SmsRequest);
+			content_type_to_client_type(SmsRequest, ContentType);
 		Error ->
 			Error
 	end.
 
--spec process_sms_request(#just_sms_request_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
-process_sms_request(SmsRequest = #just_sms_request_dto{}) ->
-	?log_debug("Got just sms request: ~p", [SmsRequest]),
-	MsgInfos = sms_request_to_msg_info_list(SmsRequest),
+content_type_to_client_type(SmsRequest, <<"k1apiSmsRequest">>) ->
+	process_sms_request(SmsRequest, k1api);
+content_type_to_client_type(SmsRequest, <<"SmsRequest">>) ->
+	process_sms_request(SmsRequest, funnel).
+
+-spec process_sms_request(#just_sms_request_dto{}, k1api | funnel) -> {ok, [#worker_reply{}]} | {error, any()}.
+process_sms_request(SmsRequest, ClientType) ->
+	?log_debug("Got ~p sms request: ~p", [ClientType, SmsRequest]),
+	MsgInfos = sms_request_to_msg_info_list(SmsRequest, ClientType),
 	case k_utils:safe_foreach(fun process_msg_info/1, MsgInfos, ok, {error, '_'}) of
 		ok ->
 			{ok, []};
@@ -32,9 +37,10 @@ process_sms_request(SmsRequest = #just_sms_request_dto{}) ->
 -spec process_msg_info(#msg_info{}) -> ok | {error, any()}.
 process_msg_info(MsgInfo = #msg_info{
 	id = Id,
+	client_type = ClientType,
 	customer_id = CustomerId
 }) ->
-	InputId = {CustomerId, Id},
+	InputId = {CustomerId, ClientType, Id},
 	Status = submitted,
 	Time = k_datetime:utc_unix_epoch(),
 	case update_msg_status(InputId, Status, Time) of
@@ -83,7 +89,7 @@ get_param_by_name(Name, Params) ->
 			{ok, Param}
 	end.
 
--spec sms_request_to_msg_info_list(#just_sms_request_dto{}) -> [#msg_info{}].
+-spec sms_request_to_msg_info_list(#just_sms_request_dto{}, k1api | funnel) -> [#msg_info{}].
 sms_request_to_msg_info_list(#just_sms_request_dto{
 	id = _Id,
 	gateway_id = GatewayId,
@@ -94,8 +100,7 @@ sms_request_to_msg_info_list(#just_sms_request_dto{
 	params = Params,
 	source_addr = SourceAddr,
 	dest_addrs = {_, DestAddrs},
-	message_ids = MessageIds
-}) ->
+	message_ids = MessageIds}, ClientType) ->
 	%% Message ids come in ["ID1", "ID2:ID3", "ID4"], where "ID2:ID3" is a multipart message ids.
 	%% Destination addrs come in ["ADDR1", "ADDR2", "ADDR3"]. The task is to get {ADDRX, IDY} pairs
 	%% like that [{"ADDR1", "ID1"}, {"ADDR2", "ID2"}, {"ADDR2", "ID3"}, {"ADDR3", "ID4"}].
@@ -116,6 +121,7 @@ sms_request_to_msg_info_list(#just_sms_request_dto{
 					id = MessageId,
 					gateway_id = GatewayId,
 					customer_id = CustomerId,
+					client_type = ClientType,
 					type = Type,
 					encoding = Encoding,
 					body = Message,
