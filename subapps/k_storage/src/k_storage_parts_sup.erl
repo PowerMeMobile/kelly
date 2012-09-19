@@ -10,6 +10,11 @@
 %% Supervisor callbacks
 -export([init/1]).
 
+%% Helper
+-define(CHILD(Name),
+	{Name, {k_storage_parts_mgr, start_link, [Name]},
+			permanent, 10000, worker, [k_storage_parts_mgr]}).
+
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/supervisor_spec.hrl").
 
@@ -29,15 +34,11 @@ init([]) ->
 	?log_debug("init", []),
 	{ok, {
 		{one_for_one, 5, 10}, [
-			{msg_info_id,
-				{k_storage_parts_mgr, start_link, [msg_info]}, permanent, 10000, worker, [k_storage_parts_mgr]},
-			{msg_status_id,
-				{k_storage_parts_mgr, start_link, [msg_status]}, permanent, 10000, worker, [k_storage_parts_mgr]},
-			{in_to_out_id,
-				{k_storage_parts_mgr, start_link, [in_to_out]}, permanent, 10000, worker, [k_storage_parts_mgr]},
-			{out_to_in_id,
-				{k_storage_parts_mgr, start_link, [out_to_in]}, permanent, 10000, worker, [k_storage_parts_mgr]},
-			{incoming_msg_info,
-				{k_storage_parts_mgr, start_link, [incoming_msg_info]}, permanent, 10000, worker, [k_storage_parts_mgr]}
+			?CHILD(msg_info),
+			?CHILD(msg_status),
+			?CHILD(in_to_out),
+			?CHILD(out_to_in),
+			?CHILD(incoming_msg_info),
+			?CHILD(k1api_sms_request_id_to_msg_ids)
 		]}
 	}.

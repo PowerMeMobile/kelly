@@ -14,7 +14,10 @@
 	get_input_id_by_output_id/1,
 
 	set_incoming_msg_info/2,
-	get_incoming_msg_info/1
+	get_incoming_msg_info/1,
+
+	link_sms_request_id_to_msg_ids/2,
+	get_msg_ids_by_sms_request_id/1
 ]).
 
 -include_lib("k_common/include/msg_id.hrl").
@@ -65,3 +68,11 @@ set_incoming_msg_info(OutputId, MsgInfo = #msg_info{}) ->
 -spec get_incoming_msg_info(msg_id()) -> {ok, #msg_info{}} | {error, any()}.
 get_incoming_msg_info(OutputId) ->
 	gen_server:call(incoming_msg_info, {get, OutputId}, infinity).
+
+-spec link_sms_request_id_to_msg_ids(binary(), [binary()]) -> ok | {error, any()}.
+link_sms_request_id_to_msg_ids(SmsRequestID, MessageIDs) ->
+	gen_server:call(k1api_sms_request_id_to_msg_ids, {set, SmsRequestID, MessageIDs}).
+
+-spec get_msg_ids_by_sms_request_id(binary()) -> {ok, [binary()]} | {error, any()}.
+get_msg_ids_by_sms_request_id(SmsRequestID) ->
+	gen_server:call(k1api_sms_request_id_to_msg_ids, {get, SmsRequestID}).
