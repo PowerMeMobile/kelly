@@ -89,6 +89,7 @@ map_in_to_out(InputId, OutputId) ->
 sms_response_to_msg_resp_list(#just_sms_response_dto{
 	id = _Id,
 	customer_id = CustomerId,
+	client_type = ClientType,
 	gateway_id = GatewayId,
 	timestamp = _Timestamp,
 	statuses = Statuses }) ->
@@ -102,13 +103,7 @@ sms_response_to_msg_resp_list(#just_sms_response_dto{
 					error_code = _ErrorCode
 				 }) ->
 					#msg_resp{
-						input_id = {CustomerId, OriginalId},
+						input_id = {CustomerId, ClientType, OriginalId},
 						output_id = {GatewayId, MessageId},
 						status = Status
 					} end, Statuses).
-
-
-%% optional_to_binary(asn1_NOVALUE) ->
-%% 	asn1_NOVALUE;
-%% optional_to_binary(Value) ->
-%% 	list_to_binary(Value).

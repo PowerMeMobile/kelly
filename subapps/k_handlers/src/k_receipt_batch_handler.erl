@@ -11,7 +11,6 @@
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"ReceiptBatch">>, Message) ->
-	?log_debug("Got just delivery receipt", []),
 	case adto:decode(#just_delivery_receipt_dto{}, Message) of
 		{ok, ReceiptBatch} ->
 			process_receipt_batch(ReceiptBatch);
@@ -27,7 +26,7 @@ process(CT, Message) ->
 process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
 	gateway_id = GatewayId,
 	receipts = Receipts }) ->
-	?log_debug("DeliveryReceipt body: ~p", [ReceiptBatch]),
+	?log_debug("Got just delivery receipt: ~p", [ReceiptBatch]),
 	DlrTime = k_datetime:utc_unix_epoch(),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
 		ok ->
@@ -90,7 +89,7 @@ register_funnel_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
 		BatchId, CustomerId, UserId, <<"ReceiptBatch">>, BatchBinary
 	).
 build_receipt(Data) ->
-	{{CustomerId, InputMsgId}, MessageState, SrcAddr, DstAddr, DlrTime} = Data,
+	{{CustomerId, _ClientType, InputMsgId}, MessageState, SrcAddr, DstAddr, DlrTime} = Data,
 	Receipt = #funnel_delivery_receipt_container_dto{
 		message_id = InputMsgId,
 		submit_date = list_to_binary(unix_to_utc(DlrTime)),
