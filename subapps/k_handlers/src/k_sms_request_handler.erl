@@ -86,7 +86,7 @@ get_param_by_name(Name, Params) ->
 
 -spec sms_request_to_msg_info_list(#just_sms_request_dto{}) -> [#msg_info{}].
 sms_request_to_msg_info_list(#just_sms_request_dto{
-	id = _Id,
+	id = SmsRequestID,
 	gateway_id = GatewayId,
 	customer_id = CustomerId,
 	client_type = ClientType,
@@ -112,6 +112,7 @@ sms_request_to_msg_info_list(#just_sms_request_dto{
 			_ ->
 				false
 		end,
+	link_sms_request_id_to_message_ids(SmsRequestID, CustomerId, AllPairs, ClientType),
 	lists:map(fun({DestAddr, MessageId}) ->
 				#msg_info{
 					id = MessageId,
@@ -149,3 +150,12 @@ transform_addr(#addr_ref_num_dto{
 -spec split(binary()) -> [binary()].
 split(BinIDs) ->
 	binary:split(BinIDs, <<":">>, [global, trim]).
+
+link_sms_request_id_to_message_ids(SmsRequestID, CustomerID, AllPairs, k1api) ->
+	InputMessageIDs = lists:map(fun({_Addr, ID}) ->
+		{CustomerID, k1api, ID}
+	end, AllPairs),
+	ok = k_storage:link_sms_request_id_to_msg_ids(SmsRequestID, InputMessageIDs),
+	ok;
+link_sms_request_id_to_message_ids(_SmsRequestID, _CustomerID,_AllPairs, _ClientType) ->
+	ok.
