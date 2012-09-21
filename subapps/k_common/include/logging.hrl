@@ -4,7 +4,7 @@
 -define(logging_hrl, included).
 
 -define( log_common(Lvl, Fmt, Args),
-		lager:Lvl(Fmt ++  " [~s:~p]",Args ++ [?FILE, ?LINE] )
+		lager:Lvl(Fmt ++  " [~s:~p]",Args ++ [filename:basename(?FILE), ?LINE] )
 	).
 
 -define( log_debug(Fmt, Args), ?log_common(debug, Fmt, Args) ).
