@@ -10,6 +10,11 @@
 %% supervisor callbacks
 -export([init/1]).
 
+-define(HANDLER(Name),
+	{Name,
+		{k_amqp_gen_consumer, start_link, [Name]},
+		permanent, 10000, worker, [k_amqp_gen_consumer]}).
+
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/supervisor_spec.hrl").
 
@@ -28,23 +33,15 @@ init([]) ->
 		%% The MaxR = 12 and MaxT = 1 values mean that we tolerate 2 amqp connection problems
 		%% in each of them in 1 minute. Adjust the values to more appropriate ones if you need.
 		{one_for_one, 12, 1}, [
-			{k_amqp_bind_request,
-				{k_amqp_gen_consumer, start_link, [k_amqp_bind_request]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
-			{k_k1api_auth_handler,
-				{k_amqp_gen_consumer, start_link, [k_k1api_auth_handler]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
-			{k_amqp_k1api_sms_request,
-				{k_amqp_gen_consumer, start_link, [k_amqp_k1api_sms_request]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
-			{k_amqp_sms_request,
-				{k_amqp_gen_consumer, start_link, [k_amqp_sms_request]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
-			{k_amqp_sms_response,
-				{k_amqp_gen_consumer, start_link, [k_amqp_sms_response]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
-			{k_amqp_receipt_batch,
-				{k_amqp_gen_consumer, start_link, [k_amqp_receipt_batch]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
-			{k_amqp_funnel_events,
-				{k_amqp_gen_consumer, start_link, [k_amqp_funnel_events]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
-			{k_amqp_incoming_sms,
-				{k_amqp_gen_consumer, start_link, [k_amqp_incoming_sms]}, permanent, 10000, worker, [k_amqp_gen_consumer]},
-
+			?HANDLER(k_amqp_bind_request),
+			?HANDLER(k_k1api_auth_handler),
+			?HANDLER(k_k1api_delivery_status_req_handler),
+			?HANDLER(k_amqp_k1api_sms_request),
+			?HANDLER(k_amqp_sms_request),
+			?HANDLER(k_amqp_sms_response),
+			?HANDLER(k_amqp_receipt_batch),
+			?HANDLER(k_amqp_funnel_events),
+			?HANDLER(k_amqp_incoming_sms),
 			%%% NOTE: k_worker_sup MUST be at the end of SPEC %%%
 			{k_worker_sup,
 				{k_worker_sup, start_link, []}, permanent, infinity, supervisor, [k_worker_sup]}
