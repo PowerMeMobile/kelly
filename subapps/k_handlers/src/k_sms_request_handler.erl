@@ -63,7 +63,7 @@ update_msg_status(InputId, DefaultStatus, ReqTime) ->
 		%% Very strange case. It shouldn't be here, but I saw it happened during the testing.
 		%% I'm not sure what to do in this case. :(
 		{ok, _MsgStatus} ->
-			?log_info("~p", [_MsgStatus]),
+			?log_warn("Just sms response was processed before sms request was processed ~p", [_MsgStatus]),
 			ok;
 		Other ->
 			Other
@@ -112,7 +112,7 @@ sms_request_to_msg_info_list(#just_sms_request_dto{
 			_ ->
 				false
 		end,
-	link_sms_request_id_to_message_ids(SmsRequestID, CustomerId, AllPairs, ClientType),
+	link_sms_request_id_to_message_ids(CustomerId, undefined, SourceAddr, SmsRequestID, AllPairs, ClientType),
 	lists:map(fun({DestAddr, MessageId}) ->
 				#msg_info{
 					id = MessageId,
@@ -151,11 +151,16 @@ transform_addr(#addr_ref_num_dto{
 split(BinIDs) ->
 	binary:split(BinIDs, <<":">>, [global, trim]).
 
-link_sms_request_id_to_message_ids(SmsRequestID, CustomerID, AllPairs, k1api) ->
+link_sms_request_id_to_message_ids(CustomerID, UserID, SenderAddress,
+						SmsRequestID, AddressAndMessageIDPairs, k1api) ->
 	InputMessageIDs = lists:map(fun({_Addr, ID}) ->
 		{CustomerID, k1api, ID}
-	end, AllPairs),
-	ok = k_storage:link_sms_request_id_to_msg_ids(SmsRequestID, InputMessageIDs),
-	ok;
-link_sms_request_id_to_message_ids(_SmsRequestID, _CustomerID,_AllPairs, _ClientType) ->
+	end, AddressAndMessageIDPairs),
+	%% Include CustomerID & UserID to Key to avoid access to another's
+	%% sms statuses
+	%% Include SenderAddress into Key to make SmsRequestID unique
+	%% within specific SenderAddress
+	Key = {CustomerID, UserID, SenderAddress, SmsRequestID},
+	ok = k_storage:link_sms_request_id_to_msg_ids(Key, InputMessageIDs);
+link_sms_request_id_to_message_ids(_, _, _, _, _, _) ->
 	ok.
