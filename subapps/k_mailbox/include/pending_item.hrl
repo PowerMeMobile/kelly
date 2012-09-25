@@ -3,8 +3,8 @@
 
 -include_lib("k_common/include/storages.hrl").
 
--type content_type() :: delivery_receipt | incoming_sms.
--type encoding() ::
+-type content_type() :: binary().
+-type message_encoding() ::
 	{text, default} |
 	{text, gsm0338} |
 	{text, ascii} |
@@ -20,10 +20,9 @@
 	content_type :: content_type(),
 	sender_addr :: addr(), %% #addr{}
 	dest_addr :: addr(), %% #addr{}
-	timestamp :: integer(), %% utc unix epoch seconds
+	timestamp :: integer(), %% utc unix epoch seconds when kelly got message
 	message_body :: bitstring(),
-	content_body :: binary(), %% funnel batch
-	encoding :: encoding(),
+	encoding :: message_encoding(),
 	attempt = 1 :: integer(), % delivery attempt counter
 	error :: term(), % last error term
 	state = pending :: 	pending |
