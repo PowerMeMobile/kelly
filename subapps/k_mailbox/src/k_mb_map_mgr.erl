@@ -81,40 +81,41 @@ init([]) ->
 
 handle_call({get_sub, CustomerID, UserID, ContentType}, _From,
 	State = #state{storage = TableID}) ->
-	Customer = get_customer(TableID, CustomerID, UserID),
-	Reply = get_subscription(ContentType, Customer#customer_map.map),
+	CustomerMap = get_customer_map(TableID, CustomerID, UserID),
+	Reply = get_subscription(ContentType, CustomerMap#customer_map.map),
 	%% ?log_debug("ContentType: ~p, customer.map: ~p", [ContentType, Customer#customer_map.map]),
-	set_flag(Reply, Customer, TableID),
+	set_flag(Reply, CustomerMap, TableID),
 	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
     {noreply, ok, State}.
 
 handle_cast({reg_sub, Subscription}, State = #state{storage = TableID}) ->
-
 	#k_mb_subscription{
 		customer_id = CustomerID,
 		user_id = UserID
 		} = Subscription,
-
-	Customer = get_customer(TableID, CustomerID, UserID),
-	build_map(TableID, CustomerID, UserID),
-	process_postponed_items(Customer#customer_map.wait_flag, CustomerID, UserID),
+	?log_debug("Got register subscription event [cust: ~p user: ~p]", [CustomerID, UserID]),
+	CustomerMap = get_customer_map(TableID, CustomerID, UserID),
+	{ok, NewMap} = build_map(TableID, CustomerID, UserID),
+	?log_debug("Built new map of [cust: ~p user: ~p] ~p", [CustomerID, UserID, NewMap]),
+	process_postponed_items(CustomerMap#customer_map.wait_flag, CustomerID, UserID),
 
 	{noreply, State};
 
 handle_cast({unreg_sub, CustomerID, UserID, SubscriptionID},
-	State = #state{storage = TableID}) ->
+		State = #state{storage = TableID}) ->
 
-	Customer = get_customer(TableID, CustomerID, UserID),
-	?log_debug("customer: ~p", [Customer]),
+	?log_debug("Got unregister subscription event [cust: ~p user: ~p]", [CustomerID, UserID]),
+	CustomerMap = get_customer_map(TableID, CustomerID, UserID),
 
-	case lists:keymember(SubscriptionID, 2, Customer#customer_map.map) of
+	case lists:keymember(SubscriptionID, 2, CustomerMap#customer_map.map) of
 		true ->
-			?log_debug("true", []),
+			?log_debug("Rebuild map of [cust: ~p user: ~p]", [CustomerID, UserID]),
 			build_map(TableID, CustomerID, UserID);
 		false ->
-			?log_debug("false", []),
+			?log_debug("Subscription was not in use. Skip rebuild map of [cust: ~p user: ~p]",
+				[CustomerID, UserID]),
 			ok
 	end,
 	{noreply, State};
@@ -148,9 +149,9 @@ process_postponed_items(true, CustomerID, UserID) ->
 process_postponed_items(false, _CustomerID, _UserID) ->
 	ok.
 
-get_customer(TableID, CustomerID, UserID) ->
+get_customer_map(TableID, CustomerID, UserID) ->
 		case ets:lookup(TableID, {CustomerID, UserID}) of
-			[Customer = #customer_map{}] -> Customer;
+			[CustomerMap = #customer_map{}] -> CustomerMap;
 			[] -> #customer_map{index = {CustomerID, UserID}, map = []}
 		end.
 
@@ -173,9 +174,11 @@ content_types() -> [
 	].
 
 build_map(TableID, CustomerID, UserID) ->
+	%% get {customer_id, user_id} unique list for all existing subscriptions
 	{ok, Subscriptions} = k_mb_db:get_subscriptions(CustomerID, UserID),
 	{ok, Map} = build_map(Subscriptions),
-	ets:insert(TableID, #customer_map{index = {CustomerID, UserID}, map = Map}).
+	true = ets:insert(TableID, #customer_map{index = {CustomerID, UserID}, map = Map}),
+	{ok, Map}.
 
 
 build_map(Subscriptions) ->

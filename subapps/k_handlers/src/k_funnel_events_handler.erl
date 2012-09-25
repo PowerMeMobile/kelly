@@ -59,7 +59,7 @@ process_connection_down_event(ConnId, SystemId) ->
 	end.
 
 perform_unregister_connection(CustId, ConnId) ->
-	UserId = undefined,
+	UserId = <<"undefined">>,
 	case k_mailbox:unregister_subscription(ConnId, CustId, UserId) of
 		ok ->
 			{ok, []};
