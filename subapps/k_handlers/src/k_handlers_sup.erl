@@ -36,6 +36,7 @@ init([]) ->
 			?HANDLER(k_amqp_bind_request),
 			?HANDLER(k_k1api_auth_handler),
 			?HANDLER(k_k1api_delivery_status_req_handler),
+			?HANDLER(k_k1api_retrieve_sms_req_handler),
 			?HANDLER(k_amqp_k1api_sms_request),
 			?HANDLER(k_amqp_sms_request),
 			?HANDLER(k_amqp_sms_response),

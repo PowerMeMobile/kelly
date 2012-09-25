@@ -20,18 +20,21 @@
 	save/1,
 	delete_expired/1,
 	get_customers/0,
-	
+
 	get_subscription/1,
 	get_subscriptions/2,
 	delete_subscriptions/1,
-	
+
 	get_items/0,
 	get_pending_item/1,
 	delete_items/1,
 
 	set_wait/1,
 	get_wait/2,
-	set_pending/1
+	set_pending/1,
+
+	get_incoming_sms/4,
+	get_all/0
 ]).
 
 %% ===================================================================
@@ -110,7 +113,7 @@ get_subscription(SubscriptionID) ->
 				Sub#k_mb_subscription.id == SubscriptionID
 		]))
 	end),
-	{ok, Subscription}.	
+	{ok, Subscription}.
 
 -spec get_subscriptions(CustomerID :: string(), UserID :: string()) -> {ok, [#k_mb_subscription{}]} | {ok, []}.
 get_subscriptions(CustomerID, UserID) ->
@@ -155,10 +158,10 @@ set_wait(ItemID) ->
 	change_item_status(ItemID, pending).
 
 change_item_status(ItemID, Status) ->
-	{ok, Item} = get_pending_item(ItemID),	
+	{ok, Item} = get_pending_item(ItemID),
 	save(Item#k_mb_pending_item{state = Status}).
 
--spec get_wait(CustomerID :: string(), UserID :: string()) -> 
+-spec get_wait(CustomerID :: string(), UserID :: string()) ->
 	{ok, []} | {ok, [#k_mb_pending_item{}]}.
 get_wait(CustomerID, UserID) ->
 	{atomic, Items} = mnesia:transaction(fun() ->
@@ -172,3 +175,43 @@ get_wait(CustomerID, UserID) ->
 		]))
 	end),
 	{ok, Items}.
+
+-spec get_incoming_sms(binary(), bitstring(), addr(), integer() | undefined) ->
+	{ok, [#k_mb_pending_item{}], Total :: integer()}.
+get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
+	{atomic, AllItems} = mnesia:transaction(fun() ->
+		qlc:e(qlc:q([
+				Item || Item <- mnesia:table(k_mb_pending_item),
+				Item#k_mb_pending_item.customer_id == CustomerID andalso
+				Item#k_mb_pending_item.user_id == UserID andalso
+				Item#k_mb_pending_item.dest_addr == DestinationAddr
+		]))
+	end),
+
+	Total = length(AllItems),
+	Items = first(AllItems, Limit),
+	{ok, Items, Total}.
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
+
+first(Limit, undefined) ->
+	first(Limit, 100);
+first(List, Limit) ->
+	first(List, Limit, []).
+first([], _Counter, Acc) ->
+	lists:reverse(Acc);
+first(_List, 0, Acc) ->
+	lists:reverse(Acc);
+first([Elem | Rest], Counter, Acc) ->
+	first(Rest, Counter - 1, [Elem | Acc]).
+
+%% temp
+get_all() ->
+	{atomic, Items} = mnesia:transaction(fun() ->
+		qlc:e(qlc:q([
+				Item || Item <- mnesia:table(k_mb_pending_item)
+		], {max_lookup, 2}))
+	end),
+	first(Items, 4).

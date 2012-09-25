@@ -1,6 +1,6 @@
 #!/bin/bash
 
-UrlFmt="http://{{HOST}}:{{PORT}}/inject_mo?short_message={{TEXT}}&source_addr={{NETWORK}}{{NUMBER}}&destination_addr={{DST_ADDR}}&source_addr_ton=1&source_addr_npi=0&dest_addr_ton=1&dest_addr_npi=0"
+UrlFmt="http://{{HOST}}:{{PORT}}/inject_mo?short_message={{TEXT}}&source_addr={{NETWORK}}{{NUMBER}}&destination_addr={{DST_ADDR}}&source_addr_ton=1&source_addr_npi=0&dest_addr_ton=1&dest_addr_npi=1"
 Host=localhost
 Port=8071
 Count=0

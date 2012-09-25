@@ -5,6 +5,7 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/address.hrl").
+-include_lib("k_mailbox/include/pending_item.hrl").
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include("amqp_worker_reply.hrl").
@@ -25,8 +26,8 @@ process(CT, Message) ->
 
 process_incoming_sms_request(#just_incoming_sms_dto{
 	gateway_id = GatewayId,
-	source = SourceAddr,
-	dest = DestAddr,
+	source = SourceAddrDTO,
+	dest = DestAddrDTO,
 	message = MessageBody,
 	data_coding = DataCoding,
 	parts_ref_num = _PartsRefNum,
@@ -37,7 +38,13 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		addr = Addr,
 		ton = TON,
 		npi = NPI
-	} = DestAddr,
+	} = DestAddrDTO,
+	DestAddr = #addr{addr = Addr, ton = TON, npi = NPI},
+	SourceAddr = #addr{
+		addr = SourceAddrDTO#addr_dto.addr,
+		ton = SourceAddrDTO#addr_dto.ton,
+		npi = SourceAddrDTO#addr_dto.npi
+	},
 	%% generate new id.
 	ItemId = uuid:newid(),
 	%% transform encoding.
@@ -53,15 +60,26 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	%% this will return either valid customer id or `undefined'.
 	%% i think it makes sense to store even partly filled message.
 	CustomerId =
-		case k_addr2cust:resolve(#addr{addr = Addr, ton = TON, npi = NPI}) of
+		case k_addr2cust:resolve(DestAddr) of
 			{ok, CustId, UserId} ->
 				?log_debug("Got incoming message for [cust:~p; user: ~p] (addr:~p, ton:~p, npi:~p)",
 					[CustId, UserId, Addr, TON, NPI] ),
 				%% register it to futher sending.
-				Batch = build_funnel_incoming_message(
-					ItemId, SourceAddr, DestAddr, MessageBody, Encoding),
-				k_mailbox:register_incoming_item(
-					ItemId, CustId, UserId, <<"OutgoingBatch">>, Batch),
+				Batch = build_funnel_incoming_message_dto(
+					ItemId, SourceAddrDTO, DestAddrDTO, MessageBody, Encoding),
+				Item = #k_mb_pending_item{
+					item_id = ItemId,
+					customer_id = CustId,
+					user_id = UserId,
+					content_type = <<"OutgoingBatch">>,
+					sender_addr = SourceAddr,
+					dest_addr = DestAddr,
+					timestamp = k_datetime:utc_unix_epoch(),
+					message_body = MessageBody,
+					content_body = Batch,
+					encoding = Encoding
+				 },
+				k_mailbox:register_incoming_item(Item),
 				?log_debug("Incomming message registered [item:~p]", [ItemId]),
 				%% return valid customer.
 				CustId;
@@ -81,8 +99,8 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		type = regular,
 		encoding = Encoding,
 		body = MessageBody,
-		src_addr = transform_addr(SourceAddr),
-		dst_addr = transform_addr(DestAddr),
+		src_addr = transform_addr(SourceAddrDTO),
+		dst_addr = transform_addr(DestAddrDTO),
 		registered_delivery = false
 	},
 	%% determine receiving time.
@@ -116,7 +134,7 @@ store_incoming_msg_info(OutputId, MsgInfo, Time) ->
 	ok = k_storage:set_incoming_msg_info(OutputId, MsgInfo),
 	ok = k_statistic:store_incoming_msg_stats(OutputId, MsgInfo, Time).
 
-build_funnel_incoming_message(BatchId, SrcAddr, DstAddr, MessageBody, DataCoding) ->
+build_funnel_incoming_message_dto(BatchId, SrcAddr, DstAddr, MessageBody, DataCoding) ->
 	Msg = #funnel_incoming_sms_message_dto{
 		source = SrcAddr,
 		dest = DstAddr,

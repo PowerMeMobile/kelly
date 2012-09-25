@@ -15,7 +15,8 @@
 -export([
 	register_subscription/1,
 	unregister_subscription/3,
-	register_incoming_item/5
+	register_incoming_item/1,
+	get_incoming_sms/4
 ]).
 
 %% ===================================================================
@@ -38,18 +39,22 @@ unregister_subscription(SubscriptionID, CustomerID, UserID) ->
 	ok.
 
 %% @doc Register incoming message or receipt
--spec register_incoming_item(ItemID :: string(), CustomerID :: string(),
-	UserID :: string(), ContentType :: binary(), ContentBody :: binary()) -> ok.
-register_incoming_item(ItemID, CustID, UserID, ContentType, ContentBody) ->
+-spec register_incoming_item(#k_mb_pending_item{}) -> ok.
+register_incoming_item(Item = #k_mb_pending_item{}) ->
 	Expire = k_mb_gcollector:new_expire(),
-	Item = #k_mb_pending_item{
-		item_id = ItemID,
-		customer_id = CustID,
-		user_id = UserID,
-		content_type = ContentType,
-		content_body = ContentBody,
-		expire = Expire
-	},
+	save_pending_item(Item#k_mb_pending_item{expire = Expire}).
+
+%% @doc Give incoming sms (pending items) from db. Used by k1api handler
+-spec get_incoming_sms(binary(), bitstring(), addr(), undefined | integer()) ->
+	{ok, [#k_mb_pending_item{}], Total :: integer()}.
+get_incoming_sms(CustomerID, UserID, DestAddr, Limit) ->
+	k_mb_db:get_incoming_sms(CustomerID, UserID, DestAddr, Limit).
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
+
+save_pending_item(Item) ->
 	k_mb_db:save(Item), % add gproc:lookup(k_mb_wpool) before?
 	k_mb_wpool:process_incoming_item(Item),
 	ok.

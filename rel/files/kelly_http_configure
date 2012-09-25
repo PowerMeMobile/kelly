@@ -77,5 +77,5 @@ echo -n 'id=smppclient2&pswd=password&smpp_types=receiver' | lwp-request -UsSe -
 # Addr2Cust
 #
 
-echo -n 'msisdn=375296662323,1,0&customer=feda5822-5271-11e1-bd27-001d0947ec73&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
-echo -n 'msisdn=375296663333,1,0&customer=54d82c58-87b6-11e1-ba66-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+echo -n 'msisdn=375296663333,1,1&customer=54d82c58-87b6-11e1-ba66-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+echo -n 'msisdn=375296662323,1,1&customer=feda5822-5271-11e1-bd27-001d0947ec73&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
