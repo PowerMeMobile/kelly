@@ -9,22 +9,26 @@
 -include_lib("k_common/include/FunnelAsn.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
 
+%% pending workers
 -record(pworker, {
 	id,
 	timestamp,
 	from
-	}).
+}).
+
+%% pending responses
 -record(presponse, {
 	id,
 	timestamp
-	}).
+}).
+
 -record(state, {
 	chan :: pid(),
 	queue :: binary(),
 	tag :: binary(),
 	pending_workers = [] :: [#pworker{}],
 	pending_responses = [] :: [#presponse{}]
-	}).
+}).
 
 %% ------------------------------------------------------------------
 %% API Function Exports
@@ -32,8 +36,8 @@
 
 -export([
 	start_link/0,
-	get_response/2
-	]).
+	get_response/1
+]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -55,10 +59,15 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec get_response(string(), integer()) -> ok.
-get_response(MesID, Timeout) ->
-	gen_server:call(?MODULE, {get_response, MesID}, Timeout).
-
+-spec get_response(string()) -> {ok, delivered} | {error, timeout}.
+get_response(MesID) ->
+	Timeout = k_mb_config:get_env(request_timeout),
+	try
+		gen_server:call(?MODULE, {get_response, MesID}, Timeout)
+	catch
+		_:{timeout, _} -> {error, timeout};
+		_:Error -> Error
+	end.
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
@@ -94,10 +103,8 @@ handle_info({#'basic.deliver'{},
 			 	pending_responses = RList,
 				pending_workers = WList}) ->
 	case 'FunnelAsn':decode('BatchAck', Content) of
-		{ok, #'BatchAck'{
-			batchId = ItemID
-						}} ->
-			?log_debug("Successfully delivered [item:~p]", [ItemID]),
+		{ok, #'BatchAck'{batchId = ItemIDStr}} ->
+			ItemID = uuid:to_binary(ItemIDStr),
 			{ok, NRList, NWList} =
 				process_response(ItemID, RList, WList),
 			{noreply, State#state{pending_workers = NWList, pending_responses = NRList}};
@@ -122,7 +129,7 @@ code_change(_OldVsn, State, _Extra) ->
 process_response(ItemID, RList, WList) ->
 		case lists:keytake(ItemID, #pworker.id, WList) of
 		{value, #pworker{from = From}, RestWorkerList} ->
-			gen_server:reply(From, ok),
+			gen_server:reply(From, {ok, delivered}),
 			{ok, purge(RList), purge(RestWorkerList)};
 
 		false ->

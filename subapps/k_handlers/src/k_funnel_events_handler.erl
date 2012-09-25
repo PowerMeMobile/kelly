@@ -65,7 +65,6 @@ perform_unregister_connection(CustId, ConnId) ->
 			{ok, []};
 		{error, Error} ->
 			?log_error("Could not unregister ~p due to: ~p", [{CustId, ConnId}, Error]),
-			% {error, Error}
 			{ok, []}
 	end.
 

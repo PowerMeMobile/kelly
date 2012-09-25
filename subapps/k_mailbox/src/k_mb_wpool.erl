@@ -7,6 +7,7 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("gen_wp/include/gen_wp_spec.hrl").
 -include_lib("stdlib/include/qlc.hrl").
+-include_lib("alley_dto/include/adto.hrl").
 -include("subscription.hrl").
 -include("pending_item.hrl").
 
@@ -95,7 +96,6 @@ handle_fork_call( _Arg, _CallMess, _ReplyTo, _WP ) ->
 	{noreply, bad_request}.
 
 handle_fork_cast(_Arg, {process_item, Item = #k_mb_pending_item{}}, _WP) ->
-	%?log_debug("handle process item", []),
 	#k_mb_pending_item{
 		item_id = ItemID,
 		expire = Expire
@@ -121,16 +121,27 @@ handle_child_terminated(normal, _Task, _Child, State = #state{}) ->
 	{noreply, State#state{}};
 
 handle_child_terminated(Reason, _Task = {process_item, Item}, _Child, State = #state{}) ->
-	?log_error("error", []),
-	k_mb_postponed_queue:postpone(Item#k_mb_pending_item{error = Reason}),
-	{noreply, State#state{}}.
+	case k_mb_postponed_queue:postpone(Item#k_mb_pending_item{error = Reason}) of
+		{postponed, Seconds} ->
+			?log_error("Item processing terminated. It will be resend "
+			"after ~p sec. Reason: ~p", [Seconds, Reason]),
+			{noreply, State#state{}};
+		{error, rich_max} ->
+			?log_error("Item rich max number of attempts. Discard message. Reason: ~p",
+			[Reason]),
+			{noreply, State#state{}};
+		Error ->
+			?log_error("Got unexpected error: ~p. Terminating.",
+			[Error]),
+			{stop, {unexpected_case_clause, Error}}
+	end.
+
 
 %% ===================================================================
 %% Local Functions Definitions
 %% ===================================================================
 
 process(Item) ->
-	%?log_debug("process", []),
 	#k_mb_pending_item{
 		item_id = ItemID,
 		customer_id = CustomerID,
@@ -140,20 +151,71 @@ process(Item) ->
 	case k_mb_map_mgr:get_subscription(CustomerID, UserID, ContentType) of
 		{ok, SubscriptionID} ->
 			?log_debug("Found suitable subscription [~p]", [SubscriptionID]),
-			process(Item, SubscriptionID);
+			send_item(Item, SubscriptionID);
 		{error, no_subscription} ->
-			?log_debug("Suitable subscription NOT FOUND", []),
+			?log_debug("Suitable subscription NOT FOUND. Waiting for suitable subscription", []),
 			k_mb_db:set_wait(ItemID)
 	end.
 
-process(Item, SubID) ->
+send_item(Item, SubID) ->
 	#k_mb_pending_item{
-		item_id = ItemID
+		item_id = ItemID,
+		sender_addr = SenderAddr,
+		dest_addr = DestAddr,
+		message_body = Message,
+		encoding = Encoding,
+		content_type = ContentType
 		} = Item,
-
-	Timeout = k_mb_config:get_env(request_timeout),
-
+	Binary = build_funnel_incoming_sms_dto(ItemID, SenderAddr, DestAddr, Message, Encoding),
 	QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [uuid:to_string(SubID)])),
 	?log_debug("Send item to funnel queue [~p]", [QName]),
-	ok = k_mb_amqp_producer_srv:send(QName, Item, Timeout),
-	k_mb_db:delete_items([ItemID]).
+	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
+	case Result of
+		{ok, delivered} ->
+			?log_debug("Successfully delivered [item:~p]", [ItemID]),
+			k_mb_db:delete_items([ItemID]);
+		{error, timeout} ->
+			postpone_item(Item, timeout)
+	end.
+
+postpone_item(Item, Error) ->
+	case k_mb_postponed_queue:postpone(Item#k_mb_pending_item{error = Error}) of
+		{postponed, Seconds} ->
+			?log_error("Item processing terminated. It will be resend "
+			"after ~p sec. Last error: ~p", [Seconds, Error]);
+		{error, rich_max} ->
+			?log_error("Item rich max number of attempts. "
+			"Discard message. Last error: ~p", [Error]);
+		Error ->
+			?log_error("Got unexpected error: ~p. Terminating.",
+			[Error])
+	end.
+
+
+build_funnel_incoming_sms_dto(ID, SenderAddr = #addr{}, DestAddr, Message, Encoding) ->
+	SenderAddrDTO = #addr_dto{
+		addr = SenderAddr#addr.addr,
+		ton = SenderAddr#addr.ton,
+		npi = SenderAddr#addr.npi
+	},
+	build_funnel_incoming_sms_dto(ID, SenderAddrDTO, DestAddr, Message, Encoding);
+build_funnel_incoming_sms_dto(ID, SenderAddr, DestAddr = #addr{}, Message, Encoding) ->
+	DestAddrDTO = #addr_dto{
+		addr = DestAddr#addr.addr,
+		ton = DestAddr#addr.ton,
+		npi = DestAddr#addr.npi
+	},
+	build_funnel_incoming_sms_dto(ID, SenderAddr, DestAddrDTO, Message, Encoding);
+build_funnel_incoming_sms_dto(BatchId, SenderAddr, DestAddr, Message, Encoding) ->
+	Msg = #funnel_incoming_sms_message_dto{
+		source = SenderAddr,
+		dest = DestAddr,
+		data_coding = Encoding,
+		message = Message
+	},
+	Batch = #funnel_incoming_sms_dto{
+		id = BatchId,
+		messages = [Msg]
+	},
+	{ok, Binary} = adto:encode(Batch),
+	Binary.

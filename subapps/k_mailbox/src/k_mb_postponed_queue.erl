@@ -43,10 +43,11 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec postpone(Item :: #k_mb_pending_item{}) -> ok.
-postpone(Item = #k_mb_pending_item{attempt = Attempt}) ->
+-spec postpone(Item :: #k_mb_pending_item{}) ->
+	{postponed, Seconds :: integer()} |
+	{error, rich_max}.
+postpone(Item = #k_mb_pending_item{attempt = CurrentAttempt}) ->
     MaxRetry = k_mb_config:get_env(max_retry),
-    CurrentAttempt = Attempt,
     postpone(Item, CurrentAttempt, MaxRetry).
 
 %% ===================================================================
@@ -61,26 +62,25 @@ init([]) ->
     Timeout = k_mb_config:get_env(repeat_delay),
     {ok, #state{rbuff = RBuf, timeout = Timeout}, Timeout}.
 
-handle_call(_Request, _From, State) ->
-    {stop, {bad_request}, State}.
-
-handle_cast({postpone, Item}, State = #state{rbuff = RBuf, timeout = T}) ->
+handle_call({postpone, Item}, _From, State = #state{rbuff = RBuf, timeout = T}) ->
     #k_mb_pending_item{
         attempt = Attempt
-            } = Item,
+    } = Item,
     Index = position(Attempt),
+	RetryTime = T * Index / 1000,
     {{value, ItemList}, RBuf} = rbuf:get(Index, RBuf),
     NewList = [Item] ++ ItemList,
     {ok, NewRBuf} = rbuf:set(NewList, Index, RBuf),
-    {noreply, State#state{rbuff = NewRBuf}, T};
+    {reply, {postponed, RetryTime}, State#state{rbuff = NewRBuf}, T};
+
+handle_call(_Request, _From, State) ->
+    {stop, {bad_request}, State}.
 
 handle_cast(_Msg, State) ->
     {stop, {bad_request}, State}.
 
 handle_info(timeout, State = #state{rbuff = RBuf, timeout = T}) ->
-    %?log_debug("timeout", []),
     {{value, ItemList}, NewRBuf} = rbuf:get(RBuf),
-    %?log_debug("task list: ~p", [ItemList]),
     process(ItemList),
     {noreply, State#state{rbuff = NewRBuf}, T};
 handle_info(_Info, State) ->
@@ -97,7 +97,6 @@ code_change(_OldVsn, State, _Extra) ->
 %% ===================================================================
 
 process(ItemList) ->
-    %?log_debug("process", []),
     lists:foreach(fun(Item) ->
         k_mb_wpool:process_incoming_item(Item)
         end, ItemList).
@@ -105,8 +104,10 @@ process(ItemList) ->
 position(N) ->
     trunc(math:pow(2, N - 2)) + 1.
 
-postpone(Item, CurrentAttempt, MaxRetry) when CurrentAttempt == MaxRetry ->
-    ?log_warn("rich max retry attempts: ~p", [Item#k_mb_pending_item.error]),
-    k_mb_db:delete_items([Item#k_mb_pending_item.item_id]);
+postpone(_Item, CurrentAttempt, MaxRetry) when CurrentAttempt == MaxRetry ->
+	{error, rich_max};
+    %% ?log_warn("Rich max retry attempts, removing item. Error: ~p",
+	%% 	[Item#k_mb_pending_item.error]),
+    %% k_mb_db:delete_items([Item#k_mb_pending_item.item_id]);
 postpone(Item = #k_mb_pending_item{}, Attempt, _MaxRetry) ->
-    gen_server:cast(?MODULE, {postpone, Item#k_mb_pending_item{attempt = Attempt + 1}}).
+    gen_server:call(?MODULE, {postpone, Item#k_mb_pending_item{attempt = Attempt + 1}}).
