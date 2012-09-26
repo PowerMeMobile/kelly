@@ -160,13 +160,9 @@ process(Item) ->
 send_item(Item, SubID) ->
 	#k_mb_pending_item{
 		item_id = ItemID,
-		sender_addr = SenderAddr,
-		dest_addr = DestAddr,
-		message_body = Message,
-		encoding = Encoding,
 		content_type = ContentType
 		} = Item,
-	Binary = build_funnel_incoming_sms_dto(ItemID, SenderAddr, DestAddr, Message, Encoding),
+	{ok, Binary} = build_dto(Item),
 	QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [uuid:to_string(SubID)])),
 	?log_debug("Send item to funnel queue [~p]", [QName]),
 	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
@@ -191,31 +187,68 @@ postpone_item(Item, Error) ->
 			[Error])
 	end.
 
+build_dto(Item = #k_mb_pending_item{content_type = <<"ReceiptBatch">>}) ->
+	build_funnel_receipt_dto(Item);
+build_dto(Item = #k_mb_pending_item{content_type = <<"OutgoingBatch">>}) ->
+	build_funnel_incoming_sms_dto(Item).
 
-build_funnel_incoming_sms_dto(ID, SenderAddr = #addr{}, DestAddr, Message, Encoding) ->
-	SenderAddrDTO = #addr_dto{
-		addr = SenderAddr#addr.addr,
-		ton = SenderAddr#addr.ton,
-		npi = SenderAddr#addr.npi
-	},
-	build_funnel_incoming_sms_dto(ID, SenderAddrDTO, DestAddr, Message, Encoding);
-build_funnel_incoming_sms_dto(ID, SenderAddr, DestAddr = #addr{}, Message, Encoding) ->
-	DestAddrDTO = #addr_dto{
-		addr = DestAddr#addr.addr,
-		ton = DestAddr#addr.ton,
-		npi = DestAddr#addr.npi
-	},
-	build_funnel_incoming_sms_dto(ID, SenderAddr, DestAddrDTO, Message, Encoding);
-build_funnel_incoming_sms_dto(BatchId, SenderAddr, DestAddr, Message, Encoding) ->
+%% ===================================================================
+%% build incoming sms message
+%% ===================================================================
+
+build_funnel_incoming_sms_dto(Item) ->
+	#k_mb_pending_item{
+		item_id = ItemID,
+		sender_addr = SenderAddr,
+		dest_addr = DestAddr,
+		message_body = Message,
+		encoding = Encoding
+		} = Item,
 	Msg = #funnel_incoming_sms_message_dto{
-		source = SenderAddr,
-		dest = DestAddr,
+		source = addr_to_dto(SenderAddr),
+		dest = addr_to_dto(DestAddr),
 		data_coding = Encoding,
 		message = Message
 	},
 	Batch = #funnel_incoming_sms_dto{
-		id = BatchId,
+		id = ItemID,
 		messages = [Msg]
 	},
-	{ok, Binary} = adto:encode(Batch),
-	Binary.
+	adto:encode(Batch).
+
+%% ===================================================================
+%% build delivery receipt message
+%% ===================================================================
+
+build_funnel_receipt_dto(Item) ->
+	#k_mb_pending_item{
+		item_id = ItemId,
+		sender_addr = SenderAddr,
+		dest_addr = DestAddr,
+		input_id = InputMsgId,
+		submit_date = SubmitDate,
+		done_date = DoneDate,
+		message_state = MessageState
+	 } = Item,
+	Receipt = #funnel_delivery_receipt_container_dto{
+		message_id = InputMsgId,
+		submit_date = SubmitDate,
+		done_date = DoneDate,
+		message_state = MessageState,
+		source = addr_to_dto(SenderAddr),
+		dest = addr_to_dto(DestAddr)
+	},
+	?log_debug("Receipt: ~p", [Receipt]),
+	DTO = #funnel_delivery_receipt_dto{
+		id = ItemId,
+		receipts = [Receipt]
+	},
+	adto:encode(DTO).
+
+
+addr_to_dto(Addr = #addr{}) ->
+	#addr_dto{
+		addr = Addr#addr.addr,
+		ton = Addr#addr.ton,
+		npi = Addr#addr.npi
+	}.

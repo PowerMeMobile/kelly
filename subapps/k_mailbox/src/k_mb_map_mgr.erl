@@ -73,6 +73,7 @@ get_subscription(CustomerID, UserID, ContentType) ->
 
 init([]) ->
 	TableID = ets:new(customers_map, [set, {keypos, #customer_map.index}]),
+	%% get {customer_id, user_id} unique list for all existing subscriptions
 	{ok, Customers} = k_mb_db:get_customers(),
 	lists:foreach(fun({CustomerID, UserID})->
 			build_map(TableID, CustomerID, UserID)
@@ -174,7 +175,7 @@ content_types() -> [
 	].
 
 build_map(TableID, CustomerID, UserID) ->
-	%% get {customer_id, user_id} unique list for all existing subscriptions
+	%% get all available subscriptions for {customer_id, user_id} key
 	{ok, Subscriptions} = k_mb_db:get_subscriptions(CustomerID, UserID),
 	{ok, Map} = build_map(Subscriptions),
 	true = ets:insert(TableID, #customer_map{index = {CustomerID, UserID}, map = Map}),

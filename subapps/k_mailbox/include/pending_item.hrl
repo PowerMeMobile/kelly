@@ -14,15 +14,28 @@
 
 
 -record(k_mb_pending_item, {
+	%% common fields
 	item_id :: binary(),
 	customer_id :: binary(),
 	user_id :: bitstring(),
 	content_type :: content_type(),
 	sender_addr :: addr(), %% #addr{}
 	dest_addr :: addr(), %% #addr{}
+
+	%% oneapi retrieve sms fields
 	timestamp :: integer(), %% utc unix epoch seconds when kelly got message
+
+	%% incoming sms fields
 	message_body :: bitstring(),
 	encoding :: message_encoding(),
+
+	%% delivery receipt fields
+	input_id :: bitstring(),
+	submit_date :: bitstring(),
+	done_date :: bitstring(),
+	message_state :: any(),
+
+	%% mailbox service fields
 	attempt = 1 :: integer(), % delivery attempt counter
 	error :: term(), % last error term
 	state = pending :: 	pending |

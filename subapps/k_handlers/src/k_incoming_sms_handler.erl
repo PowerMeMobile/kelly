@@ -64,9 +64,8 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 			{ok, CustId, UserId} ->
 				?log_debug("Got incoming message for [cust:~p; user: ~p] (addr:~p, ton:~p, npi:~p)",
 					[CustId, UserId, Addr, TON, NPI] ),
+
 				%% register it to futher sending.
-				%% Batch = build_funnel_incoming_message_dto(
-				%% 	ItemId, SourceAddrDTO, DestAddrDTO, MessageBody, Encoding),
 				Item = #k_mb_pending_item{
 					item_id = ItemId,
 					customer_id = CustId,
@@ -76,7 +75,6 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 					dest_addr = DestAddr,
 					timestamp = k_datetime:utc_unix_epoch(),
 					message_body = MessageBody,
-					%% content_body = Batch,
 					encoding = Encoding
 				 },
 				k_mailbox:register_incoming_item(Item),

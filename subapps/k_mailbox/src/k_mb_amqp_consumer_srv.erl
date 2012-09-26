@@ -63,11 +63,11 @@ start_link() ->
 get_response(MesID) ->
 	Timeout = k_mb_config:get_env(request_timeout),
 	try
-		gen_server:call(?MODULE, {get_response, MesID}, Timeout)
+		{ok, delivered} = gen_server:call(?MODULE, {get_response, MesID}, Timeout)
 	catch
-		_:{timeout, _} -> {error, timeout};
-		_:Error -> Error
+		_:{timeout, _} -> {error, timeout}
 	end.
+
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------

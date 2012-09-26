@@ -8,6 +8,11 @@
 -include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
+-include_lib("k_mailbox/include/pending_item.hrl").
+
+%% ===================================================================
+%% API
+%% ===================================================================
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"ReceiptBatch">>, Message) ->
@@ -18,9 +23,13 @@ process(<<"ReceiptBatch">>, Message) ->
 			Error
 	end;
 
-process(CT, Message) ->
-	?log_warn("Got unexpected message of type ~p: ~p", [CT, Message]),
+process(ContentType, Message) ->
+	?log_warn("Got unexpected message of type ~p: ~p", [ContentType, Message]),
 	{ok, []}.
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
 
 -spec process_receipt_batch(#just_delivery_receipt_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
@@ -80,32 +89,25 @@ update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) ->
 	end.
 
 register_funnel_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
-	SrcAddr = MsgInfo#msg_info.src_addr,
-	DstAddr = MsgInfo#msg_info.dst_addr,
-	Data = {InputId, MessageState, SrcAddr, DstAddr, DlrTime},
-	{CustomerId, BatchId, BatchBinary} = build_receipt(Data),
+	SenderAddr = MsgInfo#msg_info.src_addr,
+	DestAddr = MsgInfo#msg_info.dst_addr,
+	{CustomerId, _ClientType, InputMsgId} = InputId,
 	UserId = <<"undefined">>,
-	ok = k_mailbox:register_incoming_item(
-		BatchId, CustomerId, UserId, <<"ReceiptBatch">>, BatchBinary
-	).
-build_receipt(Data) ->
-	{{CustomerId, _ClientType, InputMsgId}, MessageState, SrcAddr, DstAddr, DlrTime} = Data,
-	Receipt = #funnel_delivery_receipt_container_dto{
-		message_id = InputMsgId,
+	ItemId = uuid:newid(),
+	Item = #k_mb_pending_item{
+		item_id = ItemId,
+		customer_id = CustomerId,
+		user_id = UserId,
+		content_type = <<"ReceiptBatch">>,
+		sender_addr = conver_addr(SenderAddr),
+		dest_addr = conver_addr(DestAddr),
+		input_id = InputMsgId,
 		submit_date = list_to_binary(unix_to_utc(DlrTime)),
 		done_date = list_to_binary(unix_to_utc(DlrTime)),
-		message_state = MessageState,
-		source = addr_to_dto(SrcAddr),
-		dest = addr_to_dto(DstAddr)
-	},
-	?log_debug("Receipt: ~p", [Receipt]),
-	BatchId = uuid:newid(),
-	Batch = #funnel_delivery_receipt_dto{
-		id = BatchId,
-		receipts = [Receipt]
-	},
-	{ok, Binary} = adto:encode(Batch),
-	{CustomerId, BatchId, Binary}.
+		message_state = MessageState
+	 },
+	ok = k_mailbox:register_incoming_item(Item).
+
 
 unix_to_utc(TS) ->
 	NM = TS div 1000000,
@@ -123,18 +125,18 @@ unix_to_utc(TS) ->
 	).
 
 
-addr_to_dto(undefined) ->
+conver_addr(undefined) ->
 	undefined;
-addr_to_dto(Addr = #full_addr{}) ->
+conver_addr(Addr = #full_addr{}) ->
 	#full_addr{
 		addr = Msisdn,
 		ton = TON,
 		npi = NPI
 	} = Addr,
-	#addr_dto{
+	#addr{
 		addr = Msisdn,
 		ton = TON,
 		npi = NPI
 	};
-addr_to_dto(Addrs) ->
-	[addr_to_dto(Addr) || Addr <- Addrs].
+conver_addr(Addrs) ->
+	[conver_addr(Addr) || Addr <- Addrs].
