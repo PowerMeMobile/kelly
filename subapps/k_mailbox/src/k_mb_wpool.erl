@@ -162,9 +162,11 @@ send_item(Item, SubID) ->
 		item_id = ItemID,
 		content_type = ContentType
 		} = Item,
-	{ok, Binary} = build_dto(Item),
-	QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [uuid:to_string(SubID)])),
-	?log_debug("Send item to funnel queue [~p]", [QName]),
+	{ok, [Sub = #k_mb_subscription{
+		queue_name = QName
+	}]} = k_mb_db:get_subscription(SubID),
+	{ok, Binary} = build_dto(Item, Sub),
+	?log_debug("Send item to queue [~p]", [QName]),
 	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
 	case Result of
 		{ok, delivered} ->
@@ -187,14 +189,48 @@ postpone_item(Item, Error) ->
 			[Error])
 	end.
 
-build_dto(Item = #k_mb_pending_item{content_type = <<"ReceiptBatch">>}) ->
+build_dto(Item, Sub = #k_mb_subscription{app_type = smpp}) ->
+	build_funnel_dto(Item);
+build_dto(Item, Sub = #k_mb_subscription{app_type = oneapi}) ->
+	build_k1api_dto(Item, Sub).
+
+build_k1api_dto(Item = #k_mb_pending_item{content_type = <<"ReceiptBatch">>}, Sub) ->
+	build_k1api_receipt_dto(Item, Sub);
+build_k1api_dto(Item = #k_mb_pending_item{content_type = <<"OutgoingBatch">>}, Sub) ->
+	build_k1api_incoming_sms_dto(Item, Sub).
+
+build_funnel_dto(Item = #k_mb_pending_item{content_type = <<"ReceiptBatch">>}) ->
 	build_funnel_receipt_dto(Item);
-build_dto(Item = #k_mb_pending_item{content_type = <<"OutgoingBatch">>}) ->
+build_funnel_dto(Item = #k_mb_pending_item{content_type = <<"OutgoingBatch">>}) ->
 	build_funnel_incoming_sms_dto(Item).
 
 %% ===================================================================
 %% build incoming sms message
 %% ===================================================================
+
+build_k1api_incoming_sms_dto(Item, Sub) ->
+	#k_mb_pending_item{
+		item_id = ItemID,
+		sender_addr = SenderAddr,
+		dest_addr = DestAddr,
+		message_body = Message,
+		timestamp = Timestamp
+		} = Item,
+	#k_mb_subscription{
+		notify_url = URL,
+		callback_data = Callback
+	} = Sub,
+	DTO = #k1api_sms_notification_request_dto{
+		callback_data = Callback,
+		datetime = Timestamp,
+		dest_addr = addr_to_dto(DestAddr),
+		message_id = ItemID,
+		message = Message,
+		sender_addr = addr_to_dto(SenderAddr),
+		notify_url = URL
+	},
+	{ok, Bin} = adto:encode(DTO).
+
 
 build_funnel_incoming_sms_dto(Item) ->
 	#k_mb_pending_item{
@@ -219,6 +255,9 @@ build_funnel_incoming_sms_dto(Item) ->
 %% ===================================================================
 %% build delivery receipt message
 %% ===================================================================
+
+build_k1api_receipt_dto(Item, Sub) ->
+	erlang:error(not_impemented).
 
 build_funnel_receipt_dto(Item) ->
 	#k_mb_pending_item{
