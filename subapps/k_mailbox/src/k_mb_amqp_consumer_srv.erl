@@ -6,7 +6,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
--include_lib("k_common/include/FunnelAsn.hrl").
+-include_lib("alley_dto/include/FunnelAsn.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
 
 %% pending workers
