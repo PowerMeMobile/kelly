@@ -5,7 +5,7 @@
 ]).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
--include_lib("k_common/include/FunnelAsn.hrl").
+-include_lib("alley_dto/include/FunnelAsn.hrl").
 
 %% ===================================================================
 %% API
