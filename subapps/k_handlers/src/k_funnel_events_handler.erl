@@ -99,7 +99,3 @@ resolve_cust_id( SystemId ) ->
 		}} -> {ok, CustId};
 		Error -> Error
 	end.
-
-%% conn_type_to_cannonical(transmitter) -> 'smpp.transmitter';
-%% conn_type_to_cannonical(transceiver) -> 'smpp.transceiver';
-%% conn_type_to_cannonical(receiver) -> 'smpp.receiver'.
