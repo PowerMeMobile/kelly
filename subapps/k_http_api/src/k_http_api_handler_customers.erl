@@ -29,14 +29,14 @@ init() ->
 		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
-		#param{name = originators, mandatory = false, repeated = true, type = addr},
-		#param{name = default_originator, mandatory = false, repeated = false, type = addr},
+		#param{name = originators, mandatory = false, repeated = true, type = {custom, fun decode_addr/1}},
+		#param{name = default_originator, mandatory = false, repeated = false, type = {custom, fun decode_addr/1}},
 		#param{name = networks, mandatory = false, repeated = true, type = binary_uuid},
 		#param{name = default_provider_id, mandatory = false, repeated = false, type = binary_uuid},
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = false, repeated = false, type = binary},
 		#param{name = max_validity, mandatory = false, repeated = false, type = integer},
-		#param{name = state, mandatory = false, repeated = false, type = customer_state}
+		#param{name = state, mandatory = false, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	Update = #method_spec{
 				path = [<<"customers">>, id],
@@ -55,14 +55,14 @@ init() ->
 		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
-		#param{name = originators, mandatory = false, repeated = true, type = addr},
-		#param{name = default_originator, mandatory = false, repeated = false, type = addr},
+		#param{name = originators, mandatory = false, repeated = true, type = {custom, fun decode_addr/1}},
+		#param{name = default_originator, mandatory = false, repeated = false, type = {custom, fun decode_addr/1}},
 		#param{name = networks, mandatory = true, repeated = true, type = binary_uuid},
 		#param{name = default_provider_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = true, repeated = false, type = binary},
 		#param{name = max_validity, mandatory = true, repeated = false, type = integer},
-		#param{name = state, mandatory = true, repeated = false, type = customer_state}
+		#param{name = state, mandatory = true, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	Create = #method_spec{
 				path = [<<"customers">>],
@@ -293,3 +293,19 @@ translate_name(maxValidity) ->
 	max_validity;
 translate_name(Name) ->
 	Name.
+
+%% convert "addr,ton,npi" to #addr{addr, ton, npi}
+decode_addr(AddrBin) ->
+	AddrString = binary_to_list(AddrBin),
+	[Addr, Ton, Npi] = string:tokens(AddrString, ","),
+	#addr{
+		addr = list_to_binary(Addr),
+		ton = list_to_integer(Ton),
+		npi = list_to_integer(Npi)
+	}.
+
+customer_state(StateBin) ->
+	case StateBin of
+		<<"0">> -> 0;
+		<<"1">> -> 1
+	end.

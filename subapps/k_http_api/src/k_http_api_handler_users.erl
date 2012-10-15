@@ -37,7 +37,7 @@ init() ->
 		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = pswd, mandatory = false, repeated = false, type = binary},
-		#param{name = smpp_types, mandatory = false, repeated = true, type = smpp_type}
+		#param{name = smpp_types, mandatory = false, repeated = true, type = {custom, fun smpp_type/1}}
 	],
 	Update = #method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>, id],
@@ -55,7 +55,7 @@ init() ->
 		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = pswd, mandatory = true, repeated = false, type = binary},
-		#param{name = smpp_types, mandatory = true, repeated = true, type = smpp_type}
+		#param{name = smpp_types, mandatory = true, repeated = true, type = {custom, fun smpp_type/1}}
 	],
 	Create = #method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>],
@@ -205,3 +205,11 @@ resolve_pass(undefined, Pass) ->
 	Pass;
 resolve_pass(NewPass, _Pass) ->
 	crypto:sha(NewPass).
+
+smpp_type(Type) ->
+	case Type of
+		<<"oneapi">> -> oneapi;
+		<<"transmitter">> -> transmitter;
+		<<"receiver">> -> receiver;
+		<<"transceiver">> -> transceiver
+	end.

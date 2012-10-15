@@ -21,21 +21,21 @@
 init() ->
 	Read = [#method_spec{
 				path = [<<"addr2cust">>, msisdn],
-				params = [#param{name = msisdn, mandatory = true, repeated = false, type = addr}]},
+				params = [#param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}}]},
 			#method_spec{
 				path = [<<"addr2cust">>],
 				params = [#param{name = customer, mandatory = true, repeated = false, type = binary_uuid},
 						  #param{name = user, mandatory = true, repeated = false, type = binary}]}
 			],
 	DeleteParams = [
-		#param{name = msisdn, mandatory = true, repeated = false, type = addr}
+		#param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}}
 	],
 	Delete = #method_spec{
 				path = [<<"addr2cust">>, msisdn],
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = msisdn, mandatory = true, repeated = false, type = addr},
+		#param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}},
 		#param{name = customer,	mandatory = true, repeated = false,	type = binary_uuid},
 		#param{name = user, mandatory = true, repeated = false, type = binary}
 	],
@@ -101,3 +101,12 @@ prepare(CustomerID, UserID, Msisdn) ->
 
 prepare_msisdns(CustomerID, UserID, Msisdns) ->
 	[{msisdns, [[{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}] || Msisdn <- Msisdns]}, {customer, list_to_binary(uuid:to_string(CustomerID))}, {user, UserID}].
+
+decode_addr(AddrBin) ->
+	AddrString = binary_to_list(AddrBin),
+	[Addr, Ton, Npi] = string:tokens(AddrString, ","),
+	#addr{
+		addr = list_to_binary(Addr),
+		ton = list_to_integer(Ton),
+		npi = list_to_integer(Npi)
+	}.
