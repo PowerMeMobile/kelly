@@ -36,6 +36,7 @@ init() ->
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = false, repeated = false, type = binary},
 		#param{name = max_validity, mandatory = false, repeated = false, type = integer},
+		#param{name = billing_type, mandatory = false, repeated = false, type = {custom, fun billing_type/1}},
 		#param{name = state, mandatory = false, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	Update = #method_spec{
@@ -62,6 +63,7 @@ init() ->
 		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = true, repeated = false, type = binary},
 		#param{name = max_validity, mandatory = true, repeated = false, type = integer},
+		#param{name = billing_type, mandatory = true, repeated = false, type = {custom, fun billing_type/1}},
 		#param{name = state, mandatory = true, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	Create = #method_spec{
@@ -161,6 +163,7 @@ update_customer(Customer, Params) ->
 	NewReceiptsAllowed = resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
 	NewDefaultValidity = resolve(default_validity, Params, Customer#customer.defaultValidity),
 	NewMaxValidity = resolve(max_validity, Params, Customer#customer.maxValidity),
+	NewBillingType = resolve(billing_type, Params, Customer#customer.billing_type),
 	NewState = resolve(state, Params, Customer#customer.state),
 	NewCustomer = #customer{
 		id = Customer#customer.id,
@@ -177,6 +180,7 @@ update_customer(Customer, Params) ->
 		defaultValidity = NewDefaultValidity,
 		maxValidity = NewMaxValidity,
 		users = Customer#customer.users,
+		billing_type = NewBillingType,
 		state = NewState
 	},
 	ok = k_aaa:set_customer(Customer#customer.id, NewCustomer),
@@ -204,6 +208,7 @@ create_customer(Params) ->
 		defaultValidity = ?gv(default_validity, Params),
 		maxValidity = ?gv(max_validity, Params),
 		users = [],
+		billing_type = ?gv(billing_type, Params),
 		state = ?gv(state, Params)
 	},
 	k_snmp:set_row(cst, uuid:to_string(UUID), [
@@ -308,4 +313,10 @@ customer_state(StateBin) ->
 	case StateBin of
 		<<"0">> -> 0;
 		<<"1">> -> 1
+	end.
+
+billing_type(TypeBin) ->
+	case TypeBin of
+		<<"prepaid">> -> prepaid;
+		<<"postpaid">> -> postpaid
 	end.

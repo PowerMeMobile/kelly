@@ -80,6 +80,7 @@
 -type addr() :: #addr{}.
 
 -type smpp_connection_type() :: transmitter | receiver | tranceiver | oneapi.
+-type billing_type() :: prepaid | postpaid.
 -type user_id() :: string().
 -record(user, {
 	id :: user_id(),
@@ -103,6 +104,7 @@
 	defaultValidity 	:: string(),
 	maxValidity			:: integer(),
 	users = []			:: [user()] | [],
+	billing_type		:: billing_type(),
 	state = 0			:: non_neg_integer() %% 0 blocked, 1 active
 }).
 -type customer_id() :: uuid().
