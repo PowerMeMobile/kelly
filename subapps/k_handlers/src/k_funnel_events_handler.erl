@@ -74,7 +74,9 @@ process_connection_up_event(ConnId, SystemId, ConnType) when
 									ConnType == transceiver ->
 	case resolve_cust_id(SystemId) of
 		{ok, CustId} ->
-			QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [ConnId])),
+			ConnIdStr = uuid:to_string(ConnId),
+			QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [ConnIdStr])),
+			?log_debug("RMQ queue of new funnel connection: ~p", [QName]),
 			Subscription = #k_mb_subscription{
 					id = ConnId,
 					customer_id = CustId,
