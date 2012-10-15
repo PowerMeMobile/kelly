@@ -91,8 +91,8 @@ $ ./funnel_mini/bin/funnel start
 
 
 4.3 Configure Kelly node name.
-$ cd $WORD/kelly/rel/kelly/releases/1/vm.args
-Replace '127.0.0.1' in kelly@127.0.0.1 with valid server's ip address.
+$ edit $WORK/kelly/rel/kelly/releases/1/vm.args
+Replace '127.0.0.1' in kelly@127.0.0.1 with a valid server's ip address.
 
 
 4.4 Kelly launching
@@ -109,4 +109,3 @@ $ cd $WORK/kelly/rel/kelly/bin/
 Configure the `OUTPUT_SMPP_HOST' and `OUTPUT_SMPP_PORT' settings to your SMPP target in `kelly_http_configure' file.
 Apply the settings:
 $ ./kelly_http_configure
-

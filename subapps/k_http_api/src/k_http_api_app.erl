@@ -5,6 +5,7 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
+-include("application.hrl").
 -include_lib("k_common/include/application_spec.hrl").
 -include_lib("k_common/include/logging.hrl").
 
@@ -45,10 +46,13 @@ start(_StartType, _StartArgs) ->
     		{'...', error_request_handler, []}
     	]}
 	],
-	%% Name, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts
-	cowboy:start_listener(http, 1,
-    cowboy_tcp_transport, [{port, 8080}],
-    cowboy_http_protocol, [{dispatch, Dispatch}]
+
+	{ok, NumAcceptors} = application:get_env(?APP, num_acceptors),
+	{ok, Port} = application:get_env(?APP, port),
+
+	cowboy:start_listener(http, NumAcceptors,
+	    cowboy_tcp_transport, [{port, Port}],
+    	cowboy_http_protocol, [{dispatch, Dispatch}]
 	),
     % ?log_debug("cowboy started OK", []),
 	k_http_api_sup:start_link().
