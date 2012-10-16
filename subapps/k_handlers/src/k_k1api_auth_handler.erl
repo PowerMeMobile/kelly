@@ -12,36 +12,37 @@
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_ContentType, Message) ->
 	?log_debug("Got k1api auth request", []),
-	case adto:decode(#funnel_auth_request_dto{}, Message) of
+	case adto:decode(#k1api_auth_request_dto{}, Message) of
 		{ok, Request} ->
-			Response =
-				case authenticate(Request) of
-					{allow, Customer = #customer{}} ->
-						build_customer_response(Request, Customer);
-					{deny, Reason} ->
-						?log_notice("k1api authentication denied: ~p", [Reason]),
-						build_error_response(Request, Reason);
-					{error, Reason} ->
-						?log_error("authentication error: ~p", [Reason]),
-						build_error_response(Request, Reason)
-				end,
-			reply(Response);
+			process_auth_req(Request);
 		{error, Error} ->
 			?log_error("k1api auth request decode error: ~p", [Error]),
 			?authentication_failed
 	end.
 
--spec authenticate(#funnel_auth_request_dto{}) ->
+process_auth_req(Request) ->
+	case authenticate(Request) of
+		{allow, Customer = #customer{}} ->
+			{ok, ResponseDTO} = build_customer_response(Request, Customer),
+			reply(ResponseDTO);
+		{deny, Reason} ->
+			?log_notice("k1api authentication denied: ~p", [Reason]),
+			{ok, []};
+		{error, Reason} ->
+			?log_error("authentication error: ~p", [Reason]),
+			{ok, []}
+	end.
+
+-spec authenticate(#k1api_auth_request_dto{}) ->
 	{allow, #customer{}} |
 	{error, term()} |
 	{deny, no_such_customer} |
 	{deny, password} |
 	{deny, connection_type}.
-authenticate(BindReq = #funnel_auth_request_dto{
+authenticate(BindReq = #k1api_auth_request_dto{
 	customer_id = SystemID,
-	user_id = UserId
-}) ->
-	?log_debug("Got funnel auth request: ~p", [BindReq]),
+	user_id = UserId }) ->
+	?log_debug("Got k1api auth request: ~p", [BindReq]),
 
 	case k_aaa:get_customer_by_system_id(SystemID) of
 		{ok, Customer} ->
@@ -66,7 +67,7 @@ authenticate(BindReq = #funnel_auth_request_dto{
 			Any
 	end.
 
-check_stage_password(#funnel_auth_request_dto{password = Pw}, #user{pswd_hash = PwHash}) ->
+check_stage_password(#k1api_auth_request_dto{password = Pw}, #user{pswd_hash = PwHash}) ->
 	case crypto:sha(Pw) =:= PwHash of
 		true ->
 			allow;
@@ -74,7 +75,7 @@ check_stage_password(#funnel_auth_request_dto{password = Pw}, #user{pswd_hash = 
 			{deny, password}
 	end.
 
-check_stage_conntype(#funnel_auth_request_dto{}, #user{permitted_smpp_types = Types}) ->
+check_stage_conntype(#k1api_auth_request_dto{}, #user{permitted_smpp_types = Types}) ->
 	TypeRequested = oneapi,
 	case lists:any(fun(T) -> T =:= TypeRequested end, Types) of
 		true ->
@@ -84,7 +85,7 @@ check_stage_conntype(#funnel_auth_request_dto{}, #user{permitted_smpp_types = Ty
 	end.
 
 perform_checks(_, _, [], Customer) ->
-	?log_debug("Funnel auth allowed", []),
+	?log_debug("k1api auth allowed", []),
 	{allow, Customer};
 perform_checks(BindReq, User = #user{}, [Check | SoFar], Customer) ->
 	case Check(BindReq, User) of
@@ -94,20 +95,19 @@ perform_checks(BindReq, User = #user{}, [Check | SoFar], Customer) ->
 			{deny, DenyReason}
 	end.
 
-build_customer_response(#funnel_auth_request_dto{
-	connection_id = ConnectionId,
+build_customer_response(#k1api_auth_request_dto{
+	id = ConnectionId,
 	customer_id = CustomerId
 	}, #customer{
 			uuid = UUID,
-			priority = Prior,
-			rps = RPS,
+			billing_type = BillingType,
 			allowedSources = AllowedSources,
 			defaultSource = DefaultSource,
 			networks = NtwIdList,
 			defaultProviderId = DP,
 			receiptsAllowed = RA,
 			noRetry = NR,
-			defaultValidity = DV,
+			defaultValidity = _DV,
 			maxValidity = MV }) ->
 
 	{Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
@@ -149,11 +149,11 @@ build_customer_response(#funnel_auth_request_dto{
 		end
 	end, {[], []}, NtwIdList),
 
-	Customer = #funnel_auth_response_customer_dto{
-		id = CustomerId,
+	CustomerDTO = #k1api_auth_response_dto{
+		id = ConnectionId,
+		system_id = CustomerId,
 		uuid = UUID,
-		priority = Prior,
-		rps = RPS,
+		billing_type = BillingType,
 		allowed_sources = addr_to_dto(AllowedSources),
 		default_source = addr_to_dto(DefaultSource),
 		networks = Networks,
@@ -161,21 +161,22 @@ build_customer_response(#funnel_auth_request_dto{
 		default_provider_id = DP,
 		receipts_allowed = RA,
 		no_retry = NR,
-		default_validity = DV,
+		default_validity = MV, %% fake
 		max_validity = MV
 	},
-	?log_debug("Built customer: ~p", [Customer]),
-	#funnel_auth_response_dto{
-		connection_id = ConnectionId,
-		result = {customer, Customer}
-	}.
+	?log_debug("Built customer: ~p", [CustomerDTO]),
+	{ok, CustomerDTO}.
+	%% #funnel_auth_response_dto{
+	%% 	connection_id = ConnectionId,
+	%% 	result = {customer, Customer}
+	%% }.
 
-build_error_response(#funnel_auth_request_dto{connection_id = ConnectionId}, Reason) ->
-	?log_debug("Building auth error response...", []),
-	#funnel_auth_response_dto{
-		connection_id = ConnectionId,
-		result = {error, atom_to_list(Reason)}
-	}.
+%% build_error_response(#k1api_auth_request_dto{id = ConnectionId}, Reason) ->
+%% 	?log_debug("Building auth error response...", []),
+%% 	#k1api_auth_response_dto{
+%% 		id = ConnectionId,
+%% 		result = {error, atom_to_list(Reason)}
+%% 	}.
 
 reply(Response) ->
 	case adto:encode(Response) of
@@ -186,7 +187,7 @@ reply(Response) ->
 				payload = Binary},
 			{ok, [Reply]};
 		Error ->
-			?log_warn("Unexpected funnel auth response encode error: ~p", [Error]),
+			?log_warn("Unexpected k1api auth response encode error: ~p", [Error]),
 	   		Error
 	end.
 
