@@ -44,7 +44,9 @@ send(ID, Payload, QName, ContentType) ->
 %% GenWP Callback Functions Definitions
 
 init([]) ->
-	{ok, Chan} = rmql:channel_open(),
+	{ok, Connection} = rmql:connection_start(),
+	{ok, Chan} = rmql:channel_open(Connection),
+	link(Chan),
 	ReplyTo = k_mb_config:get_env(reply_to),
 	{ok, #state{chan = Chan, reply_to = ReplyTo}}.
 
