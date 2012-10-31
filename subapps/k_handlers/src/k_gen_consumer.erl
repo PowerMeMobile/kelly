@@ -109,7 +109,9 @@ handle_cast(do_subscribe, State = #state{
 		{ok, Opts, Q, DQ, Xchg, S} -> {ok, Opts, Q, DQ, Xchg, S};
 		{ok, Opts, Q, DQ, S} -> {ok, Opts, Q, DQ, undefined, S}
 	end,
-	{ok, Channel} = rmql:channel_open(),
+	{ok, Connection} = rmql:connection_start(),
+	{ok, Channel} = rmql:channel_open(Connection),
+	link(Channel),
 	declare_exchange(Channel, BXchg),
 	declare_queue(Channel, QName, DeclareQueue),
 	queue_bind(Channel, QName, BXchg),
