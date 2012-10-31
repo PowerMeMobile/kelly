@@ -66,15 +66,19 @@ process_msg_resp(#msg_resp{
 -spec update_msg_status(msg_id(), msg_id(), #msg_status{}, atom()) -> ok | {error, any()}.
 update_msg_status(InputId, OutputId, MsgStatus, ResponseStatus) ->
 	RespTime = k_datetime:utc_unix_epoch(),
-	{ok, MsgInfo} = k_storage:get_msg_info(InputId),
-	NewStatus = fix_status(ResponseStatus, MsgInfo#msg_info.registered_delivery),
-	NewMsgStatus = MsgStatus#msg_status{
-		status = NewStatus,
-		resp_time = RespTime
-	},
-	%% update message status and stats.
-	ok = k_storage:set_msg_status(InputId, NewMsgStatus),
-	ok = k_statistic:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, RespTime).
+	case k_storage:get_msg_info(InputId) of
+		{ok, MsgInfo} ->
+			NewStatus = fix_status(ResponseStatus, MsgInfo#msg_info.registered_delivery),
+			NewMsgStatus = MsgStatus#msg_status{
+							 status = NewStatus,
+							 resp_time = RespTime
+							},
+			%% update message status and stats.
+			ok = k_storage:set_msg_status(InputId, NewMsgStatus),
+			ok = k_statistic:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, RespTime);
+		Error ->
+			Error
+	end.
 
 fix_status(success, true) -> success_waiting_delivery;
 fix_status(success, false) -> success_no_delivery;
