@@ -2,7 +2,7 @@
 
 UrlFmt="http://{{HOST}}:{{PORT}}/cgi-bin/sendsms?username={{USERNAME}}&password={{PASSWORD}}&from={{FROM}}&to={{TO}}&text={{BODY}}&dlr-mask={{DRLMASK}}"
 Host=localhost
-Port=13003
+Port=13003 # 13003 postpaid, 13004 prepaid
 Username=test
 Password=test
 DlrMask=0

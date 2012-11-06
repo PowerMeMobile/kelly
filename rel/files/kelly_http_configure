@@ -23,7 +23,7 @@ OUTPUT_SMPP_PORT=8001
 echo -n 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=test_gtw&rps=10000' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways; echo
 
 #
-# Connections
+# Connections (SMPPSim)
 #
 echo -n "id=0&type=1&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient1&pass=password&sys_type=smppclient1&addr_ton=1&addr_npi=0&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections; echo
 
@@ -44,38 +44,47 @@ echo -n 'id=3b25cd8e-5eca-11e1-bf77-00269e42f7a5&name=Test network 2&country_cod
 # Customers
 #
 
-# kannel
+#
+# Funnel/Kannel
 
-echo -n 'name=test-sys-id&system_id=test-sys-id&id=feda5822-5271-11e1-bd27-001d0947ec73&originators=375296662323,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296662323,1,1&billing_type=prepaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+# postpaid customer
+echo -n 'name=funnel-postpaid&system_id=fun-postpaid&id=feda5822-5271-11e1-bd27-001d0947ec73&originators=375296660001,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660001,1,1&billing_type=postpaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
 
-
-# kannel's users
-echo -n 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
+# Funnel/Kannel users
+echo -n 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
 echo -n 'id=user2&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
 echo -n 'id=user3&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
 echo -n 'id=user4&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
 echo -n 'id=user5&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user6&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user7&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user8&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user9&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user10&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
 
-# smppclient1 - transmitter (for sms collider)
+# prepaid customer
+echo -n 'name=funnel-prepaid&system_id=fun-prepaid&id=6bd667ae-1793-11e2-95fe-00269e42f7a5&originators=375296660002,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660002,1,1&billing_type=prepaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
 
-echo -n 'name=smppclient1&system_id=smppclient1&id=4441e33c-87b3-11e1-b563-00269e42f7a5&originators=375296662323,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296662323,0,0&billing_type=postpaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+# Funnel/Kannel's users
+echo -n 'id=user111&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
+echo -n 'id=user2&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
+echo -n 'id=user3&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
+echo -n 'id=user4&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
+echo -n 'id=user5&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
 
-echo -n 'id=smppclient1&pswd=password&smpp_types=transmitter' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/4441e33c-87b3-11e1-b563-00269e42f7a5/users; echo
+#
+# OneAPI
 
-# smppclient2 - receiver (for sms collider)
+# postpaid customer
+echo -n 'name=oneapi-postpaid&system_id=oneapi-postpaid&id=a3ddc34a-1793-11e2-9602-00269e42f7a5&originators=375296660003,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660003,1,1&billing_type=postpaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
 
-echo -n 'name=smppclient2&system_id=smppclient2&id=54d82c58-87b6-11e1-ba66-00269e42f7a5&originators=375296663333,0,0&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_originator=375296663333,0,0&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&billing_type=postpaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+echo -n 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users; echo
 
-echo -n 'id=smppclient2&pswd=password&smpp_types=receiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/54d82c58-87b6-11e1-ba66-00269e42f7a5/users; echo
+# prepaid customer
+echo -n 'name=oneapi-prepaid&system_id=oneapi-prepaid&id=16f87550-1794-11e2-ade6-00269e42f7a5&originators=375296660004,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660004,1,1&billing_type=prepaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+
+echo -n 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users; echo
 
 #
 # Addr2Cust
 #
 
-echo -n 'msisdn=375296663333,1,1&customer=54d82c58-87b6-11e1-ba66-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
-echo -n 'msisdn=375296662323,1,1&customer=feda5822-5271-11e1-bd27-001d0947ec73&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+echo -n 'msisdn=375296660001,1,1&customer=feda5822-5271-11e1-bd27-001d0947ec73&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+echo -n 'msisdn=375296660002,1,1&customer=6bd667ae-1793-11e2-95fe-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+echo -n 'msisdn=375296660003,1,1&customer=a3ddc34a-1793-11e2-9602-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+echo -n 'msisdn=375296660004,1,1&customer=16f87550-1794-11e2-ade6-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
