@@ -5,7 +5,7 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/address.hrl").
--include_lib("k_mailbox/include/pending_item.hrl").
+-include_lib("k_mailbox/include/application.hrl").
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include("amqp_worker_reply.hrl").
@@ -49,12 +49,12 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	ItemId = uuid:newid(),
 	%% transform encoding.
 	Encoding = case DataCoding of
-	   -1 -> {text, default};
-		0 -> {text, gsm0338};
-		1 -> {text, ascii};
-		3 -> {text, latin1};
-		8 -> {text, ucs2};
-		_ -> {other, DataCoding}
+	   -1 -> default;
+		0 -> gsm0338;
+		1 -> ascii;
+		3 -> latin1;
+		8 -> ucs2;
+		_ -> DataCoding
 	end,
 	%% try to determine customer id and user id,
 	%% this will return either valid customer id or `undefined'.
@@ -66,17 +66,16 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 					[CustId, UserId, Addr, TON, NPI] ),
 
 				%% register it to futher sending.
-				Item = #k_mb_pending_item{
-					item_id = ItemId,
-					customer_id = CustId,
-					user_id = UserId,
-					content_type = <<"OutgoingBatch">>,
-					sender_addr = SourceAddr,
+				Item = #k_mb_incoming_sms{
+					id = ItemId,
+					customer_id	= CustId,
+					user_id	= UserId,
+					source_addr	= SourceAddr,
 					dest_addr = DestAddr,
-					timestamp = k_datetime:utc_unix_epoch(),
+					received  = k_datetime:utc_unix_epoch(),
 					message_body = MessageBody,
 					encoding = Encoding
-				 },
+				},
 				k_mailbox:register_incoming_item(Item),
 				?log_debug("Incomming message registered [item:~p]", [ItemId]),
 				%% return valid customer.

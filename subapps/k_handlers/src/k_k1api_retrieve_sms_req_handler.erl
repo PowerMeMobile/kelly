@@ -7,7 +7,7 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/msg_status.hrl").
--include_lib("k_mailbox/include/pending_item.hrl").
+-include_lib("k_mailbox/include/application.hrl").
 
 %% ===================================================================
 %% API
@@ -49,16 +49,16 @@ build_response(RequestID, IncomingSms, Total) ->
 	?log_debug("RequestID: ~p, IncomingSms: ~p, Total: ~p",
 		[RequestID, IncomingSms, Total]),
 	MessagesDTO = lists:map(fun(PendingItem) ->
-		#k_mb_pending_item{
-			item_id = ItemID,
-			message_body = Message,
-			timestamp = Time,
-			sender_addr = SenderAddr
-		} = PendingItem,
+	#k_mb_incoming_sms{
+		id = ItemID,
+		source_addr	= SourceAddr,
+		received = Time,
+		message_body = Message
+	} = PendingItem,
 		DestAddrDTO = #addr_dto{
-			addr = SenderAddr#addr.addr,
-			ton = SenderAddr#addr.ton,
-			npi = SenderAddr#addr.npi
+			addr = SourceAddr#addr.addr,
+			ton = SourceAddr#addr.ton,
+			npi = SourceAddr#addr.npi
 		},
 		#k1api_retrieved_sms_dto{
 			datetime = Time,

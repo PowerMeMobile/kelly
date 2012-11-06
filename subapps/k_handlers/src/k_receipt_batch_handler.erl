@@ -8,7 +8,7 @@
 -include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
--include_lib("k_mailbox/include/pending_item.hrl").
+-include_lib("k_mailbox/include/application.hrl").
 
 %% ===================================================================
 %% API
@@ -59,7 +59,7 @@ traverse_delivery_receipts(GatewayId, DlrTime,
 				{ok, MsgInfo} ->
 					case update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) of
 						ok ->
-							case register_funnel_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) of
+							case register_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) of
 								ok ->
 									traverse_delivery_receipts(GatewayId, DlrTime, Receipts);
 								Error ->
@@ -88,46 +88,49 @@ update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) ->
 			Error
 	end.
 
-register_funnel_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
+register_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
+	{_CustomerId, ClientType, _InputMsgId} = InputId,
+	{ok, Item} = build_receipt_item(ClientType, InputId, MsgInfo, DlrTime, MessageState),
+	ok = k_mailbox:register_incoming_item(Item).
+
+build_receipt_item(k1api, InputId, MsgInfo, _DlrTime, MsgState) ->
+	SourceAddr = MsgInfo#msg_info.src_addr,
+	DestAddr = MsgInfo#msg_info.dst_addr,
+	{CustomerId, _ClientType, InputMsgId} = InputId,
+	UserId = <<"undefined">>,
+	ItemId = uuid:newid(),
+	Item = #k_mb_k1api_receipt{
+		id = ItemId,
+		customer_id	= CustomerId,
+		user_id	= UserId,
+		source_addr = convert_addr(SourceAddr),
+		dest_addr = convert_addr(DestAddr),
+		input_message_id = InputMsgId,
+		message_state = MsgState
+	},
+	{ok, Item};
+build_receipt_item(funnel, InputId, MsgInfo, DlrTime, MsgState) ->
 	SenderAddr = MsgInfo#msg_info.src_addr,
 	DestAddr = MsgInfo#msg_info.dst_addr,
 	{CustomerId, _ClientType, InputMsgId} = InputId,
 	UserId = <<"undefined">>,
 	ItemId = uuid:newid(),
-	Item = #k_mb_pending_item{
-		item_id = ItemId,
-		customer_id = CustomerId,
+	Item = #k_mb_funnel_receipt{
+		id = ItemId,
+		customer_id	= CustomerId,
 		user_id = UserId,
-		content_type = <<"ReceiptBatch">>,
-		sender_addr = conver_addr(SenderAddr),
-		dest_addr = conver_addr(DestAddr),
-		input_id = InputMsgId,
-		submit_date = list_to_binary(unix_to_utc(DlrTime)),
-		done_date = list_to_binary(unix_to_utc(DlrTime)),
-		message_state = MessageState
+		source_addr = convert_addr(SenderAddr),
+		dest_addr = convert_addr(DestAddr),
+		input_message_id = InputMsgId,
+		submit_date = DlrTime,
+		done_date = DlrTime,
+		message_state = MsgState
 	 },
-	ok = k_mailbox:register_incoming_item(Item).
+	{ok, Item}.
 
-
-unix_to_utc(TS) ->
-	NM = TS div 1000000,
-	NS = TS - (NM * 1000000),
-	T = {NM, NS, 0},
-	{{YY, MM, DD}, {H, M, S}} = calendar:now_to_universal_time(T),
-	lists:map(
-		fun(C) ->
-			case C of
-				$\  -> $0;
-				_ -> C
-			end
-		end,
-		lists:flatten(io_lib:format("~4B~2B~2B~2B~2B~2B", [YY, MM, DD, H, M, S]))
-	).
-
-
-conver_addr(undefined) ->
+convert_addr(undefined) ->
 	undefined;
-conver_addr(Addr = #full_addr{}) ->
+convert_addr(Addr = #full_addr{}) ->
 	#full_addr{
 		addr = Msisdn,
 		ton = TON,
@@ -138,5 +141,5 @@ conver_addr(Addr = #full_addr{}) ->
 		ton = TON,
 		npi = NPI
 	};
-conver_addr(Addrs) ->
-	[conver_addr(Addr) || Addr <- Addrs].
+convert_addr(Addrs) ->
+	[convert_addr(Addr) || Addr <- Addrs].

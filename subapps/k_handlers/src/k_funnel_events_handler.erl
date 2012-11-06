@@ -6,7 +6,7 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/storages.hrl").
--include_lib("k_mailbox/include/subscription.hrl").
+-include_lib("k_mailbox/include/application.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"ConnectionDownEvent">>, Message) ->
@@ -77,13 +77,13 @@ process_connection_up_event(ConnId, SystemId, ConnType) when
 			ConnIdStr = uuid:to_string(ConnId),
 			QName = list_to_binary(io_lib:format("pmm.funnel.nodes.~s", [ConnIdStr])),
 			?log_debug("RMQ queue of new funnel connection: ~p", [QName]),
-			Subscription = #k_mb_subscription{
+			Subscription = #k_mb_funnel_sub{
 					id = ConnId,
 					customer_id = CustId,
 					user_id = <<"undefined">>,
-				   	type = ConnType,
-					app_type = smpp,
-					queue_name = QName
+					priority = 0,
+					queue_name = QName,
+					created_at = k_datetime:utc_unix_epoch()
 			},
 			k_mailbox:register_subscription(Subscription),
 			{ok, []};

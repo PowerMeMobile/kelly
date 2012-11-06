@@ -7,9 +7,10 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/supervisor_spec.hrl").
 
-%% ===================================================================
-%% Functions Exports
-%% ===================================================================
+-define(WORKER(Name),
+	{Name, {Name, start_link, []}, permanent, 5000, worker, [Name]}).
+-define(SUPERVISOR(Name),
+	{Name, {Name, start_link, []}, permanent, infinity, supervisor, [Name]}).
 
 %% API
 -export([
@@ -22,7 +23,7 @@
 	]).
 
 %% ===================================================================
-%% API Functions Definitions
+%% API
 %% ===================================================================
 
 -spec start_link() -> {ok, pid()}.
@@ -30,7 +31,7 @@ start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% ===================================================================
-%% Supervisor Functions Definitions
+%% Supervisor Callbacks
 %% ===================================================================
 
 init([]) ->
@@ -38,19 +39,10 @@ init([]) ->
 
 		{rest_for_one, 5, 10}, [
 
-			{k_mb_amqp_sup, {k_mb_amqp_sup, start_link, []},
-				permanent, infinity, supervisor, [k_mb_amqp_sup]},
-
-			{k_mb_map_mgr, {k_mb_map_mgr, start_link, []},
-				permanent, 5000, worker, [k_mb_map_mgr]},
-
-			{k_mb_postponed_queue, {k_mb_postponed_queue, start_link, []},
-				permanent, 5000, worker, [k_mb_postponed_queue]},
-
-			{k_mb_wpool, {k_mb_wpool, start_link, []},
-				permanent, 5000, worker, [k_mb_wpool]},
-
-			{k_mb_gcollector, {k_mb_gcollector, start_link, []},
-				permanent, 5000, worker, [k_mb_gcollector]}
+			?SUPERVISOR(k_mb_amqp_sup),
+			?WORKER(k_mb_subscription_mgr),
+			?WORKER(k_mb_postponed_queue),
+			?WORKER(k_mb_wpool)
+			%% ?WORKER(k_mb_gcollector)
 		]}
 	}.

@@ -42,9 +42,9 @@ get_env(Key) ->
 %% Internal Function Definitions
 %% ===================================================================
 
-default(pool_size)					-> 100;
+default(pool_size)					-> 10;
 
-default(request_timeout) 			-> 5000;
+default(request_timeout) 			-> 10000;
 default(repeat_delay)	 			-> 5000;
 default(max_retry)		   			-> 5;
 

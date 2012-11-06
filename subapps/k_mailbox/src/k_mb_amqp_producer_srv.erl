@@ -24,7 +24,6 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("gen_wp/include/gen_wp_spec.hrl").
--include("pending_item.hrl").
 
 -record(state, {
 	chan :: pid(),
@@ -45,6 +44,7 @@ send(ID, Payload, QName, ContentType) ->
 
 init([]) ->
 	{ok, Connection} = rmql:connection_start(),
+	link(Connection),
 	{ok, Chan} = rmql:channel_open(Connection),
 	link(Chan),
 	ReplyTo = k_mb_config:get_env(reply_to),
@@ -97,31 +97,3 @@ handle_child_terminated(_Reason, _Task, _Child, ModState) ->
 %% ===================================================================
 %% Internal
 %% ===================================================================
-
-%% build_funnel_incoming_sms_dto(ID, SenderAddr = #addr{}, DestAddr, Message, Encoding) ->
-%% 	SenderAddrDTO = #addr_dto{
-%% 		addr = SenderAddr#addr.addr,
-%% 		ton = SenderAddr#addr.ton,
-%% 		npi = SenderAddr#addr.npi
-%% 	},
-%% 	build_funnel_incoming_sms_dto(ID, SenderAddrDTO, DestAddr, Message, Encoding);
-%% build_funnel_incoming_sms_dto(ID, SenderAddr, DestAddr = #addr{}, Message, Encoding) ->
-%% 	DestAddrDTO = #addr_dto{
-%% 		addr = DestAddr#addr.addr,
-%% 		ton = DestAddr#addr.ton,
-%% 		npi = DestAddr#addr.npi
-%% 	},
-%% 	build_funnel_incoming_sms_dto(ID, SenderAddr, DestAddrDTO, Message, Encoding);
-%% build_funnel_incoming_sms_dto(BatchId, SenderAddr, DestAddr, Message, Encoding) ->
-%% 	Msg = #funnel_incoming_sms_message_dto{
-%% 		source = SenderAddr,
-%% 		dest = DestAddr,
-%% 		data_coding = Encoding,
-%% 		message = Message
-%% 	},
-%% 	Batch = #funnel_incoming_sms_dto{
-%% 		id = BatchId,
-%% 		messages = [Msg]
-%% 	},
-%% 	{ok, Binary} = adto:encode(Batch),
-%% 	Binary.

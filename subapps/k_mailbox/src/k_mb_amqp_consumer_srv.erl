@@ -74,6 +74,7 @@ get_response(MesID) ->
 
 init([]) ->
 	{ok, Connection} = rmql:connection_start(),
+	link(Connection),
 	{ok, Chan} = rmql:channel_open(Connection),
 	link(Chan),
 	{ok, QoS} = application:get_env(rmq_qos),

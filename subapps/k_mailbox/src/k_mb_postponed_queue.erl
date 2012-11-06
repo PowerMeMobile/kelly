@@ -6,26 +6,22 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
--include("pending_item.hrl").
+-include("application.hrl").
 
 -record(state, {
     rbuff :: term(),
     timeout :: integer()
     }).
 
-%% ===================================================================
-%% API Functions Exports
-%% ===================================================================
 
+%% API
 -export([
 	start_link/0,
     postpone/1
 ]).
 
-%% ===================================================================
-%% GenServer Functions Exports
-%% ===================================================================
 
+%% GenServer Callbacks
 -export([
 	init/1,
 	handle_call/3,
@@ -36,19 +32,27 @@
 ]).
 
 %% ===================================================================
-%% API Functions Definitions
+%% API
 %% ===================================================================
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec postpone(Item :: #k_mb_pending_item{}) ->
+-spec postpone(term()) ->
 	{postponed, Seconds :: integer()} |
 	{error, rich_max}.
-postpone(Item = #k_mb_pending_item{attempt = CurrentAttempt}) ->
+postpone(Item) ->
+	{ok, CurrentAttempt} = get_current_attempt(Item),
     MaxRetry = k_mb_config:get_env(max_retry),
     postpone(Item, CurrentAttempt, MaxRetry).
+
+get_current_attempt(Item = #k_mb_funnel_receipt{}) ->
+	{ok, Item#k_mb_funnel_receipt.delivery_attempt};
+get_current_attempt(Item = #k_mb_k1api_receipt{}) ->
+	{ok, Item#k_mb_k1api_receipt.delivery_attempt};
+get_current_attempt(Item = #k_mb_incoming_sms{}) ->
+	{ok, Item#k_mb_incoming_sms.delivery_attempt}.
 
 %% ===================================================================
 %% GenServer Functions Definitions
@@ -63,9 +67,7 @@ init([]) ->
     {ok, #state{rbuff = RBuf, timeout = Timeout}, Timeout}.
 
 handle_call({postpone, Item}, _From, State = #state{rbuff = RBuf, timeout = T}) ->
-    #k_mb_pending_item{
-        attempt = Attempt
-    } = Item,
+ 	{ok, Attempt} = get_current_attempt(Item),
     Index = position(Attempt),
 	RetryTime = T * Index / 1000,
     {{value, ItemList}, RBuf} = rbuf:get(Index, RBuf),
@@ -93,7 +95,7 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %% ===================================================================
-%% Local Functions Definitions
+%% Local
 %% ===================================================================
 
 process(ItemList) ->
@@ -104,10 +106,14 @@ process(ItemList) ->
 position(N) ->
     trunc(math:pow(2, N - 2)) + 1.
 
-postpone(_Item, CurrentAttempt, MaxRetry) when CurrentAttempt == MaxRetry ->
+postpone(_Item, CurrentAttempt, MaxRetry) when CurrentAttempt >= MaxRetry ->
 	{error, rich_max};
-    %% ?log_warn("Rich max retry attempts, removing item. Error: ~p",
-	%% 	[Item#k_mb_pending_item.error]),
-    %% k_mb_db:delete_items([Item#k_mb_pending_item.item_id]);
-postpone(Item = #k_mb_pending_item{}, Attempt, _MaxRetry) ->
-    gen_server:call(?MODULE, {postpone, Item#k_mb_pending_item{attempt = Attempt + 1}}).
+postpone(Item, Attempt, _MaxRetry) ->
+    gen_server:call(?MODULE, {postpone, increment_attempt(Item, Attempt)}).
+
+increment_attempt(Item = #k_mb_funnel_receipt{}, Attempt) ->
+	Item#k_mb_funnel_receipt{delivery_attempt = Attempt + 1};
+increment_attempt(Item = #k_mb_k1api_receipt{}, Attempt) ->
+	Item#k_mb_k1api_receipt{delivery_attempt = Attempt + 1};
+increment_attempt(Item = #k_mb_incoming_sms{}, Attempt) ->
+	Item#k_mb_incoming_sms{delivery_attempt = Attempt + 1}.

@@ -8,25 +8,19 @@
 -include_lib("gen_wp/include/gen_wp_spec.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include_lib("alley_dto/include/adto.hrl").
--include("subscription.hrl").
--include("pending_item.hrl").
+-include("application.hrl").
 
 -record(state, {
 }).
 
-%% ===================================================================
-%% API Functions Exports
-%% ===================================================================
 
+%% API
 -export([
 	start_link/0,
 	process_incoming_item/1
 	]).
 
-%% ===================================================================
-%% GenWp Callback Functions Exports
-%% ===================================================================
-
+%% GenWp Callback
 -export([
 	init/1,
 	handle_cast/2,
@@ -42,7 +36,7 @@
 	]).
 
 %% ===================================================================
-%% API Functions Definitions
+%% API
 %% ===================================================================
 
 -spec start_link() -> {ok, pid()}.
@@ -50,28 +44,24 @@ start_link() ->
 	WPSize = k_mb_config:get_env(pool_size),
 	gen_wp:start_link({local, ?MODULE}, ?MODULE, [], [{pool_size, WPSize}]).
 
--spec process_incoming_item(Item :: #k_mb_pending_item{}) -> ok.
-process_incoming_item(Item = #k_mb_pending_item{}) ->
+-spec process_incoming_item(k_mb_item() | item_id()) -> ok.
+process_incoming_item(Item) ->
 	gen_wp:cast(?MODULE, {process_item, Item}).
 
 %% ===================================================================
-%% GenWp Callback Functions Definitions
+%% GenWorkerPool Callbacks
 %% ===================================================================
 
 init([]) ->
-	?log_debug("started", []),
-	{ok, Items} = k_mb_db:get_items(),
-	Process = fun(Item) ->
-			case Item#k_mb_pending_item.item_id of
-				wait_for_sub ->
-					k_mb_db:set_pending(Item#k_mb_pending_item.item_id);
-				_ -> ok
-			end,
-			k_mb_wpool:process_incoming_item(Item)
+	?log_debug("Started", []),
+	{ok, ItemSets} = k_mb_db:get_items(),
+	Process = fun({ItemType, ItemIDs}) ->
+			lists:foreach(fun(ItemID) ->
+				process_incoming_item({ItemType, ItemID})
+			end, ItemIDs)
 		end,
-	lists:foreach(Process, Items),
+	lists:foreach(Process, ItemSets),
 	{ok, #state{}}.
-
 
 handle_call(Request, _ReplyTo, State) ->
 	{stop, {badarg, Request}, badarg, State}.
@@ -92,36 +82,32 @@ terminate(_Reason, _State) ->
 	ok.
 
 handle_fork_call( _Arg, _CallMess, _ReplyTo, _WP ) ->
-	?log_error("bad call request", []),
 	{noreply, bad_request}.
 
-handle_fork_cast(_Arg, {process_item, Item = #k_mb_pending_item{}}, _WP) ->
-	#k_mb_pending_item{
-		item_id = ItemID,
-		expire = Expire
-		} = Item,
-
-	case k_mb_gcollector:is_expired(Expire) of
-		true ->
-			k_mb_db:delete_items([ItemID]),
-			?log_debug("Pending item [~p] expired. Deleted.", [ItemID]);
-		_ -> process(Item)
-	end,
+handle_fork_cast(_Arg, {process_item, {ItemType, ItemID}}, _WP) when
+								  ItemType == ?INCOMING_SMS orelse
+								  ItemType == ?K1API_RECEIPT orelse
+								  ItemType == ?FUNNEL_RECEIPT  ->
+	{ok, Item} = k_mb_db:get_item(ItemType, ItemID),
+	process(Item),
+	{noreply, normal};
+handle_fork_cast(_Arg, {process_item, Item}, _WP) ->
+	process(Item),
 	{noreply, normal};
 
 handle_fork_cast(_Arg, _CastMess, _WP) ->
-	?log_error("bad cast request", []),
 	{noreply, bad_request}.
 
 handle_child_forked(_Task, _Child, State = #state{}) ->
 	{noreply, State#state{}}.
 
 handle_child_terminated(normal, _Task, _Child, State = #state{}) ->
-	%?log_debug("successful", []),
 	{noreply, State#state{}};
 
-handle_child_terminated(Reason, _Task = {process_item, Item}, _Child, State = #state{}) ->
-	case k_mb_postponed_queue:postpone(Item#k_mb_pending_item{error = Reason}) of
+handle_child_terminated(Reason, _Task = {process, Item}, _Child, State = #state{}) ->
+	%% ?log_error("Child terminated abnormal: ~p", [Reason]),
+	%% {noreply, State}.
+	case k_mb_postponed_queue:postpone(Item) of
 		{postponed, Seconds} ->
 			?log_error("Item processing terminated. It will be resend "
 			"after ~p sec. Reason: ~p", [Seconds, Reason]),
@@ -136,48 +122,66 @@ handle_child_terminated(Reason, _Task = {process_item, Item}, _Child, State = #s
 			{stop, {unexpected_case_clause, Error}}
 	end.
 
-
 %% ===================================================================
-%% Local Functions Definitions
+%% Local
 %% ===================================================================
 
 process(Item) ->
-	#k_mb_pending_item{
-		item_id = ItemID,
-		customer_id = CustomerID,
-		user_id = UserID,
-		content_type = ContentType
-		} = Item,
-	case k_mb_map_mgr:get_subscription(CustomerID, UserID, ContentType) of
-		{ok, SubscriptionID} ->
-			?log_debug("Found suitable subscription [~p]", [SubscriptionID]),
-			send_item(Item, SubscriptionID);
-		{error, no_subscription} ->
+	case k_mb_subscription_mgr:get_suitable_subscription(Item) of
+		{ok, Subscription} ->
+			?log_debug("Found suitable subscription [~p]", [Subscription]),
+			send_item(Item, Subscription);
+		undefined ->
 			?log_debug("Suitable subscription NOT FOUND. Waiting for suitable subscription", []),
-			k_mb_db:set_wait(ItemID)
+			mark_as_pending(Item)
 	end.
 
-send_item(Item, SubID) ->
-	#k_mb_pending_item{
-		item_id = ItemID,
-		content_type = ContentType
-		} = Item,
-	{ok, [Sub = #k_mb_subscription{
-		queue_name = QName
-	}]} = k_mb_db:get_subscription(SubID),
-	{ok, Binary} = build_dto(Item, Sub),
+mark_as_pending(Item = #k_mb_incoming_sms{}) ->
+	ItemType = ?INCOMING_SMS,
+	#k_mb_incoming_sms{
+		id = ItemID,
+		customer_id = CustomerID,
+		user_id = UserID
+	} = Item,
+	k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID);
+mark_as_pending(Item = #k_mb_k1api_receipt{}) ->
+	ItemType = ?K1API_RECEIPT,
+	#k_mb_k1api_receipt{
+		id = ItemID,
+		customer_id = CustomerID,
+		user_id = UserID
+	} = Item,
+	k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID);
+mark_as_pending(Item = #k_mb_funnel_receipt{}) ->
+	ItemType = ?FUNNEL_RECEIPT,
+	#k_mb_funnel_receipt{
+		id = ItemID,
+		customer_id = CustomerID,
+		user_id = UserID
+	} = Item,
+	k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID).
+
+
+send_item(Item, Subscription) ->
+	{ok, ItemID, QName, Binary} = build_dto(Item, Subscription),
 	?log_debug("Send item to queue [~p]", [QName]),
+	ContentType =
+	case Item of
+		#k_mb_incoming_sms{} -> <<"OutgoingBatch">>;
+		#k_mb_k1api_receipt{} -> <<"ReceiptBatch">>;
+		#k_mb_funnel_receipt{} -> <<"ReceiptBatch">>
+	end,
 	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
 	case Result of
 		{ok, delivered} ->
 			?log_debug("Successfully delivered [item:~p]", [ItemID]),
-			k_mb_db:delete_items([ItemID]);
+			k_mb_db:delete_item(Item);
 		{error, timeout} ->
 			postpone_item(Item, timeout)
 	end.
 
 postpone_item(Item, Error) ->
-	case k_mb_postponed_queue:postpone(Item#k_mb_pending_item{error = Error}) of
+	case k_mb_postponed_queue:postpone(Item) of
 		{postponed, Seconds} ->
 			?log_error("Item processing terminated. It will be resend "
 			"after ~p sec. Last error: ~p", [Seconds, Error]);
@@ -189,59 +193,46 @@ postpone_item(Item, Error) ->
 			[Error])
 	end.
 
-build_dto(Item, Sub = #k_mb_subscription{app_type = smpp}) ->
-	build_funnel_dto(Item);
-build_dto(Item, Sub = #k_mb_subscription{app_type = oneapi}) ->
-	build_k1api_dto(Item, Sub).
-
-build_k1api_dto(Item = #k_mb_pending_item{content_type = <<"ReceiptBatch">>}, Sub) ->
-	build_k1api_receipt_dto(Item, Sub);
-build_k1api_dto(Item = #k_mb_pending_item{content_type = <<"OutgoingBatch">>}, Sub) ->
-	build_k1api_incoming_sms_dto(Item, Sub).
-
-build_funnel_dto(Item = #k_mb_pending_item{content_type = <<"ReceiptBatch">>}) ->
-	build_funnel_receipt_dto(Item);
-build_funnel_dto(Item = #k_mb_pending_item{content_type = <<"OutgoingBatch">>}) ->
-	build_funnel_incoming_sms_dto(Item).
-
-%% ===================================================================
-%% build incoming sms message
-%% ===================================================================
-
-build_k1api_incoming_sms_dto(Item, Sub) ->
-	#k_mb_pending_item{
-		item_id = ItemID,
-		sender_addr = SenderAddr,
+build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
+	#k_mb_funnel_receipt{
+		id = ItemID,
+		source_addr = SourceAddr,
 		dest_addr = DestAddr,
-		message_body = Message,
-		timestamp = Timestamp
-		} = Item,
-	#k_mb_subscription{
-		notify_url = URL,
-		callback_data = Callback
+		input_message_id = InputMsgId,
+		submit_date = SubmitDate,
+		done_date = DoneDate,
+		message_state = MessageState
+	 } = Item,
+	#k_mb_funnel_sub{
+		queue_name = QName
 	} = Sub,
-	DTO = #k1api_sms_notification_request_dto{
-		callback_data = Callback,
-		datetime = Timestamp,
-		dest_addr = addr_to_dto(DestAddr),
-		message_id = ItemID,
-		message = Message,
-		sender_addr = addr_to_dto(SenderAddr),
-		notify_url = URL
+	Receipt = #funnel_delivery_receipt_container_dto{
+		message_id = InputMsgId,
+		submit_date = SubmitDate,
+		done_date = DoneDate,
+		message_state = MessageState,
+		source = addr_to_dto(SourceAddr),
+		dest = addr_to_dto(DestAddr)
 	},
-	{ok, Bin} = adto:encode(DTO).
-
-
-build_funnel_incoming_sms_dto(Item) ->
-	#k_mb_pending_item{
-		item_id = ItemID,
-		sender_addr = SenderAddr,
+	DTO = #funnel_delivery_receipt_dto{
+		id = ItemID,
+		receipts = [Receipt]
+	},
+	{ok, Bin} = adto:encode(DTO),
+	{ok, ItemID, QName, Bin};
+build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_funnel_sub{}) ->
+	#k_mb_incoming_sms{
+		id = ItemID,
+		source_addr = SourceAddr,
 		dest_addr = DestAddr,
 		message_body = Message,
 		encoding = Encoding
-		} = Item,
+	} = Item,
+	#k_mb_funnel_sub{
+		queue_name = QName
+	} = Sub,
 	Msg = #funnel_incoming_sms_message_dto{
-		source = addr_to_dto(SenderAddr),
+		source = addr_to_dto(SourceAddr),
 		dest = addr_to_dto(DestAddr),
 		data_coding = Encoding,
 		message = Message
@@ -250,40 +241,52 @@ build_funnel_incoming_sms_dto(Item) ->
 		id = ItemID,
 		messages = [Msg]
 	},
-	adto:encode(Batch).
-
-%% ===================================================================
-%% build delivery receipt message
-%% ===================================================================
-
-build_k1api_receipt_dto(Item, Sub) ->
-	erlang:error(not_impemented).
-
-build_funnel_receipt_dto(Item) ->
-	#k_mb_pending_item{
-		item_id = ItemId,
-		sender_addr = SenderAddr,
+	{ok, Bin} = adto:encode(Batch),
+	{ok, ItemID, QName, Bin};
+build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_k1api_incoming_sms_sub{}) ->
+	#k_mb_incoming_sms{
+		id = ItemID,
+		source_addr = SourceAddr,
 		dest_addr = DestAddr,
-		input_id = InputMsgId,
-		submit_date = SubmitDate,
-		done_date = DoneDate,
+		received = Received,
+		message_body = Message
+	} = Item,
+	#k_mb_k1api_incoming_sms_sub{
+		queue_name = QName,
+		notify_url = URL,
+		callback_data = CallbackData
+	} = Sub,
+	DTO = #k1api_sms_notification_request_dto{
+		callback_data = CallbackData,
+		datetime = Received,
+		dest_addr = addr_to_dto(DestAddr),
+		message_id = ItemID,
+		message = Message,
+		sender_addr = addr_to_dto(SourceAddr),
+		notify_url = URL
+	},
+	{ok, Bin} = adto:encode(DTO),
+	{ok, ItemID, QName, Bin};
+build_dto(Item = #k_mb_k1api_receipt{}, Sub = #k_mb_k1api_receipt_sub{}) ->
+	#k_mb_k1api_receipt{
+		id = ItemID,
+		dest_addr = DestAddr,
 		message_state = MessageState
-	 } = Item,
-	Receipt = #funnel_delivery_receipt_container_dto{
-		message_id = InputMsgId,
-		submit_date = SubmitDate,
-		done_date = DoneDate,
-		message_state = MessageState,
-		source = addr_to_dto(SenderAddr),
-		dest = addr_to_dto(DestAddr)
-	},
-	?log_debug("Receipt: ~p", [Receipt]),
-	DTO = #funnel_delivery_receipt_dto{
-		id = ItemId,
-		receipts = [Receipt]
-	},
-	adto:encode(DTO).
-
+	} = Item,
+	#k_mb_k1api_receipt_sub{
+		queue_name = QName,
+		callback_data = CallbackData,
+		notify_url = NotifyURL
+	} = Sub,
+	DTO = #k1api_sms_delivery_receipt_notification_dto{
+		id = ItemID,
+		dest_addr = addr_to_dto(DestAddr),
+		status = MessageState,
+		callback_data = CallbackData,
+		url = NotifyURL
+	 },
+	{ok, Bin} = adto:encode(DTO),
+	{ok, ItemID, QName, Bin}.
 
 addr_to_dto(Addr = #addr{}) ->
 	#addr_dto{
