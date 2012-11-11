@@ -5,7 +5,7 @@ Host=localhost
 Port=8071
 Count=0
 Same=0
-DstAddr=375296662323 # Should be one from Addr2Cust
+DstAddr=375296660001 # Should be one from Addr2Cust
 Networks=(37529 37533 37544 37525)
 
 function usage() {
