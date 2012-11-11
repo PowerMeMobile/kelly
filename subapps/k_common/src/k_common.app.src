@@ -9,7 +9,8 @@
                   lager,
 				  rmql,
                   sync,
-				  uuid
+				  uuid,
+				  estatsd
                  ]},
   {mod, {k_common_app, []}},
   {env, []}

@@ -175,6 +175,7 @@ send_item(Item, Subscription) ->
 	case Result of
 		{ok, delivered} ->
 			?log_debug("Successfully delivered [item:~p]", [ItemID]),
+			estatsd:increment(delivered_incoming_item),
 			k_mb_db:delete_item(Item);
 		{error, timeout} ->
 			postpone_item(Item, timeout)
