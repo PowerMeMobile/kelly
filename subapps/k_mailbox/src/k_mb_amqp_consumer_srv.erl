@@ -6,7 +6,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
--include_lib("alley_dto/include/FunnelAsn.hrl").
+-include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
 
 %% pending workers
@@ -105,14 +105,13 @@ handle_info({#'basic.deliver'{},
 			 State = #state{
 			 	pending_responses = RList,
 				pending_workers = WList}) ->
-	case 'FunnelAsn':decode('BatchAck', Content) of
-		{ok, #'BatchAck'{batchId = ItemIDStr}} ->
-			ItemID = uuid:to_binary(ItemIDStr),
+	case adto:decode(#funnel_ack_dto{}, Content) of
+		{ok, #funnel_ack_dto{id = ItemID}} ->
 			{ok, NRList, NWList} =
 				process_response(ItemID, RList, WList),
 			{noreply, State#state{pending_workers = NWList, pending_responses = NRList}};
-		{error, AsnErr} ->
-			?log_error("Failed to decode 'BatchAck' due to ~p : ~p", [AsnErr, Content]),
+		Error ->
+			?log_error("Failed to decode #funnel_ack_dto{}: ~p", [Error]),
 			{noreply, State}
 	end;
 
