@@ -5,7 +5,7 @@
 ]).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
--include_lib("alley_dto/include/FunnelAsn.hrl").
+-include_lib("alley_dto/include/adto.hrl").
 
 %% ===================================================================
 %% API
@@ -14,15 +14,7 @@
 -spec get_report() -> {ok, Report::term()} | {error, Reason::term()}.
 get_report() ->
 	%% connect and make channel.
-	Params = #amqp_params_network{
-		host = "127.0.0.1",
-		port = 5672,
-		username = <<"guest">>,
-		password = <<"guest">>,
-		virtual_host = <<"/">>
-	},
-	{ok, Conn} = amqp_connection:start(Params),
-	{ok, Channel} = amqp_connection:open_channel(Conn),
+	{ok, Channel} = rmql:channel_open(),
 
 	%% declare `To' queue.
 	QueueTo = <<"pmm.funnel.server_control">>,
@@ -43,14 +35,14 @@ get_report() ->
 		message_id = uuid:newid(),
 		reply_to = QueueReplyTo
 	},
-	{ok, ConnectionsRequest} = 'FunnelAsn':encode('ConnectionsRequest', #'ConnectionsRequest'{}),
-	ConnectionsContent = #amqp_msg{payload = list_to_binary(ConnectionsRequest), props = ConnectionsProps},
+	{ok, ConnectionsRequest} = adto:encode(#funnel_connections_request_dto{}),
+	ConnectionsContent = #amqp_msg{payload = ConnectionsRequest, props = ConnectionsProps},
 	amqp_channel:cast(Channel, PublishMethod, ConnectionsContent),
 
 	%% get `Connections' response.
 	{ok, ConnectionsResponse} = get_response(Channel, QueueReplyTo),
-	{ok, #'ConnectionsResponse'{connections = Connections}} =
-		'FunnelAsn':decode('ConnectionsResponse', ConnectionsResponse),
+	{ok, #funnel_connections_response_dto{connections = Connections}} =
+		adto:decode(#funnel_connections_response_dto{}, ConnectionsResponse),
 	io:format("~p~n", [Connections]),
 
 	%% %% send `Throughput' request.
@@ -73,8 +65,7 @@ get_report() ->
     #'queue.delete_ok'{} = amqp_channel:call(Channel, Delete),
 
 	%% close channel and connection.
-	ok = amqp_channel:close(Channel),
-	ok = amqp_connection:close(Conn),
+	rmql:channel_close(Channel),
 
 	{ok, ConnectionPropLists} = prepare_conns(Connections),
 	Report = {connections, ConnectionPropLists},
@@ -100,26 +91,32 @@ prepare_conns(ConnList) when is_list(ConnList) ->
 
 prepare_conns([], Acc) ->
 	{ok, Acc};
-prepare_conns([#'Connection'{
-	connectionId = ConnectionId,
-	remoteIp = RemoteIp,
-	customerId = CustomerId,
-	userId = UserId,
-	connectedAt = ConnectedAt,
+prepare_conns([#funnel_connection_dto{
+	connection_id = ConnectionId,
+	remote_ip = RemoteIp,
+	customer_id = CustomerId,
+	user_id = UserId,
+	connected_at = ConnectedAt,
 	type = Type,
-	msgsReceived = MsgsReceived,
-	msgsSent = MsgsSent,
+	msgs_received = MsgsReceived,
+	msgs_sent = MsgsSent,
 	errors = Errors
 } | Rest], Acc) ->
 	ConnPropList = [
-		{id, list_to_binary(ConnectionId)},
-		{remote_ip, list_to_binary(RemoteIp)},
-		{customer_id, list_to_binary(CustomerId)},
-		{user_id, list_to_binary(UserId)},
-		{connected_at, list_to_binary(ConnectedAt)},
+		{id, list_to_binary(uuid:to_string(ConnectionId))},
+		{remote_ip, RemoteIp},
+		{customer_id, CustomerId},
+		{user_id, UserId},
+		{connected_at, ConnectedAt},
 		{type, Type},
 		{msgs_received, MsgsReceived},
 		{msgs_sent, MsgsSent},
-		{errors, list_to_binary(Errors)}
+		{errors, lists:map(fun error_to_proplist/1, Errors)}
 	],
 	prepare_conns(Rest, [ConnPropList | Acc]).
+
+error_to_proplist(Error = #error_dto{}) ->
+	[
+	{error_code, Error#error_dto.error_code},
+	{timestamp, Error#error_dto.timestamp}
+	].
