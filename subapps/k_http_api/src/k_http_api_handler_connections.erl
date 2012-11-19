@@ -22,14 +22,14 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
-				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid},
+				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 						  #param{name = id, mandatory = true, repeated = false, type = integer}]},
 			#method_spec{
 				path = [<<"gateways">>, gateway_id, <<"connections">>],
-				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid}]}],
+				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary}]}],
 
 	UpdateParams = [
-		#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = integer},
 		#param{name = type, mandatory = false, repeated = false, type = integer},
 		#param{name = addr,	mandatory = false, repeated = false, type = binary},
@@ -46,7 +46,7 @@ init() ->
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = integer}
 	],
 	Delete = #method_spec{
@@ -54,7 +54,7 @@ init() ->
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = gateway_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = false, repeated = false, type = integer},
 		#param{name = type, mandatory = true, repeated = false, type = integer},
 		#param{name = addr,	mandatory = true, repeated = false,	type = binary},

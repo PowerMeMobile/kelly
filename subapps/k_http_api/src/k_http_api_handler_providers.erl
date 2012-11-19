@@ -22,17 +22,17 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"providers">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = binary_uuid}]},
+				params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
 			#method_spec{
 				path = [<<"providers">>],
 				params = []}
 			],
 
 	UpdateParams = [
-		#param{name = id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = name, mandatory = false, repeated = false, type = binary},
-		#param{name = gateway, mandatory = false, repeated = false, type = binary_uuid},
-		#param{name = bulk_gateway,	mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = gateway, mandatory = false, repeated = false, type = binary},
+		#param{name = bulk_gateway,	mandatory = false, repeated = false, type = binary},
 		#param{name = receipts_supported, mandatory = false, repeated = false, type = boolean}
 	],
 	Update = #method_spec{
@@ -40,17 +40,17 @@ init() ->
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = id, mandatory = true, repeated = false, type = binary_uuid}
+		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
 				path = [<<"providers">>, id],
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = false, repeated = false, type = binary},
 		#param{name = name, mandatory = true, repeated = false, type = binary},
-		#param{name = gateway, mandatory = true, repeated = false, type = binary_uuid},
-		#param{name = bulk_gateway, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = gateway, mandatory = true, repeated = false, type = binary},
+		#param{name = bulk_gateway, mandatory = true, repeated = false, type = binary},
 		#param{name = receipts_supported, mandatory = true, repeated = false, type = boolean}
 	],
 	Create = #method_spec{

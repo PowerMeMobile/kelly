@@ -18,21 +18,21 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"customers">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = binary_uuid}]},
+				params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
 			#method_spec{
 				path = [<<"customers">>],
 				params = []}],
 
 	UpdateParams = [
-		#param{name = id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = system_id, mandatory = false, repeated = false, type = binary},
 		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
 		#param{name = originators, mandatory = false, repeated = true, type = {custom, fun decode_addr/1}},
 		#param{name = default_originator, mandatory = false, repeated = false, type = {custom, fun decode_addr/1}},
-		#param{name = networks, mandatory = false, repeated = true, type = binary_uuid},
-		#param{name = default_provider_id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = networks, mandatory = false, repeated = true, type = binary},
+		#param{name = default_provider_id, mandatory = false, repeated = false, type = binary},
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = false, repeated = false, type = binary},
 		#param{name = max_validity, mandatory = false, repeated = false, type = integer},
@@ -44,22 +44,22 @@ init() ->
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = id, mandatory = true, repeated = false, type = binary_uuid}
+		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
 				path = [<<"customers">>, id],
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = false, repeated = false, type = binary},
 		#param{name = system_id, mandatory = true, repeated = false, type = binary},
 		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
 		#param{name = originators, mandatory = false, repeated = true, type = {custom, fun decode_addr/1}},
 		#param{name = default_originator, mandatory = false, repeated = false, type = {custom, fun decode_addr/1}},
-		#param{name = networks, mandatory = true, repeated = true, type = binary_uuid},
-		#param{name = default_provider_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = networks, mandatory = true, repeated = true, type = binary},
+		#param{name = default_provider_id, mandatory = true, repeated = false, type = binary},
 		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = true, repeated = false, type = binary},
 		#param{name = max_validity, mandatory = true, repeated = false, type = integer},

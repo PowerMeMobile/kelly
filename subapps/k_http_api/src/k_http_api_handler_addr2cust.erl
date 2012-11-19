@@ -24,7 +24,7 @@ init() ->
 				params = [#param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}}]},
 			#method_spec{
 				path = [<<"addr2cust">>],
-				params = [#param{name = customer, mandatory = true, repeated = false, type = binary_uuid},
+				params = [#param{name = customer, mandatory = true, repeated = false, type = binary},
 						  #param{name = user, mandatory = true, repeated = false, type = binary}]}
 			],
 	DeleteParams = [
@@ -36,7 +36,7 @@ init() ->
 
 	CreateParams = [
 		#param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}},
-		#param{name = customer,	mandatory = true, repeated = false,	type = binary_uuid},
+		#param{name = customer,	mandatory = true, repeated = false,	type = binary},
 		#param{name = user, mandatory = true, repeated = false, type = binary}
 	],
 	Create = #method_spec{

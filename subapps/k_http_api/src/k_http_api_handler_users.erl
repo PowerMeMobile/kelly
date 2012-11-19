@@ -27,14 +27,14 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>, id],
-				params = [#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
+				params = [#param{name = customer_id, mandatory = true, repeated = false, type = binary},
 						  #param{name = id, mandatory = true, repeated = false, type = binary}]},
 			#method_spec{
 				path = [<<"customers">>, customer_id, <<"users">>],
-				params = [#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid}]}],
+				params = [#param{name = customer_id, mandatory = true, repeated = false, type = binary}]}],
 
 	UpdateParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = pswd, mandatory = false, repeated = false, type = binary},
 		#param{name = smpp_types, mandatory = false, repeated = true, type = {custom, fun smpp_type/1}}
@@ -44,7 +44,7 @@ init() ->
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
@@ -52,7 +52,7 @@ init() ->
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = pswd, mandatory = true, repeated = false, type = binary},
 		#param{name = smpp_types, mandatory = true, repeated = true, type = {custom, fun smpp_type/1}}

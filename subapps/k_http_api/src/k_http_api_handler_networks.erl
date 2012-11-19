@@ -22,37 +22,37 @@ init() ->
 
 	Read = [#method_spec{
 				path = [<<"networks">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = binary_uuid}]},
+				params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
 			#method_spec{
 				path = [<<"networks">>],
 				params = []}],
 
 	UpdateParams = [
-		#param{name = id, mandatory = true, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = country_code, mandatory = false, repeated = false, type = binary},
 		#param{name = numbers_len,	mandatory = false, repeated = false, type = integer},
 		#param{name = prefixes, mandatory = false, repeated = true, type = binary},
-		#param{name = provider_id, mandatory = false, repeated = false, type = binary_uuid}
+		#param{name = provider_id, mandatory = false, repeated = false, type = binary}
 	],
 	Update = #method_spec{
 				path = [<<"networks">>, id],
 				params = UpdateParams},
 
 	DeleteParams = [
-		#param{name = id, mandatory = true, repeated = false, type = binary_uuid}
+		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
 				path = [<<"networks">>, id],
 				params = DeleteParams},
 
 	CreateParams = [
-		#param{name = id, mandatory = false, repeated = false, type = binary_uuid},
+		#param{name = id, mandatory = false, repeated = false, type = binary},
 		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = country_code, mandatory = true, repeated = false, type = binary},
 		#param{name = numbers_len,	mandatory = true, repeated = false, type = integer},
 		#param{name = prefixes, mandatory = true, repeated = true, type = binary},
-		#param{name = provider_id, mandatory = true, repeated = false, type = binary_uuid}
+		#param{name = provider_id, mandatory = true, repeated = false, type = binary}
 	],
 	Create = #method_spec{
 				path = [<<"networks">>],
