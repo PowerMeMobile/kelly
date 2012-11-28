@@ -128,9 +128,9 @@ is_exist(Params) ->
 update_gtw(Gtw, Params) ->
 	UUID = ?gv(id, Params),
 	#gateway{rps = RPS, name = Name, connections = Conns} = Gtw,
-	NewRPS = resolve(rps, Params, RPS),
+	NewRPS = ?resolve(rps, Params, RPS),
 	?log_debug("NewRPS: ~p", [NewRPS]),
-	NewName = resolve(name, Params, Name),
+	NewName = ?resolve(name, Params, Name),
 	NewGtw = #gateway{rps = NewRPS, name = NewName, connections = Conns},
 	?log_debug("New gtw: ~p", [NewGtw]),
 	k_snmp:set_row(gtw, uuid:to_string(UUID), [{gtwName, binary_to_list(NewName)}, {gtwRPS, NewRPS}]),

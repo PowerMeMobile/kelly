@@ -135,11 +135,11 @@ is_exist(Params) ->
 
 update_network(Network, Params) ->
 	ID = ?gv(id, Params),
-	NewName = resolve(name, Params, Network#network.name),
- 	NewCountryCode = resolve(country_code, Params, Network#network.countryCode),
-	NewNumbersLen = resolve(numbers_len, Params, Network#network.numbersLen),
-	NewPrefixes = resolve(prefixes, Params, Network#network.prefixes),
-	NewProviderId = resolve(provider_id, Params, Network#network.providerId),
+	NewName = ?resolve(name, Params, Network#network.name),
+ 	NewCountryCode = ?resolve(country_code, Params, Network#network.countryCode),
+	NewNumbersLen = ?resolve(numbers_len, Params, Network#network.numbersLen),
+	NewPrefixes = ?resolve(prefixes, Params, Network#network.prefixes),
+	NewProviderId = ?resolve(provider_id, Params, Network#network.providerId),
 	Updated = #network{
 		name = NewName,
 		countryCode = NewCountryCode,

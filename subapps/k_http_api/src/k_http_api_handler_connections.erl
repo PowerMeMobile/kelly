@@ -146,15 +146,15 @@ update_connection(Gtw, Params) ->
 	case get_connection(ConnectionID, Connections) of
 		undefined -> {exception, 'svc0003'};
 		Conn = #connection{} ->
-			NewType = resolve(type, Params, Conn#connection.type),
-			NewAddr = resolve(addr, Params, Conn#connection.addr),
-			NewPort = resolve(port, Params, Conn#connection.port),
-			NewSysID = resolve(sys_id, Params, Conn#connection.sys_id),
-			NewPass = resolve(pass, Params, Conn#connection.pass),
-			NewSysType = resolve(sys_type, Params, Conn#connection.sys_type),
-			NewAddrTon = resolve(addr_ton, Params, Conn#connection.addr_ton),
-			NewAddrNpi = resolve(addr_npi, Params, Conn#connection.addr_npi),
-			NewAddrRange = resolve(addr_range, Params, Conn#connection.addr_range),
+			NewType = ?resolve(type, Params, Conn#connection.type),
+			NewAddr = ?resolve(addr, Params, Conn#connection.addr),
+			NewPort = ?resolve(port, Params, Conn#connection.port),
+			NewSysID = ?resolve(sys_id, Params, Conn#connection.sys_id),
+			NewPass = ?resolve(pass, Params, Conn#connection.pass),
+			NewSysType = ?resolve(sys_type, Params, Conn#connection.sys_type),
+			NewAddrTon = ?resolve(addr_ton, Params, Conn#connection.addr_ton),
+			NewAddrNpi = ?resolve(addr_npi, Params, Conn#connection.addr_npi),
+			NewAddrRange = ?resolve(addr_range, Params, Conn#connection.addr_range),
 			NewConnection =
 				#connection{
 					id = ConnectionID,

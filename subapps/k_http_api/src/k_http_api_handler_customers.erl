@@ -155,16 +155,16 @@ delete(Params) ->
 %% ===================================================================
 
 update_customer(Customer, Params) ->
-	NewName = resolve(name, Params, Customer#customer.name),
-	NewOriginators = resolve(originators, Params, Customer#customer.allowedSources),
-	NewDefaultOriginator = resolve(default_originator, Params, Customer#customer.defaultSource),
-	NewNetworks = resolve(networks, Params, Customer#customer.networks),
-	NewDefaultProviderId = resolve(default_provider_id, Params, Customer#customer.defaultProviderId),
-	NewReceiptsAllowed = resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
-	NewDefaultValidity = resolve(default_validity, Params, Customer#customer.defaultValidity),
-	NewMaxValidity = resolve(max_validity, Params, Customer#customer.maxValidity),
-	NewBillingType = resolve(billing_type, Params, Customer#customer.billing_type),
-	NewState = resolve(state, Params, Customer#customer.state),
+	NewName = ?resolve(name, Params, Customer#customer.name),
+	NewOriginators = ?resolve(originators, Params, Customer#customer.allowedSources),
+	NewDefaultOriginator = ?resolve(default_originator, Params, Customer#customer.defaultSource),
+	NewNetworks = ?resolve(networks, Params, Customer#customer.networks),
+	NewDefaultProviderId = ?resolve(default_provider_id, Params, Customer#customer.defaultProviderId),
+	NewReceiptsAllowed = ?resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
+	NewDefaultValidity = ?resolve(default_validity, Params, Customer#customer.defaultValidity),
+	NewMaxValidity = ?resolve(max_validity, Params, Customer#customer.maxValidity),
+	NewBillingType = ?resolve(billing_type, Params, Customer#customer.billing_type),
+	NewState = ?resolve(state, Params, Customer#customer.state),
 	NewCustomer = #customer{
 		id = Customer#customer.id,
 		uuid = Customer#customer.uuid,

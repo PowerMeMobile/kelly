@@ -170,7 +170,7 @@ update_user(Customer, Params) ->
 			Updated = #user{
 				id = UserID,
 				pswd_hash = resolve_pass(?gv(pswd, Params), User#user.pswd_hash),
-				permitted_smpp_types = resolve(smpp_types, Params, User#user.permitted_smpp_types)
+				permitted_smpp_types = ?resolve(smpp_types, Params, User#user.permitted_smpp_types)
 			},
 			ok = k_aaa:set_customer_user(Updated, Customer#customer.uuid),
 			{ok, [UserPropList]} = prepare_users([Updated]),

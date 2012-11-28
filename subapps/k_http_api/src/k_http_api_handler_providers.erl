@@ -136,10 +136,10 @@ read_id(PrvUUID) ->
 
 update_provider(Provider, Params) ->
 	ID = ?gv(id, Params),
-	Name = resolve(name, Params, Provider#provider.name),
-	Gateway = resolve(gateway, Params, Provider#provider.gateway),
-	BulkGateway = resolve(bulk_gateway, Params, Provider#provider.bulkGateway),
-	ReceiptsSupported = resolve(receipts_supported, Params, Provider#provider.receiptsSupported),
+	Name = ?resolve(name, Params, Provider#provider.name),
+	Gateway = ?resolve(gateway, Params, Provider#provider.gateway),
+	BulkGateway = ?resolve(bulk_gateway, Params, Provider#provider.bulkGateway),
+	ReceiptsSupported = ?resolve(receipts_supported, Params, Provider#provider.receiptsSupported),
 	Updated = #provider{
 		name = Name,
 		gateway = Gateway,
