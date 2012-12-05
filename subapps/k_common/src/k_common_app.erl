@@ -5,9 +5,11 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
+%% Init
+-export([set_debug_level/0]).
+
 -include("application.hrl").
--include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/application_spec.hrl").
+-include("application_spec.hrl").
 
 
 -record(state, {}).
@@ -22,3 +24,10 @@ start(_StartType, _StartArgs) ->
 
 stop(_State = #state{}) ->
 	ok.
+
+%% ===================================================================
+%% Init API
+%% ===================================================================
+
+set_debug_level() ->
+	 lager:set_loglevel(lager_console_backend, debug).

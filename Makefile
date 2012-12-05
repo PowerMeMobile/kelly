@@ -34,6 +34,9 @@ generate-fast: compile-fast
 console:
 	./rel/$(NAME)/bin/$(NAME) console
 
+develop:
+	./rel/$(NAME)/bin/$(NAME) develop
+
 gdb:
 	./rel/$(NAME)/bin/$(NAME) gdb
 
