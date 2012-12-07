@@ -103,7 +103,7 @@ prepare_conns([#funnel_connection_dto{
 	errors = Errors
 } | Rest], Acc) ->
 	ConnPropList = [
-		{id, list_to_binary(uuid:to_string(ConnectionId))},
+		{id, ConnectionId},
 		{remote_ip, RemoteIp},
 		{customer_id, CustomerId},
 		{user_id, UserId},

@@ -72,10 +72,9 @@ handle_fork_call(_Arg, {{send, ID, Payload, QName, ContentType}, S = #state{}}, 
 		chan = Chan,
 		reply_to = ReplyTo
 		} = S,
-	RMQMessageID = list_to_binary(uuid:to_string(ID)),
 	BasicPropsPropListn =
-		[{message_id, RMQMessageID},
-		{correlation_id, RMQMessageID},
+		[{message_id, ID},
+		{correlation_id, ID},
 		{reply_to, ReplyTo},
 		{content_type, ContentType}],
 	ok = rmql:basic_publish(Chan, QName, Payload, BasicPropsPropListn),

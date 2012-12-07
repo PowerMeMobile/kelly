@@ -181,7 +181,7 @@ prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
 	BulkGateway = ?gv(bulk_gateway, PrvPropList),
 	Gateway = ?gv(gateway, PrvPropList),
 	ReceiptsSupported = ?gv(receipts_supported, PrvPropList),
-	Result = translate([{id, list_to_binary(uuid:to_string(PrvUUID))}] ++ [{name, Name}] ++ [{gateway, list_to_binary(uuid:to_string(Gateway))}] ++ [{bulk_gateway, list_to_binary(uuid:to_string(BulkGateway))}] ++ [{receipts_supported, ReceiptsSupported}]),
+	Result = translate([{id, PrvUUID}] ++ [{name, Name}] ++ [{gateway, Gateway}] ++ [{bulk_gateway, BulkGateway}] ++ [{receipts_supported, ReceiptsSupported}]),
 	prepare(Rest, [Result | Acc]).
 
 

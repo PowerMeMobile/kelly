@@ -87,12 +87,12 @@ annotate_msg_stats_report(customers, Customers) ->
 		fun(Customer) ->
 			{CustomerId, Networks} = Customer,
 			[
-				{id, list_to_binary(uuid:to_string(CustomerId))},
+				{id, CustomerId},
 				{networks,
 					lists:map(
 						fun({NetworkId, MsgIds}) ->
 							[
-								{id, list_to_binary(uuid:to_string(NetworkId))},
+								{id, NetworkId},
 								{mids, MsgIds}
 							]
 						end,
@@ -105,12 +105,12 @@ annotate_msg_stats_report(networks, Networks) ->
 	lists:map(
 		fun({NetworkId, Customers}) ->
 			[
-				{id, list_to_binary(uuid:to_string(NetworkId))},
+				{id, NetworkId},
 				{customers,
 					lists:map(
 						fun({CustomerId, MsgIds}) ->
 							[
-								{id, list_to_binary(uuid:to_string(CustomerId))},
+								{id, CustomerId},
 								{mids, MsgIds}
 							]
 						 end,

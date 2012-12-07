@@ -97,10 +97,18 @@ delete(Params) ->
 %% ===================================================================
 
 prepare(CustomerID, UserID, Msisdn) ->
-	[{msisdn, [{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}]}, {customer, list_to_binary(uuid:to_string(CustomerID))}, {user, UserID}].
+	[{msisdn, [	{addr, Msisdn#addr.addr},
+				{ton, Msisdn#addr.ton},
+				{npi, Msisdn#addr.npi}]},
+	{customer, CustomerID},
+	{user, UserID}].
 
 prepare_msisdns(CustomerID, UserID, Msisdns) ->
-	[{msisdns, [[{addr, Msisdn#addr.addr}, {ton, Msisdn#addr.ton}, {npi, Msisdn#addr.npi}] || Msisdn <- Msisdns]}, {customer, list_to_binary(uuid:to_string(CustomerID))}, {user, UserID}].
+	[{msisdns, [[{addr, Msisdn#addr.addr},
+				{ton, Msisdn#addr.ton},
+				{npi, Msisdn#addr.npi}] || Msisdn <- Msisdns]},
+	{customer, CustomerID},
+	{user, UserID}].
 
 decode_addr(AddrBin) ->
 	AddrString = binary_to_list(AddrBin),

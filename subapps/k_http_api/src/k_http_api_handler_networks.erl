@@ -182,7 +182,7 @@ prepare_ntws([], Acc) ->
 prepare_ntws([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
 	NtwFun = ?record_to_proplist(network),
 	NtwPropList = NtwFun(Ntw),
-	Result = translate([{id, list_to_binary(uuid:to_string(NtwUUID))}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, list_to_binary(uuid:to_string(?gv(provider_id, NtwPropList)))})),
+	Result = translate([{id, NtwUUID}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, ?gv(provider_id, NtwPropList)})),
 	prepare_ntws(Rest, [Result | Acc]).
 
 translate(Proplist) ->

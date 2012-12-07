@@ -106,7 +106,7 @@ delete(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
 	ConnectionID = ?gv(id, Params),
 	ok = k_config:del_gateway_connection(GtwUUID, ConnectionID),
-	k_snmp:del_row(cnn, uuid:to_string(GtwUUID) ++ [ConnectionID]),
+	k_snmp:del_row(cnn, binary_to_list(GtwUUID) ++ [ConnectionID]),
 	{http_code, 204}.
 
 %% ===================================================================
@@ -170,7 +170,7 @@ update_connection(Gtw, Params) ->
 					},
  			{ok, NewConnections} = replace_connection(NewConnection, Connections),
 			ok = k_config:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
-			SnmpConnID = uuid:to_string(GtwID) ++ [ConnectionID],
+			SnmpConnID = binary_to_list(GtwID) ++ [ConnectionID],
 			k_snmp:set_row(cnn, SnmpConnID,
 				[{cnnType, NewType},
 				{cnnAddr, convert_to_snmp_ip(binary_to_list(NewAddr))},
@@ -260,7 +260,7 @@ create_connection(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
 	k_config:set_gateway_connection(GtwUUID, Connection),
 
-	SnmpConnId = uuid:to_string(GtwUUID) ++ [ConnectionID],
+	SnmpConnId = binary_to_list(GtwUUID) ++ [ConnectionID],
 	k_snmp:set_row(cnn, SnmpConnId,
 		[{cnnType, Type},
 		{cnnAddr, convert_to_snmp_ip(binary_to_list(Addr))},
