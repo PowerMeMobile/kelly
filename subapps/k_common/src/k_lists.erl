@@ -4,7 +4,8 @@
 	remove/2,
 	group/1,
 	groupwith/2,
-	findwith/2
+	findwith/2,
+	permutations/1
 ]).
 
 %% remove(2, "abcdef") ==> "acdef"
@@ -35,3 +36,9 @@ groupwith(_, []) ->
 groupwith(Eq, [X|XS]) ->
 	{YS, ZS} = lists:splitwith(fun(I) -> Eq(X, I) end, XS),
 	[[X|YS] | groupwith(Eq, ZS)].
+
+-spec permutations([A]) -> [[A]].
+permutations([]) ->
+	[[]];
+permutations(L) ->
+	[[H|T] || H <- L, T <- permutations(L--[H])].
