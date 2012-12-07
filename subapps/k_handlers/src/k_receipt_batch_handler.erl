@@ -34,7 +34,8 @@ process(ContentType, Message) ->
 -spec process_receipt_batch(#just_delivery_receipt_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
 	gateway_id = GatewayId,
-	receipts = Receipts }) ->
+	receipts = Receipts
+}) ->
 	?log_debug("Got just delivery receipt: ~p", [ReceiptBatch]),
 	DlrTime = k_datetime:utc_unix_epoch(),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of

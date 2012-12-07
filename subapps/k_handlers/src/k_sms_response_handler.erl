@@ -96,7 +96,8 @@ sms_response_to_msg_resp_list(#just_sms_response_dto{
 	client_type = ClientType,
 	gateway_id = GatewayId,
 	timestamp = _Timestamp,
-	statuses = Statuses }) ->
+	statuses = Statuses
+}) ->
 	lists:map(fun(#just_sms_status_dto{
 					original_id = OriginalId,
 					dest_addr = _DestAddr,
