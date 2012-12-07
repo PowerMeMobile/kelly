@@ -5,7 +5,7 @@
 ]).
 
 -include("msg_stats.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/gateway.hrl").
 
 %% ===================================================================
 %% API

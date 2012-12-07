@@ -11,7 +11,7 @@
 ]).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/network.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
@@ -136,16 +136,16 @@ is_exist(Params) ->
 update_network(Network, Params) ->
 	ID = ?gv(id, Params),
 	NewName = ?resolve(name, Params, Network#network.name),
- 	NewCountryCode = ?resolve(country_code, Params, Network#network.countryCode),
-	NewNumbersLen = ?resolve(numbers_len, Params, Network#network.numbersLen),
+ 	NewCountryCode = ?resolve(country_code, Params, Network#network.country_code),
+	NewNumbersLen = ?resolve(numbers_len, Params, Network#network.numbers_len),
 	NewPrefixes = ?resolve(prefixes, Params, Network#network.prefixes),
-	NewProviderId = ?resolve(provider_id, Params, Network#network.providerId),
+	NewProviderId = ?resolve(provider_id, Params, Network#network.provider_id),
 	Updated = #network{
 		name = NewName,
-		countryCode = NewCountryCode,
-		numbersLen = NewNumbersLen,
+		country_code = NewCountryCode,
+		numbers_len = NewNumbersLen,
 		prefixes = NewPrefixes,
-		providerId = NewProviderId
+		provider_id = NewProviderId
 	},
 	ok = k_config:set_network(ID, Updated),
 	{ok, [NtwPropList]} = prepare_ntws({ID, Updated}),
@@ -161,10 +161,10 @@ create_network(Params) ->
 	ProviderId = ?gv(provider_id, Params),
  	Network = #network{
 		name = Name,
-		countryCode = CountryCode,
-		numbersLen = NumbersLen,
+		country_code = CountryCode,
+		numbers_len = NumbersLen,
 		prefixes = Prefixes,
-		providerId = ProviderId
+		provider_id = ProviderId
 	},
 	ok = k_config:set_network(ID, Network),
 	{ok, [NtwPropList]} = prepare_ntws({ID, Network}),
@@ -182,7 +182,7 @@ prepare_ntws([], Acc) ->
 prepare_ntws([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
 	NtwFun = ?record_to_proplist(network),
 	NtwPropList = NtwFun(Ntw),
-	Result = translate([{id, list_to_binary(uuid:to_string(NtwUUID))}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, list_to_binary(uuid:to_string(?gv(providerId, NtwPropList)))})),
+	Result = translate([{id, list_to_binary(uuid:to_string(NtwUUID))}] ++ lists:keyreplace(providerId, 1, NtwPropList, {providerId, list_to_binary(uuid:to_string(?gv(provider_id, NtwPropList)))})),
 	prepare_ntws(Rest, [Result | Acc]).
 
 translate(Proplist) ->
@@ -192,11 +192,11 @@ translate([], Acc) ->
 translate([{Name, Value} | Tail], Acc) ->
 	translate(Tail, [{translate_name(Name), Value} | Acc]).
 
-translate_name(providerId) ->
+translate_name(provider_id) ->
 	provider_id;
-translate_name(numbersLen) ->
+translate_name(numbers_len) ->
 	numbers_len;
-translate_name(countryCode) ->
+translate_name(country_code) ->
 	country_code;
 translate_name(Name) ->
 	Name.

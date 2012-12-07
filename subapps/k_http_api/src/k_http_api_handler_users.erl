@@ -16,7 +16,7 @@
 ]).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/customer.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================

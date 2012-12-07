@@ -7,7 +7,7 @@
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/customer.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_ContentType, Message) ->
@@ -101,23 +101,23 @@ build_customer_response(#k1api_auth_request_dto{
 	}, #customer{
 			uuid = UUID,
 			billing_type = BillingType,
-			allowedSources = AllowedSources,
-			defaultSource = DefaultSource,
+			allowed_sources = AllowedSources,
+			default_source = DefaultSource,
 			networks = NtwIdList,
-			defaultProviderId = DP,
-			receiptsAllowed = RA,
-			noRetry = NR,
-			defaultValidity = _DV,
-			maxValidity = MV }) ->
+			default_provider_id = DP,
+			receipts_allowed = RA,
+			no_retry = NR,
+			default_validity = _DV,
+			max_validity = MV }) ->
 
 	{Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
 		%%%NETWORK SECTION%%%
 		{ok, Network} = k_config:get_network(NetworkId),
 		#network{
-			countryCode = CC,
-			numbersLen = NL,
+			country_code = CC,
+			numbers_len = NL,
 			prefixes = Pref,
-			providerId = ProviderId
+			provider_id = ProviderId
 			} = Network,
 		NNew = #network_dto{
 			id = NetworkId,
@@ -131,8 +131,8 @@ build_customer_response(#k1api_auth_request_dto{
 		{ok, Provider} = k_config:get_provider(ProviderId),
 		#provider{
 			gateway = Gateway,
-			bulkGateway = BGateway,
-			receiptsSupported = RS
+			bulk_gateway = BGateway,
+			receipts_supported = RS
 		} = Provider,
 		PNew = #provider_dto{
 			id = ProviderId,

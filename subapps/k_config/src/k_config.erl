@@ -20,7 +20,9 @@
 ]).
 
 -include("application.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/gateway.hrl").
+-include_lib("k_common/include/provider.hrl").
+-include_lib("k_common/include/network.hrl").
 -include_lib("k_common/include/logging.hrl").
 
 %% ===================================================================

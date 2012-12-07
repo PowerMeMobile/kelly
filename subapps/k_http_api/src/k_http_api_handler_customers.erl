@@ -11,7 +11,7 @@
 ]).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/customer.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 init() ->
@@ -156,13 +156,13 @@ delete(Params) ->
 
 update_customer(Customer, Params) ->
 	NewName = ?resolve(name, Params, Customer#customer.name),
-	NewOriginators = ?resolve(originators, Params, Customer#customer.allowedSources),
-	NewDefaultOriginator = ?resolve(default_originator, Params, Customer#customer.defaultSource),
+	NewOriginators = ?resolve(originators, Params, Customer#customer.allowed_sources),
+	NewDefaultOriginator = ?resolve(default_originator, Params, Customer#customer.default_source),
 	NewNetworks = ?resolve(networks, Params, Customer#customer.networks),
-	NewDefaultProviderId = ?resolve(default_provider_id, Params, Customer#customer.defaultProviderId),
-	NewReceiptsAllowed = ?resolve(receipts_allowed, Params, Customer#customer.receiptsAllowed),
-	NewDefaultValidity = ?resolve(default_validity, Params, Customer#customer.defaultValidity),
-	NewMaxValidity = ?resolve(max_validity, Params, Customer#customer.maxValidity),
+	NewDefaultProviderId = ?resolve(default_provider_id, Params, Customer#customer.default_provider_id),
+	NewReceiptsAllowed = ?resolve(receipts_allowed, Params, Customer#customer.receipts_allowed),
+	NewDefaultValidity = ?resolve(default_validity, Params, Customer#customer.default_validity),
+	NewMaxValidity = ?resolve(max_validity, Params, Customer#customer.max_validity),
 	NewBillingType = ?resolve(billing_type, Params, Customer#customer.billing_type),
 	NewState = ?resolve(state, Params, Customer#customer.state),
 	NewCustomer = #customer{
@@ -171,14 +171,14 @@ update_customer(Customer, Params) ->
 		name = NewName,
 		priority = 1,
 		rps = 10000,
-		allowedSources = NewOriginators,
-		defaultSource = NewDefaultOriginator,
+		allowed_sources = NewOriginators,
+		default_source = NewDefaultOriginator,
 		networks = NewNetworks,
-		defaultProviderId = NewDefaultProviderId,
-		receiptsAllowed = NewReceiptsAllowed,
-		noRetry = false,
-		defaultValidity = NewDefaultValidity,
-		maxValidity = NewMaxValidity,
+		default_provider_id = NewDefaultProviderId,
+		receipts_allowed = NewReceiptsAllowed,
+		no_retry = false,
+		default_validity = NewDefaultValidity,
+		max_validity = NewMaxValidity,
 		users = Customer#customer.users,
 		billing_type = NewBillingType,
 		state = NewState
@@ -199,14 +199,14 @@ create_customer(Params) ->
 		name = ?gv(name, Params),
 		priority = Priority,
 		rps = RPS,
-		allowedSources = ?gv(originators, Params),
-		defaultSource = ?gv(default_originator, Params),
+		allowed_sources = ?gv(originators, Params),
+		default_source = ?gv(default_originator, Params),
 		networks = ?gv(networks, Params),
-		defaultProviderId = ?gv(default_provider_id, Params),
-		receiptsAllowed = ?gv(receipts_allowed, Params),
-		noRetry = false,
-		defaultValidity = ?gv(default_validity, Params),
-		maxValidity = ?gv(max_validity, Params),
+		default_provider_id = ?gv(default_provider_id, Params),
+		receipts_allowed = ?gv(receipts_allowed, Params),
+		no_retry = false,
+		default_validity = ?gv(default_validity, Params),
+		max_validity = ?gv(max_validity, Params),
 		users = [],
 		billing_type = ?gv(billing_type, Params),
 		state = ?gv(state, Params)
@@ -228,8 +228,8 @@ prepare([], Acc) ->
 	{ok, Acc};
 prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 	 #customer{
-		allowedSources = OriginatorsList,
-		defaultSource = DefaultSource,
+		allowed_sources = OriginatorsList,
+		default_source = DefaultSource,
 		users = UsersList
 	} = Customer,
 
@@ -256,11 +256,11 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 	CustomerFun = ?record_to_proplist(customer),
 	CustomerPropList = CustomerFun(Customer#customer{
 								users = UsersPropList,
-								allowedSources = OriginatorsPropList,
-								defaultSource = DefSourcePropList
+								allowed_sources = OriginatorsPropList,
+								default_source = DefSourcePropList
 											}),
 	UUIDBinStr = list_to_binary(uuid:to_string(UUID)),
-	DefaultProviderIDBinStr = list_to_binary(uuid:to_string(?gv(defaultProviderId, CustomerPropList))),
+	DefaultProviderIDBinStr = list_to_binary(uuid:to_string(?gv(default_provider_id, CustomerPropList))),
 	NetworksBinStr = lists:map(fun(Ntw) -> list_to_binary(uuid:to_string(Ntw)) end, ?gv(networks, CustomerPropList)),
 	Renamed = translate(CustomerPropList),
 	ConvertedID = lists:keyreplace(id, 1, Renamed, {id, UUIDBinStr}),
@@ -282,19 +282,19 @@ translate_name(id) ->
 	system_id;
 translate_name(uuid) ->
 	id;
-translate_name(allowedSources) ->
+translate_name(allowed_sources) ->
 	originators;
-translate_name(defaultSource) ->
+translate_name(default_source) ->
 	default_originator;
-translate_name(defaultProviderId) ->
+translate_name(default_provider_id) ->
 	default_provider_id;
-translate_name(receiptsAllowed) ->
+translate_name(receipts_allowed) ->
 	receipts_allowed;
-translate_name(noRetry) ->
+translate_name(no_retry) ->
 	no_retry;
-translate_name(defaultValidity) ->
+translate_name(default_validity) ->
 	default_validity;
-translate_name(maxValidity) ->
+translate_name(max_validity) ->
 	max_validity;
 translate_name(Name) ->
 	Name.

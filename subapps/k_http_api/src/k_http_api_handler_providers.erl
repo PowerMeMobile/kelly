@@ -11,7 +11,7 @@
 ]).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/provider.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
@@ -138,13 +138,13 @@ update_provider(Provider, Params) ->
 	ID = ?gv(id, Params),
 	Name = ?resolve(name, Params, Provider#provider.name),
 	Gateway = ?resolve(gateway, Params, Provider#provider.gateway),
-	BulkGateway = ?resolve(bulk_gateway, Params, Provider#provider.bulkGateway),
-	ReceiptsSupported = ?resolve(receipts_supported, Params, Provider#provider.receiptsSupported),
+	BulkGateway = ?resolve(bulk_gateway, Params, Provider#provider.bulk_gateway),
+	ReceiptsSupported = ?resolve(receipts_supported, Params, Provider#provider.receipts_supported),
 	Updated = #provider{
 		name = Name,
 		gateway = Gateway,
-		bulkGateway = BulkGateway,
-		receiptsSupported = ReceiptsSupported},
+		bulk_gateway = BulkGateway,
+		receipts_supported = ReceiptsSupported},
 	ok = k_config:set_provider(ID, Updated),
 	{ok, [PrvPropList]} = prepare({ID, Updated}),
 	?log_debug("PrvPropList: ~p", [PrvPropList]),
@@ -159,8 +159,8 @@ create_provider(Params) ->
 	Provider = #provider{
 		name = Name,
 		gateway = Gateway,
-		bulkGateway = BulkGateway,
-		receiptsSupported = ReceiptsSupported
+		bulk_gateway = BulkGateway,
+		receipts_supported = ReceiptsSupported
 	},
 	ok = k_config:set_provider(UUID, Provider),
 	{ok, [PrvPropList]} = prepare({UUID, Provider}),
@@ -178,9 +178,9 @@ prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
 	PrvFun = ?record_to_proplist(provider),
 	PrvPropList = PrvFun(Prv),
 	Name = ?gv(name, PrvPropList),
-	BulkGateway = ?gv(bulkGateway, PrvPropList),
+	BulkGateway = ?gv(bulk_gateway, PrvPropList),
 	Gateway = ?gv(gateway, PrvPropList),
-	ReceiptsSupported = ?gv(receiptsSupported, PrvPropList),
+	ReceiptsSupported = ?gv(receipts_supported, PrvPropList),
 	Result = translate([{id, list_to_binary(uuid:to_string(PrvUUID))}] ++ [{name, Name}] ++ [{gateway, list_to_binary(uuid:to_string(Gateway))}] ++ [{bulk_gateway, list_to_binary(uuid:to_string(BulkGateway))}] ++ [{receipts_supported, ReceiptsSupported}]),
 	prepare(Rest, [Result | Acc]).
 
@@ -193,9 +193,9 @@ translate([], Acc) ->
 translate([{Name, Value} | Tail], Acc) ->
 	translate(Tail, [{translate_name(Name), Value} | Acc]).
 
-translate_name(bulkGateway) ->
+translate_name(bulk_gateway) ->
 	bulk_gateway;
-translate_name(receiptsSupported) ->
+translate_name(receipts_supported) ->
 	receipts_supported;
 translate_name(Name) ->
 	Name.

@@ -1,7 +1,7 @@
 -ifndef(k_mailbox_address_hrl).
 -define(k_mailbox_address_hrl, included).
 
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/customer.hrl").
 
 -record(k_mb_address, {
 	address		:: addr(),

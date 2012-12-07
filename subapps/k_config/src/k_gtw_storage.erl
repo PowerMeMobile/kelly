@@ -10,7 +10,7 @@
 	del_gateway/1
 ]).
 
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/gateway.hrl").
 
 %% ===================================================================
 %% API

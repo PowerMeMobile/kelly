@@ -5,7 +5,7 @@
 ]).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/gateway.hrl").
 
 %% ===================================================================
 %% API

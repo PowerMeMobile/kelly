@@ -1,7 +1,7 @@
 -ifndef(k_mailbox_application_hrl).
 -define(k_mailbox_application_hrl, included).
 
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/customer.hrl").
 
 -define(APP, k_mailbox).
 

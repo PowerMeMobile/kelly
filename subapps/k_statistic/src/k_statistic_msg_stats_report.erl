@@ -7,7 +7,7 @@
 
 -include("msg_stats.hrl").
 -include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/storages.hrl").
+-include_lib("k_common/include/customer.hrl").
 -include_lib("k_common/include/logging.hrl").
 
 %% ===================================================================
@@ -202,7 +202,7 @@ get_networks_by_ids(NetworkIds) ->
 
 -spec does_address_match_network(Address::string(), Network::#network{}) -> {true, CodeAndPrefix::string()} | false.
 does_address_match_network(Address, #network{
-	countryCode = CountryCode,
+	country_code = CountryCode,
 	prefixes = Prefixes
 }) ->
 	CodeAndPrefixes = lists:map(

@@ -11,7 +11,7 @@
 -record(state, {
     rbuff :: term(),
     timeout :: integer()
-    }).
+}).
 
 
 %% API
