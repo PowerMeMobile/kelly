@@ -2,6 +2,7 @@
 -define(storages_hrl, included).
 
 -define(networkStorageName, networks).
+-define(providerStorageName, providers).
 
 -type ver() 			:: integer().
 -type error() 			:: term().
