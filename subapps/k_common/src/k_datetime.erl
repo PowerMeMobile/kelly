@@ -2,7 +2,7 @@
 
 -export([
 	utc_unix_epoch/0,
-	timestamp/0,
+	utc_timestamp/0,
 
 	timestamp_to_unix_epoch/1,
 	unix_epoch_to_timestamp/1,
@@ -18,31 +18,37 @@
 
 -include("application.hrl").
 
+-type unix_epoch() :: integer().
+
 %%%%%
 %% Datetime
 %%%%%
 
--spec utc_unix_epoch() -> integer().
+-spec utc_unix_epoch() -> unix_epoch().
 utc_unix_epoch() ->
-	datetime_to_unix_epoch(calendar:universal_time()).
+	timestamp_to_unix_epoch(os:timestamp()).
 
--spec timestamp_to_unix_epoch(erlang:timestamp()) -> integer().
+-spec utc_timestamp() -> erlang:timestamp().
+utc_timestamp() ->
+	os:timestamp().
+
+-spec timestamp_to_unix_epoch(erlang:timestamp()) -> unix_epoch().
 timestamp_to_unix_epoch({M, S, _}) ->
 	M * 1000000 + S.
 
--spec unix_epoch_to_timestamp(integer()) -> os:timestamp().
+-spec unix_epoch_to_timestamp(unix_epoch()) -> os:timestamp().
 unix_epoch_to_timestamp(UnixEpoch) ->
 	M = UnixEpoch div 1000000,
 	S = UnixEpoch rem 1000000,
 	{M, S, 0}.
 
--spec datetime_to_unix_epoch(calendar:datetime()) -> integer().
+-spec datetime_to_unix_epoch(calendar:datetime()) -> unix_epoch().
 datetime_to_unix_epoch({Date, Time}) ->
     ReferenceDate = {{1970,1,1},{0,0,0}},
     calendar:datetime_to_gregorian_seconds({Date, Time}) -
 	calendar:datetime_to_gregorian_seconds(ReferenceDate).
 
--spec unix_epoch_to_datetime(integer()) -> calendar:datetime().
+-spec unix_epoch_to_datetime(unix_epoch()) -> calendar:datetime().
 unix_epoch_to_datetime(UnixTime) ->
     ReferenceDate = {{1970,1,1}, {0,0,0}},
 	TotalSeconds = calendar:datetime_to_gregorian_seconds(ReferenceDate) + UnixTime,
@@ -56,13 +62,6 @@ timestamp_to_milliseconds({MegaSecs, Secs, MicroSecs}) ->
 milliseconds_to_timestamp(MS) ->
     Secs = MS div 1000,
     {Secs div 1000000, Secs rem 1000000, (MS rem 1000) * 1000}.
-
--spec timestamp() -> pos_integer().
-timestamp() ->
-	timestamp(erlang:now()).
-
-timestamp({Mega, Secs, Micro}) ->
-    Mega*1000*1000*1000*1000 + Secs * 1000 * 1000 + Micro.
 
 -spec datetime_to_iso_8601(calendar:datetime()) -> string().
 datetime_to_iso_8601({{Year,Month,Day},{Hour,Min,Sec}}) ->
