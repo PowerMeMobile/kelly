@@ -66,7 +66,7 @@ authenticate(BindReq = #funnel_auth_request_dto{
 	end.
 
 check_stage_password(#funnel_auth_request_dto{password = Pw}, #user{pswd_hash = PwHash}) ->
-	case crypto:sha(Pw) =:= PwHash of
+	case base64:encode(crypto:sha(Pw)) =:= PwHash of
 		true ->
 			allow;
 		_ ->

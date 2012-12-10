@@ -151,7 +151,7 @@ create_user(Customer, Params) ->
 			SMPPTypes = ?gv(smpp_types, Params),
 			User = #user{
 				id 						= UserID,
-				pswd_hash 				= crypto:sha(Pass),
+				pswd_hash 				= base64:encode(crypto:sha(Pass)),
 				permitted_smpp_types 	= SMPPTypes
 				},
 			ok = k_aaa:set_customer_user(User, Customer#customer.uuid),
@@ -204,7 +204,7 @@ get_customer_user(Customer, UserID) ->
 resolve_pass(undefined, Pass) ->
 	Pass;
 resolve_pass(NewPass, _Pass) ->
-	crypto:sha(NewPass).
+	base64:encode(crypto:sha(NewPass)).
 
 smpp_type(Type) ->
 	case Type of

@@ -31,6 +31,7 @@ init([]) ->
 			{k_mnesia_schema, {k_mnesia_schema, start_link, []}, permanent, 100000, worker, [k_mnesia_schema]},
 			?MongoStorageSpec(?networkStorageName),
 			?MongoStorageSpec(?providerStorageName),
-			?MongoStorageSpec(?gatewayStorageName)
+			?MongoStorageSpec(?gatewayStorageName),
+			?MongoStorageSpec(?customerStorageName)
 		]}
 	}.
