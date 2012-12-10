@@ -33,9 +33,9 @@ init([]) ->
 			{gateways,
 				{kv_storage_common, start_link, [gateways]}, permanent, 1000000, worker, [kv_storage_common]},
 			{providers,
-				{kv_storage_common, start_link, [providers]}, permanent, 1000000, worker, [kv_storage_common]},
-			{networks,
-				{kv_storage_common, start_link, [networks]}, permanent, 1000000, worker, [kv_storage_common]}
+				{kv_storage_common, start_link, [providers]}, permanent, 1000000, worker, [kv_storage_common]}
+			%% {networks,
+			%% 	{kv_storage_common, start_link, [networks]}, permanent, 1000000, worker, [kv_storage_common]}
 		]}
 	}.
 

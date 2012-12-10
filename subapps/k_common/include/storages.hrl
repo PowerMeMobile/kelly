@@ -1,6 +1,8 @@
 -ifndef(storages_hrl).
 -define(storages_hrl, included).
 
+-define(networkStorageName, networks).
+
 -type ver() 			:: integer().
 -type error() 			:: term().
 -type uuid() 			:: binary().
