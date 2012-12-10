@@ -214,16 +214,18 @@ Result:
 Message status request.
 
 REST call:
-GET /message_status/MesID/customer/CustUUID
+GET /message_status/MsgID/client/ClientType/customer/CustUUID
 Where
-	MesID - message id
+	ClientType - client type
+	MsgID - input message id
 	CustUUID - customer uuid
 
 Example:
-http://localhost:8080/message_status/59/customer/feda5822-5271-11e1-bd27-001d0947ec73
+http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73
 
 Result:
 <message>
+	<client_type>funnel</client_type>
 	<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
 	<message_id>59</message_id>
 	<status>delivered</status>

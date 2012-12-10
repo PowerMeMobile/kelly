@@ -27,7 +27,7 @@ start(_StartType, _StartArgs) ->
             {[<<"providers">>, '...'], gen_http_api, [k_http_api_handler_providers]},
 		    {[<<"addr2cust">>, '...'], gen_http_api, [k_http_api_handler_addr2cust]},
 			%% STATISTIC API
-            {[<<"message_status">>, '_', <<"customer">>, '...'], gen_http_api, [k_http_api_handler_message_status]},
+            {[<<"message_status">>, '_', <<"client">>, '_', <<"customer">>, '...'], gen_http_api, [k_http_api_handler_message_status]},
 			{[<<"report">>, <<"uplink">>], gen_http_api, [k_http_api_handler_uplink_stats]},
 			{[<<"report">>, <<"downlink">>], gen_http_api, [k_http_api_handler_downlink_stats]},
 			{[<<"report">>, <<"statuses">>], gen_http_api, [k_http_api_handler_statuses_stats]},

@@ -13,7 +13,7 @@
 
 -include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/msg_status.hrl").
+-include_lib("k_common/include/msg_info.hrl").
 
 %% ===================================================================
 %% gen_cowboy_crud callbacks
@@ -21,9 +21,10 @@
 
 init() ->
 	Read = #method_spec{
-				path = [<<"message_status">>, message_id, <<"customer">>, customer_id],
+				path = [<<"message_status">>, message_id, <<"client">>, client_type, <<"customer">>, customer_id],
 				params = [
 					#param{name = message_id, mandatory = true, repeated = false, type = binary},
+					#param{name = client_type, mandatory = true, repeated = false, type = binary},
 					#param{name = customer_id, mandatory = true, repeated = false, type = binary}
 				]},
 
@@ -36,14 +37,16 @@ init() ->
 
 read(Params) ->
 	?log_debug("Params: ~p", [Params]),
-	MsgId = ?gv(message_id, Params),
-	CustId = ?gv(customer_id, Params),
-	case k_storage:get_msg_status({CustId, MsgId}) of
-		{ok, #msg_status{status = Status}} ->
+	ClientType = ?gv(client_type, Params),
+	CustomerId = ?gv(customer_id, Params),
+	InMsgId = ?gv(message_id, Params),
+	case k_storage:get_outgoing_msg_info(CustomerId, ClientType, InMsgId) of
+		{ok, MsgInfo} ->
 			{ok, {message, [
-				{customer_id, CustId},
-				{message_id, MsgId},
-				{status, Status}
+				{customer_id, CustomerId},
+				{message_id, InMsgId},
+				{client_type, ClientType},
+				{status, ?MSG_STATUS(MsgInfo)}
 			]}};
 		{error, no_entry} ->
 			{exception, 'svc0003'}
