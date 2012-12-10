@@ -5,7 +5,6 @@
 -include("amqp_worker_reply.hrl").
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/application.hrl").
@@ -37,11 +36,11 @@ process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
 	receipts = Receipts
 }) ->
 	?log_debug("Got just delivery receipt: ~p", [ReceiptBatch]),
-	DlrTime = k_datetime:utc_unix_epoch(),
+	DlrTime = k_datetime:utc_timestamp(),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
 		ok ->
 			{ok, []};
-		%% abnormal case, either sms request or response isn't handled yet, or both.
+		%% abnormal case, sms response isn't handled yet.
 		{error, no_entry} ->
 			{error, not_enough_data_to_proceed};
 		Error ->
@@ -51,40 +50,26 @@ process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
 traverse_delivery_receipts(_GatewayId, _DlrTime, []) ->
 	ok;
 traverse_delivery_receipts(GatewayId, DlrTime,
-	[#just_receipt_dto{message_id = MessageId, message_state = MessageState} | Receipts]) ->
-	OutputId = {GatewayId, MessageId},
-	case k_storage:get_input_id_by_output_id(OutputId) of
-		{ok, InputId} ->
-			?log_debug("[out:~p] -> [in:~p]", [OutputId, InputId]),
-			case k_storage:get_msg_info(InputId) of
-				{ok, MsgInfo} ->
-					case update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) of
-						ok ->
-							case register_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) of
-								ok ->
-									traverse_delivery_receipts(GatewayId, DlrTime, Receipts);
-								Error ->
-									Error
-							end;
-						Error ->
-							Error
-					end;
-				Error ->
-					Error
-			end;
-		Error ->
-			Error
-	end.
-
-update_delivery_state(InputId, OutputId, MsgInfo, DlrTime, MessageState) ->
-	case k_storage:get_msg_status(InputId) of
-		{ok, MsgStatus} ->
-			NewMsgStatus = MsgStatus#msg_status{
-				status = MessageState,
-				dlr_time = DlrTime
+	[#just_receipt_dto{message_id = OutMsgId, message_state = DlrStatus} | Receipts]) ->
+	%% we must be sure that the messsage is already stored.
+	%% unfortunately there's not a workaround for this limitation.
+	case k_storage:get_outgoing_msg_info(GatewayId, OutMsgId) of
+		{ok, MsgInfo = #msg_info{
+			client_type = ClientType,
+			customer_id = CustomerId,
+			in_msg_id = InMsgId
+		}} ->
+			MsgInfo2 = #msg_info{
+				gateway_id = GatewayId,
+				out_msg_id = OutMsgId,
+				dlr_time = DlrTime,
+				dlr_status = DlrStatus
 			},
-			ok = k_storage:set_msg_status(InputId, NewMsgStatus),
-			ok = k_statistic:store_status_stats(InputId, OutputId, MsgInfo, NewMsgStatus, DlrTime);
+			ok = k_storage:set_outgoing_msg_info(MsgInfo2),
+			InputId = {CustomerId, ClientType, InMsgId},
+			ok = register_delivery_receipt(InputId, MsgInfo, DlrTime, DlrStatus),
+			%% process the rest receipts.
+			traverse_delivery_receipts(GatewayId, DlrTime, Receipts);
 		Error ->
 			Error
 	end.
@@ -131,16 +116,7 @@ build_receipt_item(funnel, InputId, MsgInfo, DlrTime, MsgState) ->
 
 convert_addr(undefined) ->
 	undefined;
-convert_addr(Addr = #full_addr{}) ->
-	#full_addr{
-		addr = Msisdn,
-		ton = TON,
-		npi = NPI
-	} = Addr,
-	#addr{
-		addr = Msisdn,
-		ton = TON,
-		npi = NPI
-	};
+convert_addr(#full_addr{addr = Msisdn, ton = TON, npi = NPI}) ->
+	#addr{addr = Msisdn, ton = TON, npi = NPI};
 convert_addr(Addrs) ->
 	[convert_addr(Addr) || Addr <- Addrs].

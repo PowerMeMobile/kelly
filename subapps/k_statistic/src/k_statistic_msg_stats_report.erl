@@ -33,7 +33,7 @@ get_report(ReportType, From, To) when From < To ->
 build_raw_report(Records) ->
 	{RawReport, _NewPrefixNetworkIdMap} = lists:foldl(
 		fun(#msg_stats{msg_info = MsgInfo}, {SoFar, PrefixNetworkIdMap}) ->
-			MessageId = MsgInfo#msg_info.id,
+			MessageId = MsgInfo#msg_info.in_msg_id,
 			CustomerId = MsgInfo#msg_info.customer_id,
 			DestAddr = match_addr(MsgInfo#msg_info.dst_addr),
 

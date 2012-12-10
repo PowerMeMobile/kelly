@@ -11,6 +11,10 @@
 
 -include("logging.hrl").
 -include("supervisor_spec.hrl").
+-include("storages.hrl").
+
+-define(MongoStorageSpec(Name),
+	{Name, {mongodb_storage, start_link, [Name]}, permanent, 1000000, worker, [mongodb_storage]}).
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
@@ -24,6 +28,7 @@ init([]) ->
 	?log_debug("init", []),
     {ok, {
 		{one_for_one, 5, 10}, [
-			{k_mnesia_schema, {k_mnesia_schema, start_link, []}, permanent, 100000, worker, [k_mnesia_schema]}
+			{k_mnesia_schema, {k_mnesia_schema, start_link, []}, permanent, 100000, worker, [k_mnesia_schema]},
+			?MongoStorageSpec(outgoing_messages)
 		]}
 	}.

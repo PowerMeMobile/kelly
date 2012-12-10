@@ -6,7 +6,6 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
 %% ===================================================================

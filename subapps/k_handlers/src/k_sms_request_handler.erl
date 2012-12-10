@@ -5,7 +5,6 @@
 -include("amqp_worker_reply.hrl").
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/msg_status.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/application.hrl").
@@ -31,49 +30,8 @@ process_sms_request(SmsRequest = #just_sms_request_dto{client_type = ClientType}
 	end.
 
 -spec process_msg_info(#msg_info{}) -> ok | {error, any()}.
-process_msg_info(MsgInfo = #msg_info{
-	id = Id,
-	client_type = ClientType,
-	customer_id = CustomerId
-}) ->
-	InputId = {CustomerId, ClientType, Id},
-	Status = submitted,
-	Time = k_datetime:utc_unix_epoch(),
-	case update_msg_status(InputId, Status, Time) of
-		ok ->
-			case store_msg_info(InputId, MsgInfo, Time) of
-				ok ->
-					?log_debug("Message stored and its status updated: in:~p st:~p", [InputId, Status]);
-				Error ->
-					Error
-			end;
-		Error ->
-			Error
-	end.
-
--spec update_msg_status(msg_id(), atom(), integer()) -> ok | {error, any()}.
-update_msg_status(InputId, DefaultStatus, ReqTime) ->
-	case k_storage:get_msg_status(InputId) of
-		%% normal case, no data stored yet.
-		{error, no_entry} ->
-			NewMsgStatus = #msg_status{
-				status = DefaultStatus,
-				req_time = ReqTime
-			},
-			ok = k_storage:set_msg_status(InputId, NewMsgStatus);
-		%% Very strange case. It shouldn't be here, but I saw it happened during the testing.
-		%% I'm not sure what to do in this case. :(
-		{ok, _MsgStatus} ->
-			?log_warn("Just sms response was processed before sms request was processed ~p", [_MsgStatus]),
-			ok;
-		Other ->
-			Other
-	end.
-
--spec store_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
-store_msg_info(InputId, MsgInfo, Time) ->
-	ok = k_storage:set_msg_info(InputId, MsgInfo),
-	ok = k_statistic:store_outgoing_msg_stats(InputId, MsgInfo, Time).
+process_msg_info(MsgInfo = #msg_info{}) ->
+	ok = k_storage:set_outgoing_msg_info(MsgInfo).
 
 -spec get_param_by_name(string(), [#just_sms_request_param_dto{}]) -> {ok, #just_sms_request_param_dto{}} | {error, no_entry}.
 get_param_by_name(Name, Params) ->
@@ -114,37 +72,23 @@ sms_request_to_msg_info_list(SmsRequest = #just_sms_request_dto{
 	process_k1api_req(SmsRequest, AllPairs),
 	lists:map(fun({DestAddr, MessageId}) ->
 				#msg_info{
-					id = MessageId,
-					gateway_id = GatewayId,
-					customer_id = CustomerId,
 					client_type = ClientType,
+					customer_id = CustomerId,
+					in_msg_id = MessageId,
+					gateway_id = GatewayId,
 					type = Type,
 					encoding = Encoding,
 					body = Message,
 					src_addr = transform_addr(SourceAddr),
 					dst_addr = transform_addr(DestAddr),
-					reg_dlr = RegDlr
+					reg_dlr = RegDlr,
+					req_time = k_datetime:utc_timestamp()
 				} end, AllPairs).
 
-transform_addr(#addr_dto{
-	addr = Addr,
-	ton = Ton,
-	npi = Npi
-}) ->
-	#full_addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi
-	};
-transform_addr(#addr_ref_num_dto{
-	full_addr = FullAddr,
-	ref_num = RefNum
-}) ->
-	#full_addr_ref_num{
-		full_addr = transform_addr(FullAddr),
-		ref_num = RefNum
-	}.
-
+transform_addr(#addr_dto{addr = Addr, ton = Ton, npi = Npi}) ->
+	#full_addr{addr = Addr, ton = Ton, npi = Npi};
+transform_addr(#addr_ref_num_dto{full_addr = FullAddr, ref_num = RefNum}) ->
+	#full_addr_ref_num{full_addr = transform_addr(FullAddr), ref_num = RefNum}.
 
 -spec split(binary()) -> [binary()].
 split(BinIDs) ->
@@ -193,8 +137,9 @@ link_input_id_to_sub_id([InputID | RestIDs], SubID) ->
 	ok = k_mailbox:link_input_id_to_sub_id(InputID, SubID),
 	link_input_id_to_sub_id(RestIDs, SubID).
 
-link_sms_request_id_to_message_ids(CustomerID, UserID, SenderAddress,
-						SmsRequestID, InputMessageIDs) ->
+link_sms_request_id_to_message_ids(
+	CustomerID, UserID, SenderAddress, SmsRequestID, InputMessageIDs
+) ->
 	%% Include CustomerID & UserID to Key to avoid access to another's
 	%% sms statuses
 	%% Include SenderAddress into Key to make SmsRequestID unique
@@ -202,14 +147,5 @@ link_sms_request_id_to_message_ids(CustomerID, UserID, SenderAddress,
 	Key = {CustomerID, UserID, SenderAddress, SmsRequestID},
 	ok = k_storage:link_sms_request_id_to_msg_ids(Key, InputMessageIDs).
 
-convert_addr(AddrDTO = #addr_dto{}) ->
-	#addr_dto{
-		addr = Addr,
-		ton  = TON,
-		npi  = NPI
-	} = AddrDTO,
-	#addr{
-		addr = Addr,
-		ton = TON,
-		npi = NPI
-	}.
+convert_addr(#addr_dto{addr = Addr, ton = TON, npi = NPI}) ->
+	#addr{addr = Addr, ton = TON, npi = NPI}.

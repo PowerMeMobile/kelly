@@ -90,7 +90,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	OutputId = {GatewayId, ItemId},
 	%% build msg_info out of available data
 	MsgInfo = #msg_info{
-		id = ItemId,
+		in_msg_id = ItemId,
 		gateway_id = GatewayId,
 		customer_id = CustomerId,
 		type = regular,

@@ -86,7 +86,7 @@ outgoing_extended_report(Records, Status) ->
 	Report = lists:map(
 		fun(#status_stats{
  				msg_info = #msg_info{
-					id = MessageId,
+					in_msg_id = MessageId,
 					gateway_id = GatewayId,
 					customer_id = CustomerId,
 					src_addr = SrcAddr,
@@ -120,7 +120,7 @@ incoming_extended_report(Records) ->
 	Report = lists:map(
 		fun(#msg_stats{
 			msg_info = #msg_info{
-				id = MessageId,
+				in_msg_id = MessageId,
 				gateway_id = GatewayId,
 				customer_id = CustomerId,
 				src_addr = SrcAddr,

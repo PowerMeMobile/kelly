@@ -6,7 +6,6 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/msg_status.hrl").
 
 %% ===================================================================
 %% API
@@ -46,17 +45,15 @@ process_delivery_status_request(Request) ->
 	end.
 
 get_statuses(RequestID, InputIDs) ->
-
 	%% get status & destination adress for each Input message id
 	%% and put it into dto record #k1api_sms_status_dto
-	StatusesDTO = lists:map(fun(InputID) ->
+	StatusesDTO = lists:map(fun(InputID = {CustomerId, ClientType, InMsgId}) ->
 		{ok, MessageInfo} = k_storage:get_msg_info(InputID),
 		AddressDTO = convert_addr(MessageInfo#msg_info.dst_addr),
-		{ok, MessageStatus} = k_storage:get_msg_status(InputID),
-		Status = MessageStatus#msg_status.status,
+		{ok, MsgInfo} = k_storage:get_outgoing_msg_info(CustomerId, ClientType, InMsgId),
 		#k1api_sms_status_dto{
 			address = AddressDTO,
-			status = Status
+			status = ?MSG_STATUS(MsgInfo)
 		}
 	end, InputIDs),
 
