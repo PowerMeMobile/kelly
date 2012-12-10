@@ -21,15 +21,10 @@
 %% ===================================================================
 
 -spec set_customer(system_id(), #customer{}) -> ok | {error, term()}.
-set_customer(SystemId, Customer = #customer{
+set_customer(_SystemId, Customer = #customer{
 	uuid = CustomerId
 }) ->
-	case k_aaa_sid_to_cid:sid_to_cid(SystemId, CustomerId) of
-		ok ->
-			k_aaa_customers:set_customer(CustomerId, Customer);
-		Error ->
-			Error
-	end.
+	k_aaa_customers:set_customer(CustomerId, Customer).
 
 -spec get_customers() -> {ok, [{customer_id(), #customer{}}]} | {error, term()}.
 get_customers() ->
@@ -37,12 +32,7 @@ get_customers() ->
 
 -spec get_customer_by_system_id(system_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_system_id(SystemId) ->
-	case k_aaa_sid_to_cid:cid_by_sid(SystemId) of
-		{ok, CustomerId} ->
-			k_aaa_customers:get_customer(CustomerId);
-		Error ->
-			Error
-	end.
+	k_aaa_customers:get_customer_by_system_id(SystemId).
 
 -spec get_customer_by_id(customer_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_id(CustomerId) ->

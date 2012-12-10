@@ -4,6 +4,7 @@
 -export([
 	get_customers/0,
 	get_customer/1,
+	get_customer_by_system_id/1,
 	set_customer/2,
 	del_customer/1
 ]).
@@ -72,6 +73,15 @@ get_customers() ->
 -spec get_customer(customer_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer(CustomerId) ->
 	case mongodb_storage:find_one(?customerStorageName, [{'_id', CustomerId}]) of
+		{ok, Plist} when is_list(Plist) ->
+			{ok, proplist_to_record(Plist)};
+		Error ->
+			Error
+	end.
+
+-spec get_customer_by_system_id(binary()) -> {ok, #customer{}} | any().
+get_customer_by_system_id(SystemId) ->
+	case mongodb_storage:find_one(?customerStorageName, [{'id', SystemId}]) of
 		{ok, Plist} when is_list(Plist) ->
 			{ok, proplist_to_record(Plist)};
 		Error ->
