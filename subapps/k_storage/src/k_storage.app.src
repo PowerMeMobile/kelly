@@ -5,8 +5,8 @@
 	{applications, [
 		kernel,
 		stdlib,
-		k_common,
 		mongodb,
+		k_common,
 		kv_storage
 	]},
 	{mod, {k_storage_app, []}},

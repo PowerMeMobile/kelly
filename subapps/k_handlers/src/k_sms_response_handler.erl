@@ -68,7 +68,7 @@ update_msg_status(InputId, OutputId, MsgStatus, ResponseStatus) ->
 	RespTime = k_datetime:utc_unix_epoch(),
 	case k_storage:get_msg_info(InputId) of
 		{ok, MsgInfo} ->
-			NewStatus = fix_status(ResponseStatus, MsgInfo#msg_info.registered_delivery),
+			NewStatus = fix_status(ResponseStatus, MsgInfo#msg_info.reg_dlr),
 			NewMsgStatus = MsgStatus#msg_status{
 							 status = NewStatus,
 							 resp_time = RespTime

@@ -98,7 +98,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		body = MessageBody,
 		src_addr = transform_addr(SourceAddrDTO),
 		dst_addr = transform_addr(DestAddrDTO),
-		registered_delivery = false
+		reg_dlr = false
 	},
 	%% determine receiving time.
 	Time = k_datetime:utc_unix_epoch(),

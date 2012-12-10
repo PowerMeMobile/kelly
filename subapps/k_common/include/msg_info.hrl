@@ -18,16 +18,18 @@
 -type dst_addr() :: #full_addr{} | #full_addr_ref_num{}.
 
 -record(msg_info, {
-    id :: string(),
-    gateway_id :: string(),
-    customer_id :: string(),
+    id :: binary(),
+    customer_id :: binary(),
+	% in_msg_id :: binary(),
+    gateway_id :: binary(),
+	% out_msg_id :: binary(),
     client_type :: funnel | k1api,
     type :: atom(),
     encoding :: encoding(),
     body :: binary(),
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
-    registered_delivery :: boolean()
+    reg_dlr :: boolean()
 }).
 
 -endif. % msg_info_hrl

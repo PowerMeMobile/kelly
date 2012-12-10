@@ -106,11 +106,11 @@ sms_request_to_msg_info_list(SmsRequest = #just_sms_request_dto{
 			Ids = lists:map(fun(Id) -> {Addr, Id} end, split(ID)),
 			Ids ++ Acc
 		end, [], lists:zip(DestAddrs, MessageIds)),
-	RegisteredDelivery =
-	case get_param_by_name("registered_delivery", Params) of
-		undefined -> false;
-		Any -> Any
-	end,
+	RegDlr =
+		case get_param_by_name("registered_delivery", Params) of
+			undefined -> false;
+			Any -> Any
+		end,
 	process_k1api_req(SmsRequest, AllPairs),
 	lists:map(fun({DestAddr, MessageId}) ->
 				#msg_info{
@@ -123,7 +123,7 @@ sms_request_to_msg_info_list(SmsRequest = #just_sms_request_dto{
 					body = Message,
 					src_addr = transform_addr(SourceAddr),
 					dst_addr = transform_addr(DestAddr),
-					registered_delivery = RegisteredDelivery
+					reg_dlr = RegDlr
 				} end, AllPairs).
 
 transform_addr(#addr_dto{
