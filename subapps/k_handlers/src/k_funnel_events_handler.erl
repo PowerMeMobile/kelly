@@ -82,7 +82,7 @@ process_connection_up_event(ConnId, SystemId, ConnType) when
 					user_id = <<"undefined">>,
 					priority = 0,
 					queue_name = QName,
-					created_at = k_datetime:utc_unix_epoch()
+					created_at = k_datetime:utc_timestamp()
 			},
 			k_mailbox:register_subscription(Subscription),
 			{ok, []};

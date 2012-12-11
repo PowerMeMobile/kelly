@@ -72,7 +72,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 					user_id	= UserId,
 					source_addr	= SourceAddr,
 					dest_addr = DestAddr,
-					received  = k_datetime:utc_unix_epoch(),
+					received  = k_datetime:utc_timestamp(),
 					message_body = MessageBody,
 					encoding = Encoding
 				},
@@ -101,7 +101,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		reg_dlr = false
 	},
 	%% determine receiving time.
-	Time = k_datetime:utc_unix_epoch(),
+	Time = k_datetime:utc_timestamp(),
 	%% store it.
 	store_incoming_msg_info(OutputId, MsgInfo, Time),
 	?log_debug("Incoming message stored: out:~p", [OutputId]),

@@ -79,7 +79,7 @@ process_subscription(Request = #k1api_subscribe_incoming_sms_request_dto{}, CT) 
 		notify_url = URL,
 		criteria = Criteria,
 		callback_data = Callback,
-		created_at = k_datetime:utc_unix_epoch()
+		created_at = k_datetime:utc_timestamp()
 	},
 	k_mailbox:register_subscription(Subscription),
 	ResponseDTO = #k1api_subscribe_incoming_sms_response_dto{
@@ -118,7 +118,7 @@ process_subscription(Request = #k1api_subscribe_sms_receipts_request_dto{}, CT) 
 		dest_addr = convert_addr(DestAddr),
 		notify_url = URL,
 		callback_data = Callback,
-		created_at = k_datetime:utc_unix_epoch()
+		created_at = k_datetime:utc_timestamp()
 	},
 	k_mailbox:register_subscription(Subscription),
 	ResponseDTO = #k1api_subscribe_sms_receipts_response_dto{

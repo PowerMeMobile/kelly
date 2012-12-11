@@ -126,7 +126,7 @@ create_k1api_receipt_subscription(CustomerID, UserID, DestAddr, NotifyURL, Callb
 		dest_addr = convert_addr(DestAddr),
 		notify_url = NotifyURL,
 		callback_data = CallbackData,
-		created_at = k_datetime:utc_unix_epoch()
+		created_at = k_datetime:utc_timestamp()
 	},
 	ok = k_mailbox:register_sms_req_receipts_subscription(Subscription),
 	SubscriptionID.
