@@ -1,6 +1,11 @@
 -ifndef(storages_hrl).
 -define(storages_hrl, included).
 
+-define(networkStorageName, networks).
+-define(providerStorageName, providers).
+-define(gatewayStorageName, gateways).
+-define(customerStorageName, customers).
+
 -type ver() 			:: integer().
 -type error() 			:: term().
 -type uuid() 			:: binary().
