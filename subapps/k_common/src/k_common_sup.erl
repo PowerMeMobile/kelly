@@ -33,6 +33,8 @@ init([]) ->
 			?MongoStorageSpec(?providerStorageName),
 			?MongoStorageSpec(?gatewayStorageName),
 			?MongoStorageSpec(?customerStorageName),
-			?MongoStorageSpec(outgoing_messages)
+			?MongoStorageSpec(outgoing_messages),
+			?MongoStorageSpec(incoming_messages),
+			?MongoStorageSpec(k1api_sms_request_id_to_msg_ids)
 		]}
 	}.

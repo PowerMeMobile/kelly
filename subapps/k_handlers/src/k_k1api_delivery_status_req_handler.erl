@@ -32,11 +32,15 @@ process_delivery_status_request(Request) ->
 		customer_id = CustomerID,
 		user_id = _UserID,
 		sms_request_id = SmsRequestID,
-		address = SenderAddress
+		address = SourceAddrDTO
 	} = Request,
 	UserID = undefined,
-	Key = {CustomerID, UserID, SenderAddress, SmsRequestID},
-	case k_storage:get_msg_ids_by_sms_request_id(Key) of
+	SourceAddr = #full_addr{
+		addr = SourceAddrDTO#addr_dto.addr,
+		ton = SourceAddrDTO#addr_dto.ton,
+		npi = SourceAddrDTO#addr_dto.npi
+	},
+	case k_storage:get_msg_ids_by_sms_request_id(CustomerID, UserID, SourceAddr, SmsRequestID) of
 		{ok, IDs} ->
 			get_statuses(RequestID, IDs);
 		{error, Error} ->
