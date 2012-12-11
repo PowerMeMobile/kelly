@@ -1,6 +1,7 @@
 -module(k_statistic_status_stats_report).
 
 -export([
+	get_report/2,
 	get_report/3
 ]).
 
@@ -11,21 +12,41 @@
 %% API
 %% ===================================================================
 
+-spec get_report(From::calendar:datetime(), To::calendar:datetime()) -> [any()].
+get_report(From, To) ->
+	FromDate = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(From)),
+	ToDate = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(To)),
+	MapF =
+<<"
+	function() {
+		if (this.dlr_status) {
+			emit(this.dlr_status, 1);
+		} else {
+			emit(this.resp_status, 1);
+		}
+	};
+">>,
+	ReduceF =
+<<"
+	function(key, values) {
+		return Array.sum(values);
+	};
+">>,
+	Command =
+		{ 'mapreduce' , <<"outgoing_messages">>,
+		  'query' , { 'resp_time' , { '$gte' , FromDate, '$lt' , ToDate } },
+		  'map' , MapF,
+		  'reduce' , ReduceF,
+		  'out' , { 'inline' , 1 }
+		},
+	{ok, Bson} = mongodb_storage:command(outgoing_messages, Command),
+	ResultsBson = bson:at(results, Bson),
+	Results = [
+	 	{Status, round(Hits)} || {'_id', Status, value, Hits} <- ResultsBson
+	 ],
+	{ok, Results}.
+
 -spec get_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [any()].
-get_report(From, To, undefined) ->
-	OutgoingFilenames = k_statistic_utils:get_file_list_with(
-		From, To, fun k_statistic_utils:status_stats_slice_path/1),
-	OutgoingRecords = k_statistic_utils:read_terms_from_files(OutgoingFilenames),
-	OutgoingReport = outgoing_agregated_report(OutgoingRecords),
-
-	IncomingFilenames = k_statistic_utils:get_file_list_with(
-		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
-	IncomingRecords = k_statistic_utils:read_terms_from_files(IncomingFilenames),
-	IncomingReport = incoming_agregated_report(IncomingRecords),
-
-	Reports = merge_agregated_reports(OutgoingReport, IncomingReport),
-	{ok, {statuses, Reports}};
-
 get_report(From, To, received) ->
 	IncomingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
