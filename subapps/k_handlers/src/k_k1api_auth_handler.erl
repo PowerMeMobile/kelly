@@ -166,17 +166,6 @@ build_customer_response(#k1api_auth_request_dto{
 	},
 	?log_debug("Built customer: ~p", [CustomerDTO]),
 	{ok, CustomerDTO}.
-	%% #funnel_auth_response_dto{
-	%% 	connection_id = ConnectionId,
-	%% 	result = {customer, Customer}
-	%% }.
-
-%% build_error_response(#k1api_auth_request_dto{id = ConnectionId}, Reason) ->
-%% 	?log_debug("Building auth error response...", []),
-%% 	#k1api_auth_response_dto{
-%% 		id = ConnectionId,
-%% 		result = {error, atom_to_list(Reason)}
-%% 	}.
 
 reply(Response) ->
 	case adto:encode(Response) of
