@@ -1,14 +1,12 @@
-{application, k_config,
- [
-  {description, ""},
-  {vsn, "1"},
-  {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib,
-                  k_common,
-                  kv_storage
-                 ]},
-  {mod, {k_config_app, []} },
-  {env, []}
- ]}.
+{application, k_config, [
+	{description, ""},
+	{vsn, "1"},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		k_common
+	]},
+	{mod, {k_config_app, []}},
+	{env, []}
+]}.

@@ -1,14 +1,12 @@
-{application, k_aaa,
- [
-  {description, ""},
-  {vsn, "1"},
-  {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib,
-                  k_common,
-                  kv_storage
-                 ]},
-  {mod, {k_aaa_app, []} },
-  {env, []}
- ]}.
+{application, k_aaa, [
+	{description, ""},
+	{vsn, "1"},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		k_common
+	]},
+	{mod, {k_aaa_app, []}},
+	{env, []}
+]}.

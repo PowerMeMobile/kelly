@@ -6,8 +6,7 @@
 		kernel,
 		stdlib,
 		mongodb,
-		k_common,
-		kv_storage
+		k_common
 	]},
 	{mod, {k_storage_app, []}},
 	{env, []}
