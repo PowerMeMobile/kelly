@@ -47,7 +47,6 @@ get_report(From, To) ->
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
-	{ok, MtBson} = mongodb_storage:command(outgoing_messages, MtCommand),
 	MoCommand =
 		{ 'mapreduce' , <<"incoming_messages">>,
 		  'query' , { 'req_time' , { '$gte' , FromDate, '$lt' , ToDate } },
@@ -55,6 +54,7 @@ get_report(From, To) ->
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
+	{ok, MtBson} = mongodb_storage:command(outgoing_messages, MtCommand),
 	{ok, MoBson} = mongodb_storage:command(incoming_messages, MoCommand),
 	ResultsMtBson = bson:at(results, MtBson),
 	ResultsMoBson = bson:at(results, MoBson),
