@@ -16,7 +16,7 @@
 get_report(From, To) ->
 	FromDate = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(From)),
 	ToDate = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(To)),
-	MapF =
+	MtMapF =
 <<"
 	function() {
 		if (this.dlr_status) {
@@ -28,21 +28,37 @@ get_report(From, To) ->
 		}
 	};
 ">>,
+	MoMapF =
+<<"
+	function() {
+		emit(\"received\", 1);
+	};
+">>,
 	ReduceF =
 <<"
 	function(key, values) {
 		return Array.sum(values);
 	};
 ">>,
-	Command =
+	MtCommand =
 		{ 'mapreduce' , <<"outgoing_messages">>,
 		  'query' , { 'req_time' , { '$gte' , FromDate, '$lt' , ToDate } },
-		  'map' , MapF,
+		  'map' , MtMapF,
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
-	{ok, Bson} = mongodb_storage:command(outgoing_messages, Command),
-	ResultsBson = bson:at(results, Bson),
+	{ok, MtBson} = mongodb_storage:command(outgoing_messages, MtCommand),
+	MoCommand =
+		{ 'mapreduce' , <<"incoming_messages">>,
+		  'query' , { 'req_time' , { '$gte' , FromDate, '$lt' , ToDate } },
+		  'map' , MoMapF,
+		  'reduce' , ReduceF,
+		  'out' , { 'inline' , 1 }
+		},
+	{ok, MoBson} = mongodb_storage:command(incoming_messages, MoCommand),
+	ResultsMtBson = bson:at(results, MtBson),
+	ResultsMoBson = bson:at(results, MoBson),
+	ResultsBson = lists:sort(ResultsMtBson ++ ResultsMoBson),
 	Results = [
 	 	{Status, round(Hits)} || {'_id', Status, value, Hits} <- ResultsBson
 	 ],

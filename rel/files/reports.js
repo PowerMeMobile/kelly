@@ -18,7 +18,7 @@ function dlr_statuses() {
 	});
 };
 
-function rep1_mr() {
+function mt_statuses() {
 	var mapf = function() {
 		if (this.dlr_status) {
 			emit(this.dlr_status, 1);
@@ -40,7 +40,23 @@ function rep1_mr() {
 	});
 };
 
-function rep2_mr() {
+function mo_statuses() {
+	var mapf = function() {
+		emit("received", 1);
+	};
+	var reducef = function(key, values) {
+		return Array.sum(values);
+	};
+	return db.runCommand({
+		mapreduce : "incoming_messages",
+		query : { req_time : { $gte : fromDate, $lt : toDate } },
+		map : mapf,
+		reduce : reducef,
+		out : { inline : 1 }
+	});
+};
+
+function status(status) {
 	var mapf = function() {
 		this.charges.forEach(function(charge) {
 			emit(charge.package_id, {
