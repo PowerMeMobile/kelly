@@ -32,14 +32,9 @@ process_delivery_status_request(Request) ->
 		customer_id = CustomerID,
 		user_id = _UserID,
 		sms_request_id = SmsRequestID,
-		address = SourceAddrDTO
+		address = SourceAddr
 	} = Request,
 	UserID = undefined,
-	SourceAddr = #full_addr{
-		addr = SourceAddrDTO#addr_dto.addr,
-		ton = SourceAddrDTO#addr_dto.ton,
-		npi = SourceAddrDTO#addr_dto.npi
-	},
 	case k_storage:get_msg_ids_by_sms_request_id(CustomerID, UserID, SourceAddr, SmsRequestID) of
 		{ok, IDs} ->
 			get_statuses(RequestID, IDs);
@@ -53,9 +48,8 @@ get_statuses(RequestID, InputIDs) ->
 	%% and put it into dto record #k1api_sms_status_dto
 	StatusesDTO = lists:map(fun({CustomerId, ClientType, InMsgId}) ->
 		{ok, MsgInfo} = k_storage:get_outgoing_msg_info(CustomerId, ClientType, InMsgId),
-		AddressDTO = convert_addr(MsgInfo#msg_info.dst_addr),
 		#k1api_sms_status_dto{
-			address = AddressDTO,
+			address = MsgInfo#msg_info.dst_addr,
 			status = ?MSG_STATUS(MsgInfo)
 		}
 	end, InputIDs),
@@ -78,20 +72,3 @@ reply(DTO) ->
 			?log_warn("Unexpected k1api dto encode error: ~p", [Error]),
 	   		{ok, []}
 	end.
-
-convert_addr(FullAddr = #full_addr{}) ->
-	#full_addr{
-		addr = Addr,
-		ton = TON,
-		npi = NPI
-	} = FullAddr,
-	#addr_dto{
-		addr = Addr,
-		ton = TON,
-		npi = NPI
-	};
-convert_addr(FullAddrAndRefNum = #full_addr_ref_num{}) ->
-	#full_addr_ref_num{
-		full_addr = FullAddr
-	} = FullAddrAndRefNum,
-	convert_addr(FullAddr).

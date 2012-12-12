@@ -32,15 +32,10 @@ process_retrive_sms_request(Request) ->
 		id = RequestID,
 		customer_id = CustomerID,
 		user_id = _UserID,
-		dest_addr = DestAddrDTO,
+		dest_addr = DestAddr,
 		batch_size = BatchSize
 	} = Request,
 	UserID = <<"undefined">>,
-	DestAddr = #addr{
-		addr = DestAddrDTO#addr_dto.addr,
-		ton = DestAddrDTO#addr_dto.ton,
-		npi = DestAddrDTO#addr_dto.npi
-	},
 	{ok, IncomingSms, Total} = k_mailbox:get_incoming_sms(CustomerID, UserID, DestAddr, BatchSize),
 	build_response(RequestID, IncomingSms, Total).
 
@@ -54,14 +49,9 @@ build_response(RequestID, IncomingSms, Total) ->
 		received = Time,
 		message_body = Message
 	} = PendingItem,
-		DestAddrDTO = #addr_dto{
-			addr = SourceAddr#addr.addr,
-			ton = SourceAddr#addr.ton,
-			npi = SourceAddr#addr.npi
-		},
 		#k1api_retrieved_sms_dto{
 			datetime = Time,
-			sender_addr = DestAddrDTO,
+			sender_addr = SourceAddr,
 			message_id = ItemID,
 			message = Message
 		}

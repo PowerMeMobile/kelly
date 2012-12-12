@@ -11,6 +11,6 @@
 	receipts_supported 	:: boolean()
 }).
 -type provider_id() 	:: uuid().
--type provider() 		:: {ver(), #provider{}}.
+-type provider() 		:: #provider{}.
 
 -endif.

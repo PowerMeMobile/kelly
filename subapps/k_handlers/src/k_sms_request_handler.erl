@@ -79,16 +79,11 @@ sms_request_to_msg_info_list(SmsRequest = #just_sms_request_dto{
 					type = Type,
 					encoding = Encoding,
 					body = Message,
-					src_addr = transform_addr(SourceAddr),
-					dst_addr = transform_addr(DestAddr),
+					src_addr = SourceAddr,
+					dst_addr = DestAddr,
 					reg_dlr = RegDlr,
 					req_time = k_datetime:utc_timestamp()
 				} end, AllPairs).
-
-transform_addr(#addr_dto{addr = Addr, ton = Ton, npi = Npi}) ->
-	#full_addr{addr = Addr, ton = Ton, npi = Npi};
-transform_addr(#addr_ref_num_dto{full_addr = FullAddr, ref_num = RefNum}) ->
-	#full_addr_ref_num{full_addr = transform_addr(FullAddr), ref_num = RefNum}.
 
 -spec split(binary()) -> [binary()].
 split(BinIDs) ->
@@ -123,7 +118,7 @@ create_k1api_receipt_subscription(CustomerID, UserID, DestAddr, NotifyURL, Callb
 		customer_id = CustomerID,
 		user_id = UserID,
 		queue_name = QName,
-		dest_addr = convert_addr(DestAddr),
+		dest_addr = DestAddr,
 		notify_url = NotifyURL,
 		callback_data = CallbackData,
 		created_at = k_datetime:utc_timestamp()
@@ -145,7 +140,4 @@ link_sms_request_id_to_message_ids(
 	%% Include SenderAddress into Key to make SmsRequestID unique
 	%% within specific SenderAddress
 
-	ok = k_storage:link_sms_request_id_to_msg_ids(CustomerID, UserID, convert_addr(SenderAddress), SmsRequestID, InputMessageIDs).
-
-convert_addr(#addr_dto{addr = Addr, ton = TON, npi = NPI}) ->
-	#addr{addr = Addr, ton = TON, npi = NPI}.
+	ok = k_storage:link_sms_request_id_to_msg_ids(CustomerID, UserID, SenderAddress, SmsRequestID, InputMessageIDs).

@@ -75,7 +75,7 @@ process_subscription(Request = #k1api_subscribe_incoming_sms_request_dto{}, CT) 
 		user_id = <<"undefined">>,
 		priority = 0,
 		queue_name = QName,
-		dest_addr = convert_addr(DestAddr),
+		dest_addr = DestAddr,
 		notify_url = URL,
 		criteria = Criteria,
 		callback_data = Callback,
@@ -115,7 +115,7 @@ process_subscription(Request = #k1api_subscribe_sms_receipts_request_dto{}, CT) 
 		customer_id = CustomerID,
 		user_id = <<"undefined">>,
 		queue_name = QName,
-		dest_addr = convert_addr(DestAddr),
+		dest_addr = DestAddr,
 		notify_url = URL,
 		callback_data = Callback,
 		created_at = k_datetime:utc_timestamp()
@@ -152,15 +152,3 @@ reply(DTO, ContentType) ->
 			?log_warn("Unexpected k1api dto encode error: ~p", [Error]),
 	   		{ok, []}
 	end.
-
-convert_addr(AddrDTO = #addr_dto{}) ->
-	#addr_dto{
-		addr = Addr,
-		ton  = TON,
-		npi  = NPI
-	} = AddrDTO,
-	#addr{
-		addr = Addr,
-		ton = TON,
-		npi = NPI
-	}.

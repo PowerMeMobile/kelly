@@ -210,7 +210,7 @@ link_sms_request_id_to_msg_ids(CustomerId, UserId, SourceAddress, SmsRequestId, 
 	],
 	mongodb_storage:upsert(k1api_sms_request_id_to_msg_ids, Selectors, Plist).
 
--spec get_msg_ids_by_sms_request_id(binary(), binary(), #full_addr{}, binary()) ->
+-spec get_msg_ids_by_sms_request_id(binary(), binary(), #addr{}, binary()) ->
 	{ok, [{binary(), k1api, binary()}]} | {error, reason()}.
 get_msg_ids_by_sms_request_id(CustomerId, UserId, SourceAddr, SmsRequestId) ->
 	Selectors =
@@ -231,14 +231,22 @@ get_msg_ids_by_sms_request_id(CustomerId, UserId, SourceAddr, SmsRequestId) ->
 %% Internals
 %% ===================================================================
 
-addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi}) ->
+addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
 	{addr, Addr, ton, Ton, npi, Npi};
-addr_to_doc(#full_addr{addr = Addr, ton = Ton, npi = Npi}) ->
-	{addr, Addr, ton, Ton, npi, Npi};
-addr_to_doc(#full_addr_ref_num{full_addr = FullAddr, ref_num = RefNum}) ->
-	{addr, addr_to_doc(FullAddr), ref_num, RefNum}.
+addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
+	{addr, Addr, ton, Ton, npi, Npi, ref_num, RefNum}.
 
 doc_to_addr({addr, Addr, ton, Ton, npi, Npi}) ->
-	#full_addr{addr = Addr, ton = Ton, npi = Npi};
-doc_to_addr({addr, Addr, ref_num, RefNum}) ->
-	#full_addr_ref_num{full_addr = doc_to_addr(Addr), ref_num = RefNum}.
+	#addr{
+		addr = Addr,
+		ton = Ton,
+		npi = Npi
+	};
+doc_to_addr({addr, Addr, ton, Ton, npi, Npi, ref_num, RefNum}) ->
+	#addr{
+		addr = Addr,
+		ton = Ton,
+		npi = Npi,
+		ref_num = RefNum
+	}.
+

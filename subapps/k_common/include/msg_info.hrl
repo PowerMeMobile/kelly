@@ -3,19 +3,18 @@
 
 -type encoding() :: {atom(), atom()}.
 
--record(full_addr, {
-	addr :: string(),
-	ton :: integer(),
-	npi :: integer()
-}).
+-include_lib("alley_dto/include/addr.hrl").
 
--record(full_addr_ref_num, {
-	full_addr :: #full_addr{},
-	ref_num :: integer()
-}).
-
--type src_addr() :: #full_addr{}.
--type dst_addr() :: #full_addr{} | #full_addr_ref_num{}.
+-type src_addr() :: #addr{}.
+-type dst_addr() :: #addr{}.
+-type delivery_status() ::
+	delivered |
+	expired |
+	deleted |
+	undeliverable |
+	accepted |
+	unknown |
+	rejected.
 
 -record(msg_info, {
     client_type :: funnel | k1api,
@@ -33,7 +32,7 @@
 	resp_time :: erlang:timestamp(),
 	resp_status :: success | failure,
 	dlr_time :: erlang:timestamp(),
-	dlr_status :: delivered | expired | deleted | undeliverable | accepted | unknown | rejected
+	dlr_status :: delivery_status()
 }).
 
 -define(MSG_STATUS(MsgInfo),
