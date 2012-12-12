@@ -44,7 +44,7 @@ get_report(From, To) ->
 	Results = [
 	 	{Status, round(Hits)} || {'_id', Status, value, Hits} <- ResultsBson
 	 ],
-	{ok, Results}.
+	{ok, {statuses, Results}}.
 
 -spec get_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [any()].
 get_report(From, To, received) ->
