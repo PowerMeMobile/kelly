@@ -12,10 +12,8 @@
 %% API
 %% ===================================================================
 
--spec get_report(From::calendar:datetime(), To::calendar:datetime()) -> [any()].
+-spec get_report(From::erlang:timestamp(), To::erlang:timestamp()) -> [any()].
 get_report(From, To) ->
-	FromDate = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(From)),
-	ToDate = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(To)),
 	MtMapF =
 <<"
 	function() {
@@ -42,14 +40,14 @@ get_report(From, To) ->
 ">>,
 	MtCommand =
 		{ 'mapreduce' , <<"outgoing_messages">>,
-		  'query' , { 'req_time' , { '$gte' , FromDate, '$lt' , ToDate } },
+		  'query' , { 'req_time' , { '$gte' , From, '$lt' , To } },
 		  'map' , MtMapF,
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
 	MoCommand =
 		{ 'mapreduce' , <<"incoming_messages">>,
-		  'query' , { 'req_time' , { '$gte' , FromDate, '$lt' , ToDate } },
+		  'query' , { 'req_time' , { '$gte' , From, '$lt' , To } },
 		  'map' , MoMapF,
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
@@ -64,7 +62,7 @@ get_report(From, To) ->
 	 ],
 	{ok, {statuses, Results}}.
 
--spec get_report(From::os:timestamp(), To::os:timestamp(), Status::atom()) -> [any()].
+-spec get_report(From::os:timestamp(), To::os:timestamp(), Status::status()) -> [any()].
 get_report(From, To, received) ->
 	IncomingFilenames = k_statistic_utils:get_file_list_with(
 		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
