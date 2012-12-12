@@ -5,8 +5,8 @@
 	get_report/3
 ]).
 
--include("status_stats.hrl").
--include("msg_stats.hrl").
+-include_lib("k_common/include/msg_info.hrl").
+-include_lib("k_common/include/msg_status.hrl").
 
 %% ===================================================================
 %% API
@@ -62,123 +62,84 @@ get_report(From, To) ->
 	 ],
 	{ok, {statuses, Results}}.
 
--spec get_report(From::os:timestamp(), To::os:timestamp(), Status::status()) -> [any()].
+-spec get_report(From::erlang:timestamp(), To::erlang:timestamp(), Status::status()) -> [any()].
 get_report(From, To, received) ->
-	IncomingFilenames = k_statistic_utils:get_file_list_with(
-		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
-	IncomingRecords = k_statistic_utils:read_terms_from_files(IncomingFilenames),
-	IncomingReport = incoming_extended_report(IncomingRecords),
-	{ok, {statuses, IncomingReport}};
+	Selectors = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
+	get_raw_report(incoming_messages, Selectors);
 
-get_report(From, To, Status) ->
-	OutgoingFilenames = k_statistic_utils:get_file_list_with(
-		From, To, fun k_statistic_utils:status_stats_slice_path/1),
-	OutgoingRecords = k_statistic_utils:read_terms_from_files(OutgoingFilenames),
-	OutgoingReport = outgoing_extended_report(OutgoingRecords, Status),
+get_report(From, To, submitted) ->
+	Selectors = [
+		{ 'req_time' , { '$gte' , From, '$lt' , To } },
+		{ 'resp_status' , { '$exists' , false } },
+		{ 'dlr_status' , { '$exists' , false } }
+	],
+	get_raw_report(outgoing_messages, Selectors);
 
-	{ok, {statuses, OutgoingReport}}.
+get_report(From, To, Status) when
+	Status == success; Status == failure
+->
+	Selectors = [
+		{ 'req_time' , { '$gte' , From, '$lt' , To } },
+		{ 'resp_status' , Status }
+	],
+	get_raw_report(outgoing_messages, Selectors);
+
+get_report(From, To, Status) when
+	Status == accepted; Status == deleted; Status == delivered;
+	Status == expired; Status == rejected; Status == undeliverable;
+	Status == unknown
+->
+	Selectors = [
+		{ 'req_time' , { '$gte' , From, '$lt' , To } },
+		{ 'dlr_status' , Status }
+	],
+	get_raw_report(outgoing_messages, Selectors).
 
 %% ===================================================================
 %% Internal
 %% ===================================================================
 
--spec merge_agregated_reports(OutgoingReport::[any()], IncomingReport::[any()]) -> [any()].
-merge_agregated_reports(OutgoingReport, IncomingReport) ->
-	lists:sort(
-		fun({LStatus, _}, {RStatus, _}) ->
-			LStatus =< RStatus
-		end,
-		OutgoingReport ++ IncomingReport).
+get_raw_report(Collection, Selectors) ->
+	case mongodb_storage:find(Collection, Selectors) of
+		{ok, List} ->
+			{ok, {messages,
+				[prettify_plist(Plist) || {_Id, Plist} <- List]
+			}};
+		Error ->
+			Error
+	end.
 
--spec outgoing_agregated_report(Records::[#status_stats{}]) -> [{Status::atom(), Count::pos_integer()}].
-outgoing_agregated_report(Records) ->
-	Groups = k_statistic_utils:group(lists:sort(lists:map(
-		fun(#status_stats{msg_status = #msg_status{status = Status}}) ->
-			case Status of
-				success_no_delivery -> sent;
-				success_waiting_delivery -> sent_expected_delivery;
-				Other -> Other
-			end
-		end,
-		Records))),
-	lists:map(
-		fun(Group = [Status|_]) ->
-			{Status, length(Group)}
-		end,
-		Groups).
+doc_to_addr({addr, Addr, ton, Ton, npi, Npi}) ->
+	#full_addr{addr = Addr, ton = Ton, npi = Npi};
+doc_to_addr({addr, Addr, ref_num, RefNum}) ->
+	#full_addr_ref_num{full_addr = doc_to_addr(Addr), ref_num = RefNum}.
 
--spec outgoing_extended_report(Records::[#status_stats{}], Status::atom()) -> [any()].
-outgoing_extended_report(Records, sent) ->
-	outgoing_extended_report(Records, success_no_delivery);
-outgoing_extended_report(Records, sent_expected_delivery) ->
-	outgoing_extended_report(Records, success_waiting_delivery);
-outgoing_extended_report(Records, Status) ->
-	Filtered = lists:filter(
-		fun(#status_stats{msg_status = #msg_status{status = St}}) when St =:= Status ->
-			true;
-		   (_) ->
-			false
-		end,
-		Records),
-	Report = lists:map(
-		fun(#status_stats{
- 				msg_info = #msg_info{
-					in_msg_id = MessageId,
-					gateway_id = GatewayId,
-					customer_id = CustomerId,
-					src_addr = SrcAddr,
-					dst_addr = DstAddr,
-					body = BinText
-				},
-				time = Timestamp
-			}) ->
-			Datetime = k_statistic_utils:timestamp_to_iso_8601(Timestamp),
-			[
-				{datetime, Datetime},
-				{message_id, MessageId},
-				{gateway_id, GatewayId},
-				{customer_id, CustomerId},
-				{src_addr, transform_addr(SrcAddr)},
-				{dst_addr, transform_addr(DstAddr)},
-				{message_text, BinText}
-			]
-		end,
-		Filtered),
-	{messages, Report}.
+prettify_plist(Plist) ->
+	InMsgId = proplists:get_value(in_msg_id, Plist),
+	GatewayId = proplists:get_value(gateway_id, Plist),
+	CustomerId = proplists:get_value(customer_id, Plist),
+	Type = proplists:get_value(type, Plist),
+	Encoding = proplists:get_value(encoding, Plist),
+	Body = proplists:get_value(body, Plist),
+	SrcAddrDoc = proplists:get_value(src_addr, Plist),
+	DstAddrDoc = proplists:get_value(dst_addr, Plist),
+	ReqTime = proplists:get_value(req_time, Plist),
 
--spec incoming_agregated_report(Records::[#msg_info{}]) -> [{Status::atom(), Count::pos_integer()}].
-incoming_agregated_report([]) ->
-	[];
-incoming_agregated_report(Records) ->
-	[{received, length(Records)}].
-
--spec incoming_extended_report(Records::[#status_stats{}]) -> [any()].
-incoming_extended_report(Records) ->
-	Report = lists:map(
-		fun(#msg_stats{
-			msg_info = #msg_info{
-				in_msg_id = MessageId,
-				gateway_id = GatewayId,
-				customer_id = CustomerId,
-				src_addr = SrcAddr,
-				dst_addr = DstAddr,
-				body = BinText
-   			},
-				time = Timestamp
-			}) ->
-			Datetime = k_statistic_utils:timestamp_to_iso_8601(Timestamp),
-			[
-				{datetime, Datetime},
-				{message_id, MessageId},
-				{gateway_id, GatewayId},
-				{customer_id, CustomerId},
-				{src_addr, transform_addr(SrcAddr)},
-				{dst_addr, transform_addr(DstAddr)},
-				{message_text, BinText}
-			]
-		end,
-		Records),
-	{messages, Report}.
+	Datetime = list_to_binary(
+		k_datetime:datetime_to_iso_8601(
+			k_datetime:unix_epoch_to_datetime(
+				k_datetime:timestamp_to_unix_epoch(ReqTime)))),
+	[
+		{datetime, Datetime},
+		{message_id, InMsgId},
+		{gateway_id, GatewayId},
+		{customer_id, CustomerId},
+		{src_addr, transform_addr(doc_to_addr(SrcAddrDoc))},
+		{dst_addr, transform_addr(doc_to_addr(DstAddrDoc))},
+		{type, Type},
+		{encoding, Encoding},
+		{message_text, Body}
+	].
 
 transform_addr(#full_addr{
 	addr = Addr,

@@ -1,7 +1,18 @@
 -ifndef(msg_status_hrl).
 -define(msg_status_hrl, included).
 
--type status() :: atom().
+-type status() :: received
+				| submitted
+				| success
+				| failure
+				| accepted
+				| deleted
+				| delivered
+				| expired
+				| rejected
+				| undeliverable
+				| unknown.
+
 -type unix_epoch() :: integer().
 
 -record(msg_status, {

@@ -29,7 +29,10 @@ Result:
 REST call:
 GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&status=STATUS
 Where
-	STATUS - status
+	STATUS - mt: submitted (no response nor delivery status yet received)
+		   	 	 success, failure (response status, no delivery status received)
+				 accepted, deleted, delivered, expired, rejected, undeliverable, unknown (delivery status)
+		     mo: received
 	YYYY - year
 	MM - month
 	DD - day

@@ -35,8 +35,8 @@ status_stats_report(FromDate, ToDate) when FromDate < ToDate ->
 	Status::atom()
 ) -> {ok, Report::term()} | {error, Reason::any()}.
 status_stats_report(FromDate, ToDate, Status) when FromDate < ToDate ->
-	From = k_datetime:datetime_to_unix_epoch(FromDate),
-	To = k_datetime:datetime_to_unix_epoch(ToDate),
+	From = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(FromDate)),
+	To = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(ToDate)),
 	k_statistic_status_stats_report:get_report(From, To, Status).
 
 -spec msg_stats_report(
