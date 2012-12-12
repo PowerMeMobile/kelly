@@ -144,8 +144,8 @@ link_sms_request_id_to_message_ids(
 	%% sms statuses
 	%% Include SenderAddress into Key to make SmsRequestID unique
 	%% within specific SenderAddress
-	Key = {CustomerID, UserID, SenderAddress, SmsRequestID},
-	ok = k_storage:link_sms_request_id_to_msg_ids(Key, InputMessageIDs).
+
+	ok = k_storage:link_sms_request_id_to_msg_ids(CustomerID, UserID, convert_addr(SenderAddress), SmsRequestID, InputMessageIDs).
 
 convert_addr(#addr_dto{addr = Addr, ton = TON, npi = NPI}) ->
 	#addr{addr = Addr, ton = TON, npi = NPI}.

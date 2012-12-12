@@ -31,10 +31,4 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-	?log_debug("init", []),
-	{ok, {
-		{one_for_one, 5, 10}, [
-			?CHILD(incoming_msg_info),
-			?CHILD(k1api_sms_request_id_to_msg_ids)
-		]}
-	}.
+	{ok, {{one_for_one, 5, 10}, []}}.

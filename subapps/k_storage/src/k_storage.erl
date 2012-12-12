@@ -5,11 +5,11 @@
 	get_outgoing_msg_info/2,
 	get_outgoing_msg_info/3,
 
-	set_incoming_msg_info/2,
-	get_incoming_msg_info/1,
+	set_incoming_msg_info/1,
+	get_incoming_msg_info/2,
 
-	link_sms_request_id_to_msg_ids/2,
-	get_msg_ids_by_sms_request_id/1
+	link_sms_request_id_to_msg_ids/5,
+	get_msg_ids_by_sms_request_id/4
 ]).
 
 -include_lib("k_common/include/msg_id.hrl").
@@ -117,16 +117,6 @@ set_outgoing_msg_info(#msg_info{
 	],
 	mongodb_storage:upsert(outgoing_messages, Selectors, Plist).
 
-addr_to_doc(#full_addr{addr = Addr, ton = Ton, npi = Npi}) ->
-	{addr, Addr, ton, Ton, npi, Npi};
-addr_to_doc(#full_addr_ref_num{full_addr = FullAddr, ref_num = RefNum}) ->
-	{addr, addr_to_doc(FullAddr), ref_num, RefNum}.
-
-doc_to_addr({addr, Addr, ton, Ton, npi, Npi}) ->
-	#full_addr{addr = Addr, ton = Ton, npi = Npi};
-doc_to_addr({addr, Addr, ref_num, RefNum}) ->
-	#full_addr_ref_num{full_addr = doc_to_addr(Addr), ref_num = RefNum}.
-
 -spec get_outgoing_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_outgoing_msg_info(GatewayId, OutMsgId) ->
 	Selectors = [{gateway_id, GatewayId}, {out_msg_id, OutMsgId}],
@@ -153,22 +143,103 @@ get_outgoing_msg_info(CustomerId, ClientType, InMsgId) ->
 			Error
 	end.
 
+-spec set_incoming_msg_info(#msg_info{}) -> ok | {error, reason()}.
+set_incoming_msg_info(MsgInfo = #msg_info{}) ->
+	InMsgId = MsgInfo#msg_info.in_msg_id,
+	GatewayId = MsgInfo#msg_info.gateway_id,
+	CustomerId = MsgInfo#msg_info.customer_id,
+	Type = MsgInfo#msg_info.type,
+	Encoding = MsgInfo#msg_info.encoding,
+	MessageBody = MsgInfo#msg_info.body,
+	SourceAddr = MsgInfo#msg_info.src_addr,
+	DestAddr = MsgInfo#msg_info.dst_addr,
+	RegDlr = MsgInfo#msg_info.reg_dlr,
+
+	Selectors = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
+	Plist = [
+		{in_msg_id, InMsgId},
+		{gateway_id, GatewayId},
+		{customer_id, CustomerId},
+		{type, Type},
+		{encoding, Encoding},
+		{body, MessageBody},
+		{src_addr, addr_to_doc(SourceAddr)},
+		{dst_addr, addr_to_doc(DestAddr)},
+		{reg_dlr, RegDlr}
+	],
+	mongodb_storage:upsert(incoming_messages, Selectors, Plist).
+
+
+-spec get_incoming_msg_info(binary(), any()) -> {ok, #msg_info{}} | {error, reason()}.
+get_incoming_msg_info(GatewayId, InMsgId) ->
+	Selectors = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
+	case mongodb_storage:find_one(incoming_messages, Selectors) of
+		{ok, Plist} ->
+			SourceAddrDoc = proplists:get_value(src_addr, Plist),
+			DestAddrDoc = proplists:get_value(dst_addr, Plist),
+			MsgInfo = #msg_info{
+				in_msg_id = proplists:get_value(in_msg_id, Plist),
+				gateway_id = proplists:get_value(gateway_id, Plist),
+				customer_id = proplists:get_value(customer_id, Plist),
+				type = proplists:get_value(type, Plist),
+				encoding = proplists:get_value(encoding, Plist),
+				body = proplists:get_value(body, Plist),
+				src_addr = doc_to_addr(SourceAddrDoc),
+				dst_addr = doc_to_addr(DestAddrDoc),
+				reg_dlr = proplists:get_value(reg_dlr, Plist)
+			},
+			{ok, MsgInfo};
+		Error ->
+			Error
+	end.
+
+
+-spec link_sms_request_id_to_msg_ids(binary(), binary(), #addr{}, binary(), [any()]) -> ok | {error, reason()}.
+link_sms_request_id_to_msg_ids(CustomerId, UserId, SourceAddress, SmsRequestId, MessageIDs) ->
+	Selectors =
+		[{customer_id, CustomerId},
+		{user_id, UserId},
+	  	{src_addr, addr_to_doc(SourceAddress)},
+		{req_id, SmsRequestId}],
+	Plist = [
+		{customer_id, CustomerId},
+		{user_id, UserId},
+	  	{src_addr, addr_to_doc(SourceAddress)},
+		{req_id, SmsRequestId},
+		{msg_ids, [{customer_id, CId, client_type, Client, msg_id, MId} || {CId, Client, MId} <- MessageIDs]}
+	],
+	mongodb_storage:upsert(k1api_sms_request_id_to_msg_ids, Selectors, Plist).
+
+
+-spec get_msg_ids_by_sms_request_id(binary(), binary(), #full_addr{}, binary()) ->
+	{ok, [{binary(), k1api, binary()}]} | {error, reason()}.
+get_msg_ids_by_sms_request_id(CustomerId, UserId, SourceAddr, SmsRequestId) ->
+	Selectors =
+		[{customer_id, CustomerId},
+		{user_id, UserId},
+	  	{src_addr, addr_to_doc(SourceAddr)},
+		{req_id, SmsRequestId}],
+	case mongodb_storage:find_one(k1api_sms_request_id_to_msg_ids, Selectors) of
+		{ok, Plist} ->
+			MsgIdsDoc = proplists:get_value(msg_ids, Plist),
+			{ok, [{CId, Client, MId} || {_,CId,_,Client,_, MId} <- MsgIdsDoc]};
+		Error ->
+			Error
+	end.
+
+
 %% ===================================================================
-%% Use kv_storage
+%% Internals
 %% ===================================================================
 
--spec set_incoming_msg_info(msg_id(), #msg_info{}) -> ok | {error, reason()}.
-set_incoming_msg_info(OutputId, MsgInfo = #msg_info{}) ->
-	gen_server:call(incoming_msg_info, {set, OutputId, MsgInfo}, infinity).
+addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi}) ->
+	{addr, Addr, ton, Ton, npi, Npi};
+addr_to_doc(#full_addr{addr = Addr, ton = Ton, npi = Npi}) ->
+	{addr, Addr, ton, Ton, npi, Npi};
+addr_to_doc(#full_addr_ref_num{full_addr = FullAddr, ref_num = RefNum}) ->
+	{addr, addr_to_doc(FullAddr), ref_num, RefNum}.
 
--spec get_incoming_msg_info(msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
-get_incoming_msg_info(OutputId) ->
-	gen_server:call(incoming_msg_info, {get, OutputId}, infinity).
-
--spec link_sms_request_id_to_msg_ids(binary(), [binary()]) -> ok | {error, reason()}.
-link_sms_request_id_to_msg_ids(SmsRequestID, MessageIDs) ->
-	gen_server:call(k1api_sms_request_id_to_msg_ids, {set, SmsRequestID, MessageIDs}).
-
--spec get_msg_ids_by_sms_request_id(binary()) -> {ok, [binary()]} | {error, reason()}.
-get_msg_ids_by_sms_request_id(SmsRequestID) ->
-	gen_server:call(k1api_sms_request_id_to_msg_ids, {get, SmsRequestID}).
+doc_to_addr({addr, Addr, ton, Ton, npi, Npi}) ->
+	#full_addr{addr = Addr, ton = Ton, npi = Npi};
+doc_to_addr({addr, Addr, ref_num, RefNum}) ->
+	#full_addr_ref_num{full_addr = doc_to_addr(Addr), ref_num = RefNum}.

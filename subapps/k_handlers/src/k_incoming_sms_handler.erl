@@ -128,5 +128,5 @@ transform_addr(#addr_ref_num_dto{
 
 -spec store_incoming_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
 store_incoming_msg_info(OutputId, MsgInfo, Time) ->
-	ok = k_storage:set_incoming_msg_info(OutputId, MsgInfo),
+	ok = k_storage:set_incoming_msg_info(MsgInfo),
 	ok = k_statistic:store_incoming_msg_stats(OutputId, MsgInfo, Time).
