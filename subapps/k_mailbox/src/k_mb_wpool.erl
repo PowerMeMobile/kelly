@@ -212,8 +212,8 @@ build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
 		submit_date = SubmitDate,
 		done_date = DoneDate,
 		message_state = MessageState,
-		source = addr_to_dto(SourceAddr),
-		dest = addr_to_dto(DestAddr)
+		source = SourceAddr,
+		dest = DestAddr
 	},
 	DTO = #funnel_delivery_receipt_dto{
 		id = ItemID,
@@ -233,8 +233,8 @@ build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_funnel_sub{}) ->
 		queue_name = QName
 	} = Sub,
 	Msg = #funnel_incoming_sms_message_dto{
-		source = addr_to_dto(SourceAddr),
-		dest = addr_to_dto(DestAddr),
+		source = SourceAddr,
+		dest = DestAddr,
 		data_coding = Encoding,
 		message = Message
 	},
@@ -260,10 +260,10 @@ build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_k1api_incoming_sms_sub{}) ->
 	DTO = #k1api_sms_notification_request_dto{
 		callback_data = CallbackData,
 		datetime = Received,
-		dest_addr = addr_to_dto(DestAddr),
+		dest_addr = DestAddr,
 		message_id = ItemID,
 		message = Message,
-		sender_addr = addr_to_dto(SourceAddr),
+		sender_addr = SourceAddr,
 		notify_url = URL
 	},
 	{ok, Bin} = adto:encode(DTO),
@@ -281,17 +281,10 @@ build_dto(Item = #k_mb_k1api_receipt{}, Sub = #k_mb_k1api_receipt_sub{}) ->
 	} = Sub,
 	DTO = #k1api_sms_delivery_receipt_notification_dto{
 		id = ItemID,
-		dest_addr = addr_to_dto(DestAddr),
+		dest_addr = DestAddr,
 		status = MessageState,
 		callback_data = CallbackData,
 		url = NotifyURL
 	 },
 	{ok, Bin} = adto:encode(DTO),
 	{ok, ItemID, QName, Bin}.
-
-addr_to_dto(Addr = #addr{}) ->
-	#addr_dto{
-		addr = Addr#addr.addr,
-		ton = Addr#addr.ton,
-		npi = Addr#addr.npi
-	}.

@@ -1,20 +1,14 @@
 -ifndef(storages_hrl).
 -define(storages_hrl, included).
 
+-include_lib("alley_dto/include/addr.hrl").
+
 -define(networkStorageName, networks).
 -define(providerStorageName, providers).
 -define(gatewayStorageName, gateways).
 -define(customerStorageName, customers).
 
--type ver() 			:: integer().
--type error() 			:: term().
--type uuid() 			:: binary().
-
--record(addr, {
-	addr 				:: binary(),
-	ton 				:: integer(),
-	npi 				:: integer()
-}).
--type addr() 			:: #addr{}.
+-type error()	:: term().
+-type uuid() 	:: binary().
 
 -endif.

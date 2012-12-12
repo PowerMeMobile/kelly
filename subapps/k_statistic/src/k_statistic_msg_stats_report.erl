@@ -35,7 +35,8 @@ build_raw_report(Records) ->
 		fun(#msg_stats{msg_info = MsgInfo}, {SoFar, PrefixNetworkIdMap}) ->
 			MessageId = MsgInfo#msg_info.in_msg_id,
 			CustomerId = MsgInfo#msg_info.customer_id,
-			DestAddr = match_addr(MsgInfo#msg_info.dst_addr),
+			FullDestAddr = MsgInfo#msg_info.dst_addr,
+			DestAddr = FullDestAddr#addr.addr,
 
 			case cache_lookup_network_id(DestAddr, PrefixNetworkIdMap) of
 				{value, NetworkId} ->
@@ -135,15 +136,6 @@ msg_stats_report(KeyN, Records) ->
 		Pairs),
 	List = orddict:to_list(Dict),
 	List.
-
--spec match_addr(AddrRec::#full_addr{} | #full_addr_ref_num{}) -> Addr::string().
-match_addr(AddrRec) ->
-	case AddrRec of
-		#full_addr{addr = Addr} ->
-			Addr;
-		#full_addr_ref_num{full_addr = #full_addr{addr = Addr}} ->
-			Addr
-	 end.
 
 -spec cache_lookup_network_id(Address::string(), CacheMap::[{Prefix::string(), NetworkId::network_id()}]) ->
 	{value, NetworkId::network_id()} | false.

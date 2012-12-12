@@ -154,8 +154,8 @@ build_customer_response(#funnel_auth_request_dto{
 		uuid = UUID,
 		priority = Prior,
 		rps = RPS,
-		allowed_sources = addr_to_dto(AllowedSources),
-		default_source = addr_to_dto(DefaultSource),
+		allowed_sources = AllowedSources,
+		default_source = DefaultSource,
 		networks = Networks,
 		providers = Providers,
 		default_provider_id = DP,
@@ -190,19 +190,3 @@ reply(Response) ->
 			?log_warn("Unexpected funnel auth response encode error: ~p", [Error]),
 	   		Error
 	end.
-
-addr_to_dto(undefined) ->
-	undefined;
-addr_to_dto(Addr = #addr{}) ->
-	#addr{
-		addr = Msisdn,
-		ton = TON,
-		npi = NPI
-	} = Addr,
-	#addr_dto{
-		addr = Msisdn,
-		ton = TON,
-		npi = NPI
-	};
-addr_to_dto(Addrs) ->
-	[addr_to_dto(Addr) || Addr <- Addrs].

@@ -80,43 +80,30 @@ register_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
 	ok = k_mailbox:register_incoming_item(Item).
 
 build_receipt_item(k1api, InputId, MsgInfo, _DlrTime, MsgState) ->
-	SourceAddr = MsgInfo#msg_info.src_addr,
-	DestAddr = MsgInfo#msg_info.dst_addr,
 	{CustomerId, _ClientType, InputMsgId} = InputId,
-	UserId = <<"undefined">>,
 	ItemId = uuid:newid(),
 	Item = #k_mb_k1api_receipt{
 		id = ItemId,
 		customer_id	= CustomerId,
-		user_id	= UserId,
-		source_addr = convert_addr(SourceAddr),
-		dest_addr = convert_addr(DestAddr),
+		user_id	= <<"undefined">>,
+		source_addr = MsgInfo#msg_info.src_addr,
+		dest_addr = MsgInfo#msg_info.dst_addr,
 		input_message_id = InputMsgId,
 		message_state = MsgState
 	},
 	{ok, Item};
 build_receipt_item(funnel, InputId, MsgInfo, DlrTime, MsgState) ->
-	SenderAddr = MsgInfo#msg_info.src_addr,
-	DestAddr = MsgInfo#msg_info.dst_addr,
 	{CustomerId, _ClientType, InputMsgId} = InputId,
-	UserId = <<"undefined">>,
 	ItemId = uuid:newid(),
 	Item = #k_mb_funnel_receipt{
 		id = ItemId,
 		customer_id	= CustomerId,
-		user_id = UserId,
-		source_addr = convert_addr(SenderAddr),
-		dest_addr = convert_addr(DestAddr),
+		user_id = <<"undefined">>,
+		source_addr = MsgInfo#msg_info.src_addr,
+		dest_addr = MsgInfo#msg_info.dst_addr,
 		input_message_id = InputMsgId,
 		submit_date = DlrTime,
 		done_date = DlrTime,
 		message_state = MsgState
 	 },
 	{ok, Item}.
-
-convert_addr(undefined) ->
-	undefined;
-convert_addr(#full_addr{addr = Msisdn, ton = TON, npi = NPI}) ->
-	#addr{addr = Msisdn, ton = TON, npi = NPI};
-convert_addr(Addrs) ->
-	[convert_addr(Addr) || Addr <- Addrs].

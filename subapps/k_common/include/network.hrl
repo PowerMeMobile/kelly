@@ -11,7 +11,8 @@
 	prefixes 			:: [binary()],
 	provider_id			:: provider_id()
 }).
+
 -type network_id() 		:: uuid().
--type network() 		:: {ver(), #network{}}.
+-type network() 		:: #network{}.
 
 -endif.

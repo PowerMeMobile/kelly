@@ -141,18 +141,26 @@ prettify_plist(Plist) ->
 		{message_text, Body}
 	].
 
-transform_addr(#full_addr{
-	addr = Addr,
-	ton = Ton,
-	npi = Npi
-}) ->
-	[
-		{addr, Addr},
-		{ton, Ton},
-		{npi, Npi}
-	];
-transform_addr(#full_addr_ref_num{
-	full_addr = FullAddr,
-	ref_num = RefNum
-}) ->
-	transform_addr(FullAddr) ++ [{ref_num, RefNum}].
+transform_addr(FAddr = #addr{ref_num = undefined}) ->
+	#addr{
+		addr = Addr,
+		ton = Ton,
+		npi = Npi
+	} = FAddr,
+
+	[{addr, Addr},
+	{ton, Ton},
+	{npi, Npi}];
+
+transform_addr(FAddr = #addr{}) ->
+	#addr{
+		addr = Addr,
+		ton = Ton,
+		npi = Npi,
+		ref_num = RefNum
+	} = FAddr,
+
+	[{addr, Addr},
+	{ton, Ton},
+	{npi, Npi},
+	{ref_num, RefNum}].

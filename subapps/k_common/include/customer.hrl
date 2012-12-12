@@ -36,6 +36,6 @@
 }).
 -type customer_id() 	:: uuid().
 -type system_id() 		:: binary().
--type customer() 		:: {ver(), #customer{} }.
+-type customer() 		:: #customer{}.
 
 -endif.

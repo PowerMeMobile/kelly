@@ -23,6 +23,6 @@
 	connections = [] 	:: [connection()] | []
 }).
 -type gateway_id() 		:: uuid().
--type gateway() 		:: {ver(), #gateway{}}.
+-type gateway() 		:: #gateway{}.
 
 -endif.

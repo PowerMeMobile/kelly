@@ -26,8 +26,8 @@ process(CT, Message) ->
 
 process_incoming_sms_request(#just_incoming_sms_dto{
 	gateway_id = GatewayId,
-	source = SourceAddrDTO,
-	dest = DestAddrDTO,
+	source = SourceAddr,
+	dest = DestAddr,
 	message = MessageBody,
 	data_coding = DataCoding,
 	parts_ref_num = _PartsRefNum,
@@ -35,17 +35,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	part_index = _PartIndex,
 	timestamp = _UTCTime
 }) ->
-	#addr_dto{
-		addr = Addr,
-		ton = TON,
-		npi = NPI
-	} = DestAddrDTO,
-	DestAddr = #addr{addr = Addr, ton = TON, npi = NPI},
-	SourceAddr = #addr{
-		addr = SourceAddrDTO#addr_dto.addr,
-		ton = SourceAddrDTO#addr_dto.ton,
-		npi = SourceAddrDTO#addr_dto.npi
-	},
+
 	%% generate new id.
 	ItemId = uuid:newid(),
 	%% transform encoding.
@@ -63,8 +53,8 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	CustomerId =
 		case k_addr2cust:resolve(DestAddr) of
 			{ok, CustId, UserId} ->
-				?log_debug("Got incoming message for [cust:~p; user: ~p] (addr:~p, ton:~p, npi:~p)",
-					[CustId, UserId, Addr, TON, NPI] ),
+				?log_debug("Got incoming message for [cust:~p; user: ~p] (~p)",
+					[CustId, UserId, DestAddr] ),
 
 				%% register it to futher sending.
 				Item = #k_mb_incoming_sms{
@@ -83,7 +73,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 				CustId;
 	    Error ->
 			?log_debug("Address resolution failed with: ~p", [Error]),
-			?log_debug("Could not resolve incoming message to (addr:~p, ton:~p, npi:~p)", [Addr, TON, NPI]),
+			?log_debug("Could not resolve incoming message to ~p", [DestAddr]),
 			%% return `undefined' customer.
 			undefined
 	end,
@@ -97,8 +87,8 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		type = regular,
 		encoding = Encoding,
 		body = MessageBody,
-		src_addr = transform_addr(SourceAddrDTO),
-		dst_addr = transform_addr(DestAddrDTO),
+		src_addr = SourceAddr,
+		dst_addr = DestAddr,
 		reg_dlr = false,
 		req_time = k_datetime:utc_timestamp()
 	},
@@ -106,22 +96,3 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	ok = k_storage:set_incoming_msg_info(MsgInfo),
 	?log_debug("Incoming message stored: out:~p", [OutputId]),
 	{ok, []}.
-
-transform_addr(#addr_dto{
-	addr = Addr,
-	ton = Ton,
-	npi = Npi
-}) ->
-	#full_addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi
-	};
-transform_addr(#addr_ref_num_dto{
-	full_addr = FullAddr,
-	ref_num = RefNum
-}) ->
-	#full_addr_ref_num{
-		full_addr = transform_addr(FullAddr),
-		ref_num = RefNum
-	}.
