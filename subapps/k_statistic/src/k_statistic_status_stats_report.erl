@@ -21,8 +21,10 @@ get_report(From, To) ->
 	function() {
 		if (this.dlr_status) {
 			emit(this.dlr_status, 1);
-		} else {
+		} else if (this.resp_status) {
 			emit(this.resp_status, 1);
+		} else {
+			emit(\"submitted\", 1);
 		}
 	};
 ">>,
@@ -34,7 +36,7 @@ get_report(From, To) ->
 ">>,
 	Command =
 		{ 'mapreduce' , <<"outgoing_messages">>,
-		  'query' , { 'resp_time' , { '$gte' , FromDate, '$lt' , ToDate } },
+		  'query' , { 'req_time' , { '$gte' , FromDate, '$lt' , ToDate } },
 		  'map' , MapF,
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
