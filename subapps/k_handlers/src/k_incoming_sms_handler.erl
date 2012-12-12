@@ -33,7 +33,8 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	parts_ref_num = _PartsRefNum,
 	parts_count = _PartsCount,
 	part_index = _PartIndex,
-	timestamp = _UTCTime }) ->
+	timestamp = _UTCTime
+}) ->
 	#addr_dto{
 		addr = Addr,
 		ton = TON,
@@ -88,7 +89,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	end,
 	%% build OutputId.
 	OutputId = {GatewayId, ItemId},
-	%% build msg_info out of available data
+	%% build msg_info out of available data.
 	MsgInfo = #msg_info{
 		in_msg_id = ItemId,
 		gateway_id = GatewayId,
@@ -98,12 +99,11 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		body = MessageBody,
 		src_addr = transform_addr(SourceAddrDTO),
 		dst_addr = transform_addr(DestAddrDTO),
-		reg_dlr = false
+		reg_dlr = false,
+		req_time = k_datetime:utc_timestamp()
 	},
-	%% determine receiving time.
-	Time = k_datetime:utc_timestamp(),
 	%% store it.
-	store_incoming_msg_info(OutputId, MsgInfo, Time),
+	ok = k_storage:set_incoming_msg_info(MsgInfo),
 	?log_debug("Incoming message stored: out:~p", [OutputId]),
 	{ok, []}.
 
@@ -125,8 +125,3 @@ transform_addr(#addr_ref_num_dto{
 		full_addr = transform_addr(FullAddr),
 		ref_num = RefNum
 	}.
-
--spec store_incoming_msg_info(msg_id(), #msg_info{}, integer()) -> ok.
-store_incoming_msg_info(OutputId, MsgInfo, Time) ->
-	ok = k_storage:set_incoming_msg_info(MsgInfo),
-	ok = k_statistic:store_incoming_msg_stats(OutputId, MsgInfo, Time).

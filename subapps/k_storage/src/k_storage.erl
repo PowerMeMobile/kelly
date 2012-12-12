@@ -153,6 +153,7 @@ set_incoming_msg_info(MsgInfo = #msg_info{}) ->
 	SourceAddr = MsgInfo#msg_info.src_addr,
 	DestAddr = MsgInfo#msg_info.dst_addr,
 	RegDlr = MsgInfo#msg_info.reg_dlr,
+	ReqTime = MsgInfo#msg_info.req_time,
 
 	Selectors = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
 	Plist = [
@@ -164,10 +165,10 @@ set_incoming_msg_info(MsgInfo = #msg_info{}) ->
 		{body, MessageBody},
 		{src_addr, addr_to_doc(SourceAddr)},
 		{dst_addr, addr_to_doc(DestAddr)},
-		{reg_dlr, RegDlr}
+		{reg_dlr, RegDlr},
+		{req_time, ReqTime}
 	],
 	mongodb_storage:upsert(incoming_messages, Selectors, Plist).
-
 
 -spec get_incoming_msg_info(binary(), any()) -> {ok, #msg_info{}} | {error, reason()}.
 get_incoming_msg_info(GatewayId, InMsgId) ->
@@ -185,13 +186,13 @@ get_incoming_msg_info(GatewayId, InMsgId) ->
 				body = proplists:get_value(body, Plist),
 				src_addr = doc_to_addr(SourceAddrDoc),
 				dst_addr = doc_to_addr(DestAddrDoc),
-				reg_dlr = proplists:get_value(reg_dlr, Plist)
+				reg_dlr = proplists:get_value(reg_dlr, Plist),
+				req_time = proplists:get_value(req_time, Plist)
 			},
 			{ok, MsgInfo};
 		Error ->
 			Error
 	end.
-
 
 -spec link_sms_request_id_to_msg_ids(binary(), binary(), #addr{}, binary(), [any()]) -> ok | {error, reason()}.
 link_sms_request_id_to_msg_ids(CustomerId, UserId, SourceAddress, SmsRequestId, MessageIDs) ->
@@ -208,7 +209,6 @@ link_sms_request_id_to_msg_ids(CustomerId, UserId, SourceAddress, SmsRequestId, 
 		{msg_ids, [{customer_id, CId, client_type, Client, msg_id, MId} || {CId, Client, MId} <- MessageIDs]}
 	],
 	mongodb_storage:upsert(k1api_sms_request_id_to_msg_ids, Selectors, Plist).
-
 
 -spec get_msg_ids_by_sms_request_id(binary(), binary(), #full_addr{}, binary()) ->
 	{ok, [{binary(), k1api, binary()}]} | {error, reason()}.
