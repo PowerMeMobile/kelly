@@ -27,7 +27,7 @@ Result:
 </statuses>
 
 REST call:
-GET /report/status?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&status=STATUS
+GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&status=STATUS
 Where
 	STATUS - status
 	YYYY - year
@@ -37,7 +37,7 @@ Where
 	mm - minutes
 
 Example:
-http://localhost:8080/report/status?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted
+http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted
 
 Result:
 <messages>
