@@ -5,6 +5,10 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
+%% API
+-export([update_dispatch_rules/0]).
+
+
 -include("application.hrl").
 -include_lib("k_common/include/application_spec.hrl").
 -include_lib("k_common/include/logging.hrl").
@@ -15,7 +19,32 @@
 
 start(_StartType, _StartArgs) ->
 	register(?MODULE, self()),
-	Dispatch = [
+
+	{ok, NumAcceptors} = application:get_env(?APP, num_acceptors),
+	{ok, Port} = application:get_env(?APP, port),
+	Dispatch = dispatch_rules(),
+	cowboy:start_listener(?MODULE, NumAcceptors,
+	    cowboy_tcp_transport, [{port, Port}],
+    	cowboy_http_protocol, [{dispatch, Dispatch}]
+	),
+	k_http_api_sup:start_link().
+
+stop(_State) ->
+    ok.
+
+%% ===================================================================
+%% API
+%% ===================================================================
+
+update_dispatch_rules() ->
+	cowboy:set_protocol_options(?MODULE, [{dispatch, dispatch_rules()}]).
+
+%% ===================================================================
+%% Internals
+%% ===================================================================
+
+dispatch_rules() ->
+	[
     %% {Host, list({Path, Handler, Opts})}
     	{'_', [
 			%% REST API
@@ -45,17 +74,4 @@ start(_StartType, _StartArgs) ->
 			%% Others handler
     		{'...', error_request_handler, []}
     	]}
-	],
-
-	{ok, NumAcceptors} = application:get_env(?APP, num_acceptors),
-	{ok, Port} = application:get_env(?APP, port),
-
-	cowboy:start_listener(http, NumAcceptors,
-	    cowboy_tcp_transport, [{port, Port}],
-    	cowboy_http_protocol, [{dispatch, Dispatch}]
-	),
-    % ?log_debug("cowboy started OK", []),
-	k_http_api_sup:start_link().
-
-stop(_State) ->
-    ok.
+	].
