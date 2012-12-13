@@ -136,26 +136,16 @@ prettify_plist(Plist) ->
 		{message_text, Body}
 	].
 
-addr_to_proplist(FAddr = #addr{ref_num = undefined}) ->
-	#addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi
-	} = FAddr,
-
-	[{addr, Addr},
-	{ton, Ton},
-	{npi, Npi}];
-
-addr_to_proplist(FAddr = #addr{}) ->
-	#addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi,
-		ref_num = RefNum
-	} = FAddr,
-
-	[{addr, Addr},
-	{ton, Ton},
-	{npi, Npi},
-	{ref_num, RefNum}].
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi}
+	];
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi},
+		{ref_num, RefNum}
+	].
