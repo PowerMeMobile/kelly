@@ -1,20 +1,26 @@
 -ifndef(msg_info_hrl).
 -define(msg_info_hrl, included).
 
--type encoding() :: {atom(), atom()}.
-
 -include_lib("alley_dto/include/addr.hrl").
 
+-type encoding() :: atom() | integer().
 -type src_addr() :: #addr{}.
 -type dst_addr() :: #addr{}.
--type delivery_status() ::
-	delivered |
-	expired |
-	deleted |
-	undeliverable |
-	accepted |
-	unknown |
-	rejected.
+
+-type resp_status() ::
+	success
+  | failure.
+
+-type dlr_status() ::
+	enroute
+  | delivered
+  | expired
+  | deleted
+  | undeliverable
+  | accepted
+  | unknown
+  | rejected
+  | unrecognized.
 
 -record(msg_info, {
     client_type :: funnel | k1api,
@@ -30,9 +36,9 @@
     reg_dlr :: boolean(),
 	req_time :: erlang:timestamp(),
 	resp_time :: erlang:timestamp(),
-	resp_status :: success | failure,
+	resp_status :: resp_status(),
 	dlr_time :: erlang:timestamp(),
-	dlr_status :: delivery_status()
+	dlr_status :: dlr_status()
 }).
 
 -define(MSG_STATUS(MsgInfo),

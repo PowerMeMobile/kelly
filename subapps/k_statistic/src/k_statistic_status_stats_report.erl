@@ -6,7 +6,12 @@
 ]).
 
 -include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/msg_status.hrl").
+
+-type status() ::
+	received
+  | submitted
+  | resp_status()
+  | dlr_status().
 
 %% ===================================================================
 %% API
@@ -85,9 +90,9 @@ get_report(From, To, Status) when
 	get_raw_report(outgoing_messages, Selector);
 
 get_report(From, To, Status) when
-	Status == accepted; Status == deleted; Status == delivered;
-	Status == expired; Status == rejected; Status == undeliverable;
-	Status == unknown
+	Status == enroute; Status == delivered; Status == expired;
+	Status == deleted; Status == undeliverable; Status == accepted;
+	Status == unknown; Status == rejected; Status == unrecognized
 ->
 	Selector = [
 		{ 'req_time' , { '$gte' , From, '$lt' , To } },
