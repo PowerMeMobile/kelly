@@ -64,43 +64,43 @@ get_report(From, To) ->
 
 -spec get_report(From::erlang:timestamp(), To::erlang:timestamp(), Status::status()) -> [any()].
 get_report(From, To, received) ->
-	Selectors = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
-	get_raw_report(incoming_messages, Selectors);
+	Selector = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
+	get_raw_report(incoming_messages, Selector);
 
 get_report(From, To, submitted) ->
-	Selectors = [
+	Selector = [
 		{ 'req_time' , { '$gte' , From, '$lt' , To } },
 		{ 'resp_status' , { '$exists' , false } },
 		{ 'dlr_status' , { '$exists' , false } }
 	],
-	get_raw_report(outgoing_messages, Selectors);
+	get_raw_report(outgoing_messages, Selector);
 
 get_report(From, To, Status) when
 	Status == success; Status == failure
 ->
-	Selectors = [
+	Selector = [
 		{ 'req_time' , { '$gte' , From, '$lt' , To } },
 		{ 'resp_status' , Status }
 	],
-	get_raw_report(outgoing_messages, Selectors);
+	get_raw_report(outgoing_messages, Selector);
 
 get_report(From, To, Status) when
 	Status == accepted; Status == deleted; Status == delivered;
 	Status == expired; Status == rejected; Status == undeliverable;
 	Status == unknown
 ->
-	Selectors = [
+	Selector = [
 		{ 'req_time' , { '$gte' , From, '$lt' , To } },
 		{ 'dlr_status' , Status }
 	],
-	get_raw_report(outgoing_messages, Selectors).
+	get_raw_report(outgoing_messages, Selector).
 
 %% ===================================================================
 %% Internal
 %% ===================================================================
 
-get_raw_report(Collection, Selectors) ->
-	case mongodb_storage:find(Collection, Selectors) of
+get_raw_report(Collection, Selector) ->
+	case mongodb_storage:find(Collection, Selector) of
 		{ok, List} ->
 			{ok, {messages,
 				[prettify_plist(Plist) || {_Id, Plist} <- List]
@@ -136,26 +136,16 @@ prettify_plist(Plist) ->
 		{message_text, Body}
 	].
 
-addr_to_proplist(FAddr = #addr{ref_num = undefined}) ->
-	#addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi
-	} = FAddr,
-
-	[{addr, Addr},
-	{ton, Ton},
-	{npi, Npi}];
-
-addr_to_proplist(FAddr = #addr{}) ->
-	#addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi,
-		ref_num = RefNum
-	} = FAddr,
-
-	[{addr, Addr},
-	{ton, Ton},
-	{npi, Npi},
-	{ref_num, RefNum}].
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi}
+	];
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi},
+		{ref_num, RefNum}
+	].

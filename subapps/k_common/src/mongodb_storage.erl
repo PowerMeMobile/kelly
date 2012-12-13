@@ -4,7 +4,9 @@
 -export([
 	start_link/1,
 	find/2,
+	find/3,
 	find_one/2,
+	find_one/3,
 	upsert/3,
 	delete/2,
 	command/2
@@ -31,6 +33,10 @@
 	db_name :: binary()
 }).
 
+-type key() :: term().
+-type value() :: term().
+-type reason() :: term().
+
 %% ===================================================================
 %% API
 %% ===================================================================
@@ -39,13 +45,19 @@
 start_link(Coll) ->
 	gen_server:start_link({local, Coll}, ?MODULE, [], []).
 
--spec find(Coll::binary(), Selectors::[{atom(), term()}]) -> {ok, [{Key::term(), Value::term()}]} | {error, Reason::term()}.
-find(Coll, Selectors) ->
+-spec find(Coll::binary(), Selector::[{atom(), term()}]) ->
+	{ok, [{key(), value()}]} | {error, reason()}.
+find(Coll, Selector) ->
+	find(Coll, Selector, []).
+
+-spec find(Coll::binary(), Selector::[{atom(), term()}], Projector::[{atom(), term()}]) ->
+	{ok, [{key(), value()}]} | {error, reason()}.
+find(Coll, Selector, Projector) ->
 	case gen_server:call(Coll, get_conn_and_db) of
 		{ok, Conn, DBName} ->
 			Res = mongo:do(safe, master, Conn, DBName,
 				fun() ->
-					Cursor = mongo:find(Coll, bson:document(Selectors)),
+					Cursor = mongo:find(Coll, bson:document(Selector), bson:document(Projector)),
 					Documents = mongo_cursor:rest(Cursor),
 					Results = lists:map(
 						fun(BsonDoc) ->
@@ -67,14 +79,19 @@ find(Coll, Selectors) ->
 			{error, Reason}
 	end.
 
--spec find_one(Coll::binary(), Selectors::[{atom(), term()}]) ->
-{ok, Plist::[tuple()]} | {error, no_entry} | {error, Reason::term()}.
-find_one(Coll, Selectors) ->
+-spec find_one(Coll::binary(), Selector::[{atom(), term()}]) ->
+	{ok, Plist::[tuple()]} | {error, no_entry} | {error, reason()}.
+find_one(Coll, Selector) ->
+	find_one(Coll, Selector, []).
+
+-spec find_one(Coll::binary(), Selector::[{atom(), term()}], Projector::[{atom(), term()}]) ->
+	{ok, Plist::[tuple()]} | {error, no_entry} | {error, reason()}.
+find_one(Coll, Selector, Projector) ->
 	case gen_server:call(Coll, get_conn_and_db) of
 		{ok, Conn, DBName} ->
 			Res = mongo:do(safe, master, Conn, DBName,
 				fun() ->
-					case mongo:find_one(Coll, bson:document(Selectors)) of
+					case mongo:find_one(Coll, bson:document(Selector), bson:document(Projector)) of
 						{} ->
 							{error, no_entry};
 						{BsonDoc} ->
@@ -92,13 +109,14 @@ find_one(Coll, Selectors) ->
 			{error, Reason}
 	end.
 
--spec upsert(Coll::binary(), Selectors::[{atom(), term()}], Value::[tuple()]) -> ok | {error, Reason::term()}.
-upsert(Coll, Selectors, Plist) when is_list(Plist) ->
+-spec upsert(Coll::binary(), Selector::[{atom(), term()}], Value::[tuple()]) ->
+	ok | {error, reason()}.
+upsert(Coll, Selector, Plist) when is_list(Plist) ->
 	case gen_server:call(Coll, get_conn_and_db) of
 		{ok, Conn, DBName} ->
 			Res = mongo:do(safe, master, Conn, DBName,
 				fun() ->
-					mongo:repsert(Coll, bson:document(Selectors), {'$set', bson:document(Plist)})
+					mongo:repsert(Coll, bson:document(Selector), {'$set', bson:document(Plist)})
 				end),
 			case Res of
 				{ok, _} ->
@@ -110,13 +128,14 @@ upsert(Coll, Selectors, Plist) when is_list(Plist) ->
 			{error, Reason}
 	end.
 
--spec delete(Coll::binary(), Selectors::[{atom(), term()}]) -> ok | {error, no_entry} | {error, Reason::term()}.
-delete(Coll, Selectors) ->
+-spec delete(Coll::binary(), Selector::[{atom(), term()}]) ->
+	ok | {error, no_entry} | {error, reason()}.
+delete(Coll, Selector) ->
 	case gen_server:call(Coll, get_conn_and_db) of
 		{ok, Conn, DBName} ->
 			Res = mongo:do(safe, master, Conn, DBName,
 				fun() ->
-					mongo:delete(Coll, bson:document(Selectors))
+					mongo:delete(Coll, bson:document(Selector))
 				end),
 			case Res of
 				{ok, _} ->
@@ -128,7 +147,8 @@ delete(Coll, Selectors) ->
 			{error, Reason}
 	end.
 
--spec command(Coll::binary(), Command::tuple()) -> {ok, Result::term()} | {error, Reason::term()}.
+-spec command(Coll::binary(), Command::tuple()) ->
+	{ok, Result::term()} | {error, reason()}.
 command(Coll, Command) ->
 	case gen_server:call(Coll, get_conn_and_db) of
 		{ok, Conn, DBName} ->

@@ -7,26 +7,28 @@
 -include("msg_stats.hrl").
 -include_lib("k_common/include/gateway.hrl").
 
+-type unix_epoch() :: pos_integer().
+-type reason() :: term().
+
 %% ===================================================================
 %% API
 %% ===================================================================
 
 -spec get_report(
-	From::calendar:datetime(),
-	To::calendar:datetime(),
+	FromUnix::unix_epoch(),
+	ToUnix::unix_epoch(),
 	SliceLength::pos_integer()
-) -> {ok, Report::term()} | {error, Reason::term()}.
-get_report(From, To, SliceLength) when From < To ->
-	SliceRanges = k_statistic_utils:get_timestamp_ranges(From, To, SliceLength),
+) -> {ok, Report::term()} | {error, reason()}.
+get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
+	SliceRanges = k_statistic_utils:get_timestamp_ranges(FromUnix, ToUnix, SliceLength),
 
-	OutgoingFilenames = k_statistic_utils:get_file_list_with(
-		From, To, fun k_statistic_utils:msg_stats_slice_path/1),
-	OutgoingRecords = k_statistic_utils:read_terms_from_files_with(OutgoingFilenames, fun strip_msg_stats/1),
+  	From = k_datetime:unix_epoch_to_timestamp(FromUnix),
+	To = k_datetime:unix_epoch_to_timestamp(ToUnix),
+
+	{ok, OutgoingRecords} = get_records(outgoing_messages, From, To),
 	OutgoingReport = detailed_msg_stats_report(OutgoingRecords, SliceRanges),
 
-	IncomingFilenames = k_statistic_utils:get_file_list_with(
-		From, To, fun k_statistic_utils:incoming_msg_stats_slice_path/1),
-	IncomingRecords = k_statistic_utils:read_terms_from_files_with(IncomingFilenames, fun strip_msg_stats/1),
+	{ok, IncomingRecords} = get_records(incoming_messages, From, To),
 	IncomingReport = detailed_msg_stats_report(IncomingRecords, SliceRanges),
 
 	{ok, {messages, [
@@ -38,16 +40,30 @@ get_report(From, To, SliceLength) when From < To ->
 %% Internal
 %% ===================================================================
 
--spec strip_msg_stats(#msg_stats{}) -> {gateway_id(), os:timestamp()}.
-strip_msg_stats(#msg_stats{
-	msg_info = #msg_info{gateway_id = GatewayId},
-	time = Time
-}) ->
-	{GatewayId, Time}.
+-spec get_records(
+	Collection::atom(),
+	From::erlang:timestamp(),
+	To::erlang:timestamp()
+) -> {ok, [{gateway_id(), unix_epoch()}]} | {error, reason()}.
+get_records(Collection, From, To) ->
+	Selector = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
+	Projector = [ { 'gateway_id' , 1 } , { 'req_time' , 1 } ],
+	case mongodb_storage:find(Collection, Selector, Projector) of
+		{ok, List} ->
+			{ok, [strip_plist(Plist) || {_Id, Plist} <- List]};
+		Error ->
+			Error
+	end.
+
+strip_plist(Plist) ->
+	GatewayId = proplists:get_value(gateway_id, Plist),
+	ReqTime = proplists:get_value(req_time, Plist),
+	ReqTimeUnix = k_datetime:timestamp_to_unix_epoch(ReqTime),
+	{GatewayId, ReqTimeUnix}.
 
 -spec detailed_msg_stats_report(
-	Records::[{gateway_id(), os:timestamp()}],
-	SliceRanges::[{os:timestamp(), os:timestamp()}]
+	Records::[{gateway_id(), unix_epoch()}],
+	SliceRanges::[{unix_epoch(), unix_epoch()}]
 ) -> [tuple()].
 detailed_msg_stats_report(Records, SliceRanges) ->
 	Total = length(Records),
@@ -59,7 +75,7 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 			lists:map(
 				fun(GatewayId) ->
 					Timestamps = dict:fetch(GatewayId, Dict),
-					Frequencies = k_statistic_utils:make_frequencies(Timestamps),
+					Frequencies = k_lists:make_frequencies(Timestamps),
 					GatewayTotal = length(Timestamps),
 					[
 						{gateway_id, GatewayId},
@@ -100,7 +116,7 @@ get_gateway_name(GatewayId) ->
 			"N/A"
 	end.
 
--spec build_gateway_id_to_timestamps_dict([{gateway_id(), os:timestamp()}]) -> dict().
+-spec build_gateway_id_to_timestamps_dict([{gateway_id(), unix_epoch()}]) -> dict().
 build_gateway_id_to_timestamps_dict(Records) ->
 	lists:foldl(
 		fun({GatewayId, Timestamp}, Dict) ->
@@ -110,11 +126,9 @@ build_gateway_id_to_timestamps_dict(Records) ->
 		Records).
 
 -spec get_frequencies_from_to(
-	Frequencies::[{os:timestamp(), pos_integer()}],
-	From::os:timestamp(),
-	To::os:timestamp()
+	Frequencies::[{unix_epoch(), pos_integer()}],
+	From::unix_epoch(),
+	To::unix_epoch()
 ) -> [pos_integer()].
 get_frequencies_from_to(Frequencies, From, To) ->
-	MoreThenFrom = lists:dropwhile(fun({Timestamp, _}) -> Timestamp < From end, Frequencies),
-	LessThenTo = lists:takewhile(fun({Timestamp, _}) -> Timestamp < To end, MoreThenFrom),
-	lists:map(fun({_, Fr}) -> Fr end, LessThenTo).
+	[Fr || {Timestamp, Fr} <- Frequencies, Timestamp >= From, Timestamp < To].

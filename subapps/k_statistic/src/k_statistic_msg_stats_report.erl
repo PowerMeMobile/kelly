@@ -125,7 +125,7 @@ annotate_msg_stats_report(networks, Networks) ->
 msg_stats_report(KeyN, Records) ->
 	Pairs = lists:map(
 		fun(R) ->
-			k_statistic_utils:make_pair(KeyN, R)
+			k_lists:make_pair(KeyN, R)
 		end,
 		Records),
 	Dict = lists:foldl(

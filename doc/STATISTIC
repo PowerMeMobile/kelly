@@ -114,7 +114,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
-	LEN - Slice length - seconds, default is 60, possible prefixes: S - seconds, M - minutes, H - hours
+	LEN - Slice length - seconds, default is 60, possible prefixes: S - seconds, M - minutes, H - hours, D - days
 
 Example:
 http://localhost:8080/report/messages/details?from=2012-05-20T00:00&to=2012-05-25T00:00&slice_length=M60
