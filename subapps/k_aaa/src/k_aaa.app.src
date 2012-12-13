@@ -7,6 +7,5 @@
 		stdlib,
 		k_common
 	]},
-	{mod, {k_aaa_app, []}},
 	{env, []}
 ]}.
