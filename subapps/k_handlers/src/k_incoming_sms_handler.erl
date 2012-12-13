@@ -38,15 +38,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 
 	%% generate new id.
 	ItemId = uuid:newid(),
-	%% transform encoding.
-	Encoding = case DataCoding of
-	   -1 -> default;
-		0 -> gsm0338;
-		1 -> ascii;
-		3 -> latin1;
-		8 -> ucs2;
-		_ -> DataCoding
-	end,
+
 	%% try to determine customer id and user id,
 	%% this will return either valid customer id or `undefined'.
 	%% i think it makes sense to store even partly filled message.
@@ -65,7 +57,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 					dest_addr = DestAddr,
 					received  = k_datetime:utc_timestamp(),
 					message_body = MessageBody,
-					encoding = Encoding
+					encoding = DataCoding
 				},
 				k_mailbox:register_incoming_item(Item),
 				?log_debug("Incomming message registered [item:~p]", [ItemId]),
@@ -85,7 +77,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		gateway_id = GatewayId,
 		customer_id = CustomerId,
 		type = regular,
-		encoding = Encoding,
+		encoding = DataCoding,
 		body = MessageBody,
 		src_addr = SourceAddr,
 		dst_addr = DestAddr,
