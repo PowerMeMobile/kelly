@@ -42,3 +42,6 @@ gdb:
 
 release: generate
 	./rel/create-release.sh
+
+update-deps:
+	./rebar update-deps
