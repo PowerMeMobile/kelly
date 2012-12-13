@@ -50,13 +50,13 @@ msg_stats_report(ReportType, From, To) when From < To ->
 	k_statistic_msg_stats_report:get_report(ReportType, FromUnix, ToUnix).
 
 -spec detailed_msg_stats_report(
-	From::calendar:datetime(),
-	To::calendar:datetime(),
+	FromDate::calendar:datetime(),
+	ToDate::calendar:datetime(),
 	SliceLength::pos_integer()
 ) -> {ok, Report::term()} | {error, Reason::term()}.
-detailed_msg_stats_report(From, To, SliceLength) when From < To ->
-	FromUnix = k_datetime:datetime_to_unix_epoch(From),
-	ToUnix = k_datetime:datetime_to_unix_epoch(To),
+detailed_msg_stats_report(FromDate, ToDate, SliceLength) when FromDate < ToDate ->
+	FromUnix = k_datetime:datetime_to_unix_epoch(FromDate),
+	ToUnix = k_datetime:datetime_to_unix_epoch(ToDate),
 	k_statistic_detailed_msg_stats_report:get_report(FromUnix, ToUnix, SliceLength).
 
 -spec uplink_report() -> {ok, Report::term()} | {error, Reason::term()}.
