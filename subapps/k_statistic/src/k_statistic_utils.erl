@@ -22,16 +22,7 @@
 	align_time_range/2,
 	align_time_range/3,
 	get_file_list_with/3,
-	timestamp_to_iso_8601/1,
-
-	%% common utils
-	make_pair/2,
-	remove/2,
-	group/1,
-	groupwith/2,
-	findwith/2,
-	make_ranges/1,
-	make_frequencies/1
+	timestamp_to_iso_8601/1
 ]).
 
 -include("application.hrl").
@@ -158,75 +149,15 @@ align_time_range(From, To, Step) ->
 	{FromFloor, ToCeiling}.
 
 -spec get_file_list_with(
-	From::os:timestamp(),
-	To::os:timestamp(),
-	Fun::fun((Timestamp::os:timestamp()) -> file:filename())
+	From::unix_epoch(),
+	To::unix_epoch(),
+	Fun::fun((Timestamp::unix_epoch()) -> file:filename())
 ) -> [file:filename()].
 get_file_list_with(From, To, Fun) when From < To ->
 	Timestamps = get_timestamp_list(From, To),
 	lists:map(Fun, Timestamps).
 
--spec timestamp_to_iso_8601(Timestamp::os:timestamp()) -> string().
+-spec timestamp_to_iso_8601(Timestamp::unix_epoch()) -> string().
 timestamp_to_iso_8601(Timestamp) ->
 	k_datetime:datetime_to_iso_8601(
 		k_datetime:unix_epoch_to_datetime(Timestamp)).
-
-%% make_pair(2, {a,b,c}) ==> {b,{a,c}}
-%% make_pair(1, {a,b}) ==> {a,b}
--spec make_pair(KeyN::integer(), Tuple::tuple()) -> {Key::term(), Value::tuple()} | {Key::term(), Value::term()}.
-make_pair(KeyN, Tuple) ->
-	Key = element(KeyN, Tuple),
-	ValueList = remove(KeyN, tuple_to_list(Tuple)),
-	Value = case length(ValueList) of
-				1 -> hd(ValueList);
-				_ -> list_to_tuple(ValueList)
-			end,
-	{Key, Value}.
-
-%% remove(2, "abcdef") ==> "acdef"
--spec remove(N::integer(), List::[term()]) -> [term()].
-remove(_, []) -> [];
-remove(1, [_|T]) -> T;
-remove(N, [H|T]) -> [H | remove(N-1, T)].
-
--spec findwith(fun((A::term()) -> boolean()), [A::term()]) -> {value, A::term()} | false.
-findwith(_, []) ->
-	false;
-findwith(Pred, [H|T]) ->
-	case Pred(H) of
-		true ->
-			{value, H};
-		false ->
-			findwith(Pred, T)
-	end.
-
-%% group("Mississippi") ==> ["M","i","ss","i","ss","i","pp","i"]
--spec group([A]) -> [[A]].
-group(List) ->
-	groupwith(fun erlang:'=:='/2, List).
-
--spec groupwith(Eq::fun((A, A) -> boolean()), [A]) -> [[A]].
-groupwith(_, []) ->
-	[];
-groupwith(Eq, [X|XS]) ->
-	{YS, ZS} = lists:splitwith(fun(I) -> Eq(X, I) end, XS),
-	[[X|YS] | groupwith(Eq, ZS)].
-
-%% make_ranges([1,2,3,4,5]) ==> [{1,2},{2,3},{3,4},{4,5}]
--spec make_ranges([A]) -> [{A,A}].
-make_ranges(List) ->
-	make_ranges(List, []).
-make_ranges([_|[]], Ranges) ->
-	lists:reverse(Ranges);
-make_ranges([F,S|T], Ranges) ->
-	make_ranges([S|T], [{F,S}|Ranges]).
-
-%% make_frequencies([1,2,3,2,3,3]) ==> [{1,1},{2,2},{3,3}]
--spec make_frequencies([A]) -> [{A, pos_integer()}].
-make_frequencies(Timestamps) ->
-	Groups = group(lists:sort(Timestamps)),
-	lists:map(
-		fun([H|_] = L) ->
-			{H, length(L)}
-		end,
-		Groups).

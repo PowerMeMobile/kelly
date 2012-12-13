@@ -59,7 +59,7 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 			lists:map(
 				fun(GatewayId) ->
 					Timestamps = dict:fetch(GatewayId, Dict),
-					Frequencies = k_statistic_utils:make_frequencies(Timestamps),
+					Frequencies = k_lists:make_frequencies(Timestamps),
 					GatewayTotal = length(Timestamps),
 					[
 						{gateway_id, GatewayId},
