@@ -111,12 +111,12 @@ prepare_conns([#funnel_connection_dto{
 		{type, Type},
 		{msgs_received, MsgsReceived},
 		{msgs_sent, MsgsSent},
-		{errors, lists:map(fun error_to_proplist/1, Errors)}
+		{errors, [error_to_proplist(Error) || Error <- Errors]}
 	],
 	prepare_conns(Rest, [ConnPropList | Acc]).
 
-error_to_proplist(Error = #error_dto{}) ->
+error_to_proplist(#error_dto{error_code = ErrorCode, timestamp = Timestamp}) ->
 	[
-	{error_code, Error#error_dto.error_code},
-	{timestamp, Error#error_dto.timestamp}
+		{error_code, ErrorCode},
+		{timestamp, Timestamp}
 	].

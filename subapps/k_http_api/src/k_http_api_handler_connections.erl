@@ -290,10 +290,7 @@ prepare_connections([Connection = #connection{} | Rest], Acc) ->
 	ConnPropList = ConnFun(Connection),
 	prepare_connections(Rest, [ConnPropList | Acc]).
 
-
 %% convert "127.0.0.1" to [127,0,0,1]
 convert_to_snmp_ip(Addr) when is_list(Addr) ->
 	Tokens = string:tokens(Addr, "."),
-	lists:map(fun(Token)->
-		list_to_integer(Token)
-	end, Tokens).
+	[list_to_integer(Token) || Token <- Tokens].
