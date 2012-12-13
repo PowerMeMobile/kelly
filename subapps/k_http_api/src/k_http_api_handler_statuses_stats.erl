@@ -22,9 +22,9 @@ init() ->
 	Read = #method_spec{
 				path = [<<"report">>, <<"statuses">>],
 				params = [
-					#param{name = from, mandatory = true, repeated = false, type = string},
-					#param{name = to, mandatory = true, repeated = false, type = string},
-					#param{name = status, mandatory = false, repeated = false, type = string}
+					#param{name = from, mandatory = true, repeated = false, type = {custom, fun convert_datetime/1}},
+					#param{name = to, mandatory = true, repeated = false, type = {custom, fun convert_datetime/1}},
+					#param{name = status, mandatory = false, repeated = false, type = atom}
 				]},
 
 	{ok, #specs{
@@ -60,24 +60,17 @@ delete(_Params) ->
 %% Internal
 %% ===================================================================
 
-build_report(HttpFrom, HttpTo, undefined) ->
-	From = convert_http_datetime_to_term(HttpFrom),
-	To = convert_http_datetime_to_term(HttpTo),
+build_report(From, To, undefined) ->
 	k_statistic:status_stats_report(From, To);
 
-build_report(HttpFrom, HttpTo, HttpStatus) ->
-	From = convert_http_datetime_to_term(HttpFrom),
-	To = convert_http_datetime_to_term(HttpTo),
- 	Status = list_to_existing_atom(HttpStatus),
+build_report(From, To, Status) ->
  	k_statistic:status_stats_report(From, To, Status).
 
--spec convert_http_datetime_to_term(string()) -> calendar:datetime().
-convert_http_datetime_to_term(DateTime) ->
-	DateTimeList = string:tokens(DateTime, [$T, $:, $-]),
-	Result = lists:map(
-		fun(List)->
-			list_to_integer(List)
-		end,
-		DateTimeList),
+%% convert_datetime(<<"2012-12-11T13:20">>) => {{2012,12,11},{13,20,0}}.
+-spec convert_datetime(binary()) -> calendar:datetime().
+convert_datetime(DateTimeBin) ->
+	DateTime = binary_to_list(DateTimeBin),
+	DateTimeList = string:tokens(DateTime, [$-, $T, $:]),
+	Result = [list_to_integer(List) || List <- DateTimeList],
 	[Year, Month, Day, Hour, Minute] = Result,
 	{{Year, Month, Day}, {Hour, Minute, 0}}.

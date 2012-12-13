@@ -27,6 +27,8 @@
 
 -include("application.hrl").
 
+-type unix_epoch() :: pos_integer().
+
 %% ===================================================================
 %% Slice frequency
 %% ===================================================================
@@ -47,22 +49,22 @@ slice_path(Fmt, Args) ->
 			"data/time-slices.d/" ++ Fmt, Args)),
 	filename:join(CWD, Path).
 
--spec msg_stats_slice_path(os:timestamp()) -> file:filename().
+-spec msg_stats_slice_path(unix_epoch()) -> file:filename().
 msg_stats_slice_path(Timestamp) ->
 	slice_path("msg-stats/~p.dat", [Timestamp]).
 
 report_type_to_index(customers) -> 1;
 report_type_to_index(networks) -> 2.
 
--spec msg_stats_slice_path(os:timestamp(), atom()) -> file:filename().
+-spec msg_stats_slice_path(unix_epoch(), atom()) -> file:filename().
 msg_stats_slice_path(Timestamp, ReportType) ->
 	slice_path("msg-stats/~p-~p.dat", [Timestamp, report_type_to_index(ReportType)]).
 
--spec status_stats_slice_path(os:timestamp()) -> file:filename().
+-spec status_stats_slice_path(unix_epoch()) -> file:filename().
 status_stats_slice_path(Timestamp) ->
 	slice_path("status-stats/~p.dat", [Timestamp]).
 
--spec incoming_msg_stats_slice_path(os:timestamp()) -> file:filename().
+-spec incoming_msg_stats_slice_path(unix_epoch()) -> file:filename().
 incoming_msg_stats_slice_path(Timestamp) ->
 	slice_path("incoming-msg-stats/~p.dat", [Timestamp]).
 
@@ -113,12 +115,12 @@ read_terms_from_files_with(Filenames, MapTermFun) ->
 %% Statistic utils
 %% ===================================================================
 
--spec get_timestamp_list(From::os:timestamp(), To::os:timestamp()) -> [os:timestamp()].
+-spec get_timestamp_list(From::unix_epoch(), To::unix_epoch()) -> [unix_epoch()].
 get_timestamp_list(From, To) when From < To ->
 	Step = stats_report_frequency(),
 	get_timestamp_list(From, To, Step).
 
--spec get_timestamp_list(From::os:timestamp(), To::os:timestamp(), Step::pos_integer()) -> [os:timestamp()].
+-spec get_timestamp_list(From::unix_epoch(), To::unix_epoch(), Step::pos_integer()) -> [unix_epoch()].
 get_timestamp_list(From, To, Step) when From < To ->
 	{FromFloor, ToCeiling} = align_time_range(From, To),
 	List = lists:seq(FromFloor, ToCeiling, Step),
@@ -127,19 +129,19 @@ get_timestamp_list(From, To, Step) when From < To ->
 		false -> List
 	end.
 
--spec get_timestamp_ranges(From::os:timestamp(), To::os:timestamp(), Step::pos_integer()) -> [{os:timestamp(), os:timestamp()}].
+-spec get_timestamp_ranges(From::unix_epoch(), To::unix_epoch(), Step::pos_integer()) -> [{unix_epoch(), unix_epoch()}].
 get_timestamp_ranges(From, To, Step) when From < To ->
 	Timestamps = get_timestamp_list(From, To, Step),
-	make_ranges(Timestamps).
+	k_lists:make_ranges(Timestamps).
 
--spec align_time_range(From::os:timestamp(), To::os:timestamp()) ->
-	{FromFloor::os:timestamp(), ToCeiling::os:timestamp()}.
+-spec align_time_range(From::unix_epoch(), To::unix_epoch()) ->
+	{FromFloor::unix_epoch(), ToCeiling::unix_epoch()}.
 align_time_range(From, To) ->
 	Step = stats_report_frequency(),
 	align_time_range(From, To, Step).
 
--spec align_time_range(From::os:timestamp(), To::os:timestamp(), Step::pos_integer()) ->
-	{FromFloor::os:timestamp(), ToCeiling::os:timestamp()}.
+-spec align_time_range(From::unix_epoch(), To::unix_epoch(), Step::pos_integer()) ->
+	{FromFloor::unix_epoch(), ToCeiling::unix_epoch()}.
 align_time_range(From, To, Step) ->
 	FromFloor = From - From rem Step,
 	ToCeiling = case To rem Step of
