@@ -50,7 +50,7 @@ set_outgoing_msg_info(#msg_info{
 	dlr_time = undefined,
 	dlr_status = undefined
 }) ->
-	Selectors = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
+	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
 	Plist = [
 		{client_type, ClientType},
 		{customer_id, CustomerId},
@@ -64,7 +64,7 @@ set_outgoing_msg_info(#msg_info{
 		{reg_dlr, RegDlr},
 		{req_time, ReqTime}
 	],
-	mongodb_storage:upsert(outgoing_messages, Selectors, Plist);
+	mongodb_storage:upsert(outgoing_messages, Selector, Plist);
 set_outgoing_msg_info(#msg_info{
 	client_type = ClientType,
 	customer_id = CustomerId,
@@ -83,7 +83,7 @@ set_outgoing_msg_info(#msg_info{
 	dlr_time = undefined,
 	dlr_status = undefined
 }) ->
-	Selectors = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
+	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
 	Plist = [
 		{client_type, ClientType},
 		{customer_id, CustomerId},
@@ -93,7 +93,7 @@ set_outgoing_msg_info(#msg_info{
 		{resp_time, RespTime},
 		{resp_status, RespStatus}
 	],
-	mongodb_storage:upsert(outgoing_messages, Selectors, Plist);
+	mongodb_storage:upsert(outgoing_messages, Selector, Plist);
 set_outgoing_msg_info(#msg_info{
 	client_type = undefined,
 	customer_id = undefined,
@@ -112,19 +112,19 @@ set_outgoing_msg_info(#msg_info{
 	dlr_time = DlrTime,
 	dlr_status = DlrStatus
 }) ->
-	Selectors = [{gateway_id, GatewayId}, {out_msg_id, OutMsgId}],
+	Selector = [{gateway_id, GatewayId}, {out_msg_id, OutMsgId}],
 	Plist = [
 		{gateway_id, GatewayId},
 		{out_msg_id, OutMsgId},
 		{dlr_time, DlrTime},
 		{dlr_status, DlrStatus}
 	],
-	mongodb_storage:upsert(outgoing_messages, Selectors, Plist).
+	mongodb_storage:upsert(outgoing_messages, Selector, Plist).
 
 -spec get_outgoing_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_outgoing_msg_info(GatewayId, OutMsgId) ->
-	Selectors = [{gateway_id, GatewayId}, {out_msg_id, OutMsgId}],
-	case mongodb_storage:find_one(outgoing_messages, Selectors) of
+	Selector = [{gateway_id, GatewayId}, {out_msg_id, OutMsgId}],
+	case mongodb_storage:find_one(outgoing_messages, Selector) of
 		{ok, Plist} ->
 			MsgInfo = record_info:proplist_to_record(Plist, msg_info, ?MODULE),
 			SrcAddr = doc_to_addr(MsgInfo#msg_info.src_addr),
@@ -136,8 +136,8 @@ get_outgoing_msg_info(GatewayId, OutMsgId) ->
 
 -spec get_outgoing_msg_info(customer_id(), atom(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_outgoing_msg_info(CustomerId, ClientType, InMsgId) ->
-	Selectors = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
-	case mongodb_storage:find_one(outgoing_messages, Selectors) of
+	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
+	case mongodb_storage:find_one(outgoing_messages, Selector) of
 		{ok, Plist} ->
 			MsgInfo = record_info:proplist_to_record(Plist, msg_info, ?MODULE),
 			SrcAddr = doc_to_addr(MsgInfo#msg_info.src_addr),
@@ -160,7 +160,7 @@ set_incoming_msg_info(MsgInfo = #msg_info{}) ->
 	RegDlr = MsgInfo#msg_info.reg_dlr,
 	ReqTime = MsgInfo#msg_info.req_time,
 
-	Selectors = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
+	Selector = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
 	Plist = [
 		{in_msg_id, InMsgId},
 		{gateway_id, GatewayId},
@@ -173,12 +173,12 @@ set_incoming_msg_info(MsgInfo = #msg_info{}) ->
 		{reg_dlr, RegDlr},
 		{req_time, ReqTime}
 	],
-	mongodb_storage:upsert(incoming_messages, Selectors, Plist).
+	mongodb_storage:upsert(incoming_messages, Selector, Plist).
 
 -spec get_incoming_msg_info(binary(), any()) -> {ok, #msg_info{}} | {error, reason()}.
 get_incoming_msg_info(GatewayId, InMsgId) ->
-	Selectors = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
-	case mongodb_storage:find_one(incoming_messages, Selectors) of
+	Selector = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
+	case mongodb_storage:find_one(incoming_messages, Selector) of
 		{ok, Plist} ->
 			SourceAddrDoc = proplists:get_value(src_addr, Plist),
 			DestAddrDoc = proplists:get_value(dst_addr, Plist),
@@ -201,11 +201,12 @@ get_incoming_msg_info(GatewayId, InMsgId) ->
 
 -spec link_sms_request_id_to_msg_ids(binary(), binary(), #addr{}, binary(), [any()]) -> ok | {error, reason()}.
 link_sms_request_id_to_msg_ids(CustomerId, UserId, SourceAddress, SmsRequestId, MessageIDs) ->
-	Selectors =
-		[{customer_id, CustomerId},
+	Selector = 	[
+		{customer_id, CustomerId},
 		{user_id, UserId},
 	  	{src_addr, addr_to_doc(SourceAddress)},
-		{req_id, SmsRequestId}],
+		{req_id, SmsRequestId}
+	],
 	Plist = [
 		{customer_id, CustomerId},
 		{user_id, UserId},
@@ -213,17 +214,18 @@ link_sms_request_id_to_msg_ids(CustomerId, UserId, SourceAddress, SmsRequestId, 
 		{req_id, SmsRequestId},
 		{msg_ids, [{customer_id, CId, client_type, Client, msg_id, MId} || {CId, Client, MId} <- MessageIDs]}
 	],
-	mongodb_storage:upsert(k1api_sms_request_id_to_msg_ids, Selectors, Plist).
+	mongodb_storage:upsert(k1api_sms_request_id_to_msg_ids, Selector, Plist).
 
 -spec get_msg_ids_by_sms_request_id(binary(), binary(), #addr{}, binary()) ->
 	{ok, [{binary(), k1api, binary()}]} | {error, reason()}.
 get_msg_ids_by_sms_request_id(CustomerId, UserId, SourceAddr, SmsRequestId) ->
-	Selectors =
-		[{customer_id, CustomerId},
+	Selector = [
+		{customer_id, CustomerId},
 		{user_id, UserId},
 	  	{src_addr, addr_to_doc(SourceAddr)},
-		{req_id, SmsRequestId}],
-	case mongodb_storage:find_one(k1api_sms_request_id_to_msg_ids, Selectors) of
+		{req_id, SmsRequestId}
+	],
+	case mongodb_storage:find_one(k1api_sms_request_id_to_msg_ids, Selector) of
 		{ok, Plist} ->
 			MsgIdsDoc = proplists:get_value(msg_ids, Plist),
 			{ok, [{CId, Client, MId} || {_,CId,_,Client,_, MId} <- MsgIdsDoc]};
