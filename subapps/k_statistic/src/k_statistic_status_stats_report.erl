@@ -109,11 +109,6 @@ get_raw_report(Collection, Selectors) ->
 			Error
 	end.
 
-doc_to_addr({addr, Addr, ton, Ton, npi, Npi}) ->
-	#full_addr{addr = Addr, ton = Ton, npi = Npi};
-doc_to_addr({addr, Addr, ref_num, RefNum}) ->
-	#full_addr_ref_num{full_addr = doc_to_addr(Addr), ref_num = RefNum}.
-
 prettify_plist(Plist) ->
 	InMsgId = proplists:get_value(in_msg_id, Plist),
 	GatewayId = proplists:get_value(gateway_id, Plist),
@@ -134,14 +129,14 @@ prettify_plist(Plist) ->
 		{message_id, InMsgId},
 		{gateway_id, GatewayId},
 		{customer_id, CustomerId},
-		{src_addr, transform_addr(doc_to_addr(SrcAddrDoc))},
-		{dst_addr, transform_addr(doc_to_addr(DstAddrDoc))},
+		{src_addr, addr_to_proplist(k_storage:doc_to_addr(SrcAddrDoc))},
+		{dst_addr, addr_to_proplist(k_storage:doc_to_addr(DstAddrDoc))},
 		{type, Type},
 		{encoding, Encoding},
 		{message_text, Body}
 	].
 
-transform_addr(FAddr = #addr{ref_num = undefined}) ->
+addr_to_proplist(FAddr = #addr{ref_num = undefined}) ->
 	#addr{
 		addr = Addr,
 		ton = Ton,
@@ -152,7 +147,7 @@ transform_addr(FAddr = #addr{ref_num = undefined}) ->
 	{ton, Ton},
 	{npi, Npi}];
 
-transform_addr(FAddr = #addr{}) ->
+addr_to_proplist(FAddr = #addr{}) ->
 	#addr{
 		addr = Addr,
 		ton = Ton,

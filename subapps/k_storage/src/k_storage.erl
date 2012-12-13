@@ -12,6 +12,10 @@
 	get_msg_ids_by_sms_request_id/4
 ]).
 
+-export([
+	doc_to_addr/1
+]).
+
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/storages.hrl").
@@ -236,6 +240,11 @@ addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
 addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
 	{addr, Addr, ton, Ton, npi, Npi, ref_num, RefNum}.
 
+-spec doc_to_addr
+	({addr, binary(), ton, integer(), npi, integer()}) ->
+		#addr{};
+	({addr, binary(), ton, integer(), npi, integer(), ref_num, integer()}) ->
+		#addr{}.
 doc_to_addr({addr, Addr, ton, Ton, npi, Npi}) ->
 	#addr{
 		addr = Addr,
@@ -249,4 +258,3 @@ doc_to_addr({addr, Addr, ton, Ton, npi, Npi, ref_num, RefNum}) ->
 		npi = Npi,
 		ref_num = RefNum
 	}.
-
