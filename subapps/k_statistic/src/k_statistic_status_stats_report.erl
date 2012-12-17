@@ -63,7 +63,7 @@ get_report(From, To) ->
 	ResultsMoBson = bson:at(results, MoBson),
 	ResultsBson = lists:sort(ResultsMtBson ++ ResultsMoBson),
 	Results = [
-	 	{Status, round(Hits)} || {'_id', Status, value, Hits} <- ResultsBson
+	 	{list_to_existing_atom(binary_to_list(Status)), round(Hits)} || {'_id', Status, value, Hits} <- ResultsBson
 	 ],
 	{ok, {statuses, Results}}.
 
