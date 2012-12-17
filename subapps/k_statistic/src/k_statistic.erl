@@ -40,13 +40,13 @@ status_stats_report(FromDate, ToDate, Status) when FromDate < ToDate ->
 
 -spec msg_stats_report(
 	ReportType::integer(),
-	From::calendar:datetime(),
-	To::calendar:datetime()
+	FromDate::calendar:datetime(),
+	ToDate::calendar:datetime()
 ) -> {ok, Report::term()} | {error, Reason::any()}.
-msg_stats_report(ReportType, From, To) when From < To ->
-	FromUnix = k_datetime:datetime_to_unix_epoch(From),
-	ToUnix = k_datetime:datetime_to_unix_epoch(To),
-	k_statistic_msg_stats_report:get_report(ReportType, FromUnix, ToUnix).
+msg_stats_report(ReportType, FromDate, ToDate) when FromDate < ToDate ->
+	From = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(FromDate)),
+	To = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(ToDate)),
+	k_statistic_msg_stats_report:get_report(ReportType, From, To).
 
 -spec detailed_msg_stats_report(
 	FromDate::calendar:datetime(),

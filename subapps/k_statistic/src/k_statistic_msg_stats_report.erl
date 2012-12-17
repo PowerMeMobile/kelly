@@ -1,215 +1,149 @@
 -module(k_statistic_msg_stats_report).
 
 -export([
-	get_report/3,
-	build_msg_stats_report/2
+	get_report/3
 ]).
 
--include("msg_stats.hrl").
--include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/customer.hrl").
+-include_lib("k_common/include/network.hrl").
 -include_lib("k_common/include/logging.hrl").
+
+-type report_type() :: customers | networks.
+-type reason() :: any().
+-type address() :: binary().
+-type prefix() :: binary().
 
 %% ===================================================================
 %% API
 %% ===================================================================
 
 -spec get_report(
-	ReportType::atom(),
-	From::os:timestamp(),
-	To::os:timestamp()
-) -> {ok, term()} | {error, Reason::any()}.
+	report_type(),
+	erlang:timestamp(),
+	erlang:timestamp()
+) -> {ok, term()} | {error, reason()}.
 get_report(ReportType, From, To) when From < To ->
-	Filenames = k_statistic_utils:get_file_list_with(
-		From, To, fun k_statistic_utils:msg_stats_slice_path/1),
-	Records = k_statistic_utils:read_terms_from_files(Filenames),
-	RawReport = build_raw_report(Records),
-	Report = build_msg_stats_report(ReportType, RawReport),
+	{ok, OutgoingRecords} = get_records(outgoing_messages, From, To),
+	{ok, NetworkIdPrefixMap} = get_network_id_prefix_map(),
+
+	RawRecords = build_raw_records(OutgoingRecords, NetworkIdPrefixMap),
+	Report = build_msg_stats_report(ReportType, RawRecords),
 	Annotate = annotate_msg_stats_report(ReportType, Report),
 
 	AnnotatedReport = {ReportType, Annotate},
 	{ok, AnnotatedReport}.
 
-build_raw_report(Records) ->
-	{RawReport, _NewPrefixNetworkIdMap} = lists:foldl(
-		fun(#msg_stats{msg_info = MsgInfo}, {SoFar, PrefixNetworkIdMap}) ->
-			MessageId = MsgInfo#msg_info.in_msg_id,
-			CustomerId = MsgInfo#msg_info.customer_id,
-			FullDestAddr = MsgInfo#msg_info.dst_addr,
-			DestAddr = FullDestAddr#addr.addr,
-
-			case cache_lookup_network_id(DestAddr, PrefixNetworkIdMap) of
-				{value, NetworkId} ->
-					{[{CustomerId, NetworkId, MessageId} | SoFar], PrefixNetworkIdMap};
-				false ->
-					case get_network_id(CustomerId, DestAddr) of
-						{ok, {Prefix, NetworkId}} ->
-							{
-								[{CustomerId, NetworkId, MessageId} | SoFar],
-								[{Prefix, NetworkId} | PrefixNetworkIdMap]
-							};
-						{error, Reason} ->
-							%% unusual case. log the error, and leave the state unchanged.
-							?log_error("Impossible to determine NetworkId from CustomerId: ~p Address: ~p with reason: ~p",								[CustomerId, DestAddr, Reason]),
-							{SoFar, PrefixNetworkIdMap}
-					end
-			end
-		end,
-		{[], []},
-		Records),
-	RawReport.
-
--spec build_msg_stats_report(ReportType::atom(), Records::[tuple()]) -> [tuple()].
-build_msg_stats_report(customers, Records) ->
-	GroupByCustomer = msg_stats_report(1, Records),
-	GroupByCustomerAndNetwork = lists:map(
-		fun({K, List}) ->
-			{K, msg_stats_report(1, List)}
-		end,
-		GroupByCustomer),
-	GroupByCustomerAndNetwork;
-
-build_msg_stats_report(networks, Records) ->
-	GroupByNetwork = msg_stats_report(2, Records),
-	GroupByNetworkAndCustomer = lists:map(
-		fun({K, List}) ->
-			{K, msg_stats_report(1, List)}
-		end,
-		GroupByNetwork),
-	GroupByNetworkAndCustomer.
-
 %% ===================================================================
 %% Internal
 %% ===================================================================
 
--spec annotate_msg_stats_report(ReportType::atom(), Records::[tuple()]) -> [tuple()].
-annotate_msg_stats_report(customers, Customers) ->
-	lists:map(
-		fun(Customer) ->
-			{CustomerId, Networks} = Customer,
-			[
-				{id, CustomerId},
-				{networks,
-					lists:map(
-						fun({NetworkId, MsgIds}) ->
-							[
-								{id, NetworkId},
-								{mids, MsgIds}
-							]
-						end,
-						Networks)}
-			]
-		end,
-		Customers);
-
-annotate_msg_stats_report(networks, Networks) ->
-	lists:map(
-		fun({NetworkId, Customers}) ->
-			[
-				{id, NetworkId},
-				{customers,
-					lists:map(
-						fun({CustomerId, MsgIds}) ->
-							[
-								{id, CustomerId},
-								{mids, MsgIds}
-							]
-						 end,
-						Customers)}
-			]
-		end,
-		Networks).
-
-
--spec msg_stats_report(KeyN::integer(), [tuple()]) -> [tuple()].
-msg_stats_report(KeyN, Records) ->
-	Pairs = lists:map(
-		fun(R) ->
-			k_lists:make_pair(KeyN, R)
-		end,
-		Records),
-	Dict = lists:foldl(
-		fun({K, V}, Dict) ->
-			orddict:append_list(K, [V], Dict)
-		end,
-		orddict:new(),
-		Pairs),
-	List = orddict:to_list(Dict),
-	List.
-
--spec cache_lookup_network_id(Address::string(), CacheMap::[{Prefix::string(), NetworkId::network_id()}]) ->
-	{value, NetworkId::network_id()} | false.
-cache_lookup_network_id(Address, CacheMap) ->
-	Result = k_statistic_utils:findwith(
-		fun({Prefix, _}) ->
-			lists:prefix(Prefix, binary_to_list(Address))
-		end,
-		CacheMap),
-	case  Result of
-		{value, {_, NetworkId}} ->
-			{value, NetworkId};
-		false ->
-			false
-	end.
-
--spec get_network_id(CustomerId::customer_id(), Address::string()) -> {ok, {Prefix::string(), network_id()}} | {error, Reason::any()}.
-get_network_id(CustomerId, Address) ->
-	case k_aaa:get_customer_by_id(CustomerId) of
-		{ok, #customer{networks = NetworkIds}} ->
-			IdNetworkPairs = get_networks_by_ids(NetworkIds),
-			case [{Prefix, NetworkId} || {true, {Prefix, NetworkId}} <-
-						lists:map(
-							fun({NetworkId, Network}) ->
-								case does_address_match_network(Address, Network) of
-									{true, Prefix} ->
-										{true, {Prefix, NetworkId}};
-									false ->
-										false
-								end
-							end,
-						IdNetworkPairs)]
-			of
-				[{Prefix, NetworkId} | _] ->
-					{ok, {Prefix, NetworkId}};
-				[] ->
-					{error, no_entry}
-			end;
+get_records(Collection, From, To) ->
+	Selector = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
+	Projector = [ { 'in_msg_id' , 1 } , { 'customer_id' , 1 } , { 'dst_addr.addr' , 1 } ],
+	case mongodb_storage:find(Collection, Selector, Projector) of
+		{ok, List} ->
+			{ok, [strip_plist(Plist) || {_Id, Plist} <- List]};
 		Error ->
 			Error
 	end.
 
--spec get_networks_by_ids(NetworkIds::[network_id()]) -> [{network_id(), #network{}}].
-get_networks_by_ids(NetworkIds) ->
-	lists:foldl(
-		fun(NetworkId, SoFar) ->
-			case k_config:get_network(NetworkId) of
-				{ok, Network = #network{}} ->
-					[{NetworkId, Network} | SoFar];
-				_ ->
-					SoFar
-				end
+strip_plist(Plist) ->
+	InMsgId = proplists:get_value(in_msg_id, Plist),
+	CustomerId = proplists:get_value(customer_id, Plist),
+	{addr, DstAddr} = proplists:get_value(dst_addr, Plist),
+	{InMsgId, CustomerId, DstAddr}.
+
+build_raw_records(Records, NetworkIdPrefixMap) ->
+	RawRecords = lists:foldl(
+		fun({InMsgId, CustomerId, DstAddr}, RawRecords) ->
+			case lookup_network_id(DstAddr, NetworkIdPrefixMap) of
+				{value, {NetworkId, _}} ->
+					[{CustomerId, NetworkId, InMsgId} | RawRecords];
+				false ->
+					%% unusual case. log the error, and leave the state unchanged.
+					?log_error("Impossible to determine NetworkId from CustomerId: ~p Address: ~p",
+						[CustomerId, DstAddr]),
+					RawRecords
+			end
 		end,
 		[],
-		NetworkIds).
+		Records
+	),
+	RawRecords.
 
--spec does_address_match_network(Address::string(), Network::#network{}) -> {true, CodeAndPrefix::string()} | false.
-does_address_match_network(Address, #network{
-	country_code = CountryCode,
-	prefixes = Prefixes
-}) ->
-	CodeAndPrefixes = lists:map(
-		fun(Prefix) ->
-			binary_to_list(CountryCode) ++ binary_to_list(Prefix)
+-spec build_msg_stats_report(report_type(), Records::[tuple()]) -> [tuple()].
+build_msg_stats_report(customers, Records) ->
+	GroupByCustomer = msg_stats_report(1, Records),
+	[{K, msg_stats_report(1, List)} || {K, List} <- GroupByCustomer];
+
+build_msg_stats_report(networks, Records) ->
+	GroupByNetwork = msg_stats_report(2, Records),
+	[{K, msg_stats_report(1, List)} || {K, List} <- GroupByNetwork].
+
+-spec annotate_msg_stats_report(report_type(), Records::[tuple()]) -> [tuple()].
+annotate_msg_stats_report(customers, Records) ->
+	lists:map(
+		fun({CustomerId, Networks}) ->
+			[
+				{id, CustomerId},
+				{networks, [
+					[{id, NetworkId}, {mids, MsgIds} ] || {NetworkId, MsgIds} <- Networks]
+				}
+			]
 		end,
-		Prefixes),
-	Result = k_statistic_utils:findwith(
-		fun(CodeAndPrefix) ->
-			lists:prefix(CodeAndPrefix, binary_to_list(Address))
+		Records
+	);
+
+annotate_msg_stats_report(networks, Records) ->
+	lists:map(
+		fun({NetworkId, Customers}) ->
+			[
+				{id, NetworkId},
+				{customers, [
+					[{id, CustomerId}, {mids, MsgIds}] || {CustomerId, MsgIds} <- Customers
+				]}
+			]
 		end,
-		CodeAndPrefixes),
-	case Result of
-		{value, Prefix} ->
-			{true, Prefix};
-		false ->
-			false
+		Records
+	).
+
+-spec msg_stats_report(KeyN::integer(), [tuple()]) -> [tuple()].
+msg_stats_report(KeyN, Records) ->
+	Pairs = [k_lists:make_pair(KeyN, R) || R <- Records],
+	Dict = lists:foldl(
+		fun({K, V}, Dict) ->
+			orddict:append(K, V, Dict)
+		end,
+		orddict:new(),
+		Pairs),
+	orddict:to_list(Dict).
+
+-spec lookup_network_id(address(), [{network_id(), prefix()}]) ->
+	{value, {network_id(), prefix()}} | false.
+lookup_network_id(Address, Map) ->
+	k_lists:findwith(
+		fun({_, Prefix}) ->
+			binary:longest_common_prefix([Prefix, Address]) =:= size(Prefix)
+		end,
+		Map
+	).
+
+-spec get_network_id_prefix_map() ->
+	{ok, [{network_id(), prefix()}]} | {error, reason()}.
+get_network_id_prefix_map() ->
+	case k_config:get_networks() of
+		{ok, Networks} ->
+			{ok, lists:flatmap(
+					fun({NetworkId, Network}) ->
+						Code = Network#network.country_code,
+						Prefixes = Network#network.prefixes,
+						[
+							{NetworkId, <<Code/binary, Prefix/binary>>} ||
+							Prefix <- Prefixes
+						]
+					end,
+					Networks
+				 )
+			};
+		Error ->
+			Error
 	end.
