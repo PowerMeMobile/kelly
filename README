@@ -41,16 +41,38 @@ $ cd rabbitmq-server-2.7.1/
 $ sudo make install TARGET_DIR=/usr/local/lib/rabbitmq-server SBIN_DIR=/usr/local/lib/rabbitmq-server/sbin MAN_DIR=/usr/local/lib/rabbitmq-server/man
 
 
+3. MongoDB installation
 
-3. Kelly & Funnel & Just installation
+3.1 Download MongoDB binary package
+$ wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.2.2.tgz
+$ tar -zxvf mongodb-linux-x86_64-2.2.2.tgz
 
-3.1 Install dependencies
+3.2 Create db directory
+$ sudo mkdir /data/db
+
+3.3 Start MongoDB
+$ ./mongodb-linux-x86_64-2.2.2/bin/mongod --fork --logpath /data/db/mongo.log --dbpath /data/db/
+
+3.4 Try to connect to MongoDB instance
+$ ./mongodb-linux-x86_64-2.2.2/bin/mongo
+MongoDB shell version: 2.2.2
+connecting to: test
+>
+
+3.5 Setup indices to MongoDB
+$ mongo $WORK/kelly/rel/files/indices.js
+
+
+
+4. Kelly & Funnel & Just installation
+
+4.1 Install dependencies
 Ubuntu
 $ sudo apt-get install git-core uuid-dev libtokyocabinet-dev libwww-perl
 CentOS
 $ sudo yum install git-core libuuid-devel tokyocabinet-devel perl-libwww-perl
 
-3.2 Download Funnel
+4.2 Download Funnel
 NB: Funnel is currently available as a binary package. The source code will be available soon.
 
 Ubuntu
@@ -64,46 +86,46 @@ CentOS
 $ tar xfz funnel_mini_centos6_x86-64.tar.gz
 
 
-3.3 Build Kelly from sources
+4.3 Build Kelly from sources
 $ git clone git://github.com/PowerMeMobile/kelly.git
 $ cd kelly
 $ make
 
 
-3.4 Build Just from sources
+4.4 Build Just from sources
 $ git clone git://github.com/PowerMeMobile/just_mini_rel.git
 $ cd just_mini_rel
 $ make
 
 
 
-4. Startup
+5. Startup
 
 NB:
 You might need to open different tabs for each step or use the `screen' command.
 
-4.1 RabbitMQ launching
+5.1 RabbitMQ launching
 $ sudo /usr/local/lib/rabbitmq-server/sbin/rabbitmq-server -detached
 
 
-4.2 Funnel launching
+5.2 Funnel launching
 $ ./funnel_mini/bin/funnel start
 
 
-4.3 Configure Kelly node name.
-$ edit $WORK/kelly/rel/kelly/releases/1/vm.args
+5.3 Configure Kelly node name.
+$ vim $WORK/kelly/rel/kelly/releases/1/vm.args
 Replace '127.0.0.1' in kelly@127.0.0.1 with a valid server's ip address.
 
 
-4.4 Kelly launching
+5.4 Kelly launching
 $ ./kelly/rel/kelly/bin/kelly start
 
 
-4.5 Just launching
+5.5 Just launching
 $ ./just_mini_rel/just_mini/bin/just start
 
 
-4.6 Configuration uplink settings
+5.6 Configuration uplink settings
 $ cd $WORK/kelly/rel/kelly/bin/
 
 Configure the `OUTPUT_SMPP_HOST' and `OUTPUT_SMPP_PORT' settings to your SMPP target in `kelly_http_configure' file.
