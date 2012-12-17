@@ -14,9 +14,9 @@ $ sudo yum install gcc gcc-c++ wxGTK-devel libxslt openssl-devel ncurses-devel f
 
 
 1.2 Build and install Erlang from sources
-$ wget http://www.erlang.org/download/otp_src_R14B04.tar.gz
-$ tar xfz otp_src_R14B04.tar.gz
-$ cd otp_src_R14B04/
+$ wget http://www.erlang.org/download/otp_src_R15B01.tar.gz
+$ tar xfz otp_src_R15B01.tar.gz
+$ cd otp_src_R15B01/
 If you want to skip a certain library
 $ touch lib/{library_name}/SKIP
 $ ./configure
