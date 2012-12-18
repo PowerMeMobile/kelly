@@ -59,8 +59,8 @@ MongoDB shell version: 2.2.2
 connecting to: test
 >
 
-3.5 Setup indices to MongoDB
-$ mongo $WORK/kelly/rel/files/indices.js
+3.5 Setup indexes to MongoDB
+$ mongo $WORK/kelly/rel/files/indexes.js
 
 
 
