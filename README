@@ -87,7 +87,7 @@ $ tar xfz funnel_mini_centos6_x86-64.tar.gz
 
 
 4.3 Build Kelly from sources
-$ git clone git://github.com/PowerMeMobile/kelly.git
+$ git clone git://github.com/PowerMeMobile/kelly.git -b mongodb_storage
 $ cd kelly
 $ make
 
