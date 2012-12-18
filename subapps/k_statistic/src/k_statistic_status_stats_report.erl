@@ -44,21 +44,21 @@ get_report(From, To) ->
 	};
 ">>,
 	MtCommand =
-		{ 'mapreduce' , <<"outgoing_messages">>,
+		{ 'mapreduce' , <<"mt_messages">>,
 		  'query' , { 'req_time' , { '$gte' , From, '$lt' , To } },
 		  'map' , MtMapF,
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
 	MoCommand =
-		{ 'mapreduce' , <<"incoming_messages">>,
+		{ 'mapreduce' , <<"mo_messages">>,
 		  'query' , { 'req_time' , { '$gte' , From, '$lt' , To } },
 		  'map' , MoMapF,
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
-	{ok, MtBson} = mongodb_storage:command(outgoing_messages, MtCommand),
-	{ok, MoBson} = mongodb_storage:command(incoming_messages, MoCommand),
+	{ok, MtBson} = mongodb_storage:command(mt_messages, MtCommand),
+	{ok, MoBson} = mongodb_storage:command(mo_messages, MoCommand),
 	ResultsMtBson = bson:at(results, MtBson),
 	ResultsMoBson = bson:at(results, MoBson),
 	ResultsBson = lists:sort(ResultsMtBson ++ ResultsMoBson),
@@ -70,7 +70,7 @@ get_report(From, To) ->
 -spec get_report(From::erlang:timestamp(), To::erlang:timestamp(), Status::status()) -> [any()].
 get_report(From, To, received) ->
 	Selector = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
-	get_raw_report(incoming_messages, Selector);
+	get_raw_report(mo_messages, Selector);
 
 get_report(From, To, submitted) ->
 	Selector = [
@@ -78,7 +78,7 @@ get_report(From, To, submitted) ->
 		{ 'resp_status' , { '$exists' , false } },
 		{ 'dlr_status' , { '$exists' , false } }
 	],
-	get_raw_report(outgoing_messages, Selector);
+	get_raw_report(mt_messages, Selector);
 
 get_report(From, To, Status) when
 	Status == success; Status == failure
@@ -87,7 +87,7 @@ get_report(From, To, Status) when
 		{ 'req_time' , { '$gte' , From, '$lt' , To } },
 		{ 'resp_status' , Status }
 	],
-	get_raw_report(outgoing_messages, Selector);
+	get_raw_report(mt_messages, Selector);
 
 get_report(From, To, Status) when
 	Status == enroute; Status == delivered; Status == expired;
@@ -98,7 +98,7 @@ get_report(From, To, Status) when
 		{ 'req_time' , { '$gte' , From, '$lt' , To } },
 		{ 'dlr_status' , Status }
 	],
-	get_raw_report(outgoing_messages, Selector).
+	get_raw_report(mt_messages, Selector).
 
 %% ===================================================================
 %% Internal

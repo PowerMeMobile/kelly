@@ -31,7 +31,7 @@ process_sms_request(SmsRequest = #just_sms_request_dto{client_type = ClientType}
 
 -spec process_msg_info(#msg_info{}) -> ok | {error, any()}.
 process_msg_info(MsgInfo = #msg_info{}) ->
-	ok = k_storage:set_outgoing_msg_info(MsgInfo).
+	ok = k_storage:set_mt_msg_info(MsgInfo).
 
 -spec get_param_by_name(string(), [#just_sms_request_param_dto{}]) -> {ok, #just_sms_request_param_dto{}} | {error, no_entry}.
 get_param_by_name(Name, Params) ->

@@ -30,7 +30,7 @@ process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
 
 -spec process_msg_info(#msg_info{}) -> ok | {error, any()}.
 process_msg_info(MsgInfo = #msg_info{}) ->
-	ok = k_storage:set_outgoing_msg_info(MsgInfo).
+	ok = k_storage:set_mt_msg_info(MsgInfo).
 
 -spec sms_response_to_msg_info_list(#just_sms_response_dto{}) -> [#msg_info{}].
 sms_response_to_msg_info_list(#just_sms_response_dto{

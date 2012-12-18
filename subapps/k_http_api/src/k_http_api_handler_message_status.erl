@@ -40,7 +40,7 @@ read(Params) ->
 	ClientType = ?gv(client_type, Params),
 	CustomerId = ?gv(customer_id, Params),
 	InMsgId = ?gv(message_id, Params),
-	case k_storage:get_outgoing_msg_info(CustomerId, ClientType, InMsgId) of
+	case k_storage:get_mt_msg_info(CustomerId, ClientType, InMsgId) of
 		{ok, MsgInfo} ->
 			{ok, {message, [
 				{customer_id, CustomerId},

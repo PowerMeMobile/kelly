@@ -24,15 +24,15 @@ get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
   	From = k_datetime:unix_epoch_to_timestamp(FromUnix),
 	To = k_datetime:unix_epoch_to_timestamp(ToUnix),
 
-	{ok, OutgoingRecords} = get_records(outgoing_messages, From, To),
-	OutgoingReport = detailed_msg_stats_report(OutgoingRecords, SliceRanges),
+	{ok, MtRecords} = get_records(mt_messages, From, To),
+	MtReport = detailed_msg_stats_report(MtRecords, SliceRanges),
 
-	{ok, IncomingRecords} = get_records(incoming_messages, From, To),
-	IncomingReport = detailed_msg_stats_report(IncomingRecords, SliceRanges),
+	{ok, MoRecords} = get_records(mo_messages, From, To),
+	MoReport = detailed_msg_stats_report(MoRecords, SliceRanges),
 
 	{ok, {messages, [
-		{outgoing, OutgoingReport},
-		{incoming, IncomingReport}
+		{outgoing, MtReport},
+		{incoming, MoReport}
 	]}}.
 
 %% ===================================================================

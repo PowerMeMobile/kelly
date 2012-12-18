@@ -22,10 +22,10 @@
 	erlang:timestamp()
 ) -> {ok, term()} | {error, reason()}.
 get_report(ReportType, From, To) when From < To ->
-	{ok, OutgoingRecords} = get_records(outgoing_messages, From, To),
+	{ok, MtRecords} = get_records(mt_messages, From, To),
 	{ok, NetworkIdPrefixMap} = get_network_id_prefix_map(),
 
-	RawRecords = build_raw_records(OutgoingRecords, NetworkIdPrefixMap),
+	RawRecords = build_raw_records(MtRecords, NetworkIdPrefixMap),
 	Report = build_msg_stats_report(ReportType, RawRecords),
 	Annotate = annotate_msg_stats_report(ReportType, Report),
 
