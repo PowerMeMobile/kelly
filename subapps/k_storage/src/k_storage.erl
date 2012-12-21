@@ -146,8 +146,8 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 	Type = MsgInfo#msg_info.type,
 	Encoding = MsgInfo#msg_info.encoding,
 	MessageBody = MsgInfo#msg_info.body,
-	SourceAddr = MsgInfo#msg_info.src_addr,
-	DestAddr = MsgInfo#msg_info.dst_addr,
+	SrcAddr = MsgInfo#msg_info.src_addr,
+	DstAddr = MsgInfo#msg_info.dst_addr,
 	RegDlr = MsgInfo#msg_info.reg_dlr,
 	ReqTime = MsgInfo#msg_info.req_time,
 
@@ -159,8 +159,8 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 		{type, Type},
 		{encoding, Encoding},
 		{body, MessageBody},
-		{src_addr, addr_to_doc(SourceAddr)},
-		{dst_addr, addr_to_doc(DestAddr)},
+		{src_addr, addr_to_doc(SrcAddr)},
+		{dst_addr, addr_to_doc(DstAddr)},
 		{reg_dlr, RegDlr},
 		{req_time, ReqTime}
 	],
@@ -171,17 +171,17 @@ get_mo_msg_info(GatewayId, InMsgId) ->
 	Selector = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
 	case mongodb_storage:find_one(mo_messages, Selector) of
 		{ok, Plist} ->
-			SourceAddrDoc = proplists:get_value(src_addr, Plist),
-			DestAddrDoc = proplists:get_value(dst_addr, Plist),
+			SrcAddrDoc = proplists:get_value(src_addr, Plist),
+			DstAddrDoc = proplists:get_value(dst_addr, Plist),
 			MsgInfo = #msg_info{
+				customer_id = proplists:get_value(customer_id, Plist),
 				in_msg_id = proplists:get_value(in_msg_id, Plist),
 				gateway_id = proplists:get_value(gateway_id, Plist),
-				customer_id = proplists:get_value(customer_id, Plist),
 				type = proplists:get_value(type, Plist),
 				encoding = proplists:get_value(encoding, Plist),
 				body = proplists:get_value(body, Plist),
-				src_addr = doc_to_addr(SourceAddrDoc),
-				dst_addr = doc_to_addr(DestAddrDoc),
+				src_addr = doc_to_addr(SrcAddrDoc),
+				dst_addr = doc_to_addr(DstAddrDoc),
 				reg_dlr = proplists:get_value(reg_dlr, Plist),
 				req_time = proplists:get_value(req_time, Plist)
 			},
@@ -191,17 +191,17 @@ get_mo_msg_info(GatewayId, InMsgId) ->
 	end.
 
 -spec link_sms_request_id_to_msg_ids(binary(), binary(), #addr{}, binary(), [any()]) -> ok | {error, reason()}.
-link_sms_request_id_to_msg_ids(CustomerId, UserId, SourceAddress, SmsRequestId, MessageIDs) ->
+link_sms_request_id_to_msg_ids(CustomerId, UserId, SrcAddr, SmsRequestId, MessageIDs) ->
 	Selector = 	[
 		{customer_id, CustomerId},
 		{user_id, UserId},
-	  	{src_addr, addr_to_doc(SourceAddress)},
+	  	{src_addr, addr_to_doc(SrcAddr)},
 		{req_id, SmsRequestId}
 	],
 	Plist = [
 		{customer_id, CustomerId},
 		{user_id, UserId},
-	  	{src_addr, addr_to_doc(SourceAddress)},
+	  	{src_addr, addr_to_doc(SrcAddr)},
 		{req_id, SmsRequestId},
 		{msg_ids, [{customer_id, CId, client_type, Client, msg_id, MId} || {CId, Client, MId} <- MessageIDs]}
 	],
@@ -209,11 +209,11 @@ link_sms_request_id_to_msg_ids(CustomerId, UserId, SourceAddress, SmsRequestId, 
 
 -spec get_msg_ids_by_sms_request_id(binary(), binary(), #addr{}, binary()) ->
 	{ok, [{binary(), k1api, binary()}]} | {error, reason()}.
-get_msg_ids_by_sms_request_id(CustomerId, UserId, SourceAddr, SmsRequestId) ->
+get_msg_ids_by_sms_request_id(CustomerId, UserId, SrcAddr, SmsRequestId) ->
 	Selector = [
 		{customer_id, CustomerId},
 		{user_id, UserId},
-	  	{src_addr, addr_to_doc(SourceAddr)},
+	  	{src_addr, addr_to_doc(SrcAddr)},
 		{req_id, SmsRequestId}
 	],
 	case mongodb_storage:find_one(k1api_sms_request_id_to_msg_ids, Selector) of
