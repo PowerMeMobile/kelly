@@ -22,9 +22,6 @@
 -include_lib("k_common/include/gateway.hrl").
 -include_lib("k_common/include/customer.hrl").
 
--include_lib("record_info/include/record_info.hrl").
--export_record_info([msg_info]).
-
 -type reason() :: any().
 
 %% ===================================================================
@@ -126,10 +123,7 @@ get_mt_msg_info(GatewayId, OutMsgId) ->
 	Selector = [{gateway_id, GatewayId}, {out_msg_id, OutMsgId}],
 	case mongodb_storage:find_one(mt_messages, Selector) of
 		{ok, Plist} ->
-			MsgInfo = record_info:proplist_to_record(Plist, msg_info, ?MODULE),
-			SrcAddr = doc_to_addr(MsgInfo#msg_info.src_addr),
-			DstAddr = doc_to_addr(MsgInfo#msg_info.dst_addr),
-			{ok, MsgInfo#msg_info{src_addr = SrcAddr, dst_addr = DstAddr}};
+			{ok, plist_to_msg_info(Plist)};
 		Error ->
 			Error
 	end.
@@ -139,10 +133,7 @@ get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
 	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
 	case mongodb_storage:find_one(mt_messages, Selector) of
 		{ok, Plist} ->
-			MsgInfo = record_info:proplist_to_record(Plist, msg_info, ?MODULE),
-			SrcAddr = doc_to_addr(MsgInfo#msg_info.src_addr),
-			DstAddr = doc_to_addr(MsgInfo#msg_info.dst_addr),
-			{ok, MsgInfo#msg_info{src_addr = SrcAddr, dst_addr = DstAddr}};
+			{ok, plist_to_msg_info(Plist)};
 		Error ->
 			Error
 	end.
@@ -233,10 +224,31 @@ get_msg_ids_by_sms_request_id(CustomerId, UserId, SourceAddr, SmsRequestId) ->
 			Error
 	end.
 
-
 %% ===================================================================
 %% Internals
 %% ===================================================================
+
+plist_to_msg_info(Plist) ->
+	SrcAddrDoc = proplists:get_value(src_addr, Plist),
+	DstAddrDoc = proplists:get_value(dst_addr, Plist),
+	#msg_info{
+		client_type = proplists:get_value(client_type, Plist),
+		customer_id = proplists:get_value(customer_id, Plist),
+		in_msg_id = proplists:get_value(in_msg_id, Plist),
+		gateway_id = proplists:get_value(gateway_id, Plist),
+		out_msg_id = proplists:get_value(out_msg_id, Plist),
+		type = proplists:get_value(type, Plist),
+		encoding = proplists:get_value(encoding, Plist),
+		body = proplists:get_value(body, Plist),
+		src_addr = doc_to_addr(SrcAddrDoc),
+		dst_addr = doc_to_addr(DstAddrDoc),
+		reg_dlr = proplists:get_value(reg_dlr, Plist),
+		req_time = proplists:get_value(req_time, Plist),
+		resp_time = proplists:get_value(resp_time, Plist),
+		resp_status = proplists:get_value(resp_status, Plist),
+		dlr_time = proplists:get_value(dlr_time, Plist),
+		dlr_status = proplists:get_value(dlr_status, Plist)
+	}.
 
 addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
 	{addr, Addr, ton, Ton, npi, Npi};
