@@ -1,7 +1,10 @@
 -module(k_storage).
 
 -export([
-	set_mt_msg_info/1,
+	set_mt_req_info/1,
+	set_mt_resp_info/1,
+	set_mt_dlr_info/1,
+
 	get_mt_msg_info/2,
 	get_mt_msg_info/3,
 
@@ -28,24 +31,19 @@
 %% API
 %% ===================================================================
 
--spec set_mt_msg_info(#msg_info{}) -> ok | {error, reason()}.
-set_mt_msg_info(#msg_info{
+-spec set_mt_req_info(#req_info{}) -> ok | {error, reason()}.
+set_mt_req_info(#req_info{
 	client_type = ClientType,
 	customer_id = CustomerId,
 	in_msg_id = InMsgId,
 	gateway_id = GatewayId,
-	out_msg_id = undefined,
 	type = Type,
 	encoding = Encoding,
 	body = Message,
 	src_addr = SrcAddr,
 	dst_addr = DstAddr,
 	reg_dlr = RegDlr,
-	req_time = ReqTime,
-	resp_time = undefined,
-	resp_status = undefined,
-	dlr_time = undefined,
-	dlr_status = undefined
+	req_time = ReqTime
 }) ->
 	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
 	Plist = [
@@ -61,24 +59,17 @@ set_mt_msg_info(#msg_info{
 		{reg_dlr, RegDlr},
 		{req_time, ReqTime}
 	],
-	mongodb_storage:upsert(mt_messages, Selector, Plist);
-set_mt_msg_info(#msg_info{
+	mongodb_storage:upsert(mt_messages, Selector, Plist).
+
+-spec set_mt_resp_info(#resp_info{}) -> ok | {error, reason()}.
+set_mt_resp_info(#resp_info{
 	client_type = ClientType,
 	customer_id = CustomerId,
 	in_msg_id = InMsgId,
 	gateway_id = GatewayId,
 	out_msg_id = OutMsgId,
-	type = undefined,
-	encoding = undefined,
-	body = undefined,
-	src_addr = undefined,
-	dst_addr = undefined,
-	reg_dlr = undefined,
-	req_time = undefined,
 	resp_time = RespTime,
-	resp_status = RespStatus,
-	dlr_time = undefined,
-	dlr_status = undefined
+	resp_status = RespStatus
 }) ->
 	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
 	Plist = [
@@ -90,22 +81,12 @@ set_mt_msg_info(#msg_info{
 		{resp_time, RespTime},
 		{resp_status, RespStatus}
 	],
-	mongodb_storage:upsert(mt_messages, Selector, Plist);
-set_mt_msg_info(#msg_info{
-	client_type = undefined,
-	customer_id = undefined,
-	in_msg_id = undefined,
+	mongodb_storage:upsert(mt_messages, Selector, Plist).
+
+-spec set_mt_dlr_info(#dlr_info{}) -> ok | {error, reason()}.
+set_mt_dlr_info(#dlr_info{
 	gateway_id = GatewayId,
 	out_msg_id = OutMsgId,
-	type = undefined,
-	encoding = undefined,
-	body = undefined,
-	src_addr = undefined,
-	dst_addr = undefined,
-	reg_dlr = undefined,
-	req_time = undefined,
-	resp_time = undefined,
-	resp_status = undefined,
 	dlr_time = DlrTime,
 	dlr_status = DlrStatus
 }) ->
@@ -128,7 +109,7 @@ get_mt_msg_info(GatewayId, OutMsgId) ->
 			Error
 	end.
 
--spec get_mt_msg_info(customer_id(), atom(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
+-spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
 	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
 	case mongodb_storage:find_one(mt_messages, Selector) of

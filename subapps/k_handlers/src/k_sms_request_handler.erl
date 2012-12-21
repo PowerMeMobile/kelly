@@ -21,17 +21,15 @@ process(_ContentType, Message) ->
 -spec process_sms_request(#just_sms_request_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_sms_request(SmsRequest = #just_sms_request_dto{client_type = ClientType}) ->
 	?log_debug("Got ~p sms request: ~p", [ClientType, SmsRequest]),
-	MsgInfos = sms_request_to_msg_info_list(SmsRequest),
-	case k_utils:safe_foreach(fun process_msg_info/1, MsgInfos, ok, {error, '_'}) of
+	ReqInfos = sms_request_to_req_info_list(SmsRequest),
+	case k_utils:safe_foreach(
+		fun k_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
+	) of
 		ok ->
 			{ok, []};
 		Error ->
 			Error
 	end.
-
--spec process_msg_info(#msg_info{}) -> ok | {error, any()}.
-process_msg_info(MsgInfo = #msg_info{}) ->
-	ok = k_storage:set_mt_msg_info(MsgInfo).
 
 -spec get_param_by_name(string(), [#just_sms_request_param_dto{}]) -> {ok, #just_sms_request_param_dto{}} | {error, no_entry}.
 get_param_by_name(Name, Params) ->
@@ -43,8 +41,8 @@ get_param_by_name(Name, Params) ->
 			Value
 	end.
 
--spec sms_request_to_msg_info_list(#just_sms_request_dto{}) -> [#msg_info{}].
-sms_request_to_msg_info_list(SmsRequest = #just_sms_request_dto{
+-spec sms_request_to_req_info_list(#just_sms_request_dto{}) -> [#req_info{}].
+sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
 	id = _SmsRequestID,
 	gateway_id = GatewayId,
 	customer_id = CustomerId,
@@ -71,7 +69,7 @@ sms_request_to_msg_info_list(SmsRequest = #just_sms_request_dto{
 		end,
 	process_k1api_req(SmsRequest, AllPairs),
 	lists:map(fun({DestAddr, MessageId}) ->
-				#msg_info{
+				#req_info{
 					client_type = ClientType,
 					customer_id = CustomerId,
 					in_msg_id = MessageId,
