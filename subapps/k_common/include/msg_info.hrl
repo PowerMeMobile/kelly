@@ -22,6 +22,37 @@
   | rejected
   | unrecognized.
 
+-record(req_info, {
+    client_type :: funnel | k1api,
+    customer_id :: binary(),
+	in_msg_id :: binary(),
+    gateway_id :: binary(),
+    type :: atom(),
+    encoding :: encoding(),
+    body :: binary(),
+    src_addr :: src_addr(),
+    dst_addr :: dst_addr(),
+    reg_dlr :: boolean(),
+	req_time :: erlang:timestamp()
+}).
+
+-record(resp_info, {
+    client_type :: funnel | k1api,
+    customer_id :: binary(),
+	in_msg_id :: binary(),
+    gateway_id :: binary(),
+	out_msg_id :: binary(),
+	resp_time :: erlang:timestamp(),
+	resp_status :: resp_status()
+}).
+
+-record(dlr_info, {
+    gateway_id :: binary(),
+	out_msg_id :: binary(),
+	dlr_time :: erlang:timestamp(),
+	dlr_status :: dlr_status()
+}).
+
 -record(msg_info, {
     client_type :: funnel | k1api,
     customer_id :: binary(),

@@ -76,7 +76,7 @@ init() ->
 		record_info(fields, ?FUNNEL_RECEIPT)).
 
 %% @doc Save known entries in database.
--spec save(record()) -> ok.
+-spec save(tuple()) -> ok.
 save(Record) ->
 	ok = mnesia:dirty_write(Record).
 
@@ -109,7 +109,7 @@ get_items() ->
 			{?INCOMING_SMS, IncomingSmsIds}	]}.
 
 %% @doc Return specified item from db
--spec get_item(ItemType :: atom(), ItemID :: binary()) -> Item :: record().
+-spec get_item(ItemType :: atom(), ItemID :: binary()) -> Item :: tuple().
 get_item(ItemType, ItemID) ->
 	[Item] = mnesia:dirty_read(ItemType, ItemID),
 	{ok, Item}.

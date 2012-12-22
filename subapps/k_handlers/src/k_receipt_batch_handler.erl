@@ -59,13 +59,13 @@ traverse_delivery_receipts(GatewayId, DlrTime,
 			customer_id = CustomerId,
 			in_msg_id = InMsgId
 		}} ->
-			MsgInfo2 = #msg_info{
+			DlrInfo = #dlr_info{
 				gateway_id = GatewayId,
 				out_msg_id = OutMsgId,
 				dlr_time = DlrTime,
 				dlr_status = DlrStatus
 			},
-			ok = k_storage:set_mt_msg_info(MsgInfo2),
+			ok = k_storage:set_mt_dlr_info(DlrInfo),
 			InputId = {CustomerId, ClientType, InMsgId},
 			ok = register_delivery_receipt(InputId, MsgInfo, DlrTime, DlrStatus),
 			%% process the rest receipts.
