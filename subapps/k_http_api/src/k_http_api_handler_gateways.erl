@@ -138,7 +138,7 @@ update_gtw(Gtw, Params) ->
 	case k_config:get_gateway(UUID) of
 		{ok, NewGtw = #gateway{}} ->
 			?log_debug("NewGtw: ~p", [NewGtw]),
-			{ok, [GtwPropList]} = prepare_gtws([{UUID, Gtw}]),
+			{ok, [GtwPropList]} = prepare_gtws([{UUID, NewGtw}]),
 			?log_debug("GtwPropList: ~p", [GtwPropList]),
 			{http_code, 200, GtwPropList};
 		{error, no_entry} ->
