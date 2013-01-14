@@ -158,7 +158,7 @@ case "$1" in
             console_clean)  BOOTFILE=start_clean ;;
             develop)
                 BOOTFILE=develop
-                DEV_HOOK="-run k_common_app set_debug_level" ;;
+                DEV_HOOK="-run alley_develop init" ;;
         esac
         # Setup beam-required vars
         ROOTDIR=$RUNNER_BASE_DIR
