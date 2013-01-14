@@ -22,7 +22,7 @@ get-deps:
 	@./rebar get-deps
 
 update-deps:
-	./rebar update-deps
+	@./rebar update-deps
 
 clean:
 	@./rebar clean
@@ -40,13 +40,23 @@ $(PRJ_PLT):
 	-r ./deps/*/ebin ./subapps/*/ebin
 
 console:
-	./rel/$(NAME)/bin/$(NAME) console
+	@./rel/$(NAME)/bin/$(NAME) console
 
 develop:
-	./rel/$(NAME)/bin/$(NAME) develop
+	@./rel/$(NAME)/bin/$(NAME) develop
 
 gdb:
-	./rel/$(NAME)/bin/$(NAME) gdb
+	@./rel/$(NAME)/bin/$(NAME) gdb
 
 release: generate
-	./rel/create-release.sh
+	@./rel/create-release.sh
+
+configure:
+	@./rel/files/http_conf.sh
+
+api-test:
+	@./rebar skip_deps=true eunit suites=kelly_http_api_addr2cust_test
+	@./rebar skip_deps=true eunit suites=kelly_http_api_cst_test
+	@./rebar skip_deps=true eunit suites=kelly_http_api_gtw_test
+	@./rebar skip_deps=true eunit suites=kelly_http_api_ntw_test
+	@./rebar skip_deps=true eunit suites=kelly_http_api_prv_test

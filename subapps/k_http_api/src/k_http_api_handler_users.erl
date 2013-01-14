@@ -134,12 +134,12 @@ translate_name(permitted_smpp_types) ->
 translate_name(Name) ->
 	Name.
 
-prepare_users(Users) ->
+prepare_users(User = #user{}) ->
 	UserFun = ?record_to_proplist(user),
-	{ok, lists:map(fun(User)->
-		UserPropList = UserFun(User),
-		translate(proplists:delete(pswd_hash, UserPropList))
-		end, Users)}.
+	UserPropList = UserFun(User),
+	translate(proplists:delete(pswd_hash, UserPropList));
+prepare_users(Users) when is_list(Users) ->
+	{ok, [prepare_users(User) || User <- Users]}.
 
 create_user(Customer, Params) ->
 	UserID = ?gv(id, Params),
@@ -155,7 +155,7 @@ create_user(Customer, Params) ->
 				permitted_smpp_types 	= SMPPTypes
 				},
 			ok = k_aaa:set_customer_user(User, Customer#customer.uuid),
-			{ok, UserPropList} = prepare_users([User]),
+			{ok, [UserPropList]} = prepare_users([User]),
 			?log_debug("UserPropList: ~p", [UserPropList]),
 			{http_code, 201, UserPropList};
 		Error ->
