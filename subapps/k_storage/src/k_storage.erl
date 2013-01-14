@@ -45,19 +45,19 @@ set_mt_req_info(#req_info{
 	reg_dlr = RegDlr,
 	req_time = ReqTime
 }) ->
-	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
+	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}],
 	Plist = [
-		{client_type, ClientType},
-		{customer_id, CustomerId},
-		{in_msg_id, InMsgId},
-		{gateway_id, GatewayId},
-		{type, Type},
-		{encoding, Encoding},
-		{body, Message},
-		{src_addr, addr_to_doc(SrcAddr)},
-		{dst_addr, addr_to_doc(DstAddr)},
-		{reg_dlr, RegDlr},
-		{req_time, ReqTime}
+		{ct, ClientType},
+		{ci, CustomerId},
+		{imi, InMsgId},
+		{gi, GatewayId},
+		{t, Type},
+		{e, Encoding},
+		{b, Message},
+		{sa, addr_to_doc(SrcAddr)},
+		{da, addr_to_doc(DstAddr)},
+		{rd, RegDlr},
+		{rqt, ReqTime}
 	],
 	mongodb_storage:upsert(mt_messages, Selector, Plist).
 
@@ -71,15 +71,15 @@ set_mt_resp_info(#resp_info{
 	resp_time = RespTime,
 	resp_status = RespStatus
 }) ->
-	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
+	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}],
 	Plist = [
-		{client_type, ClientType},
-		{customer_id, CustomerId},
-		{in_msg_id, InMsgId},
-		{gateway_id, GatewayId},
-		{out_msg_id, OutMsgId},
-		{resp_time, RespTime},
-		{resp_status, RespStatus}
+		{ct, ClientType},
+		{ci, CustomerId},
+		{imi, InMsgId},
+		{gi, GatewayId},
+		{omi, OutMsgId},
+		{rpt, RespTime},
+		{rps, RespStatus}
 	],
 	mongodb_storage:upsert(mt_messages, Selector, Plist).
 
@@ -90,18 +90,18 @@ set_mt_dlr_info(#dlr_info{
 	dlr_time = DlrTime,
 	dlr_status = DlrStatus
 }) ->
-	Selector = [{gateway_id, GatewayId}, {out_msg_id, OutMsgId}],
+	Selector = [{gi, GatewayId}, {omi, OutMsgId}],
 	Plist = [
-		{gateway_id, GatewayId},
-		{out_msg_id, OutMsgId},
-		{dlr_time, DlrTime},
-		{dlr_status, DlrStatus}
+		{gi, GatewayId},
+		{omi, OutMsgId},
+		{dt, DlrTime},
+		{ds, DlrStatus}
 	],
 	mongodb_storage:upsert(mt_messages, Selector, Plist).
 
 -spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(GatewayId, OutMsgId) ->
-	Selector = [{gateway_id, GatewayId}, {out_msg_id, OutMsgId}],
+	Selector = [{gi, GatewayId}, {omi, OutMsgId}],
 	case mongodb_storage:find_one(mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_msg_info(Plist)};
@@ -111,7 +111,7 @@ get_mt_msg_info(GatewayId, OutMsgId) ->
 
 -spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
-	Selector = [{customer_id, CustomerId}, {client_type, ClientType}, {in_msg_id, InMsgId}],
+	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}],
 	case mongodb_storage:find_one(mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_msg_info(Plist)};
@@ -132,39 +132,39 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 	RegDlr = MsgInfo#msg_info.reg_dlr,
 	ReqTime = MsgInfo#msg_info.req_time,
 
-	Selector = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
+	Selector = [{gi, GatewayId}, {imi, InMsgId}],
 	Plist = [
-		{in_msg_id, InMsgId},
-		{gateway_id, GatewayId},
-		{customer_id, CustomerId},
-		{type, Type},
-		{encoding, Encoding},
-		{body, MessageBody},
-		{src_addr, addr_to_doc(SrcAddr)},
-		{dst_addr, addr_to_doc(DstAddr)},
-		{reg_dlr, RegDlr},
-		{req_time, ReqTime}
+		{imi, InMsgId},
+		{gi, GatewayId},
+		{ci, CustomerId},
+		{t, Type},
+		{e, Encoding},
+		{b, MessageBody},
+		{sa, addr_to_doc(SrcAddr)},
+		{da, addr_to_doc(DstAddr)},
+		{rd, RegDlr},
+		{rqt, ReqTime}
 	],
 	mongodb_storage:upsert(mo_messages, Selector, Plist).
 
 -spec get_mo_msg_info(binary(), any()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mo_msg_info(GatewayId, InMsgId) ->
-	Selector = [{gateway_id, GatewayId}, {in_msg_id, InMsgId}],
+	Selector = [{gi, GatewayId}, {imi, InMsgId}],
 	case mongodb_storage:find_one(mo_messages, Selector) of
 		{ok, Plist} ->
-			SrcAddrDoc = proplists:get_value(src_addr, Plist),
-			DstAddrDoc = proplists:get_value(dst_addr, Plist),
+			SrcAddrDoc = proplists:get_value(sa, Plist),
+			DstAddrDoc = proplists:get_value(da, Plist),
 			MsgInfo = #msg_info{
-				customer_id = proplists:get_value(customer_id, Plist),
-				in_msg_id = proplists:get_value(in_msg_id, Plist),
-				gateway_id = proplists:get_value(gateway_id, Plist),
-				type = proplists:get_value(type, Plist),
-				encoding = proplists:get_value(encoding, Plist),
-				body = proplists:get_value(body, Plist),
+				customer_id = proplists:get_value(ci, Plist),
+				in_msg_id = proplists:get_value(imi, Plist),
+				gateway_id = proplists:get_value(gi, Plist),
+				type = proplists:get_value(t, Plist),
+				encoding = proplists:get_value(e, Plist),
+				body = proplists:get_value(b, Plist),
 				src_addr = doc_to_addr(SrcAddrDoc),
 				dst_addr = doc_to_addr(DstAddrDoc),
-				reg_dlr = proplists:get_value(reg_dlr, Plist),
-				req_time = proplists:get_value(req_time, Plist)
+				reg_dlr = proplists:get_value(rd, Plist),
+				req_time = proplists:get_value(rqt, Plist)
 			},
 			{ok, MsgInfo};
 		Error ->
@@ -210,44 +210,44 @@ get_msg_ids_by_sms_request_id(CustomerId, UserId, SrcAddr, SmsRequestId) ->
 %% ===================================================================
 
 plist_to_msg_info(Plist) ->
-	SrcAddrDoc = proplists:get_value(src_addr, Plist),
-	DstAddrDoc = proplists:get_value(dst_addr, Plist),
+	SrcAddrDoc = proplists:get_value(sa, Plist),
+	DstAddrDoc = proplists:get_value(da, Plist),
 	#msg_info{
-		client_type = proplists:get_value(client_type, Plist),
-		customer_id = proplists:get_value(customer_id, Plist),
-		in_msg_id = proplists:get_value(in_msg_id, Plist),
-		gateway_id = proplists:get_value(gateway_id, Plist),
-		out_msg_id = proplists:get_value(out_msg_id, Plist),
-		type = proplists:get_value(type, Plist),
-		encoding = proplists:get_value(encoding, Plist),
-		body = proplists:get_value(body, Plist),
+		client_type = proplists:get_value(ct, Plist),
+		customer_id = proplists:get_value(ci, Plist),
+		in_msg_id = proplists:get_value(imi, Plist),
+		gateway_id = proplists:get_value(gi, Plist),
+		out_msg_id = proplists:get_value(omi, Plist),
+		type = proplists:get_value(t, Plist),
+		encoding = proplists:get_value(e, Plist),
+		body = proplists:get_value(b, Plist),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),
-		reg_dlr = proplists:get_value(reg_dlr, Plist),
-		req_time = proplists:get_value(req_time, Plist),
-		resp_time = proplists:get_value(resp_time, Plist),
-		resp_status = proplists:get_value(resp_status, Plist),
-		dlr_time = proplists:get_value(dlr_time, Plist),
-		dlr_status = proplists:get_value(dlr_status, Plist)
+		reg_dlr = proplists:get_value(rd, Plist),
+		req_time = proplists:get_value(rqt, Plist),
+		resp_time = proplists:get_value(rpt, Plist),
+		resp_status = proplists:get_value(rps, Plist),
+		dlr_time = proplists:get_value(dt, Plist),
+		dlr_status = proplists:get_value(ds, Plist)
 	}.
 
 addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
-	{addr, Addr, ton, Ton, npi, Npi};
+	{a, Addr, t, Ton, n, Npi};
 addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
-	{addr, Addr, ton, Ton, npi, Npi, ref_num, RefNum}.
+	{a, Addr, t, Ton, n, Npi, r, RefNum}.
 
 -spec doc_to_addr
-	({addr, binary(), ton, integer(), npi, integer()}) ->
+	({a, binary(), t, integer(), n, integer()}) ->
 		#addr{};
-	({addr, binary(), ton, integer(), npi, integer(), ref_num, integer()}) ->
+	({a, binary(), t, integer(), n, integer(), r, integer()}) ->
 		#addr{}.
-doc_to_addr({addr, Addr, ton, Ton, npi, Npi}) ->
+doc_to_addr({a, Addr, t, Ton, n, Npi}) ->
 	#addr{
 		addr = Addr,
 		ton = Ton,
 		npi = Npi
 	};
-doc_to_addr({addr, Addr, ton, Ton, npi, Npi, ref_num, RefNum}) ->
+doc_to_addr({a, Addr, t, Ton, n, Npi, r, RefNum}) ->
 	#addr{
 		addr = Addr,
 		ton = Ton,
