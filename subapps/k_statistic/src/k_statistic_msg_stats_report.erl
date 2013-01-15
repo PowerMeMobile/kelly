@@ -37,8 +37,8 @@ get_report(ReportType, From, To) when From < To ->
 %% ===================================================================
 
 get_records(Collection, From, To) ->
-	Selector = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
-	Projector = [ { 'in_msg_id' , 1 } , { 'customer_id' , 1 } , { 'dst_addr.addr' , 1 } ],
+	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
+	Projector = [ { 'imi' , 1 } , { 'ci' , 1 } , { 'da.a' , 1 } ],
 	case mongodb_storage:find(Collection, Selector, Projector) of
 		{ok, List} ->
 			{ok, [strip_plist(Plist) || {_Id, Plist} <- List]};
@@ -47,9 +47,9 @@ get_records(Collection, From, To) ->
 	end.
 
 strip_plist(Plist) ->
-	InMsgId = proplists:get_value(in_msg_id, Plist),
-	CustomerId = proplists:get_value(customer_id, Plist),
-	{addr, DstAddr} = proplists:get_value(dst_addr, Plist),
+	InMsgId = proplists:get_value(imi, Plist),
+	CustomerId = proplists:get_value(ci, Plist),
+	{a, DstAddr} = proplists:get_value(da, Plist),
 	{InMsgId, CustomerId, DstAddr}.
 
 build_raw_records(Records, NetworkIdPrefixMap) ->

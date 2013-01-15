@@ -45,8 +45,8 @@ get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
 	To::erlang:timestamp()
 ) -> {ok, [{gateway_id(), unix_epoch()}]} | {error, reason()}.
 get_records(Collection, From, To) ->
-	Selector = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
-	Projector = [ { 'gateway_id' , 1 } , { 'req_time' , 1 } ],
+	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
+	Projector = [ { 'gi' , 1 } , { 'rqt' , 1 } ],
 	case mongodb_storage:find(Collection, Selector, Projector) of
 		{ok, List} ->
 			{ok, [strip_plist(Plist) || {_Id, Plist} <- List]};
@@ -55,8 +55,8 @@ get_records(Collection, From, To) ->
 	end.
 
 strip_plist(Plist) ->
-	GatewayId = proplists:get_value(gateway_id, Plist),
-	ReqTime = proplists:get_value(req_time, Plist),
+	GatewayId = proplists:get_value(gi, Plist),
+	ReqTime = proplists:get_value(rqt, Plist),
 	ReqTimeUnix = k_datetime:timestamp_to_unix_epoch(ReqTime),
 	{GatewayId, ReqTimeUnix}.
 

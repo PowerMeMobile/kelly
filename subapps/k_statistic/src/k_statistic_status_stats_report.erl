@@ -22,10 +22,10 @@ get_report(From, To) ->
 	MtMapF =
 <<"
 	function() {
-		if (this.dlr_status) {
-			emit(this.dlr_status, 1);
-		} else if (this.resp_status) {
-			emit(this.resp_status, 1);
+		if (this.ds) {
+			emit(this.ds, 1);
+		} else if (this.rps) {
+			emit(this.rps, 1);
 		} else {
 			emit(\"submitted\", 1);
 		}
@@ -45,14 +45,14 @@ get_report(From, To) ->
 ">>,
 	MtCommand =
 		{ 'mapreduce' , <<"mt_messages">>,
-		  'query' , { 'req_time' , { '$gte' , From, '$lt' , To } },
+		  'query' , { 'rqt' , { '$gte' , From, '$lt' , To } },
 		  'map' , MtMapF,
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
 	MoCommand =
 		{ 'mapreduce' , <<"mo_messages">>,
-		  'query' , { 'req_time' , { '$gte' , From, '$lt' , To } },
+		  'query' , { 'rqt' , { '$gte' , From, '$lt' , To } },
 		  'map' , MoMapF,
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
@@ -69,14 +69,14 @@ get_report(From, To) ->
 
 -spec get_report(From::erlang:timestamp(), To::erlang:timestamp(), Status::status()) -> [any()].
 get_report(From, To, received) ->
-	Selector = [ { 'req_time' , { '$gte' , From, '$lt' , To } } ],
+	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
 	get_raw_report(mo_messages, Selector);
 
 get_report(From, To, submitted) ->
 	Selector = [
-		{ 'req_time' , { '$gte' , From, '$lt' , To } },
-		{ 'resp_status' , { '$exists' , false } },
-		{ 'dlr_status' , { '$exists' , false } }
+		{ 'rqt' , { '$gte' , From, '$lt' , To } },
+		{ 'rps' , { '$exists' , false } },
+		{ 'ds' , { '$exists' , false } }
 	],
 	get_raw_report(mt_messages, Selector);
 
@@ -84,8 +84,8 @@ get_report(From, To, Status) when
 	Status == success; Status == failure
 ->
 	Selector = [
-		{ 'req_time' , { '$gte' , From, '$lt' , To } },
-		{ 'resp_status' , Status }
+		{ 'rqt' , { '$gte' , From, '$lt' , To } },
+		{ 'rps' , Status }
 	],
 	get_raw_report(mt_messages, Selector);
 
@@ -95,8 +95,8 @@ get_report(From, To, Status) when
 	Status == unknown; Status == rejected; Status == unrecognized
 ->
 	Selector = [
-		{ 'req_time' , { '$gte' , From, '$lt' , To } },
-		{ 'dlr_status' , Status }
+		{ 'rqt' , { '$gte' , From, '$lt' , To } },
+		{ 'ds' , Status }
 	],
 	get_raw_report(mt_messages, Selector).
 
@@ -115,15 +115,15 @@ get_raw_report(Collection, Selector) ->
 	end.
 
 prettify_plist(Plist) ->
-	InMsgId = proplists:get_value(in_msg_id, Plist),
-	GatewayId = proplists:get_value(gateway_id, Plist),
-	CustomerId = proplists:get_value(customer_id, Plist),
-	Type = proplists:get_value(type, Plist),
-	Encoding = proplists:get_value(encoding, Plist),
-	Body = proplists:get_value(body, Plist),
-	SrcAddrDoc = proplists:get_value(src_addr, Plist),
-	DstAddrDoc = proplists:get_value(dst_addr, Plist),
-	ReqTime = proplists:get_value(req_time, Plist),
+	InMsgId = proplists:get_value(imi, Plist),
+	GatewayId = proplists:get_value(gi, Plist),
+	CustomerId = proplists:get_value(ci, Plist),
+	Type = proplists:get_value(t, Plist),
+	Encoding = proplists:get_value(e, Plist),
+	Body = proplists:get_value(b, Plist),
+	SrcAddrDoc = proplists:get_value(sa, Plist),
+	DstAddrDoc = proplists:get_value(da, Plist),
+	ReqTime = proplists:get_value(rqt, Plist),
 
 	Datetime = list_to_binary(
 		k_datetime:datetime_to_iso_8601(
