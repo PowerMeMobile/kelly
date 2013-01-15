@@ -57,8 +57,8 @@ get_report(From, To) ->
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
-	{ok, MtBson} = mongodb_storage:command(mt_messages, MtCommand),
-	{ok, MoBson} = mongodb_storage:command(mo_messages, MoCommand),
+	{ok, MtBson} = mongodb_storage:command(MtCommand),
+	{ok, MoBson} = mongodb_storage:command(MoCommand),
 	ResultsMtBson = bson:at(results, MtBson),
 	ResultsMoBson = bson:at(results, MoBson),
 	ResultsBson = lists:sort(ResultsMtBson ++ ResultsMoBson),

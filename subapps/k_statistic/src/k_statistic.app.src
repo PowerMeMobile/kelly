@@ -7,8 +7,6 @@
 		stdlib,
 		k_common,
 		k_storage,
-		k_aaa,
-		k_config,
 		k_j3_support
 	]},
 	{env, []}
