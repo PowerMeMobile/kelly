@@ -28,7 +28,8 @@
 
 -record(state, {
 	db_name :: binary(),
-	conn_pool :: pid()
+	db_conn :: pid(),
+	is_rs :: boolean()
 }).
 
 -type collection() :: atom() | binary().
@@ -124,26 +125,30 @@ command(Command) ->
 
 init([]) ->
 	?log_debug("init", []),
-	{ok, DBName, Pool} = connect(),
-	{ok, #state{db_name = DBName, conn_pool = Pool}}.
+	{ok, DBConn, DBName, IsRs} = connect(),
+	{ok, #state{db_conn = DBConn, db_name = DBName, is_rs = IsRs}}.
 
-handle_call(get_conn_and_db, _From, State = #state{
-	conn_pool = Pool,
+handle_call(get_conn_and_name, _From, State = #state{
+	db_conn = DBConn,
 	db_name = DBName
 }) ->
-	Reply =
-		case resource_pool:get(Pool) of
-			{ok, Conn} ->
-				{ok, Conn, DBName};
-			{error, Reason} ->
-				{error, Reason}
-		end,
-	{reply, Reply, State};
+	{reply, {ok, DBConn, DBName}, State};
 
-handle_call(reconnect, _From, #state{conn_pool = Pool}) ->
-	ok = resource_pool:close(Pool),
-	{ok, DBName, NewPool} = connect(),
-	{reply, ok, #state{db_name = DBName, conn_pool = NewPool}};
+handle_call({try_reconnect, CurDBConn}, _From, #state{db_conn = CurDBConn, is_rs = IsRs}) ->
+	%% ?log_info("Trying to reconnect to MongoDB...", []),
+	%% close connection(s).
+	case IsRs of
+		true -> mongo:rs_disconnect(CurDBConn);
+		false -> mongo:disconnect(CurDBConn)
+	end,
+	%% connect again.
+	{ok, NewDBConn, NewDBName, NewIsRs} = connect(),
+	%% ?log_info("Reconnected to MongoDB", []),
+	{reply, ok, #state{db_conn = NewDBConn, db_name = NewDBName, is_rs = NewIsRs}};
+
+handle_call({try_reconnect, PrevDBConn}, _From, State = #state{db_conn = CurDBConn}) when PrevDBConn =/= CurDBConn ->
+	%% ?log_info("Already reconnecting(ed) to MongoDB.", []),
+	{reply, ok, State};
 
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
@@ -166,34 +171,32 @@ code_change(_OldVsn, State, _Extra) ->
 
 connect() ->
 	{ok, ConnProps} = application:get_env(?APP, mongodb_conn_props),
-	{ok, PoolSize} = application:get_env(?APP, mongodb_pool_size),
 	{ok, DBName} = application:get_env(?APP, mongodb_dbname),
-	ConnFactory =
+	{DBConn, IsRs} =
 		case ConnProps of
 			{single, HostPort} ->
-				mongo:connect_factory(HostPort);
+				{mongo:connect(HostPort), false};
 			{replica_set, RSProps} ->
-				mongo:rs_connect_factory(RSProps)
+				{mongo:rs_connect(RSProps), true}
 		 end,
-	Pool = resource_pool:new(ConnFactory, PoolSize),
-	{ok, DBName, Pool}.
+	{ok, DBConn, DBName, IsRs}.
 
 mongo_do(WriteMode, ReadMode, ActionFun) ->
-	case gen_server:call(?MODULE, get_conn_and_db) of
-		{ok, Conn, DBName} ->
-			case mongo:do(WriteMode, ReadMode, Conn, DBName, ActionFun) of
+	case gen_server:call(?MODULE, get_conn_and_name) of
+		{ok, DBConn, DBName} ->
+			case mongo:do(WriteMode, ReadMode, DBConn, DBName, ActionFun) of
 				{ok, ok} ->
 					ok;
 				{ok, {error, Reason}} ->
 					{error, Reason};
 				{ok, Entries} ->
 					{ok, Entries};
-				{failure, {connection_failure, _, _} = Reason} ->
-					?log_error("Connection failure: ~p~n", [Reason]),
-					?log_info("Trying to reconnect...~n", []),
-					ok = gen_server:call(?MODULE, reconnect),
+				{failure, {connection_failure, _} = Reason} ->
+					?log_error("MongoDB connection failure: ~p", [Reason]),
+					ok = gen_server:call(?MODULE, {try_reconnect, DBConn}),
 					mongo_do(WriteMode, ReadMode, ActionFun);
 				{failure, Reason} ->
+					?log_error("MongoDB failure: ~p", [Reason]),
 					{error, Reason}
 			end;
 		{error, Reason} ->
