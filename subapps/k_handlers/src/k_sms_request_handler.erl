@@ -63,7 +63,7 @@ sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
 			Ids ++ Acc
 		end, [], lists:zip(DestAddrs, MessageIds)),
 	RegDlr =
-		case get_param_by_name("registered_delivery", Params) of
+		case get_param_by_name(<<"registered_delivery">>, Params) of
 			undefined -> false;
 			Any -> Any
 		end,
