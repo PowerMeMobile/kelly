@@ -138,4 +138,4 @@ link_sms_request_id_to_message_ids(
 	%% Include SenderAddress into Key to make SmsRequestID unique
 	%% within specific SenderAddress
 
-	ok = k_storage:link_sms_request_id_to_msg_ids(CustomerID, UserID, SenderAddress, SmsRequestID, InputMessageIDs).
+	ok = k_k1api:link_sms_request_id_to_msg_ids(CustomerID, UserID, SenderAddress, SmsRequestID, InputMessageIDs).

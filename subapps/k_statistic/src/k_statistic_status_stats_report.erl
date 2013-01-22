@@ -134,8 +134,8 @@ prettify_plist(Plist) ->
 		{message_id, InMsgId},
 		{gateway_id, GatewayId},
 		{customer_id, CustomerId},
-		{src_addr, addr_to_proplist(k_storage:doc_to_addr(SrcAddrDoc))},
-		{dst_addr, addr_to_proplist(k_storage:doc_to_addr(DstAddrDoc))},
+		{src_addr, addr_to_proplist(k_storage_utils:doc_to_addr(SrcAddrDoc))},
+		{dst_addr, addr_to_proplist(k_storage_utils:doc_to_addr(DstAddrDoc))},
 		{type, Type},
 		{encoding, Encoding},
 		{message_text, Body}

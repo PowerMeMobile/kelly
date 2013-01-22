@@ -9,20 +9,11 @@
 	get_mt_msg_info/3,
 
 	set_mo_msg_info/1,
-	get_mo_msg_info/2,
-
-	link_sms_request_id_to_msg_ids/5,
-	get_msg_ids_by_sms_request_id/4
-]).
-
--export([
-	doc_to_addr/1
+	get_mo_msg_info/2
 ]).
 
 -include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/storages.hrl").
--include_lib("k_common/include/gateway.hrl").
 -include_lib("k_common/include/customer.hrl").
 
 -type reason() :: any().
@@ -54,8 +45,8 @@ set_mt_req_info(#req_info{
 		{t, Type},
 		{e, Encoding},
 		{b, Message},
-		{sa, addr_to_doc(SrcAddr)},
-		{da, addr_to_doc(DstAddr)},
+		{sa, k_storage_utils:addr_to_doc(SrcAddr)},
+		{da, k_storage_utils:addr_to_doc(DstAddr)},
 		{rd, RegDlr},
 		{rqt, ReqTime}
 	],
@@ -140,8 +131,8 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 		{t, Type},
 		{e, Encoding},
 		{b, MessageBody},
-		{sa, addr_to_doc(SrcAddr)},
-		{da, addr_to_doc(DstAddr)},
+		{sa, k_storage_utils:addr_to_doc(SrcAddr)},
+		{da, k_storage_utils:addr_to_doc(DstAddr)},
 		{rd, RegDlr},
 		{rqt, ReqTime}
 	],
@@ -161,46 +152,12 @@ get_mo_msg_info(GatewayId, InMsgId) ->
 				type = proplists:get_value(t, Plist),
 				encoding = proplists:get_value(e, Plist),
 				body = proplists:get_value(b, Plist),
-				src_addr = doc_to_addr(SrcAddrDoc),
-				dst_addr = doc_to_addr(DstAddrDoc),
+				src_addr = k_storage_utils:doc_to_addr(SrcAddrDoc),
+				dst_addr = k_storage_utils:doc_to_addr(DstAddrDoc),
 				reg_dlr = proplists:get_value(rd, Plist),
 				req_time = proplists:get_value(rqt, Plist)
 			},
 			{ok, MsgInfo};
-		Error ->
-			Error
-	end.
-
--spec link_sms_request_id_to_msg_ids(binary(), binary(), #addr{}, binary(), [any()]) -> ok | {error, reason()}.
-link_sms_request_id_to_msg_ids(CustomerId, UserId, SrcAddr, SmsRequestId, MessageIDs) ->
-	Selector = 	[
-		{customer_id, CustomerId},
-		{user_id, UserId},
-	  	{src_addr, addr_to_doc(SrcAddr)},
-		{req_id, SmsRequestId}
-	],
-	Plist = [
-		{customer_id, CustomerId},
-		{user_id, UserId},
-	  	{src_addr, addr_to_doc(SrcAddr)},
-		{req_id, SmsRequestId},
-		{msg_ids, [{customer_id, CId, client_type, Client, msg_id, MId} || {CId, Client, MId} <- MessageIDs]}
-	],
-	mongodb_storage:upsert(k1api_sms_request_id_to_msg_ids, Selector, Plist).
-
--spec get_msg_ids_by_sms_request_id(binary(), binary(), #addr{}, binary()) ->
-	{ok, [{binary(), k1api, binary()}]} | {error, reason()}.
-get_msg_ids_by_sms_request_id(CustomerId, UserId, SrcAddr, SmsRequestId) ->
-	Selector = [
-		{customer_id, CustomerId},
-		{user_id, UserId},
-	  	{src_addr, addr_to_doc(SrcAddr)},
-		{req_id, SmsRequestId}
-	],
-	case mongodb_storage:find_one(k1api_sms_request_id_to_msg_ids, Selector) of
-		{ok, Plist} ->
-			MsgIdsDoc = proplists:get_value(msg_ids, Plist),
-			{ok, [{CId, Client, MId} || {_,CId,_,Client,_, MId} <- MsgIdsDoc]};
 		Error ->
 			Error
 	end.
@@ -221,36 +178,12 @@ plist_to_msg_info(Plist) ->
 		type = proplists:get_value(t, Plist),
 		encoding = proplists:get_value(e, Plist),
 		body = proplists:get_value(b, Plist),
-		src_addr = doc_to_addr(SrcAddrDoc),
-		dst_addr = doc_to_addr(DstAddrDoc),
+		src_addr = k_storage_utils:doc_to_addr(SrcAddrDoc),
+		dst_addr = k_storage_utils:doc_to_addr(DstAddrDoc),
 		reg_dlr = proplists:get_value(rd, Plist),
 		req_time = proplists:get_value(rqt, Plist),
 		resp_time = proplists:get_value(rpt, Plist),
 		resp_status = proplists:get_value(rps, Plist),
 		dlr_time = proplists:get_value(dt, Plist),
 		dlr_status = proplists:get_value(ds, Plist)
-	}.
-
-addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
-	{a, Addr, t, Ton, n, Npi};
-addr_to_doc(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
-	{a, Addr, t, Ton, n, Npi, r, RefNum}.
-
--spec doc_to_addr
-	({a, binary(), t, integer(), n, integer()}) ->
-		#addr{};
-	({a, binary(), t, integer(), n, integer(), r, integer()}) ->
-		#addr{}.
-doc_to_addr({a, Addr, t, Ton, n, Npi}) ->
-	#addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi
-	};
-doc_to_addr({a, Addr, t, Ton, n, Npi, r, RefNum}) ->
-	#addr{
-		addr = Addr,
-		ton = Ton,
-		npi = Npi,
-		ref_num = RefNum
 	}.

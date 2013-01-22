@@ -35,7 +35,7 @@ process_delivery_status_request(Request) ->
 		address = SourceAddr
 	} = Request,
 	UserID = undefined,
-	case k_storage:get_msg_ids_by_sms_request_id(CustomerID, UserID, SourceAddr, SmsRequestID) of
+	case k_k1api:get_msg_ids_by_sms_request_id(CustomerID, UserID, SourceAddr, SmsRequestID) of
 		{ok, IDs} ->
 			get_statuses(RequestID, IDs);
 		{error, Error} ->
