@@ -66,21 +66,18 @@ traverse_delivery_receipts(GatewayId, DlrTime,
 				dlr_status = DlrStatus
 			},
 			ok = k_storage:set_mt_dlr_info(DlrInfo),
-			InputId = {CustomerId, ClientType, InMsgId},
-			ok = register_delivery_receipt(InputId, MsgInfo, DlrTime, DlrStatus),
+			ok = register_delivery_receipt(ClientType, CustomerId, InMsgId, MsgInfo, DlrTime, DlrStatus),
 			%% process the rest receipts.
 			traverse_delivery_receipts(GatewayId, DlrTime, Receipts);
 		Error ->
 			Error
 	end.
 
-register_delivery_receipt(InputId, MsgInfo, DlrTime, MessageState) ->
-	{_CustomerId, ClientType, _InputMsgId} = InputId,
-	{ok, Item} = build_receipt_item(ClientType, InputId, MsgInfo, DlrTime, MessageState),
+register_delivery_receipt(ClientType, CustomerId, InMsgId, MsgInfo, DlrTime, MessageState) ->
+	{ok, Item} = build_receipt_item(ClientType, CustomerId, InMsgId, MsgInfo, DlrTime, MessageState),
 	ok = k_mailbox:register_incoming_item(Item).
 
-build_receipt_item(k1api, InputId, MsgInfo, _DlrTime, MsgState) ->
-	{CustomerId, _ClientType, InputMsgId} = InputId,
+build_receipt_item(k1api, CustomerId, InMsgId, MsgInfo, _DlrTime, MsgState) ->
 	ItemId = uuid:newid(),
 	Item = #k_mb_k1api_receipt{
 		id = ItemId,
@@ -88,12 +85,11 @@ build_receipt_item(k1api, InputId, MsgInfo, _DlrTime, MsgState) ->
 		user_id	= <<"undefined">>,
 		source_addr = MsgInfo#msg_info.src_addr,
 		dest_addr = MsgInfo#msg_info.dst_addr,
-		input_message_id = InputMsgId,
+		input_message_id = InMsgId,
 		message_state = MsgState
 	},
 	{ok, Item};
-build_receipt_item(funnel, InputId, MsgInfo, DlrTime, MsgState) ->
-	{CustomerId, _ClientType, InputMsgId} = InputId,
+build_receipt_item(funnel, CustomerId, InMsgId, MsgInfo, DlrTime, MsgState) ->
 	ItemId = uuid:newid(),
 	Item = #k_mb_funnel_receipt{
 		id = ItemId,
@@ -101,7 +97,7 @@ build_receipt_item(funnel, InputId, MsgInfo, DlrTime, MsgState) ->
 		user_id = <<"undefined">>,
 		source_addr = MsgInfo#msg_info.src_addr,
 		dest_addr = MsgInfo#msg_info.dst_addr,
-		input_message_id = InputMsgId,
+		input_message_id = InMsgId,
 		submit_date = DlrTime,
 		done_date = DlrTime,
 		message_state = MsgState
