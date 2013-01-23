@@ -57,8 +57,8 @@ get_report(From, To) ->
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
-	{ok, MtBson} = mongodb_storage:command(MtCommand),
-	{ok, MoBson} = mongodb_storage:command(MoCommand),
+	{ok, MtBson} = k_dynamic_storage:command(MtCommand),
+	{ok, MoBson} = k_dynamic_storage:command(MoCommand),
 	ResultsMtBson = bson:at(results, MtBson),
 	ResultsMoBson = bson:at(results, MoBson),
 	ResultsBson = lists:sort(ResultsMtBson ++ ResultsMoBson),
@@ -105,7 +105,7 @@ get_report(From, To, Status) when
 %% ===================================================================
 
 get_raw_report(Collection, Selector) ->
-	case mongodb_storage:find(Collection, Selector) of
+	case k_dynamic_storage:find(Collection, Selector) of
 		{ok, List} ->
 			{ok, {messages,
 				[prettify_plist(Plist) || {_Id, Plist} <- List]

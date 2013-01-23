@@ -47,7 +47,7 @@ get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
 get_records(Collection, From, To) ->
 	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
 	Projector = [ { 'gi' , 1 } , { 'rqt' , 1 } ],
-	case mongodb_storage:find(Collection, Selector, Projector) of
+	case k_dynamic_storage:find(Collection, Selector, Projector) of
 		{ok, List} ->
 			{ok, [strip_plist(Plist) || {_Id, Plist} <- List]};
 		Error ->

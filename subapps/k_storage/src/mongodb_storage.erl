@@ -2,14 +2,15 @@
 
 %% API
 -export([
-	start_link/0,
-	find/2,
+	start_link/2,
 	find/3,
-	find_one/2,
+	find/4,
 	find_one/3,
-	upsert/3,
-	delete/2,
-	command/1
+	find_one/4,
+	upsert/4,
+	delete/3,
+	command/2,
+	ensure_index/3
 ]).
 
 %% gen_server callbacks
@@ -31,31 +32,35 @@
 	db_pool :: resource_pool:pool()
 }).
 
+-type server_name() :: atom().
 -type collection() :: atom() | binary().
 -type plist() :: [{atom(), term()}].
 -type selector() :: plist().
 -type projector() :: plist().
+-type modifier() :: plist().
 -type key() :: term().
 -type value() :: term().
+-type command() :: tuple().
+-type index_spec() :: tuple().
 -type reason() :: no_entry | term().
 
 %% ===================================================================
 %% API
 %% ===================================================================
 
--spec start_link() -> {ok, pid()}.
-start_link() ->
-	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+-spec start_link(server_name(), plist()) -> {ok, pid()}.
+start_link(ServerName, Props) ->
+	gen_server:start_link({local, ServerName}, ?MODULE, [Props], []).
 
--spec find(collection(), selector()) ->
+-spec find(server_name(), collection(), selector()) ->
 	{ok, [{key(), value()}]} | {error, reason()}.
-find(Coll, Selector) ->
-	find(Coll, Selector, []).
+find(ServerName, Coll, Selector) ->
+	find(ServerName, Coll, Selector, []).
 
--spec find(collection(), selector(), projector()) ->
+-spec find(server_name(), collection(), selector(), projector()) ->
 	{ok, [{key(), value()}]} | {error, reason()}.
-find(Coll, Selector, Projector) ->
-	mongo_do(safe, master,
+find(ServerName, Coll, Selector, Projector) ->
+	mongo_do(ServerName, safe, master,
 		fun() ->
 			Cursor = mongo:find(Coll, bson:document(Selector), bson:document(Projector)),
 			Documents = mongo_cursor:rest(Cursor),
@@ -71,15 +76,15 @@ find(Coll, Selector, Projector) ->
 		end
 	).
 
--spec find_one(collection(), selector()) ->
+-spec find_one(server_name(), collection(), selector()) ->
 	{ok, Plist::[tuple()]} | {error, reason()}.
-find_one(Coll, Selector) ->
-	find_one(Coll, Selector, []).
+find_one(ServerName, Coll, Selector) ->
+	find_one(ServerName, Coll, Selector, []).
 
--spec find_one(collection(), selector(), projector()) ->
+-spec find_one(server_name(), collection(), selector(), projector()) ->
 	{ok, Plist::[tuple()]} | {error, reason()}.
-find_one(Coll, Selector, Projector) ->
-	mongo_do(safe, master,
+find_one(ServerName, Coll, Selector, Projector) ->
+	mongo_do(ServerName, safe, master,
 		fun() ->
 			case mongo:find_one(Coll, bson:document(Selector), bson:document(Projector)) of
 				{} ->
@@ -91,30 +96,39 @@ find_one(Coll, Selector, Projector) ->
 		end
 	).
 
--spec upsert(collection(), selector(), Value::[tuple()]) ->
+-spec upsert(server_name(), collection(), selector(), modifier()) ->
 	ok | {error, reason()}.
-upsert(Coll, Selector, Plist) when is_list(Plist) ->
-	mongo_do(safe, master,
+upsert(ServerName, Coll, Selector, Modifier) ->
+	mongo_do(ServerName, safe, master,
 		fun() ->
-			mongo:repsert(Coll, bson:document(Selector), {'$set', bson:document(Plist)})
+			mongo:repsert(Coll, bson:document(Selector), {'$set', bson:document(Modifier)})
 		end
 	).
 
--spec delete(collection(), selector()) ->
+-spec delete(server_name(), collection(), selector()) ->
 	ok | {error, reason()}.
-delete(Coll, Selector) ->
-	mongo_do(safe, master,
+delete(ServerName, Coll, Selector) ->
+	mongo_do(ServerName, safe, master,
 		fun() ->
 			mongo:delete(Coll, bson:document(Selector))
 		end
 	).
 
--spec command(Command::tuple()) ->
+-spec command(server_name(), command()) ->
 	{ok, Result::term()} | {error, reason()}.
-command(Command) ->
-	mongo_do(safe, master,
+command(ServerName, Command) ->
+	mongo_do(ServerName, safe, master,
 		fun() ->
 			mongo:command(Command)
+		end
+	).
+
+-spec ensure_index(server_name(), collection(), index_spec()) ->
+	ok | {error, reason()}.
+ensure_index(ServerName, Coll, IndexSpec) ->
+	mongo_do(ServerName, safe, master,
+		fun() ->
+			mongo:create_index(Coll, IndexSpec)
 		end
 	).
 
@@ -122,9 +136,9 @@ command(Command) ->
 %% gen_server callbacks
 %% ===================================================================
 
-init([]) ->
+init([Props]) ->
 	?log_debug("init", []),
-	{ok, DbName, DbPool} = connect(),
+	{ok, DbName, DbPool} = connect(Props),
 	{ok, #state{db_name = DbName, db_pool = DbPool}}.
 
 handle_call(get_name_and_pool, _From, State = #state{
@@ -142,7 +156,8 @@ handle_cast(Request, State = #state{}) ->
 handle_info(Message, State = #state{}) ->
 	{stop, {bad_arg, Message}, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, #state{db_pool = DbPool}) ->
+	resource_pool:close(DbPool),
 	ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -152,10 +167,10 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal
 %% ===================================================================
 
-connect() ->
-	{ok, ConnProps} = application:get_env(?APP, mongodb_conn_props),
-	{ok, DbName} = application:get_env(?APP, mongodb_dbname),
-	{ok, PoolSize} = application:get_env(?APP, mongodb_pool_size),
+connect(Props) ->
+	ConnProps = proplists:get_value(mongodb_conn_props, Props),
+	DbName = proplists:get_value(mongodb_dbname, Props),
+	PoolSize = proplists:get_value(mongodb_pool_size, Props),
 	ConnFactory =
 		case ConnProps of
 			{single, HostPort} ->
@@ -166,8 +181,8 @@ connect() ->
 	DbPool = resource_pool:new(ConnFactory, PoolSize),
 	{ok, DbName, DbPool}.
 
-mongo_do(WriteMode, ReadMode, ActionFun) ->
-	case gen_server:call(?MODULE, get_name_and_pool) of
+mongo_do(ServerName, WriteMode, ReadMode, ActionFun) ->
+	case gen_server:call(ServerName, get_name_and_pool) of
 		{ok, DbName, DbPool} ->
 			{ok, DbConn} = resource_pool:get(DbPool),
 			case mongo:do(WriteMode, ReadMode, DbConn, DbName, ActionFun) of
@@ -179,10 +194,10 @@ mongo_do(WriteMode, ReadMode, ActionFun) ->
 					{ok, Entries};
 				{failure, {connection_failure, _} = Reason} ->
 					?log_error("MongoDB connection failure: ~p", [Reason]),
-					mongo_do(WriteMode, ReadMode, ActionFun);
+					mongo_do(ServerName, WriteMode, ReadMode, ActionFun);
 				{failure, {connection_failure, _,_} = Reason} ->
 					?log_error("MongoDB connection failure: ~p", [Reason]),
-					mongo_do(WriteMode, ReadMode, ActionFun);
+					mongo_do(ServerName, WriteMode, ReadMode, ActionFun);
 				{failure, Reason} ->
 					?log_error("MongoDB failure: ~p", [Reason]),
 					{error, Reason}

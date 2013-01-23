@@ -31,11 +31,9 @@ init([]) ->
 		{one_for_one, 5, 10}, [
 			{k_storage_parts_sup,
 				{k_storage_parts_sup, start_link, []}, permanent, 100000, supervisor, [k_storage_parts_sup]},
-			{mongodb_storage,
-				{mongodb_storage, start_link, []}, permanent, 100000, worker, [mongodb_storage]}
+			{k_static_storage,
+				{k_static_storage, start_link, []}, permanent, 100000, worker, [k_static_storage]},
+			{k_dynamic_storage,
+				{k_dynamic_storage, start_link, []}, permanent, 100000, worker, [k_dynamic_storage]}
 		]}
 	}.
-
-%% ===================================================================
-%% Internal
-%% ===================================================================

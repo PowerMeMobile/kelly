@@ -39,7 +39,7 @@ get_report(ReportType, From, To) when From < To ->
 get_records(Collection, From, To) ->
 	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
 	Projector = [ { 'imi' , 1 } , { 'ci' , 1 } , { 'da.a' , 1 } ],
-	case mongodb_storage:find(Collection, Selector, Projector) of
+	case k_dynamic_storage:find(Collection, Selector, Projector) of
 		{ok, List} ->
 			{ok, [strip_plist(Plist) || {_Id, Plist} <- List]};
 		Error ->

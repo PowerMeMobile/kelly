@@ -50,7 +50,7 @@ set_mt_req_info(#req_info{
 		{rd, RegDlr},
 		{rqt, ReqTime}
 	],
-	mongodb_storage:upsert(mt_messages, Selector, Plist).
+	k_dynamic_storage:upsert(mt_messages, Selector, Plist).
 
 -spec set_mt_resp_info(#resp_info{}) -> ok | {error, reason()}.
 set_mt_resp_info(#resp_info{
@@ -72,7 +72,7 @@ set_mt_resp_info(#resp_info{
 		{rpt, RespTime},
 		{rps, RespStatus}
 	],
-	mongodb_storage:upsert(mt_messages, Selector, Plist).
+	k_dynamic_storage:upsert(mt_messages, Selector, Plist).
 
 -spec set_mt_dlr_info(#dlr_info{}) -> ok | {error, reason()}.
 set_mt_dlr_info(#dlr_info{
@@ -88,12 +88,12 @@ set_mt_dlr_info(#dlr_info{
 		{dt, DlrTime},
 		{ds, DlrStatus}
 	],
-	mongodb_storage:upsert(mt_messages, Selector, Plist).
+	k_dynamic_storage:update(mt_messages, Selector, Plist).
 
 -spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(GatewayId, OutMsgId) ->
 	Selector = [{gi, GatewayId}, {omi, OutMsgId}],
-	case mongodb_storage:find_one(mt_messages, Selector) of
+	case k_dynamic_storage:find_one(mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_msg_info(Plist)};
 		Error ->
@@ -103,7 +103,7 @@ get_mt_msg_info(GatewayId, OutMsgId) ->
 -spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
 	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}],
-	case mongodb_storage:find_one(mt_messages, Selector) of
+	case k_dynamic_storage:find_one(mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_msg_info(Plist)};
 		Error ->
@@ -136,12 +136,12 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 		{rd, RegDlr},
 		{rqt, ReqTime}
 	],
-	mongodb_storage:upsert(mo_messages, Selector, Plist).
+	k_dynamic_storage:upsert(mo_messages, Selector, Plist).
 
 -spec get_mo_msg_info(binary(), any()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mo_msg_info(GatewayId, InMsgId) ->
 	Selector = [{gi, GatewayId}, {imi, InMsgId}],
-	case mongodb_storage:find_one(mo_messages, Selector) of
+	case k_dynamic_storage:find_one(mo_messages, Selector) of
 		{ok, Plist} ->
 			SrcAddrDoc = proplists:get_value(sa, Plist),
 			DstAddrDoc = proplists:get_value(da, Plist),
