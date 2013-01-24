@@ -7,6 +7,7 @@
 	find/3,
 	find_one/2,
 	find_one/3,
+	insert/2,
 	upsert/3,
 	delete/2,
 	command/1
@@ -88,6 +89,15 @@ find_one(Coll, Selector, Projector) ->
 					BsonValue = bson:exclude(['_id'],  BsonDoc),
 					bson:fields(BsonValue)
 			end
+		end
+	).
+
+-spec insert(collection(), Value::[tuple()]) ->
+	ok | {error, reason()}.
+insert(Coll, Plist) ->
+	mongo_do(safe, master,
+		fun() ->
+			mongo:insert(Coll, bson:document(Plist))
 		end
 	).
 

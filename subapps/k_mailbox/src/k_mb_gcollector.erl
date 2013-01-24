@@ -1,7 +1,3 @@
-%% @private
-%% @doc Mailbox garbage collector.
-%% This module is responsible for purging expired items.
-
 %% @TODO Add cron like functionality?
 %% @TODO Compute timeout relatively to next checktime
 

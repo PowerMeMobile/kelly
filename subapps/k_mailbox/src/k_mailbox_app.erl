@@ -1,4 +1,3 @@
-%% @hidden
 -module(k_mailbox_app).
 
 -behaviour(application).
@@ -14,7 +13,6 @@
 
 start(_StartType, _StartArgs) ->
 	register(?MODULE, self()),
-	k_mb_db:init(),
 	k_mb_config:init(),
 	k_mailbox_sup:start_link().
 

@@ -16,7 +16,8 @@
 ]).
 
 -export([
-	doc_to_addr/1
+	doc_to_addr/1,
+	addr_to_doc/1
 ]).
 
 -include_lib("k_common/include/msg_id.hrl").
