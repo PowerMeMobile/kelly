@@ -28,7 +28,7 @@ link_sms_request_id_to_msg_ids(CustomerId, UserId, SrcAddr, SmsRequestId, Messag
 		{req_id, SmsRequestId},
 		{msg_ids, [{customer_id, CId, client_type, Client, msg_id, MId} || {CId, Client, MId} <- MessageIDs]}
 	],
-	k_static_storage:upsert(k1api_sms_request_id_to_msg_ids, Selector, Plist).
+	mongodb_storage:upsert(k_static_storage, k1api_sms_request_id_to_msg_ids, Selector, Plist).
 
 -spec get_msg_ids_by_sms_request_id(binary(), binary(), #addr{}, binary()) ->
 	{ok, [{binary(), k1api, binary()}]} | {error, reason()}.
@@ -39,7 +39,7 @@ get_msg_ids_by_sms_request_id(CustomerId, UserId, SrcAddr, SmsRequestId) ->
 	  	{src_addr, k_storage_utils:addr_to_doc(SrcAddr)},
 		{req_id, SmsRequestId}
 	],
-	case k_static_storage:find_one(k1api_sms_request_id_to_msg_ids, Selector) of
+	case mongodb_storage:find_one(k_static_storage, k1api_sms_request_id_to_msg_ids, Selector) of
 		{ok, Plist} ->
 			MsgIdsDoc = proplists:get_value(msg_ids, Plist),
 			{ok, [{CId, Client, MId} || {_,CId,_,Client,_, MId} <- MsgIdsDoc]};

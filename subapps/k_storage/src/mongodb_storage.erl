@@ -2,7 +2,7 @@
 
 %% API
 -export([
-	start_link/2,
+	start_link/1,
 	find/3,
 	find/4,
 	find_one/3,
@@ -48,9 +48,9 @@
 %% API
 %% ===================================================================
 
--spec start_link(server_name(), plist()) -> {ok, pid()}.
-start_link(ServerName, Props) ->
-	gen_server:start_link({local, ServerName}, ?MODULE, [Props], []).
+-spec start_link(plist()) -> {ok, pid()}.
+start_link(Props) ->
+	gen_server:start_link(?MODULE, [Props], []).
 
 -spec find(server_name(), collection(), selector()) ->
 	{ok, [{key(), value()}]} | {error, reason()}.
@@ -137,7 +137,11 @@ ensure_index(ServerName, Coll, IndexSpec) ->
 %% ===================================================================
 
 init([Props]) ->
-	?log_debug("init", []),
+	ServerName = proplists:get_value(server_name, Props),
+
+	?log_debug("register as: ~p", [ServerName]),
+	true = register(ServerName, self()),
+
 	{ok, DbName, DbPool} = connect(Props),
 	{ok, #state{db_name = DbName, db_pool = DbPool}}.
 

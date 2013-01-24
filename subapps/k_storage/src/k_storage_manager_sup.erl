@@ -1,34 +1,44 @@
--module(k_storage_parts_sup).
+-module(k_storage_manager_sup).
 
 -behaviour(supervisor).
 
 %% API
 -export([
-	start_link/0
+	start_link/0,
+	start_child/1
 ]).
 
-%% Supervisor callbacks
+%% supervisor callbacks.
 -export([init/1]).
 
-%% Helper
--define(CHILD(Name),
-	{Name, {k_storage_parts_mgr, start_link, [Name]},
-			permanent, 10000, worker, [k_storage_parts_mgr]}).
-
+-include("application.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/supervisor_spec.hrl").
 
+-type plist() :: [{atom(), term()}].
+
 %% ===================================================================
-%% API functions
+%% API
 %% ===================================================================
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
+-spec start_child(plist()) -> {ok, pid()}.
+start_child(Props) ->
+	{SupPid, _Value} = gproc:await({n, l, ?MODULE}),
+	supervisor:start_child(SupPid, [Props]).
+
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
 
 init([]) ->
-	{ok, {{one_for_one, 5, 10}, []}}.
+	?log_debug("init", []),
+	gproc:add_local_name(?MODULE),
+	{ok, {
+		{simple_one_for_one, 0, 1}, [
+			{mongodb_storage, {mongodb_storage, start_link, []}, permanent, 10000, worker, [mongodb_storage]}
+		]}
+	}.

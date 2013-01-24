@@ -57,11 +57,11 @@ set_customer(CustomerId, Customer) ->
 		{billing_type, Customer#customer.billing_type},
 		{state, Customer#customer.state}
 	],
-	k_static_storage:upsert(customers, [{'_id', CustomerId}], Plist).
+	mongodb_storage:upsert(k_static_storage, customers, [{'_id', CustomerId}], Plist).
 
 -spec get_customers() -> {ok, [{customer_id(), #customer{}}]} | {error, term()}.
 get_customers() ->
-	case k_static_storage:find(customers, []) of
+	case mongodb_storage:find(k_static_storage, customers, []) of
 		{ok, List} ->
 			{ok, [
 				{Id, proplist_to_record(Plist)} || {Id, Plist} <- List
@@ -72,7 +72,7 @@ get_customers() ->
 
 -spec get_customer(customer_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer(CustomerId) ->
-	case k_static_storage:find_one(customers, [{'_id', CustomerId}]) of
+	case mongodb_storage:find_one(k_static_storage, customers, [{'_id', CustomerId}]) of
 		{ok, Plist} when is_list(Plist) ->
 			{ok, proplist_to_record(Plist)};
 		Error ->
@@ -81,7 +81,7 @@ get_customer(CustomerId) ->
 
 -spec get_customer_by_system_id(binary()) -> {ok, #customer{}} | any().
 get_customer_by_system_id(SystemId) ->
-	case k_static_storage:find_one(customers, [{'id', SystemId}]) of
+	case mongodb_storage:find_one(k_static_storage, customers, [{'id', SystemId}]) of
 		{ok, Plist} when is_list(Plist) ->
 			{ok, proplist_to_record(Plist)};
 		Error ->
@@ -90,7 +90,7 @@ get_customer_by_system_id(SystemId) ->
 
 -spec del_customer(customer_id()) -> ok | {error, no_entry} | {error, term()}.
 del_customer(CustomerId) ->
-	k_static_storage:delete(customers, [{'_id', CustomerId}]).
+	mongodb_storage:delete(k_static_storage, customers, [{'_id', CustomerId}]).
 
 %% ===================================================================
 %% Internals

@@ -34,11 +34,11 @@ set_gateway(GatewayId, Gateway)->
 		{rps, Gateway#gateway.rps},
 		{connections, ConnectionsPList}
 	],
-	k_static_storage:upsert(gateways, [{'_id', GatewayId}], Plist).
+	mongodb_storage:upsert(k_static_storage, gateways, [{'_id', GatewayId}], Plist).
 
 -spec get_gateway(gateway_id()) -> {ok, #gateway{}} | {error, no_entry} | {error, term()}.
 get_gateway(GatewayId) ->
-	case k_static_storage:find_one(gateways, [{'_id', GatewayId}]) of
+	case mongodb_storage:find_one(k_static_storage, gateways, [{'_id', GatewayId}]) of
 		{ok, Plist} when is_list(Plist) ->
 			{ok, proplist_to_record(Plist)};
 		Error ->
@@ -47,7 +47,7 @@ get_gateway(GatewayId) ->
 
 -spec get_gateways() -> {ok, [{gateway_id(), #gateway{}}]} | {error, term()}.
 get_gateways() ->
-	case k_static_storage:find(gateways, []) of
+	case mongodb_storage:find(k_static_storage, gateways, []) of
 		{ok, List} ->
 			{ok, [
 				{Id, proplist_to_record(Plist)} || {Id, Plist} <- List
@@ -58,7 +58,7 @@ get_gateways() ->
 
 -spec del_gateway(gateway_id()) -> ok | {error, no_entry} | {error, term()}.
 del_gateway(GatewayId) ->
-	k_static_storage:delete(gateways, [{'_id', GatewayId}]).
+	mongodb_storage:delete(k_static_storage, gateways, [{'_id', GatewayId}]).
 
 %% ===================================================================
 %% Internals

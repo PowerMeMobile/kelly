@@ -28,12 +28,10 @@ start_link() ->
 init([]) ->
 	?log_debug("init", []),
 	{ok, {
-		{one_for_one, 5, 10}, [
-			{k_storage_parts_sup,
-				{k_storage_parts_sup, start_link, []}, permanent, 100000, supervisor, [k_storage_parts_sup]},
-			{k_static_storage,
-				{k_static_storage, start_link, []}, permanent, 100000, worker, [k_static_storage]},
-			{k_dynamic_storage,
-				{k_dynamic_storage, start_link, []}, permanent, 100000, worker, [k_dynamic_storage]}
+		{one_for_all, 5, 10}, [
+			{k_storage_manager_sup,
+				{k_storage_manager_sup, start_link, []}, permanent, 100000, supervisor, [k_storage_manager_sup]},
+			{k_storage_manager,
+				{k_storage_manager, start_link, []}, permanent, 100000, worker, [k_storage_manager]}
 		]}
 	}.
