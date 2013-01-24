@@ -126,11 +126,17 @@ command(ServerName, Command) ->
 -spec ensure_index(server_name(), collection(), index_spec()) ->
 	ok | {error, reason()}.
 ensure_index(ServerName, Coll, IndexSpec) ->
-	mongo_do(ServerName, safe, master,
+	Res = mongo_do(ServerName, safe, master,
 		fun() ->
 			mongo:create_index(Coll, IndexSpec)
 		end
-	).
+	),
+	case Res of
+		{ok, _} ->
+			ok;
+		Error ->
+			Error
+	end.
 
 %% ===================================================================
 %% gen_server callbacks

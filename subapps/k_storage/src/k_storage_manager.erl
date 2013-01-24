@@ -40,6 +40,7 @@ init([]) ->
 	%% start static storage.
 	{ok, StaticProps} = application:get_env(?APP, static_storage),
 	{ok, _} = k_storage_manager_sup:start_child([{server_name, k_static_storage} | StaticProps]),
+	ok = ensure_static_storage_index(k_static_storage),
 
 	%% start dynamic storages.
 	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
@@ -58,10 +59,12 @@ init([]) ->
 	%% start current dynamic storage.
 	CurProps = [{server_name, k_current_dynamic_storage}, {mongodb_dbname, CurDbName} | DynamicProps],
 	{ok, _} = k_storage_manager_sup:start_child(CurProps),
+	ok = ensure_dynamic_storage_index(k_current_dynamic_storage),
 
 	%% start previous dynamic storage.
-	PrevProps = [{server_name, k_previous_dynamic_storage}, {mongodb_db_name, PrevDbName} | DynamicProps],
+	PrevProps = [{server_name, k_previous_dynamic_storage}, {mongodb_dbname, PrevDbName} | DynamicProps],
 	{ok, _} = k_storage_manager_sup:start_child(PrevProps),
+	ok = ensure_dynamic_storage_index(k_previous_dynamic_storage),
 
 	{ok, #state{}}.
 
@@ -84,12 +87,15 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal
 %% ===================================================================
 
-ensure_index() ->
-	mongodb_storage:ensure_index(k_current_dynamic_storage, mt_messages,
+ensure_static_storage_index(_ServerName) ->
+	ok.
+
+ensure_dynamic_storage_index(ServerName) ->
+	mongodb_storage:ensure_index(ServerName, mt_messages,
 		{key, {ci, 1, ct, 1, imi, 1}, unique, true, dropDups, true}),
-	mongodb_storage:ensure_index(k_current_dynamic_storage, mt_messages,
+	mongodb_storage:ensure_index(ServerName, mt_messages,
 		{key, {qi, 1, omi, 1}}),
-	mongodb_storage:ensure_index(k_current_dynamic_storage, mt_messages,
+	mongodb_storage:ensure_index(ServerName, mt_messages,
 		{key, {rqt, 1}}),
-	mongodb_storage:ensure_index(k_current_dynamic_storage, mo_messages,
+	mongodb_storage:ensure_index(ServerName, mo_messages,
 		{key, {rqt, 1}}).
