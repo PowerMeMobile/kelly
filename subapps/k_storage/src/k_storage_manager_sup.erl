@@ -31,7 +31,7 @@ start_child(Props) ->
 	supervisor:start_child(SupPid, [Props]).
 
 %% ===================================================================
-%% Supervisor callbacks
+%% supervisor callbacks
 %% ===================================================================
 
 init([]) ->
