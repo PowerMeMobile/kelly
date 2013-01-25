@@ -38,7 +38,7 @@ init([]) ->
 	?log_debug("init", []),
 	gproc:add_local_name(?MODULE),
 	{ok, {
-		{simple_one_for_one, 0, 1}, [
-			{mongodb_storage, {mongodb_storage, start_link, []}, permanent, 10000, worker, [mongodb_storage]}
+		{simple_one_for_one, 5, 10}, [
+			{mongodb_storage, {mongodb_storage, start_link, []}, transient, 10000, worker, [mongodb_storage]}
 		]}
 	}.
