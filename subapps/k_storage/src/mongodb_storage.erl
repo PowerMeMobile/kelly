@@ -3,6 +3,8 @@
 %% API
 -export([
 	start_link/1,
+	stop/1,
+
 	find/3,
 	find/4,
 	find_one/3,
@@ -51,6 +53,10 @@
 -spec start_link(plist()) -> {ok, pid()}.
 start_link(Props) ->
 	gen_server:start_link(?MODULE, [Props], []).
+
+-spec stop(server_name()) -> ok.
+stop(ServerName) ->
+	gen_server:cast(ServerName, stop).
 
 -spec find(server_name(), collection(), selector()) ->
 	{ok, [{key(), value()}]} | {error, reason()}.
@@ -143,13 +149,11 @@ ensure_index(ServerName, Coll, IndexSpec) ->
 %% ===================================================================
 
 init([Props]) ->
-	ServerName = proplists:get_value(server_name, Props),
-
-	?log_debug("register as: ~p", [ServerName]),
-	true = register(ServerName, self()),
-
 	{ok, DbName, DbPool} = connect(Props),
-	{ok, #state{db_name = DbName, db_pool = DbPool}}.
+	{ok, #state{
+		db_name = DbName,
+		db_pool = DbPool
+	}}.
 
 handle_call(get_name_and_pool, _From, State = #state{
 	db_name = DbName,
@@ -159,6 +163,9 @@ handle_call(get_name_and_pool, _From, State = #state{
 
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
+
+handle_cast(stop, State = #state{}) ->
+	{stop, normal, State};
 
 handle_cast(Request, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.

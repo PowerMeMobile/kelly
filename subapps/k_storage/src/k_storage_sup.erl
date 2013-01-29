@@ -31,6 +31,10 @@ init([]) ->
 		{one_for_all, 5, 10}, [
 			{k_storage_manager_sup,
 				{k_storage_manager_sup, start_link, []}, permanent, 100000, supervisor, [k_storage_manager_sup]},
+			{k_time_server,
+				{k_time_server, start_link, []}, permanent, 1000, worker, [k_time_server]},
+			{k_storage_events_manager,
+				{k_storage_events_manager, start_link, []}, permanent, 10000, worker, [k_storage_events_manager]},
 			{k_storage_manager,
 				{k_storage_manager, start_link, []}, permanent, 100000, worker, [k_storage_manager]}
 		]}

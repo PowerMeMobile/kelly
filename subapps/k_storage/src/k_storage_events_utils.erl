@@ -2,6 +2,7 @@
 
 -export([
 	get_prev_shift_time/2,
+	get_curr_shift_time/2,
 	get_next_shift_time/2,
 	get_response_end_time/2,
 	get_delivery_end_time/2,
@@ -17,6 +18,13 @@
 
 -spec get_prev_shift_time(calendar:datetime(), frame()) -> calendar:datetime().
 get_prev_shift_time(CurrTime, ShiftFrequency) ->
+	{{Year, Month, _}, _} = CurrTime,
+	{months, 1} = ShiftFrequency,
+	{PrevYear, PrevMonth, _} = edate:shift({Year, Month, 1}, -1, month),
+	{{PrevYear, PrevMonth, 1}, {0, 0, 0}}.
+
+-spec get_curr_shift_time(calendar:datetime(), frame()) -> calendar:datetime().
+get_curr_shift_time(CurrTime, ShiftFrequency) ->
 	{{Year, Month, _}, _} = CurrTime,
 	{months, 1} = ShiftFrequency,
 	{{Year, Month, 1}, {0, 0, 0}}.

@@ -1,4 +1,4 @@
--module(k_response_mode_storage).
+-module(k_delivery_mode_storage).
 
 -export([
 	set_mt_req_info/1,
@@ -52,33 +52,7 @@ set_mt_req_info(#req_info{
 		{rd, RegDlr},
 		{rqt, ReqTime}
 	],
-
-	Command = {
-		'findandmodify' , <<"mt_messages">>,
-		'query' , { 'ci' , CustomerId , 'ct' , ClientType , 'imi' , InMsgId },
-		'update' , {
-			'$set' , {
-				'ct'  , ClientType,
-				'ci'  , CustomerId,
-				'imi' , InMsgId,
-				'gi'  , GatewayId,
-				't'   , Type,
-				'e'   , Encoding,
-				'b'   , Message,
-				'sa'  , k_storage_utils:addr_to_doc(SrcAddr),
-				'da'  , k_storage_utils:addr_to_doc(DstAddr),
-				'rd'  , RegDlr,
-				'rqt' , ReqTime
-			}
-		}
-	},
-
-	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
-		{ok, {value, _, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
-			ok;
-		{ok, {value, undefined, ok, _}} ->
-			mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Plist)
-	end.
+	mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Plist).
 
 -spec set_mt_resp_info(#resp_info{}) -> ok | {error, reason()}.
 set_mt_resp_info(#resp_info{
@@ -100,29 +74,7 @@ set_mt_resp_info(#resp_info{
 		{rpt, RespTime},
 		{rps, RespStatus}
 	],
-
-	Command = {
-		'findandmodify' , <<"mt_messages">>,
-		'query' , { 'ci' , CustomerId , 'ct' , ClientType , 'imi' , InMsgId },
-		'update' , {
-			'$set' , {
-				'ct'  , ClientType,
-				'ci'  , CustomerId,
-				'imi' , InMsgId,
-				'gi'  , GatewayId,
-				'omi' , OutMsgId,
-				'rpt' , RespTime,
-				'rps' , RespStatus
-			}
-		}
-	},
-
-	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
-		{ok, {value, _, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
-			ok;
-		{ok, {value, undefined, ok, _}} ->
-			mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Plist)
-	end.
+	mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Plist).
 
 -spec set_mt_dlr_info(#dlr_info{}) -> ok | {error, reason()}.
 set_mt_dlr_info(#dlr_info{
@@ -138,12 +90,12 @@ set_mt_dlr_info(#dlr_info{
 		{dt, DlrTime},
 		{ds, DlrStatus}
 	],
-	mongodb_storage:upsert(k_prev_dynamic_storage, mt_messages, Selector, Plist).
+	mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Plist).
 
 -spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(GatewayId, OutMsgId) ->
 	Selector = [{gi, GatewayId}, {omi, OutMsgId}],
-	case mongodb_storage:find_one(k_prev_dynamic_storage, mt_messages, Selector) of
+	case mongodb_storage:find_one(k_curr_dynamic_storage, mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_msg_info(Plist)};
 		Error ->
@@ -153,7 +105,7 @@ get_mt_msg_info(GatewayId, OutMsgId) ->
 -spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
 	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}],
-	case mongodb_storage:find_one(k_prev_dynamic_storage, mt_messages, Selector) of
+	case mongodb_storage:find_one(k_curr_dynamic_storage, mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_msg_info(Plist)};
 		Error ->
@@ -186,12 +138,12 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 		{rd, RegDlr},
 		{rqt, ReqTime}
 	],
-	mongodb_storage:upsert(k_prev_dynamic_storage, mo_messages, Selector, Plist).
+	mongodb_storage:upsert(k_curr_dynamic_storage, mo_messages, Selector, Plist).
 
 -spec get_mo_msg_info(binary(), any()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mo_msg_info(GatewayId, InMsgId) ->
 	Selector = [{gi, GatewayId}, {imi, InMsgId}],
-	case mongodb_storage:find_one(k_prev_dynamic_storage, mo_messages, Selector) of
+	case mongodb_storage:find_one(k_curr_dynamic_storage, mo_messages, Selector) of
 		{ok, Plist} ->
 			SrcAddrDoc = proplists:get_value(sa, Plist),
 			DstAddrDoc = proplists:get_value(da, Plist),
