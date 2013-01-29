@@ -3,8 +3,6 @@
 -export([
 	set_mt_req_info/1,
 	set_mt_resp_info/1,
-
-
 	set_mt_dlr_info/1,
 
 	get_mt_msg_info/2,
@@ -138,14 +136,38 @@ set_mt_dlr_info(#dlr_info{
 		{dt, DlrTime},
 		{ds, DlrStatus}
 	],
-	mongodb_storage:upsert(k_prev_dynamic_storage, mt_messages, Selector, Plist).
+
+	Command = {
+		'findandmodify' , <<"mt_messages">>,
+		'query' , { 'gi' , GatewayId , 'omi' , OutMsgId },
+		'update' , {
+			'$set' , {
+				'dt'  , DlrTime,
+				'ds'  , DlrStatus
+			}
+		}
+	},
+
+	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
+		{ok, {value, _, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
+			ok;
+		{ok, {value, undefined, ok, _}} ->
+			mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Plist)
+	end.
 
 -spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(GatewayId, OutMsgId) ->
 	Selector = [{gi, GatewayId}, {omi, OutMsgId}],
-	case mongodb_storage:find_one(k_prev_dynamic_storage, mt_messages, Selector) of
+	case mongodb_storage:find_one(k_curr_dynamic_storage, mt_messages, Selector) of
 		{ok, Plist} ->
-			{ok, plist_to_msg_info(Plist)};
+			{ok, plist_to_mt_msg_info(Plist)};
+		{error, no_entry} ->
+			case mongodb_storage:find_one(k_prev_dynamic_storage, mt_messages, Selector) of
+				{ok, Plist} ->
+					{ok, plist_to_mt_msg_info(Plist)};
+				Error ->
+					Error
+			end;
 		Error ->
 			Error
 	end.
@@ -153,9 +175,16 @@ get_mt_msg_info(GatewayId, OutMsgId) ->
 -spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
 	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}],
-	case mongodb_storage:find_one(k_prev_dynamic_storage, mt_messages, Selector) of
+	case mongodb_storage:find_one(k_curr_dynamic_storage, mt_messages, Selector) of
 		{ok, Plist} ->
-			{ok, plist_to_msg_info(Plist)};
+			{ok, plist_to_mt_msg_info(Plist)};
+		{error, no_entry} ->
+			case mongodb_storage:find_one(k_prev_dynamic_storage, mt_messages, Selector) of
+				{ok, Plist} ->
+					{ok, plist_to_mt_msg_info(Plist)};
+				Error ->
+					Error
+			end;
 		Error ->
 			Error
 	end.
@@ -191,23 +220,16 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 -spec get_mo_msg_info(binary(), any()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mo_msg_info(GatewayId, InMsgId) ->
 	Selector = [{gi, GatewayId}, {imi, InMsgId}],
-	case mongodb_storage:find_one(k_prev_dynamic_storage, mo_messages, Selector) of
+	case mongodb_storage:find_one(k_curr_dynamic_storage, mo_messages, Selector) of
 		{ok, Plist} ->
-			SrcAddrDoc = proplists:get_value(sa, Plist),
-			DstAddrDoc = proplists:get_value(da, Plist),
-			MsgInfo = #msg_info{
-				customer_id = proplists:get_value(ci, Plist),
-				in_msg_id = proplists:get_value(imi, Plist),
-				gateway_id = proplists:get_value(gi, Plist),
-				type = proplists:get_value(t, Plist),
-				encoding = proplists:get_value(e, Plist),
-				body = proplists:get_value(b, Plist),
-				src_addr = k_storage_utils:doc_to_addr(SrcAddrDoc),
-				dst_addr = k_storage_utils:doc_to_addr(DstAddrDoc),
-				reg_dlr = proplists:get_value(rd, Plist),
-				req_time = proplists:get_value(rqt, Plist)
-			},
-			{ok, MsgInfo};
+			{ok, plist_to_mo_msg_info(Plist)};
+		{error, no_entry} ->
+			case mongodb_storage:find_one(k_prev_dynamic_storage, mo_messages, Selector) of
+				{ok, Plist} ->
+					{ok, plist_to_mo_msg_info(Plist)};
+				Error ->
+					Error
+			end;
 		Error ->
 			Error
 	end.
@@ -216,7 +238,7 @@ get_mo_msg_info(GatewayId, InMsgId) ->
 %% Internals
 %% ===================================================================
 
-plist_to_msg_info(Plist) ->
+plist_to_mt_msg_info(Plist) ->
 	SrcAddrDoc = proplists:get_value(sa, Plist),
 	DstAddrDoc = proplists:get_value(da, Plist),
 	#msg_info{
@@ -236,4 +258,20 @@ plist_to_msg_info(Plist) ->
 		resp_status = proplists:get_value(rps, Plist),
 		dlr_time = proplists:get_value(dt, Plist),
 		dlr_status = proplists:get_value(ds, Plist)
+	}.
+
+plist_to_mo_msg_info(Plist) ->
+	SrcAddrDoc = proplists:get_value(sa, Plist),
+	DstAddrDoc = proplists:get_value(da, Plist),
+	#msg_info{
+		customer_id = proplists:get_value(ci, Plist),
+		in_msg_id = proplists:get_value(imi, Plist),
+		gateway_id = proplists:get_value(gi, Plist),
+		type = proplists:get_value(t, Plist),
+		encoding = proplists:get_value(e, Plist),
+		body = proplists:get_value(b, Plist),
+		src_addr = k_storage_utils:doc_to_addr(SrcAddrDoc),
+		dst_addr = k_storage_utils:doc_to_addr(DstAddrDoc),
+		reg_dlr = proplists:get_value(rd, Plist),
+		req_time = proplists:get_value(rqt, Plist)
 	}.
