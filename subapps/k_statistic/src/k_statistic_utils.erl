@@ -22,12 +22,12 @@
 	align_time_range/2,
 	align_time_range/3,
 	get_file_list_with/3,
-	timestamp_to_iso_8601/1
+	timestamp_to_iso8601/1
 ]).
 
 -include("application.hrl").
 
--type unix_epoch() :: pos_integer().
+-type unixepoch() :: pos_integer().
 
 %% ===================================================================
 %% Slice frequency
@@ -49,22 +49,22 @@ slice_path(Fmt, Args) ->
 			"data/time-slices.d/" ++ Fmt, Args)),
 	filename:join(CWD, Path).
 
--spec msg_stats_slice_path(unix_epoch()) -> file:filename().
+-spec msg_stats_slice_path(unixepoch()) -> file:filename().
 msg_stats_slice_path(Timestamp) ->
 	slice_path("msg-stats/~p.dat", [Timestamp]).
 
 report_type_to_index(customers) -> 1;
 report_type_to_index(networks) -> 2.
 
--spec msg_stats_slice_path(unix_epoch(), atom()) -> file:filename().
+-spec msg_stats_slice_path(unixepoch(), atom()) -> file:filename().
 msg_stats_slice_path(Timestamp, ReportType) ->
 	slice_path("msg-stats/~p-~p.dat", [Timestamp, report_type_to_index(ReportType)]).
 
--spec status_stats_slice_path(unix_epoch()) -> file:filename().
+-spec status_stats_slice_path(unixepoch()) -> file:filename().
 status_stats_slice_path(Timestamp) ->
 	slice_path("status-stats/~p.dat", [Timestamp]).
 
--spec incoming_msg_stats_slice_path(unix_epoch()) -> file:filename().
+-spec incoming_msg_stats_slice_path(unixepoch()) -> file:filename().
 incoming_msg_stats_slice_path(Timestamp) ->
 	slice_path("incoming-msg-stats/~p.dat", [Timestamp]).
 
@@ -115,12 +115,12 @@ read_terms_from_files_with(Filenames, MapTermFun) ->
 %% Statistic utils
 %% ===================================================================
 
--spec get_timestamp_list(From::unix_epoch(), To::unix_epoch()) -> [unix_epoch()].
+-spec get_timestamp_list(From::unixepoch(), To::unixepoch()) -> [unixepoch()].
 get_timestamp_list(From, To) when From < To ->
 	Step = stats_report_frequency(),
 	get_timestamp_list(From, To, Step).
 
--spec get_timestamp_list(From::unix_epoch(), To::unix_epoch(), Step::pos_integer()) -> [unix_epoch()].
+-spec get_timestamp_list(From::unixepoch(), To::unixepoch(), Step::pos_integer()) -> [unixepoch()].
 get_timestamp_list(From, To, Step) when From < To ->
 	{FromFloor, ToCeiling} = align_time_range(From, To),
 	List = lists:seq(FromFloor, ToCeiling, Step),
@@ -129,19 +129,19 @@ get_timestamp_list(From, To, Step) when From < To ->
 		false -> List
 	end.
 
--spec get_timestamp_ranges(From::unix_epoch(), To::unix_epoch(), Step::pos_integer()) -> [{unix_epoch(), unix_epoch()}].
+-spec get_timestamp_ranges(From::unixepoch(), To::unixepoch(), Step::pos_integer()) -> [{unixepoch(), unixepoch()}].
 get_timestamp_ranges(From, To, Step) when From < To ->
 	Timestamps = get_timestamp_list(From, To, Step),
 	k_lists:make_ranges(Timestamps).
 
--spec align_time_range(From::unix_epoch(), To::unix_epoch()) ->
-	{FromFloor::unix_epoch(), ToCeiling::unix_epoch()}.
+-spec align_time_range(From::unixepoch(), To::unixepoch()) ->
+	{FromFloor::unixepoch(), ToCeiling::unixepoch()}.
 align_time_range(From, To) ->
 	Step = stats_report_frequency(),
 	align_time_range(From, To, Step).
 
--spec align_time_range(From::unix_epoch(), To::unix_epoch(), Step::pos_integer()) ->
-	{FromFloor::unix_epoch(), ToCeiling::unix_epoch()}.
+-spec align_time_range(From::unixepoch(), To::unixepoch(), Step::pos_integer()) ->
+	{FromFloor::unixepoch(), ToCeiling::unixepoch()}.
 align_time_range(From, To, Step) ->
 	FromFloor = From - From rem Step,
 	ToCeiling = case To rem Step of
@@ -151,15 +151,15 @@ align_time_range(From, To, Step) ->
 	{FromFloor, ToCeiling}.
 
 -spec get_file_list_with(
-	From::unix_epoch(),
-	To::unix_epoch(),
-	Fun::fun((Timestamp::unix_epoch()) -> file:filename())
+	From::unixepoch(),
+	To::unixepoch(),
+	Fun::fun((Timestamp::unixepoch()) -> file:filename())
 ) -> [file:filename()].
 get_file_list_with(From, To, Fun) when From < To ->
 	Timestamps = get_timestamp_list(From, To),
 	lists:map(Fun, Timestamps).
 
--spec timestamp_to_iso_8601(Timestamp::unix_epoch()) -> string().
-timestamp_to_iso_8601(Timestamp) ->
-	k_datetime:datetime_to_iso_8601(
-		k_datetime:unix_epoch_to_datetime(Timestamp)).
+-spec timestamp_to_iso8601(Timestamp::unixepoch()) -> string().
+timestamp_to_iso8601(Timestamp) ->
+	k_datetime:datetime_to_iso8601(
+		k_datetime:unixepoch_to_datetime(Timestamp)).

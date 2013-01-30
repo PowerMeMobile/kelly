@@ -133,7 +133,7 @@ start_curr_dynamic_storage() ->
 	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
 	DbNameFmt = proplists:get_value(mongodb_dbname_fmt, DynamicProps),
 
-	CurrTime = get_curr_time(),
+	CurrTime = k_datetime:utc_time(),
 	{{ShiftYear, ShiftMonth, _}, _} = k_storage_events_utils:get_curr_shift_time(CurrTime, ShiftFrequency),
 
 	%% build current db name in format YYYY-MM.
@@ -155,7 +155,7 @@ start_prev_dynamic_storage() ->
 	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
 	DbNameFmt = proplists:get_value(mongodb_dbname_fmt, DynamicProps),
 
-	CurrTime = get_curr_time(),
+	CurrTime = k_datetime:utc_time(),
 	{{ShiftYear, ShiftMonth, _}, _} = k_storage_events_utils:get_prev_shift_time(CurrTime, ShiftFrequency),
 
 	%% build previous db names in format YYYY-MM.
@@ -202,10 +202,3 @@ handle_event('Response', 'ResponseEndEvent', 'Delivery') ->
 	ok;
 handle_event('Delivery', 'DeliveryEndEvent', 'Normal') ->
 	ok = stop_previous_storage().
-
-%% ===================================================================
-%% Redesign
-%% ===================================================================
-
-get_curr_time() ->
-	k_time_server:get_utc_time().

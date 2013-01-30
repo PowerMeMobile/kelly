@@ -55,7 +55,7 @@ get_storage_mode() ->
 init([]) ->
 	gproc:reg({n, l, ?MODULE}),
 
-	CurrTime = get_curr_time(),
+	CurrTime = k_datetime:utc_time(),
 
 	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
 	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
@@ -98,7 +98,7 @@ handle_info({timeout, TimerRef, {heartbeat}}, State = #state{
 }) ->
    	%?log_debug("~p", [State]),
 
-	CurrTime = get_curr_time(),
+	CurrTime = k_datetime:utc_time(),
 
 	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
 	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
@@ -192,10 +192,3 @@ get_next_mode('Response', 'ResponseEndEvent') ->
 	'Delivery';
 get_next_mode('Delivery', 'DeliveryEndEvent') ->
 	'Normal'.
-
-%% ===================================================================
-%% Redesign
-%% ===================================================================
-
-get_curr_time() ->
-	k_time_server:get_utc_time().

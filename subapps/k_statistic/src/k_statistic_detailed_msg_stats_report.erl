@@ -6,7 +6,7 @@
 
 -include_lib("k_common/include/gateway.hrl").
 
--type unix_epoch() :: pos_integer().
+-type unixepoch() :: pos_integer().
 -type reason() :: term().
 
 %% ===================================================================
@@ -14,15 +14,15 @@
 %% ===================================================================
 
 -spec get_report(
-	FromUnix::unix_epoch(),
-	ToUnix::unix_epoch(),
+	FromUnix::unixepoch(),
+	ToUnix::unixepoch(),
 	SliceLength::pos_integer()
 ) -> {ok, Report::term()} | {error, reason()}.
 get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
 	SliceRanges = k_statistic_utils:get_timestamp_ranges(FromUnix, ToUnix, SliceLength),
 
-  	From = k_datetime:unix_epoch_to_timestamp(FromUnix),
-	To = k_datetime:unix_epoch_to_timestamp(ToUnix),
+  	From = k_datetime:unixepoch_to_timestamp(FromUnix),
+	To = k_datetime:unixepoch_to_timestamp(ToUnix),
 
 	{ok, MtRecords} = get_records(mt_messages, From, To),
 	MtReport = detailed_msg_stats_report(MtRecords, SliceRanges),
@@ -43,7 +43,7 @@ get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
 	Collection::atom(),
 	From::erlang:timestamp(),
 	To::erlang:timestamp()
-) -> {ok, [{gateway_id(), unix_epoch()}]} | {error, reason()}.
+) -> {ok, [{gateway_id(), unixepoch()}]} | {error, reason()}.
 get_records(Collection, From, To) ->
 	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
 	Projector = [ { 'gi' , 1 } , { 'rqt' , 1 } ],
@@ -57,12 +57,12 @@ get_records(Collection, From, To) ->
 strip_plist(Plist) ->
 	GatewayId = proplists:get_value(gi, Plist),
 	ReqTime = proplists:get_value(rqt, Plist),
-	ReqTimeUnix = k_datetime:timestamp_to_unix_epoch(ReqTime),
+	ReqTimeUnix = k_datetime:timestamp_to_unixepoch(ReqTime),
 	{GatewayId, ReqTimeUnix}.
 
 -spec detailed_msg_stats_report(
-	Records::[{gateway_id(), unix_epoch()}],
-	SliceRanges::[{unix_epoch(), unix_epoch()}]
+	Records::[{gateway_id(), unixepoch()}],
+	SliceRanges::[{unixepoch(), unixepoch()}]
 ) -> [tuple()].
 detailed_msg_stats_report(Records, SliceRanges) ->
 	Total = length(Records),
@@ -91,8 +91,8 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 										true -> lists:max(SliceFreqs) * 1.0
 									end,
 									[
-										{from, list_to_binary(k_statistic_utils:timestamp_to_iso_8601(F))},
-										{to, list_to_binary(k_statistic_utils:timestamp_to_iso_8601(T))},
+										{from, list_to_binary(k_statistic_utils:timestamp_to_iso8601(F))},
+										{to, list_to_binary(k_statistic_utils:timestamp_to_iso8601(T))},
 										{total, SliceTotal},
 										{avg, SliceAvg},
 										{peak, SlicePeak}
@@ -115,7 +115,7 @@ get_gateway_name(GatewayId) ->
 			"N/A"
 	end.
 
--spec build_gateway_id_to_timestamps_dict([{gateway_id(), unix_epoch()}]) -> dict().
+-spec build_gateway_id_to_timestamps_dict([{gateway_id(), unixepoch()}]) -> dict().
 build_gateway_id_to_timestamps_dict(Records) ->
 	lists:foldl(
 		fun({GatewayId, Timestamp}, Dict) ->
@@ -125,9 +125,9 @@ build_gateway_id_to_timestamps_dict(Records) ->
 		Records).
 
 -spec get_frequencies_from_to(
-	Frequencies::[{unix_epoch(), pos_integer()}],
-	From::unix_epoch(),
-	To::unix_epoch()
+	Frequencies::[{unixepoch(), pos_integer()}],
+	From::unixepoch(),
+	To::unixepoch()
 ) -> [pos_integer()].
 get_frequencies_from_to(Frequencies, From, To) ->
 	[Fr || {Timestamp, Fr} <- Frequencies, Timestamp >= From, Timestamp < To].

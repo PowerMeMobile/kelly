@@ -126,9 +126,9 @@ prettify_plist(Plist) ->
 	ReqTime = proplists:get_value(rqt, Plist),
 
 	Datetime = list_to_binary(
-		k_datetime:datetime_to_iso_8601(
-			k_datetime:unix_epoch_to_datetime(
-				k_datetime:timestamp_to_unix_epoch(ReqTime)))),
+		k_datetime:datetime_to_iso8601(
+			k_datetime:unixepoch_to_datetime(
+				k_datetime:timestamp_to_unixepoch(ReqTime)))),
 	[
 		{datetime, Datetime},
 		{message_id, InMsgId},
