@@ -42,12 +42,16 @@ init(_Args) ->
 handle_call(_Request, _From, State) ->
 	{stop, bad_call_request, State}.
 
-handle_cast({process, {Module, ContentType, Message, Channel}}, State = #state{}) ->
+handle_cast({process, {Module, ContentType, Message, Channel, Pid}}, State = #state{}) ->
 	% ?log_debug("got message: ~p", [Message]),
 	Result = Module:process(ContentType, Message),
 	case Result of
 		{ok, List} when is_list(List) ->
 			send_response(Channel, List),
+			{stop, normal, State};
+		{error, not_enough_data_to_proceed} ->
+			?log_info("Not enough data to process receipt. Requeue.", []),
+			k_gen_consumer:requeue_message(Pid),
 			{stop, normal, State};
 		{error, Reason} ->
 			{stop, Reason, State}
