@@ -44,7 +44,7 @@ process_delivery_status_request(Request) ->
 	end.
 
 get_statuses(RequestID, InputIDs) ->
-	%% get status & destination adress for each Input message id
+	%% get status & destination address for each Input message id
 	%% and put it into dto record #k1api_sms_status_dto
 	StatusesDTO = lists:map(fun({CustomerId, ClientType, InMsgId}) ->
 		{ok, MsgInfo} = k_storage:get_mt_msg_info(CustomerId, ClientType, InMsgId),

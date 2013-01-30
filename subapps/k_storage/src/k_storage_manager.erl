@@ -3,8 +3,11 @@
 %% API
 -export([
 	start_link/0,
-	get_storage_mode/0,
+	get_storage_mode/0
+]).
 
+%% !!! DO NOT USE !!!
+-export([
 	notify_event/1
 ]).
 
@@ -17,8 +20,6 @@
 	terminate/2,
 	code_change/3
 ]).
-
--compile(export_all).
 
 -include("application.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
