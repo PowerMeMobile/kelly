@@ -173,15 +173,6 @@ start_prev_dynamic_storage() ->
 
 	ok = ensure_dynamic_storage_index(k_prev_dynamic_storage).
 
-stop_previous_storage() ->
-	%% unregister and stop previous storage, if one.
-	case whereis(k_prev_dynamic_storage) of
-		undefined -> ok;
-		PrevPid ->
-			true = unregister(k_prev_dynamic_storage),
-			ok = mongodb_storage:stop(PrevPid)
-	end.
-
 shift_storages() ->
 	%% unregister and stop previous storage, if one.
 	case whereis(k_prev_dynamic_storage) of
@@ -202,4 +193,8 @@ handle_event('Normal', 'ShiftEvent', 'Response') ->
 handle_event('Response', 'ResponseEndEvent', 'Delivery') ->
 	ok;
 handle_event('Delivery', 'DeliveryEndEvent', 'Normal') ->
-	ok = stop_previous_storage().
+	%% even though it's possible and even logical to close
+	%% the previous storage, it's still make sense not to,
+	%% because there might be processes still, that are having
+	%% links to it and then we get errors like `noproc'.
+	ok.
