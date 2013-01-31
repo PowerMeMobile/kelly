@@ -5,8 +5,8 @@
 	set_mt_resp_info/1,
 	set_mt_dlr_info/1,
 
-	get_mt_msg_info/2,
 	get_mt_msg_info/3,
+	get_mt_msg_info/2,
 
 	set_mo_msg_info/1,
 	get_mo_msg_info/2
@@ -90,9 +90,9 @@ set_mt_dlr_info(#dlr_info{
 	],
 	mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Plist).
 
--spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
-get_mt_msg_info(GatewayId, OutMsgId) ->
-	Selector = [{gi, GatewayId}, {omi, OutMsgId}],
+-spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
+get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
+	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}, {rqt, {'$exists', true}}],
 	case mongodb_storage:find_one(k_curr_dynamic_storage, mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_mt_msg_info(Plist)};
@@ -100,9 +100,9 @@ get_mt_msg_info(GatewayId, OutMsgId) ->
 			Error
 	end.
 
--spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
-get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
-	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}],
+-spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
+get_mt_msg_info(GatewayId, OutMsgId) ->
+	Selector = [{gi, GatewayId}, {omi, OutMsgId}, {rqt, {'$exists', true}}],
 	case mongodb_storage:find_one(k_curr_dynamic_storage, mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_mt_msg_info(Plist)};

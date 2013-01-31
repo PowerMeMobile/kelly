@@ -5,8 +5,8 @@
 	set_mt_resp_info/1,
 	set_mt_dlr_info/1,
 
-	get_mt_msg_info/2,
 	get_mt_msg_info/3,
+	get_mt_msg_info/2,
 
 	set_mo_msg_info/1,
 	get_mo_msg_info/2
@@ -37,15 +37,15 @@ set_mt_dlr_info(DlrInfo = #dlr_info{}) ->
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
 	StorageMode:set_mt_dlr_info(DlrInfo).
 
--spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
-get_mt_msg_info(GatewayId, OutMsgId) ->
-	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
-	StorageMode:get_mt_msg_info(GatewayId, OutMsgId).
-
 -spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
 	StorageMode:get_mt_msg_info(CustomerId, ClientType, InMsgId).
+
+-spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
+get_mt_msg_info(GatewayId, OutMsgId) ->
+	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
+	StorageMode:get_mt_msg_info(GatewayId, OutMsgId).
 
 -spec set_mo_msg_info(#msg_info{}) -> ok | {error, reason()}.
 set_mo_msg_info(MsgInfo = #msg_info{}) ->
