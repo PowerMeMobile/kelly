@@ -194,7 +194,7 @@ handle_event('Response', 'ResponseEndEvent', 'Delivery') ->
 	ok;
 handle_event('Delivery', 'DeliveryEndEvent', 'Normal') ->
 	%% even though it's possible and even logical to close
-	%% the previous storage, it's still make sense not to,
-	%% because there might be processes still, that are having
-	%% links to it and then we get errors like `noproc'.
+	%% the previous storage, it still makes sense not to,
+	%% because there might be processes having links to it
+	%% and we will get `noproc' exceptions'.
 	ok.
