@@ -4,6 +4,8 @@
 -export([
 	start_link/0,
 	get_utc_time/0,
+	get_utc_timestamp/0,
+
 	set_utc_time/1
 ]).
 
@@ -21,6 +23,9 @@
 -include_lib("k_common/include/gen_server_spec.hrl").
 -include_lib("k_common/include/logging.hrl").
 
+%% calendar:datetime_to_gregorian_seconds({{1970,1,1},{0,0,0}}) == 62167219200
+-define(GREGORIAN_SECS_BEFORE_UNIX_EPOCH, 62167219200).
+
 -record(state, {
 	offset_secs :: non_neg_integer()
 }).
@@ -33,12 +38,17 @@
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec get_utc_time() -> calendar:datetime().
+-spec get_utc_time() -> calendar:datetime1970().
 get_utc_time() ->
 	{ok, Datetime} = gen_server:call(?MODULE, get_utc_time),
 	Datetime.
 
--spec set_utc_time(calendar:datetime()) -> ok.
+-spec get_utc_timestamp() -> erlang:timestamp().
+get_utc_timestamp() ->
+	{ok, Ts} = gen_server:call(?MODULE, get_utc_timestamp),
+	Ts.
+
+-spec set_utc_time(calendar:datetime1970() | 0) -> ok.
 set_utc_time(Datetime) ->
 	gen_server:cast(?MODULE, {set_utc_time, Datetime}).
 
@@ -69,12 +79,34 @@ handle_call(get_utc_time, _From, State = #state{
 handle_call(get_utc_time, _From, State = #state{
 	offset_secs = OffsetSecs
 }) ->
-	NowSecs = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
-	Datetime = calendar:gregorian_seconds_to_datetime(NowSecs - OffsetSecs),
+	{NowSecs, _} = now_secs(),
+	Secs = NowSecs - OffsetSecs + ?GREGORIAN_SECS_BEFORE_UNIX_EPOCH,
+	Datetime = calendar:gregorian_seconds_to_datetime(Secs),
 	{reply, {ok, Datetime}, State};
+
+handle_call(get_utc_timestamp, _From, State = #state{
+	offset_secs = 0
+}) ->
+	Ts = os:timestamp(),
+	{reply, {ok, Ts}, State};
+
+handle_call(get_utc_timestamp, _From, State = #state{
+	offset_secs = OffsetSecs
+}) ->
+	{NowSecs, NowMc} = now_secs(),
+	Secs = NowSecs - OffsetSecs,
+	M = Secs div 1000000,
+	S = Secs rem 1000000,
+	Ts = {M, S, NowMc},
+	{reply, {ok, Ts}, State};
 
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
+
+handle_cast({set_utc_time, 0}, State = #state{}) ->
+	{noreply, State#state{
+		offset_secs = 0
+	}};
 
 handle_cast({set_utc_time, Datetime}, State = #state{}) ->
 	OffsetSecs = calc_offset(Datetime),
@@ -98,7 +130,11 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal
 %% ===================================================================
 
+now_secs() ->
+	{Mg, S, Mc} = os:timestamp(),
+	{Mg * 1000000 + S, Mc}.
+
 calc_offset(Datetime) ->
-	NowSecs = calendar:datetime_to_gregorian_seconds(calendar:universal_time()),
-	Secs = calendar:datetime_to_gregorian_seconds(Datetime),
+	{NowSecs, _} = now_secs(),
+	Secs = calendar:datetime_to_gregorian_seconds(Datetime) - ?GREGORIAN_SECS_BEFORE_UNIX_EPOCH,
 	NowSecs - Secs.

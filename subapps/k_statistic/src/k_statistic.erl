@@ -24,8 +24,8 @@
 	ToDate::calendar:datetime()
 ) -> {ok, Report::term()} | {error, Reason::any()}.
 status_stats_report(FromDate, ToDate) when FromDate < ToDate ->
-	From = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(FromDate)),
-	To = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(ToDate)),
+	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(FromDate)),
+	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(ToDate)),
 	k_statistic_status_stats_report:get_report(From, To).
 
 -spec status_stats_report(
@@ -34,8 +34,8 @@ status_stats_report(FromDate, ToDate) when FromDate < ToDate ->
 	Status::atom()
 ) -> {ok, Report::term()} | {error, Reason::any()}.
 status_stats_report(FromDate, ToDate, Status) when FromDate < ToDate ->
-	From = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(FromDate)),
-	To = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(ToDate)),
+	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(FromDate)),
+	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(ToDate)),
 	k_statistic_status_stats_report:get_report(From, To, Status).
 
 -spec msg_stats_report(
@@ -44,8 +44,8 @@ status_stats_report(FromDate, ToDate, Status) when FromDate < ToDate ->
 	ToDate::calendar:datetime()
 ) -> {ok, Report::term()} | {error, Reason::any()}.
 msg_stats_report(ReportType, FromDate, ToDate) when FromDate < ToDate ->
-	From = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(FromDate)),
-	To = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(ToDate)),
+	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(FromDate)),
+	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(ToDate)),
 	k_statistic_msg_stats_report:get_report(ReportType, From, To).
 
 -spec detailed_msg_stats_report(
@@ -54,8 +54,8 @@ msg_stats_report(ReportType, FromDate, ToDate) when FromDate < ToDate ->
 	SliceLength::pos_integer()
 ) -> {ok, Report::term()} | {error, Reason::term()}.
 detailed_msg_stats_report(FromDate, ToDate, SliceLength) when FromDate < ToDate ->
-	FromUnix = k_datetime:datetime_to_unix_epoch(FromDate),
-	ToUnix = k_datetime:datetime_to_unix_epoch(ToDate),
+	FromUnix = k_datetime:datetime_to_unixepoch(FromDate),
+	ToUnix = k_datetime:datetime_to_unixepoch(ToDate),
 	k_statistic_detailed_msg_stats_report:get_report(FromUnix, ToUnix, SliceLength).
 
 -spec uplink_report() -> {ok, Report::term()} | {error, Reason::term()}.
