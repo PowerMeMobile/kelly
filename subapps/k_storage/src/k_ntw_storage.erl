@@ -17,30 +17,32 @@
 
 -spec set_network(network_id(), #network{}) -> ok | {error, term()}.
 set_network(NetworkId, Network)->
-	Plist = [
-		{name, Network#network.name},
-		{country_code, Network#network.country_code},
-		{numbers_len, Network#network.numbers_len},
-		{prefixes, Network#network.prefixes},
-		{provider_id, Network#network.provider_id}
-	],
-	mongodb_storage:upsert(k_static_storage, networks, [{'_id', NetworkId}], Plist).
+	Modifier = {
+		'$set' , {
+			'name'         , Network#network.name,
+			'country_code' , Network#network.country_code,
+			'numbers_len'  , Network#network.numbers_len,
+			'prefixes'     , Network#network.prefixes,
+			'provider_id'  , Network#network.provider_id
+		}
+	},
+	mongodb_storage:upsert(k_static_storage, networks, {'_id', NetworkId}, Modifier).
 
 -spec get_network(network_id()) -> {ok, #network{}} | {error, no_entry} | {error, term()}.
 get_network(NetworkId) ->
-	case mongodb_storage:find_one(k_static_storage, networks, [{'_id', NetworkId}]) of
-		{ok, Plist} when is_list(Plist) ->
-			{ok, proplist_to_record(Plist)};
+	case mongodb_storage:find_one(k_static_storage, networks, {'_id', NetworkId}) of
+		{ok, Doc} ->
+			{ok, doc_to_record(Doc)};
 		Error ->
 			Error
 	end.
 
 -spec get_networks() -> {ok, [{network_id(), #network{}}]} | {error, term()}.
 get_networks() ->
-	case mongodb_storage:find(k_static_storage, networks, []) of
+	case mongodb_storage:find(k_static_storage, networks, {}) of
 		{ok, List} ->
 			{ok, [
-				{Id, proplist_to_record(Plist)} || {Id, Plist} <- List
+				{Id, doc_to_record(Doc)} || {Id, Doc} <- List
 			]};
 		Error ->
 			Error
@@ -48,18 +50,18 @@ get_networks() ->
 
 -spec del_network(network_id()) -> ok | {error, no_entry} | {error, term()}.
 del_network(NetworkId) ->
-	mongodb_storage:delete(k_static_storage, networks, [{'_id', NetworkId}]).
+	mongodb_storage:delete(k_static_storage, networks, {'_id', NetworkId}).
 
 %% ===================================================================
 %% Internals
 %% ===================================================================
 
-proplist_to_record(Plist) ->
-	Name = proplists:get_value(name, Plist),
-	CountryCode = proplists:get_value(country_code, Plist),
-	NumbersLen = proplists:get_value(numbers_len, Plist),
-	Prefixes = proplists:get_value(prefixes, Plist),
-	ProviderId = proplists:get_value(provider_id, Plist),
+doc_to_record(Doc) ->
+	Name = bson:at(name, Doc),
+	CountryCode = bson:at(country_code, Doc),
+	NumbersLen = bson:at(numbers_len, Doc),
+	Prefixes = bson:at(prefixes, Doc),
+	ProviderId = bson:at(provider_id, Doc),
 	#network{
 		name = Name,
 		country_code = CountryCode,

@@ -37,13 +37,13 @@
 -type server_name() :: atom().
 -type collection() :: atom() | binary().
 -type plist() :: [{atom(), term()}].
--type selector() :: plist().
--type projector() :: plist().
--type modifier() :: plist().
+-type selector() :: bson:document().
+-type projector() :: bson:document().
+-type modifier() :: bson:document().
 -type key() :: term().
 -type value() :: term().
--type command() :: tuple().
--type index_spec() :: tuple().
+-type command() :: bson:document().
+-type index_spec() :: bson:document().
 -type reason() :: no_entry | term().
 
 %% ===================================================================
@@ -61,20 +61,19 @@ stop(ServerName) ->
 -spec find(server_name(), collection(), selector()) ->
 	{ok, [{key(), value()}]} | {error, reason()}.
 find(ServerName, Coll, Selector) ->
-	find(ServerName, Coll, Selector, []).
+	find(ServerName, Coll, Selector, {}).
 
 -spec find(server_name(), collection(), selector(), projector()) ->
 	{ok, [{key(), value()}]} | {error, reason()}.
 find(ServerName, Coll, Selector, Projector) ->
 	mongo_do(ServerName, safe, master,
 		fun() ->
-			Cursor = mongo:find(Coll, bson:document(Selector), bson:document(Projector)),
+			Cursor = mongo:find(Coll, Selector, Projector),
 			Documents = mongo_cursor:rest(Cursor),
 			Results = lists:map(
 				fun(BsonDoc) ->
 					BsonKey = bson:at('_id', BsonDoc),
-					BsonValue = bson:exclude(['_id'], BsonDoc),
-					{BsonKey, bson:fields(BsonValue)}
+					{BsonKey, BsonDoc}
 				end,
 				Documents),
 			mongo_cursor:close(Cursor),
@@ -85,19 +84,18 @@ find(ServerName, Coll, Selector, Projector) ->
 -spec find_one(server_name(), collection(), selector()) ->
 	{ok, Plist::[tuple()]} | {error, reason()}.
 find_one(ServerName, Coll, Selector) ->
-	find_one(ServerName, Coll, Selector, []).
+	find_one(ServerName, Coll, Selector, {}).
 
 -spec find_one(server_name(), collection(), selector(), projector()) ->
 	{ok, Plist::[tuple()]} | {error, reason()}.
 find_one(ServerName, Coll, Selector, Projector) ->
 	mongo_do(ServerName, safe, master,
 		fun() ->
-			case mongo:find_one(Coll, bson:document(Selector), bson:document(Projector)) of
+			case mongo:find_one(Coll, Selector, Projector) of
 				{} ->
 					{error, no_entry};
 				{BsonDoc} ->
-					BsonValue = bson:exclude(['_id'],  BsonDoc),
-					bson:fields(BsonValue)
+					BsonDoc
 			end
 		end
 	).
@@ -107,7 +105,7 @@ find_one(ServerName, Coll, Selector, Projector) ->
 upsert(ServerName, Coll, Selector, Modifier) ->
 	mongo_do(ServerName, safe, master,
 		fun() ->
-			mongo:repsert(Coll, bson:document(Selector), {'$set', bson:document(Modifier)})
+			mongo:repsert(Coll, Selector, Modifier)
 		end
 	).
 
@@ -116,7 +114,7 @@ upsert(ServerName, Coll, Selector, Modifier) ->
 delete(ServerName, Coll, Selector) ->
 	mongo_do(ServerName, safe, master,
 		fun() ->
-			mongo:delete(Coll, bson:document(Selector))
+			mongo:delete(Coll, Selector)
 		end
 	).
 

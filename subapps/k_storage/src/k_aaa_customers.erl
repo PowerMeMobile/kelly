@@ -18,53 +18,51 @@
 
 -spec set_customer(customer_id(), #customer{}) -> ok | {error, term()}.
 set_customer(CustomerId, Customer) ->
-	AllowedSourcesDocList = [ bson:document(
-		[{addr, Addr#addr.addr},
-		{ton, Addr#addr.ton},
-		{npi, Addr#addr.npi}]
-	) || Addr <- Customer#customer.allowed_sources],
-
-	DefaultSourceDoc = case Customer#customer.default_source of
-		undefined -> undefined;
-		Addr = #addr{} ->
-			bson:document(
-				[{addr, Addr#addr.addr},
-				{ton, Addr#addr.ton},
-				{npi, Addr#addr.npi}])
-	end,
-
-	UsersDocList =  [ bson:document(
-		[{id, User#user.id},
-		{pswd_hash, User#user.pswd_hash},
-		{permitted_smpp_types, User#user.permitted_smpp_types}]
-	) || User <- Customer#customer.users],
-
-	Plist = [
-		{id, Customer#customer.id},
-		{uuid, Customer#customer.uuid},
-		{name, Customer#customer.name},
-		{priority, Customer#customer.priority},
-		{rps, Customer#customer.rps},
-		{allowed_sources, AllowedSourcesDocList},
-		{default_source, DefaultSourceDoc},
-		{networks, Customer#customer.networks},
-		{default_provider_id, Customer#customer.default_provider_id},
-		{receipts_allowed, Customer#customer.receipts_allowed},
-		{no_retry, Customer#customer.no_retry},
-		{default_validity, Customer#customer.default_validity},
-		{max_validity, Customer#customer.max_validity},
-		{users, UsersDocList},
-		{billing_type, Customer#customer.billing_type},
-		{state, Customer#customer.state}
+	AllowedSourcesDocList = [
+		{'addr' , Addr#addr.addr , 'ton' , Addr#addr.ton , 'npi' , Addr#addr.npi}
+		|| Addr <- Customer#customer.allowed_sources
 	],
-	mongodb_storage:upsert(k_static_storage, customers, [{'_id', CustomerId}], Plist).
+
+	DefaultSourceDoc =
+		case Customer#customer.default_source of
+			undefined -> undefined;
+			Addr = #addr{} ->
+				{'addr' , Addr#addr.addr , 'ton' , Addr#addr.ton , 'npi' , Addr#addr.npi}
+		end,
+
+	UsersDocList = [
+		{'id' , User#user.id, 'pswd_hash' , User#user.pswd_hash, 'permitted_smpp_types' , User#user.permitted_smpp_types}
+		|| User <- Customer#customer.users
+	],
+
+	Modifier = {
+		'$set' , {
+			'id'                  , Customer#customer.id,
+			'uuid'                , Customer#customer.uuid,
+			'name'                , Customer#customer.name,
+			'priority'            , Customer#customer.priority,
+			'rps'                 , Customer#customer.rps,
+			'allowed_sources'     , AllowedSourcesDocList,
+			'default_source'      , DefaultSourceDoc,
+			'networks'            , Customer#customer.networks,
+			'default_provider_id' , Customer#customer.default_provider_id,
+			'receipts_allowed'    , Customer#customer.receipts_allowed,
+			'no_retry'            , Customer#customer.no_retry,
+			'default_validity'    , Customer#customer.default_validity,
+			'max_validity'        , Customer#customer.max_validity,
+			'users'               , UsersDocList,
+			'billing_type'        , Customer#customer.billing_type,
+			'state'               , Customer#customer.state
+		}
+	},
+	mongodb_storage:upsert(k_static_storage, customers, {'_id', CustomerId}, Modifier).
 
 -spec get_customers() -> {ok, [{customer_id(), #customer{}}]} | {error, term()}.
 get_customers() ->
-	case mongodb_storage:find(k_static_storage, customers, []) of
+	case mongodb_storage:find(k_static_storage, customers, {}) of
 		{ok, List} ->
 			{ok, [
-				{Id, proplist_to_record(Plist)} || {Id, Plist} <- List
+				{Id, doc_to_record(Doc)} || {Id, Doc} <- List
 			]};
 		Error ->
 			Error
@@ -72,75 +70,73 @@ get_customers() ->
 
 -spec get_customer(customer_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer(CustomerId) ->
-	case mongodb_storage:find_one(k_static_storage, customers, [{'_id', CustomerId}]) of
-		{ok, Plist} when is_list(Plist) ->
-			{ok, proplist_to_record(Plist)};
+	case mongodb_storage:find_one(k_static_storage, customers, {'_id', CustomerId}) of
+		{ok, Doc} ->
+			{ok, doc_to_record(Doc)};
 		Error ->
 			Error
 	end.
 
 -spec get_customer_by_system_id(binary()) -> {ok, #customer{}} | any().
 get_customer_by_system_id(SystemId) ->
-	case mongodb_storage:find_one(k_static_storage, customers, [{'id', SystemId}]) of
-		{ok, Plist} when is_list(Plist) ->
-			{ok, proplist_to_record(Plist)};
+	case mongodb_storage:find_one(k_static_storage, customers, {'id', SystemId}) of
+		{ok, Doc} ->
+			{ok, doc_to_record(Doc)};
 		Error ->
 			Error
 	end.
 
 -spec del_customer(customer_id()) -> ok | {error, no_entry} | {error, term()}.
 del_customer(CustomerId) ->
-	mongodb_storage:delete(k_static_storage, customers, [{'_id', CustomerId}]).
+	mongodb_storage:delete(k_static_storage, customers, {'_id', CustomerId}).
 
 %% ===================================================================
 %% Internals
 %% ===================================================================
 
-proplist_to_record(Plist) ->
-	UsersDocList = proplists:get_value(users, Plist),
-	UsersPList = [bson:fields(Doc) || Doc <- UsersDocList],
+doc_to_record(Doc) ->
+	UsersDocs = bson:at(users, Doc),
 	Users = [
 		#user{
-			id = proplists:get_value(id, User),
-			pswd_hash = proplists:get_value(pswd_hash, User),
-			permitted_smpp_types = proplists:get_value(permitted_smpp_types, User)
+			id = bson:at(id, User),
+			pswd_hash = bson:at(pswd_hash, User),
+			permitted_smpp_types = bson:at(permitted_smpp_types, User)
 		}
-		|| User <- UsersPList],
+		|| User <- UsersDocs],
 
-	AllowedSourcesDocList = proplists:get_value(allowed_sources, Plist),
-	AllowedSourcesPList = [bson:fields(Doc) || Doc <- AllowedSourcesDocList],
+	AllowedSourcesDocs = bson:at(allowed_sources, Doc),
 	AllowedSources = [
 		#addr{
-			addr = proplists:get_value(addr, Addr),
-			ton = proplists:get_value(ton, Addr),
-			npi = proplists:get_value(npi, Addr)
+			addr = bson:at(addr, Addr),
+			ton = bson:at(ton, Addr),
+			npi = bson:at(npi, Addr)
 		}
-		|| Addr <- AllowedSourcesPList],
+		|| Addr <- AllowedSourcesDocs],
 
-	DefaultSource = case proplists:get_value(default_source, Plist) of
-		undefined -> undefined;
-		AddrDoc when is_tuple(AddrDoc) ->
-			AddrPList = bson:fields(AddrDoc),
-			#addr{
-				addr = proplists:get_value(addr, AddrPList),
-				ton = proplists:get_value(ton, AddrPList),
-				npi = proplists:get_value(npi, AddrPList)
-			}
-	end,
+	DefaultSource =
+		case bson:at(default_source, Doc) of
+			undefined -> undefined;
+			AddrDoc when is_tuple(AddrDoc) ->
+				#addr{
+					addr = bson:at(addr, AddrDoc),
+					ton = bson:at(ton, AddrDoc),
+					npi = bson:at(npi, AddrDoc)
+				}
+		end,
 
-	ID = proplists:get_value(id, Plist),
-	UUID = proplists:get_value(uuid, Plist),
-	Name = proplists:get_value(name, Plist),
-	Priority = proplists:get_value(priority, Plist),
-	RPS = proplists:get_value(rps, Plist),
-	NetworkIds = proplists:get_value(networks, Plist),
-	DefProviderID = proplists:get_value(default_provider_id, Plist),
-	ReceiptsAllowed = proplists:get_value(receipts_allowed, Plist),
-	NoRetry = proplists:get_value(no_retry, Plist),
-	DefValidity = proplists:get_value(default_validity, Plist),
-	MaxValidity = proplists:get_value(max_validity, Plist),
-	BillingType = proplists:get_value(billing_type, Plist),
-	State = proplists:get_value(state, Plist),
+	ID = bson:at(id, Doc),
+	UUID = bson:at(uuid, Doc),
+	Name = bson:at(name, Doc),
+	Priority = bson:at(priority, Doc),
+	RPS = bson:at(rps, Doc),
+	NetworkIds = bson:at(networks, Doc),
+	DefProviderID = bson:at(default_provider_id, Doc),
+	ReceiptsAllowed = bson:at(receipts_allowed, Doc),
+	NoRetry = bson:at(no_retry, Doc),
+	DefValidity = bson:at(default_validity, Doc),
+	MaxValidity = bson:at(max_validity, Doc),
+	BillingType = bson:at(billing_type, Doc),
+	State = bson:at(state, Doc),
 
  	#customer{
 		id = ID,

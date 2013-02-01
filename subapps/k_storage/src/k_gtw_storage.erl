@@ -17,40 +17,44 @@
 
 -spec set_gateway(gateway_id(), #gateway{}) -> ok | {error, term()}.
 set_gateway(GatewayId, Gateway)->
-	ConnectionsPList =
-	[	bson:document(
-		[{id, Conn#connection.id},
-		{type, Conn#connection.type},
-		{addr, Conn#connection.addr},
-		{port, Conn#connection.port},
-		{sys_id, Conn#connection.sys_id},
-		{pass, Conn#connection.pass},
-		{sys_type, Conn#connection.pass},
-		{addr_ton, Conn#connection.addr_ton},
-		{addr_npi, Conn#connection.addr_npi},
-		{addr_range, Conn#connection.addr_range}]) || Conn <- Gateway#gateway.connections],
-	Plist = [
-		{name, Gateway#gateway.name},
-		{rps, Gateway#gateway.rps},
-		{connections, ConnectionsPList}
+	ConnectionsDocs = [
+		{
+			'id'         , Conn#connection.id,
+			'type'       , Conn#connection.type,
+			'addr'       , Conn#connection.addr,
+			'port'       , Conn#connection.port,
+			'sys_id'     , Conn#connection.sys_id,
+			'pass'       , Conn#connection.pass,
+			'sys_type'   , Conn#connection.pass,
+			'addr_ton'   , Conn#connection.addr_ton,
+			'addr_npi'   , Conn#connection.addr_npi,
+			'addr_range' , Conn#connection.addr_range
+		} || Conn <- Gateway#gateway.connections
 	],
-	mongodb_storage:upsert(k_static_storage, gateways, [{'_id', GatewayId}], Plist).
+	Modifier = {
+		'$set', {
+			'name'        , Gateway#gateway.name,
+			'rps'         , Gateway#gateway.rps,
+			'connections' , ConnectionsDocs
+		}
+	},
+	mongodb_storage:upsert(k_static_storage, gateways, {'_id', GatewayId}, Modifier).
 
 -spec get_gateway(gateway_id()) -> {ok, #gateway{}} | {error, no_entry} | {error, term()}.
 get_gateway(GatewayId) ->
-	case mongodb_storage:find_one(k_static_storage, gateways, [{'_id', GatewayId}]) of
-		{ok, Plist} when is_list(Plist) ->
-			{ok, proplist_to_record(Plist)};
+	case mongodb_storage:find_one(k_static_storage, gateways, {'_id', GatewayId}) of
+		{ok, Doc} ->
+			{ok, doc_to_record(Doc)};
 		Error ->
 			Error
 	end.
 
 -spec get_gateways() -> {ok, [{gateway_id(), #gateway{}}]} | {error, term()}.
 get_gateways() ->
-	case mongodb_storage:find(k_static_storage, gateways, []) of
+	case mongodb_storage:find(k_static_storage, gateways, {}) of
 		{ok, List} ->
 			{ok, [
-				{Id, proplist_to_record(Plist)} || {Id, Plist} <- List
+				{Id, doc_to_record(Doc)} || {Id, Doc} <- List
 			]};
 		Error ->
 			Error
@@ -58,31 +62,30 @@ get_gateways() ->
 
 -spec del_gateway(gateway_id()) -> ok | {error, no_entry} | {error, term()}.
 del_gateway(GatewayId) ->
-	mongodb_storage:delete(k_static_storage, gateways, [{'_id', GatewayId}]).
+	mongodb_storage:delete(k_static_storage, gateways, {'_id', GatewayId}).
 
 %% ===================================================================
 %% Internals
 %% ===================================================================
 
-proplist_to_record(Plist) ->
-	Name = proplists:get_value(name, Plist),
-	RPS = proplists:get_value(rps, Plist),
-	ConnectionsDoc = proplists:get_value(connections, Plist),
-	ConnectionsPList = [bson:fields(Doc) || Doc <- ConnectionsDoc],
+doc_to_record(Doc) ->
+	Name = bson:at(name, Doc),
+	RPS = bson:at(rps, Doc),
+	ConnectionsDoc = bson:at(connections, Doc),
 	Connections = [
 		#connection{
-			id = proplists:get_value(id, ConnPList),
-			type = proplists:get_value(type, ConnPList),
-			addr = proplists:get_value(addr, ConnPList),
-			port = proplists:get_value(port, ConnPList),
-			sys_id = proplists:get_value(sys_id, ConnPList),
-			pass = proplists:get_value(pass, ConnPList),
-			sys_type = proplists:get_value(sys_type, ConnPList),
-			addr_ton = proplists:get_value(addr_ton, ConnPList),
-			addr_npi = proplists:get_value(addr_npi, ConnPList),
-			addr_range = proplists:get_value(addr_range, ConnPList)
+			id = bson:at(id, ConnDoc),
+			type = bson:at(type, ConnDoc),
+			addr = bson:at(addr, ConnDoc),
+			port = bson:at(port, ConnDoc),
+			sys_id = bson:at(sys_id, ConnDoc),
+			pass = bson:at(pass, ConnDoc),
+			sys_type = bson:at(sys_type, ConnDoc),
+			addr_ton = bson:at(addr_ton, ConnDoc),
+			addr_npi = bson:at(addr_npi, ConnDoc),
+			addr_range = bson:at(addr_range, ConnDoc)
 		}
-		|| ConnPList <- ConnectionsPList],
+		|| ConnDoc <- ConnectionsDoc],
  	#gateway{
 		name = Name,
 		rps = RPS,
