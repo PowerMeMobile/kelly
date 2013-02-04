@@ -1,5 +1,3 @@
-%% @private
-
 -module(k_mb_postponed_queue).
 
 -behaviour(gen_server).

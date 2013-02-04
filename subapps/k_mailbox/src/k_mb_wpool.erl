@@ -1,5 +1,3 @@
-%% @private
-
 -module(k_mb_wpool).
 
 -behaviour(gen_wp).
@@ -85,9 +83,9 @@ handle_fork_call( _Arg, _CallMess, _ReplyTo, _WP ) ->
 	{noreply, bad_request}.
 
 handle_fork_cast(_Arg, {process_item, {ItemType, ItemID}}, _WP) when
-								  ItemType == ?INCOMING_SMS orelse
-								  ItemType == ?K1API_RECEIPT orelse
-								  ItemType == ?FUNNEL_RECEIPT  ->
+								  ItemType == k_mb_incoming_sms orelse
+								  ItemType == k_mb_k1api_receipt orelse
+								  ItemType == k_mb_funnel_receipt  ->
 	{ok, Item} = k_mb_db:get_item(ItemType, ItemID),
 	process(Item),
 	{noreply, normal};
@@ -137,7 +135,7 @@ process(Item) ->
 	end.
 
 mark_as_pending(Item = #k_mb_incoming_sms{}) ->
-	ItemType = ?INCOMING_SMS,
+	ItemType = k_mb_incoming_sms,
 	#k_mb_incoming_sms{
 		id = ItemID,
 		customer_id = CustomerID,
@@ -145,7 +143,7 @@ mark_as_pending(Item = #k_mb_incoming_sms{}) ->
 	} = Item,
 	k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID);
 mark_as_pending(Item = #k_mb_k1api_receipt{}) ->
-	ItemType = ?K1API_RECEIPT,
+	ItemType = k_mb_k1api_receipt,
 	#k_mb_k1api_receipt{
 		id = ItemID,
 		customer_id = CustomerID,
@@ -153,7 +151,7 @@ mark_as_pending(Item = #k_mb_k1api_receipt{}) ->
 	} = Item,
 	k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID);
 mark_as_pending(Item = #k_mb_funnel_receipt{}) ->
-	ItemType = ?FUNNEL_RECEIPT,
+	ItemType = k_mb_funnel_receipt,
 	#k_mb_funnel_receipt{
 		id = ItemID,
 		customer_id = CustomerID,

@@ -1,6 +1,3 @@
-%% @private
-%% @doc Provides application environment.
-
 -module(k_mb_config).
 
 -include("application.hrl").
