@@ -3,7 +3,11 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/2, start_link/3]).
+-export([
+	start_link/2,
+	start_link/3,
+	subscribe/1
+]).
 
 %% gen_server callbacks
 -export([
@@ -55,14 +59,18 @@ behaviour_info(_) ->
 -spec start_link( {local, atom()}, atom(), [any()] ) -> {ok, pid()}.
 start_link({local, Name}, Module, Args) ->
 	{ok, Pid} = gen_server:start_link({local, Name}, ?MODULE, {Module, Args}, []),
-	gen_server:cast(Pid, do_subscribe),
+	subscribe(Pid),
 	{ok, Pid}.
 
 -spec start_link( atom(), [any()] ) -> {ok, pid()}.
 start_link(Module, Args) ->
 	{ok, Pid} = gen_server:start_link(?MODULE, {Module, Args}, []),
-	gen_server:cast(Pid, do_subscribe),
+	subscribe(Pid),
 	{ok, Pid}.
+
+-spec subscribe(pid()) -> ok.
+subscribe(Pid) ->
+	gen_server:cast(Pid, do_subscribe).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -111,20 +119,28 @@ handle_cast(do_subscribe, State = #state{
 	end,
 	{ok, Connection} = rmql:connection_start(),
 	{ok, Channel} = rmql:channel_open(Connection),
-	link(Channel),
 	declare_exchange(Channel, BXchg),
 	declare_queue(Channel, QName, DeclareQueue),
 	queue_bind(Channel, QName, BXchg),
 	ok = rmql:basic_qos(Channel, QoS),
-	{ok, QTag} = rmql:basic_consume(Channel, QName, false),
-	Dict = dict:new(),
-	{noreply, State#state{
-		amqp_chan = Channel,
-		amqp_xchg = BXchg,
-		qname = QName,
-		qtag = QTag,
-		dict = Dict,
-		mod_state = NewMState}};
+	case rmql:basic_consume(Channel, QName, false) of
+		{ok, QTag} ->
+			link(Channel),
+			Dict = dict:new(),
+			{noreply, State#state{
+						amqp_chan = Channel,
+						amqp_xchg = BXchg,
+						qname = QName,
+						qtag = QTag,
+						dict = Dict,
+						mod_state = NewMState}};
+		{error,{{shutdown,{server_initiated_close,404, _Description}},_}} ->
+			?log_warn("Queue [~p] not found. Retry after 5 sec.", [QName]),
+			{ok, _TRef} = timer:apply_after(5000, ?MODULE, subscribe, [self()]),
+			rmql:channel_close(Channel),
+			rmql:connection_close(Connection),
+			{noreply, State}
+	end;
 
 handle_cast(Msg, State = #state{
 	mod_state = MState,
@@ -239,7 +255,7 @@ code_change(OldVsn, State = #state{
 %% ===================================================================
 
 declare_queue(_Channel, QName, false) ->
-	?log_notice("Abort to declare queue [~p]: false flag", [QName]),
+	?log_debug("Abort to declare queue [~p]: false flag", [QName]),
 	ok;
 declare_queue(Channel, QName, DeclareQueue) when DeclareQueue == undefined orelse
 												 DeclareQueue == true ->
