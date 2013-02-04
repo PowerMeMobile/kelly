@@ -61,7 +61,8 @@ dispatch_rules() ->
 			{[<<"report">>, <<"downlink">>], gen_http_api, [k_http_api_handler_downlink_stats]},
 			{[<<"report">>, <<"statuses">>], gen_http_api, [k_http_api_handler_statuses_stats]},
             {[<<"report">>, <<"messages">>, '_'], gen_http_api, [k_http_api_handler_msg_stats]},
-			{[<<"report">>, <<"mt_aggr">>], gen_http_api, [k_http_api_handler_mt_msg_stats]},
+			{[<<"report">>, <<"mt_aggr">>], gen_http_api, [k_http_api_handler_mt_msg_aggr_stats]},
+			{[<<"report">>, <<"mt">>], gen_http_api, [k_http_api_handler_mt_msg_stats]},
 
 			%% GUI
             {[<<"gui">>], k_http_api_gui_index_router, []}, %% redirect to Index.html
