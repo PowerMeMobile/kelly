@@ -55,6 +55,7 @@ dispatch_rules() ->
             {[<<"networks">>, '...'], gen_http_api, [k_http_api_handler_networks]},
             {[<<"providers">>, '...'], gen_http_api, [k_http_api_handler_providers]},
 		    {[<<"addr2cust">>, '...'], gen_http_api, [k_http_api_handler_addr2cust]},
+			{[<<"just">>, <<"reconfigure">>], gen_http_api, [k_http_api_handler_just]},
 			%% STATISTIC API
             {[<<"message_status">>, '_', <<"client">>, '_', <<"customer">>, '...'], gen_http_api, [k_http_api_handler_message_status]},
 			{[<<"report">>, <<"uplink">>], gen_http_api, [k_http_api_handler_uplink_stats]},

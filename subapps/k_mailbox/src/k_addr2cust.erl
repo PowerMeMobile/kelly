@@ -32,7 +32,6 @@ link(Address = #addr{}, CustID, UserID) ->
 	],
 	case resolve(Address) of
 		{error, addr_not_used} ->
-			io:format("Link addr: ~p~n", [Plist]),
 			{ok, {_ID}} = mongodb_storage:insert(?msisdnsColl, Plist),
 			ok;
 		_ -> {error, addr_in_use}

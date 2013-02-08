@@ -3,6 +3,7 @@
 -behaviour(gen_fsm).
 
 -include_lib("k_common/include/logging.hrl").
+-include_lib("k_common/include/gateway.hrl").
 -include_lib("k_common/include/gen_fsm_spec.hrl").
 -include("snmp_task.hrl").
 
@@ -21,7 +22,16 @@
 	start_link/0,
 	get_column_val/2,
 	set_row/3,
-	del_row/2
+	del_row/2,
+
+	set_customer/3,
+	delete_customer/1,
+
+	set_gateway/3,
+	delete_gateway/1,
+
+	set_connection/2,
+	delete_connection/2
 ]).
 
 %% Callbacks
@@ -51,7 +61,9 @@
 	int 	:: integer()
 }).
 
-%%% --- API ---
+%% ===================================================================
+%% API
+%% ===================================================================
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
@@ -63,7 +75,6 @@ start_link() ->
 get_column_val(ColumnName, Index) ->
 	{ok, [OID]} = snmpm:name_to_oid(ColumnName),
 	Result = snmpm:sync_get(?USER, ?TARGET, [OID ++ Index]),
-	%?log_debug("Get result: ~p", [Result]),
 	parse_snmp_result(Result).
 
 -spec set_row(snmp_column_name(), snmp_index(), snmp_value_list()) -> ok.
@@ -76,7 +87,54 @@ del_row(TableName, Index)->
 	Task = #task{function = fun del_row/1, args = {TableName, Index}},
 	process_task(Task).
 
-%%% Callbacks
+-spec set_customer(binary(), integer(), integer()) -> ok.
+set_customer(ID, RPS, Priority) when
+					is_binary(ID) andalso
+					is_integer(RPS) andalso
+					is_integer(Priority) ->
+	set_row(cst, binary_to_list(ID), [
+		{cstRPS, RPS},
+		{cstPriority, Priority}]).
+
+-spec delete_customer(binary()) -> ok.
+delete_customer(ID) when is_binary(ID) ->
+	del_row(cst, binary_to_list(ID)).
+
+-spec set_gateway(binary(), binary(), integer()) -> ok.
+set_gateway(ID, Name, RPS) when
+					is_binary(ID) andalso
+					is_binary(Name) andalso
+					is_integer(RPS) ->
+	set_row(gtw, binary_to_list(ID),
+			[{gtwName, binary_to_list(Name)}, {gtwRPS, RPS}]).
+
+-spec delete_gateway(binary()) -> ok.
+delete_gateway(ID) when is_binary(ID) ->
+	del_row(gtw, binary_to_list(ID)).
+
+-spec set_connection(binary(), #connection{}) -> ok.
+set_connection(GtwID, Conn = #connection{}) when is_binary(GtwID) ->
+	set_row(cnn, binary_to_list(GtwID) ++ [Conn#connection.id],
+				[{cnnType, Conn#connection.type},
+				{cnnAddr, convert_to_snmp_ip(Conn#connection.addr)},
+				{cnnPort, Conn#connection.port},
+				{cnnSystemId, binary_to_list(Conn#connection.sys_id)},
+				{cnnPassword, binary_to_list(Conn#connection.pass)},
+				{cnnSystemType, binary_to_list(Conn#connection.sys_type)},
+				{cnnAddrTon, Conn#connection.addr_ton},
+				{cnnAddrNpi, Conn#connection.addr_npi},
+				{cnnAddrRange, binary_to_list(Conn#connection.addr_range)}
+			    ]).
+
+-spec delete_connection(binary(), integer()) -> ok.
+delete_connection(GtwID, ConnID) when
+					is_binary(GtwID) andalso
+					is_integer(ConnID) ->
+	del_row(cnn, binary_to_list(GtwID) ++ [ConnID]).
+
+%% ===================================================================
+%% Behaviour callbacks
+%% ===================================================================
 
 init(_Args) ->
 	{ok, ready, #state{}}.
@@ -98,8 +156,6 @@ ready(process_queue, State = #state{time = Time}) ->
 				process_queue(),
 				{next_state, ready, State};
 			_Error ->
-				%?log_error("error process snmp task: ~p", [_Error]),
-				%?log_debug("going to sleep...", []),
 				start_timer(Time),
 				{next_state, sleep, State}
 		end;
@@ -130,8 +186,9 @@ terminate(_Reason, _StateName, _State = #state{}) ->
 code_change(_OldVsn, StateName, State = #state{}, _Extra) ->
 	{ok, StateName, State}.
 
-
-%%% --- Internal Functions ---
+%% ===================================================================
+%% Internals
+%% ===================================================================
 
 %%% Queue functions
 
@@ -208,16 +265,13 @@ set(_Index, _ValueList = [], _LastResult = {ok, _}) ->
 set(Index, [{ColumnName, Value} | RestValueList], _LastResult = {ok, _}) ->
 	{ok, [OID]} = snmpm:name_to_oid(ColumnName),
 	Result = snmpm:sync_set(?USER, ?TARGET, [{OID ++ Index, Value}]),
-	%?log_debug("snmp result: ~p", [Result]),
 	set(Index, RestValueList, parse_snmp_result(Result));
 set(_Index, _ValueList, ErrorResult) ->
-	%?log_error("snmp set error: ~p", [ErrorResult]),
 	{error, ErrorResult}.
 
 is_exist(TableName, Index)->
 	{ok, ColumnName} = status_column_name(TableName),
 	GetResult = get_column_val(ColumnName, Index),
-	%?log_debug("GetResult: ~p", [GetResult]),
 	case GetResult of
 		{ok, ?active} -> exist;
 		{ok, Some} when is_integer(Some) -> incorrectState;
@@ -235,7 +289,6 @@ status_column_name(TableName) ->
 	end.
 
 parse_snmp_result(Result) ->
-	%?log_debug("Snmp result: ~p", [Result]),
 	case Result of
 		{ok, { noError, 0, [#varbind{value = Value}]}, _Remaining} ->
 			case Value of
@@ -251,3 +304,8 @@ parse_snmp_result(Result) ->
 		{error, Reason} ->
 			{error, Reason}
 	end.
+
+%% convert "127.0.0.1" to [127,0,0,1]
+convert_to_snmp_ip(Addr) when is_binary(Addr) ->
+	Tokens = string:tokens(binary_to_list(Addr), "."),
+	[list_to_integer(Token) || Token <- Tokens].
