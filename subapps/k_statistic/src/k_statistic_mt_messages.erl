@@ -16,8 +16,8 @@
 %% ===================================================================
 
 build_report(Params) ->
-	From = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(?gv(from, Params))),
-	To = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(?gv(to, Params))),
+	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(?gv(from, Params))),
+	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(?gv(to, Params))),
 	CustomerSelector =
 	case ?gv(customer_id, Params) of
 		undefined -> { '$exists' , 1 };
@@ -46,8 +46,8 @@ build_report(Params) ->
 	[build_mt_report_response(Doc) || Doc <- Docs].
 
 build_aggr_report(Params) ->
-	From = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(?gv(from, Params))),
-	To = k_datetime:unix_epoch_to_timestamp(k_datetime:datetime_to_unix_epoch(?gv(to, Params))),
+	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(?gv(from, Params))),
+	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(?gv(to, Params))),
 	CustomerSelector =
 	case ?gv(customer_id, Params) of
 		undefined -> { '$exists' , 1 };
@@ -124,12 +124,12 @@ project(monthly) ->
 
 
 build_mt_report_response({{ID}, Plist}) ->
-	DstAddr = k_storage:doc_to_addr(proplists:get_value(da, Plist)),
-	SrcAddr = k_storage:doc_to_addr(proplists:get_value(sa, Plist)),
+	DstAddr = k_storage_utils:doc_to_addr(proplists:get_value(da, Plist)),
+	SrcAddr = k_storage_utils:doc_to_addr(proplists:get_value(sa, Plist)),
 	Timestamp = proplists:get_value(rqt, Plist),
-	UnixEpoch  = k_datetime:timestamp_to_unix_epoch(Timestamp),
-	Datetime = k_datetime:unix_epoch_to_datetime(UnixEpoch),
-	ISO8601 = k_datetime:datetime_to_iso_8601(Datetime),
+	UnixEpoch  = k_datetime:timestamp_to_unixepoch(Timestamp),
+	Datetime = k_datetime:unixepoch_to_datetime(UnixEpoch),
+	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
 	[{message_id, base64:encode(ID)},
 	{request_time, list_to_binary(ISO8601)},
 	{customer_id, proplists:get_value(ci, Plist)},
