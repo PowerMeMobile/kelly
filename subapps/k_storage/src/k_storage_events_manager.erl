@@ -21,15 +21,20 @@
 -include_lib("k_common/include/logging.hrl").
 
 -type storage_mode() :: 'Response' | 'Delivery' | 'Normal'.
+-type event_name() :: 'ResponseEndEvent' | 'DeliveryEndEvent' | 'ShiftEvent'.
 
 -record(state, {
 	heartbeat_timer_ref :: reference(),
 
+	shift_frequency,
+	response_frame,
+	delivery_frame,
+
 	curr_shift_time :: calendar:datetime(),
 	next_shift_time :: calendar:datetime(),
 
-	storage_mode :: atom(),
-	next_event :: any()
+	curr_mode :: storage_mode(),
+	next_event :: {event_name(), calendar:datetime()}
 }).
 
 %% ===================================================================
@@ -43,43 +48,35 @@ start_link() ->
 -spec get_storage_mode() -> {ok, storage_mode()}.
 get_storage_mode() ->
 	{Pid, _} = gproc:await({n, l, ?MODULE}),
-	gen_server:call(Pid, get_storage_mode).
+	gen_server:call(Pid, get_curr_mode).
 
 %% ===================================================================
 %% gen_server callbacks
 %% ===================================================================
 
-%% on startup fire on_start_event -> to start static storage
-%% on startup fire set_mode_event
-
 init([]) ->
-	gproc:reg({n, l, ?MODULE}),
+	%% waiting for static storage to be ready...
+	k_storage_manager:wait_for_static_storage(),
 
 	CurrTime = k_datetime:utc_time(),
 
-	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
-	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
-	ResponseFrame = proplists:get_value(response_frame, DynamicProps),
-	DeliveryFrame = proplists:get_value(delivery_frame, DynamicProps),
-
-	CurrShiftTime = k_storage_events_utils:get_curr_shift_time(CurrTime, ShiftFrequency),
-	NextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrequency),
-
-	CurrMode = get_storage_mode(CurrTime, CurrShiftTime, ResponseFrame, DeliveryFrame),
-	NextEvent = get_next_event(CurrMode, CurrShiftTime, ResponseFrame, DeliveryFrame, NextShiftTime),
+	{ok, NewState} =
+		 case read_storage_state() of
+			{ok, State} ->
+				check_storage_state(CurrTime, State);
+			{error, no_entry} ->
+				make_storage_state(CurrTime)
+		end,
+	ok = write_storage_state(NewState),
 
 	{ok, TimerRef} = start_heartbeat_timer(),
 
-	{ok, #state{
-		heartbeat_timer_ref = TimerRef,
-		curr_shift_time = CurrShiftTime,
-		next_shift_time = NextShiftTime,
-		storage_mode = CurrMode,
-		next_event = NextEvent
-	}}.
+	%% signal events manager is ready.
+	gproc:reg({n, l, ?MODULE}),
+	{ok, NewState#state{heartbeat_timer_ref = TimerRef}}.
 
-handle_call(get_storage_mode, _From, State = #state{
-	storage_mode = CurrMode
+handle_call(get_curr_mode, _From, State = #state{
+	curr_mode = CurrMode
 }) ->
 	{reply, {ok, CurrMode}, State};
 
@@ -91,51 +88,18 @@ handle_cast(Request, State = #state{}) ->
 
 handle_info({timeout, TimerRef, {heartbeat}}, State = #state{
 	heartbeat_timer_ref = TimerRef,
-	curr_shift_time = CurrShiftTime,
-	next_shift_time = NextShiftTime,
-	storage_mode = CurrMode,
 	next_event = {CurrEvent, CurrEventTime}
 }) ->
    	%?log_debug("~p", [State]),
 
 	CurrTime = k_datetime:utc_time(),
 
-	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
-	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
-	ResponseFrame = proplists:get_value(response_frame, DynamicProps),
-	DeliveryFrame = proplists:get_value(delivery_frame, DynamicProps),
-
-	NewState =
+	{ok, NewState} =
 		case CurrTime >= CurrEventTime of
 			true ->
-				NextMode = get_next_mode(CurrMode, CurrEvent),
-				case CurrEvent of
-					'ShiftEvent' ->
-						NewNextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrequency),
-						NextEvent = get_next_event(
-							NextMode, NextShiftTime, ResponseFrame, DeliveryFrame, NewNextShiftTime
-						),
-						?log_info("~p -> ~p -> ~p ~p", [CurrMode, CurrEvent, NextMode, NextEvent]),
-						k_storage_manager:notify_event({CurrMode, CurrEvent, NextMode}),
-						State#state{
-							curr_shift_time = NextShiftTime,
-							next_shift_time = NewNextShiftTime,
-							storage_mode = NextMode,
-							next_event = NextEvent
-						};
-					_ ->
-						NextEvent = get_next_event(
-							NextMode, CurrShiftTime, ResponseFrame, DeliveryFrame, NextShiftTime
-						),
-						?log_info("~p -> ~p -> ~p ~p", [CurrMode, CurrEvent, NextMode, NextEvent]),
-						k_storage_manager:notify_event({CurrMode, CurrEvent, NextMode}),
-						State#state{
-							storage_mode = NextMode,
-							next_event = NextEvent
-						}
-				end;
+				process_event(CurrEvent, CurrTime, State);
 			false ->
-				State
+				{ok, State}
 		end,
 
 	{ok, NewTimerRef} = start_heartbeat_timer(),
@@ -161,7 +125,136 @@ start_heartbeat_timer() ->
 	TimerRef = erlang:start_timer(1000, self(), {heartbeat}),
 	{ok, TimerRef}.
 
-get_storage_mode(CurrTime, CurrShiftTime, ResponseFrame, DeliveryFrame) ->
+read_storage_state() ->
+	case mongodb_storage:find_one(k_static_storage, 'storage.state', {}) of
+		{ok, Doc} ->
+			ShiftFrequency = bson:at(shift_frequency, Doc),
+			ResponseFrame = bson:at(response_frame, Doc),
+			DeliveryFrame = bson:at(delivery_frame, Doc),
+			CurrShiftTime = bson:at(curr_shift_time, Doc),
+			NextShiftTime = bson:at(next_shift_time, Doc),
+			CurrMode = bson:at(curr_mode, Doc),
+			NextEvent = bson:at(next_event, Doc),
+			NextEventTime = bson:at(next_event_time, Doc),
+			State = #state{
+				shift_frequency = ShiftFrequency,
+				response_frame = ResponseFrame,
+				delivery_frame = DeliveryFrame,
+				curr_shift_time = k_datetime:timestamp_to_datetime(CurrShiftTime),
+				next_shift_time = k_datetime:timestamp_to_datetime(NextShiftTime),
+				curr_mode = CurrMode,
+				next_event = {NextEvent, k_datetime:timestamp_to_datetime(NextEventTime)}
+			},
+			{ok, State};
+		Error ->
+			Error
+	end.
+
+write_storage_state(#state{
+	shift_frequency = ShiftFrequency,
+	response_frame = ResponseFrame,
+	delivery_frame = DeliveryFrame,
+	curr_shift_time = CurrShiftTime,
+	next_shift_time = NextShiftTime,
+	curr_mode = CurrMode,
+	next_event = {NextEvent, NextEventTime}
+}) ->
+	Modifier = {
+		shift_frequency , ShiftFrequency,
+		response_frame  , ResponseFrame,
+		delivery_frame  , DeliveryFrame,
+		curr_shift_time , k_datetime:datetime_to_timestamp(CurrShiftTime),
+		next_shift_time , k_datetime:datetime_to_timestamp(NextShiftTime),
+		curr_mode       , CurrMode,
+		next_event      , NextEvent,
+		next_event_time , k_datetime:datetime_to_timestamp(NextEventTime)
+	},
+	ok = mongodb_storage:upsert(k_static_storage, 'storage.state', {}, Modifier),
+	ok.
+
+check_storage_state(_CurrTime, State = #state{
+	shift_frequency = _ShiftFrequency,
+	response_frame = _ResponseFrame,
+	delivery_frame = _DeliveryFrame,
+
+	curr_shift_time = _CurrShiftTime,
+	next_shift_time = _NextShiftTime,
+
+	curr_mode = _CurrMode,
+	next_event = _NextEvent
+}) ->
+	%% put here code that is supporsed to check/fix any storage state
+	%% inconsistencies, caused by state and current time, etc.
+	{ok, State}.
+
+make_storage_state(CurrTime) ->
+	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
+	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
+	ResponseFrame = proplists:get_value(response_frame, DynamicProps),
+	DeliveryFrame = proplists:get_value(delivery_frame, DynamicProps),
+
+	CurrShiftTime = k_storage_events_utils:get_curr_shift_time(CurrTime, ShiftFrequency),
+	NextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrequency),
+
+	CurrMode = get_curr_mode(CurrTime, CurrShiftTime, ResponseFrame, DeliveryFrame),
+	NextEvent = get_next_event(CurrMode, CurrShiftTime, ResponseFrame, DeliveryFrame, NextShiftTime),
+
+	{ok, #state{
+		shift_frequency = ShiftFrequency,
+		response_frame = ResponseFrame,
+		delivery_frame = DeliveryFrame,
+
+		curr_shift_time = CurrShiftTime,
+		next_shift_time = NextShiftTime,
+		curr_mode = CurrMode,
+		next_event = NextEvent
+	}}.
+
+process_event(CurrEvent = 'ShiftEvent', CurrTime, State = #state{
+	shift_frequency = ShiftFrequency,
+	response_frame = ResponseFrame,
+	delivery_frame = DeliveryFrame,
+	next_shift_time = NextShiftTime,
+	curr_mode = CurrMode
+}) ->
+	NextMode = get_next_mode(CurrMode, CurrEvent),
+
+	NewNextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrequency),
+	NextEvent = get_next_event(
+			NextMode, NextShiftTime, ResponseFrame, DeliveryFrame, NewNextShiftTime
+	),
+	?log_info("~p -> ~p -> ~p ~p", [CurrMode, CurrEvent, NextMode, NextEvent]),
+	ok = k_storage_manager:notify_event({CurrMode, CurrEvent, NextMode}),
+	NewState = State#state{
+		curr_shift_time = NextShiftTime,
+		next_shift_time = NewNextShiftTime,
+		curr_mode = NextMode,
+		next_event = NextEvent
+	},
+	ok = write_storage_state(NewState),
+	{ok, NewState};
+process_event(CurrEvent, _CurrTime, State = #state{
+	response_frame = ResponseFrame,
+	delivery_frame = DeliveryFrame,
+	next_shift_time = NextShiftTime,
+	curr_shift_time = CurrShiftTime,
+	curr_mode = CurrMode
+}) when CurrEvent =:= 'ResponseEndEvent'; CurrEvent =:= 'DeliveryEndEvent' ->
+	NextMode = get_next_mode(CurrMode, CurrEvent),
+
+	NextEvent = get_next_event(
+		NextMode, CurrShiftTime, ResponseFrame, DeliveryFrame, NextShiftTime
+	),
+	?log_info("~p -> ~p -> ~p ~p", [CurrMode, CurrEvent, NextMode, NextEvent]),
+	ok = k_storage_manager:notify_event({CurrMode, CurrEvent, NextMode}),
+	NewState = State#state{
+		curr_mode = NextMode,
+		next_event = NextEvent
+	},
+	ok = write_storage_state(NewState),
+	{ok, NewState}.
+
+get_curr_mode(CurrTime, CurrShiftTime, ResponseFrame, DeliveryFrame) ->
 	CurrShiftSecs = calendar:datetime_to_gregorian_seconds(CurrShiftTime),
 	CurrTimeSecs = calendar:datetime_to_gregorian_seconds(CurrTime),
 	ResponseFrameSecs = k_storage_events_utils:to_seconds(ResponseFrame),

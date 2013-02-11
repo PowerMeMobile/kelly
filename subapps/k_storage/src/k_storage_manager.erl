@@ -3,10 +3,11 @@
 %% API
 -export([
 	start_link/0,
-	get_storage_mode/0
+	get_storage_mode/0,
+	wait_for_static_storage/0
 ]).
 
-%% !!! DO NOT USE !!!
+%% !!! DO NOT USE DIRECTLY !!!
 -export([
 	notify_event/1
 ]).
@@ -25,7 +26,9 @@
 -include_lib("k_common/include/gen_server_spec.hrl").
 -include_lib("k_common/include/logging.hrl").
 
--type storage_mode() :: undefined | 'Response' | 'Delivery' | 'Normal'.
+-type event_name() :: 'ResponseEndEvent' | 'DeliveryEndEvent' | 'ShiftEvent'.
+-type storage_mode() :: 'Response' | 'Delivery' | 'Normal'.
+-type reason() :: term().
 
 -record(state, {
 	storage_mode :: storage_mode()
@@ -39,9 +42,16 @@
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+-spec get_storage_mode() -> {ok, storage_mode()} | {error, reason()}.
 get_storage_mode() ->
 	gen_server:call(?MODULE, get_storage_mode, infinity).
 
+-spec wait_for_static_storage() -> ok.
+wait_for_static_storage() ->
+	{_, _} = gproc:await({n, l, k_static_storage}),
+	ok.
+
+-spec notify_event(event_name()) -> ok.
 notify_event(Event) ->
 	gen_server:cast(?MODULE, {notify_event, Event}).
 
@@ -50,14 +60,9 @@ notify_event(Event) ->
 %% ===================================================================
 
 init([]) ->
-	ok = start_static_storage(),
-
-	{ok, StorageMode} = k_storage_events_manager:get_storage_mode(),
-	ok = start_dynamic_storage(StorageMode),
-
-	{ok, #state{
-		storage_mode = StorageMode
-	}}.
+	%% initialize static storage.
+	gen_server:cast(self(), start_static_storage),
+	{ok, #state{}}.
 
 handle_call(get_storage_mode, _From, State = #state{
 	storage_mode = StorageMode
@@ -72,6 +77,20 @@ handle_call(get_storage_mode, _From, State = #state{
 
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
+
+handle_cast(start_static_storage, State = #state{}) ->
+	ok = start_static_storage(),
+	%% signal static storage is ready.
+	gproc:reg({n, l, k_static_storage}),
+	%% initialize dynamic storage.
+	gen_server:cast(self(), start_dynamic_storage),
+	{noreply, State};
+
+handle_cast(start_dynamic_storage, State = #state{}) ->
+	{ok, StorageMode} = k_storage_events_manager:get_storage_mode(),
+	ok = start_dynamic_storage(StorageMode),
+
+	{noreply, State#state{storage_mode = StorageMode}};
 
 handle_cast({notify_event, {CurrMode, Event, NextMode}}, State = #state{
 	storage_mode = CurrMode
