@@ -146,7 +146,7 @@ update(Params) ->
 
 delete(Params) ->
 	UUID = ?gv(id, Params),
-	k_snmp:del_row(cst, binary_to_list(UUID)),
+	k_snmp:delete_customer(UUID),
 	ok = k_aaa:del_customer(UUID),
 	{http_code, 204}.
 
@@ -211,9 +211,7 @@ create_customer(Params) ->
 		billing_type = ?gv(billing_type, Params),
 		state = ?gv(state, Params)
 	},
-	k_snmp:set_row(cst, binary_to_list(UUID), [
-		{cstRPS, RPS},
-		{cstPriority, Priority}]),
+	k_snmp:set_customer(UUID, RPS, Priority),
 	ok = k_aaa:set_customer(System_id, Customer),
 	{ok, [CustPropList]} = prepare({UUID, Customer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),

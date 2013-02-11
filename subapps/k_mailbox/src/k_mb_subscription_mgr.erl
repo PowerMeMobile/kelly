@@ -1,5 +1,3 @@
-%% @private
-
 %% @TODO convert subscription key
 %% SubscriptionID -> {CustomerID, UserID, SubscriptionID}
 %% to protect subscriptions of other users
@@ -48,8 +46,7 @@ start_link() ->
 
 -spec register(Subscription :: k_mb_subscription()) -> ok.
 register(Subscription) ->
-	{ok, SubID} = get_id(Subscription),
-	ok = k_mb_db:save(#k_mb_subscription{key = SubID, value = Subscription}),
+	ok = k_mb_db:save_sub(Subscription),
 	gen_server:cast(?MODULE, {reg_sub, Subscription}).
 
 -spec unregister(	SubscriptionID :: binary(),
@@ -132,7 +129,7 @@ process_get_suitable_sub_req(Item) ->
 	get_suitable_subscription(Item, Subscriptions).
 
 get_suitable_subscription(_Item = #k_mb_funnel_receipt{}, Subscriptions) ->
-	case lists:keysearch(?FUNNEL_SUB, 1, Subscriptions) of
+	case lists:keysearch(k_mb_funnel_sub, 1, Subscriptions) of
 		{value, Subscription} -> {ok, Subscription};
 		false -> undefined
 	end;
@@ -226,16 +223,6 @@ ets_lookup_subs(Key) ->
 		[] -> []
 	end,
 	{ok, Subscriptions}.
-
-get_id(Sub = #k_mb_k1api_receipt_sub{}) ->
-	SubID = Sub#k_mb_k1api_receipt_sub.id,
-	{ok, SubID};
-get_id(Sub = #k_mb_k1api_incoming_sms_sub{}) ->
-	SubID = Sub#k_mb_k1api_incoming_sms_sub.id,
-	{ok, SubID};
-get_id(Sub = #k_mb_funnel_sub{}) ->
-	SubID = Sub#k_mb_funnel_sub.id,
-	{ok, SubID}.
 
 get_customer_user(Sub = #k_mb_k1api_receipt_sub{}) ->
 	CustomerID = Sub#k_mb_k1api_receipt_sub.customer_id,

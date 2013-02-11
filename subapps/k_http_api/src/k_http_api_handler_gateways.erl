@@ -87,7 +87,7 @@ update(Params) ->
 
 delete(Params) ->
 	UUID = ?gv(id, Params),
-	k_snmp:del_row(gtw, binary_to_list(UUID)),
+	k_snmp:delete_gateway(UUID),
 	ok = k_config:del_gateway(UUID),
 	{http_code, 204}.
 
@@ -133,7 +133,7 @@ update_gtw(Gtw, Params) ->
 	NewName = ?resolve(name, Params, Name),
 	NewGtw = #gateway{rps = NewRPS, name = NewName, connections = Conns},
 	?log_debug("New gtw: ~p", [NewGtw]),
-	k_snmp:set_row(gtw, binary_to_list(UUID), [{gtwName, binary_to_list(NewName)}, {gtwRPS, NewRPS}]),
+	k_snmp:set_gateway(UUID, NewName, NewRPS),
 	ok = k_config:set_gateway(UUID, NewGtw),
 	case k_config:get_gateway(UUID) of
 		{ok, NewGtw = #gateway{}} ->
@@ -154,7 +154,7 @@ create_gtw(Params) ->
 	Name = ?gv(name, Params),
 	UUID = ?gv(id, Params),
 	Gateway = #gateway{rps = RPS, name = Name},
-	k_snmp:set_row(gtw, binary_to_list(UUID), [{gtwName, binary_to_list(Name)}, {gtwRPS, RPS}]),
+	k_snmp:set_gateway(UUID, Name, RPS),
 	ok = k_config:set_gateway(UUID, Gateway),
 	case k_config:get_gateway(UUID) of
 		{ok, Gtw = #gateway{}} ->

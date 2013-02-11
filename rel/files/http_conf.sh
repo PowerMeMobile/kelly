@@ -98,6 +98,15 @@ post "customers" 'name=oneapi-prepaid&system_id=oneapi-prepaid&id=16f87550-1794-
 post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/users" 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi'
 
 #
+# Soap
+#
+
+# postpaid customer
+post "customers" 'name=soap-postpaid&system_id=soap-postpaid&id=c173786e-63ce-11e2-8740-001d0947ec73&originators=999,6,0&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=999,6,0&billing_type=postpaid&state=1'
+
+post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi'
+
+#
 # Addr2Cust
 #
 

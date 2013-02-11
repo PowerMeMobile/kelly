@@ -9,6 +9,7 @@
 	find/4,
 	find_one/3,
 	find_one/4,
+	insert/3,
 	upsert/4,
 	delete/3,
 	command/2,
@@ -97,6 +98,15 @@ find_one(ServerName, Coll, Selector, Projector) ->
 				{BsonDoc} ->
 					BsonDoc
 			end
+		end
+	).
+
+-spec insert(server_name(), collection(), modifier()) ->
+	ok | {error, reason()}.
+insert(ServerName, Coll, Modifier) ->
+	mongo_do(ServerName, safe, master,
+		fun() ->
+			mongo:insert(Coll, Modifier)
 		end
 	).
 

@@ -4,11 +4,14 @@
 -include_lib("k_common/include/customer.hrl").
 
 -define(APP, k_mailbox).
-
--define(INCOMING_SMS, 	k_mb_incoming_sms).
--define(K1API_RECEIPT, 	k_mb_k1api_receipt).
--define(FUNNEL_RECEIPT, k_mb_funnel_receipt).
--define(PENDING_ITEM, 	k_mb_pending_item).
+-define(msisdnsColl, msisdns).
+-define(funnelReceiptsColl, mb_funnel_receipts).
+-define(incomingSmsColl, mb_incoming_sms).
+-define(inputIdToSubIdColl, mb_k1api_input_id_to_sub_id).
+-define(k1apiReceiptsColl, mb_k1api_receipts).
+-define(k1apiReceiptSubColl, mb_k1api_receipt_subs).
+-define(pendingItemsColl, mb_pending_items).
+-define(subscriptionsColl, mb_subscriptions).
 
 -type utcunix() :: integer(). %% utc unix epoch seconds
 
@@ -17,8 +20,10 @@
 %% ===================================================================
 
 -record(k_mb_pending_item, {
-	id :: {atom(), binary()}, %% {ItemType :: atom(), ItemID :: binary()}
-	owner :: {customer_id(), user_id()}
+	id			:: binary(),
+	type		:: atom(),
+	customer_id	:: binary(),
+	user_id 	:: binary()
 }).
 
 %% ===================================================================
@@ -49,7 +54,7 @@
 -record(k_mb_incoming_sms, {
 	id					 :: binary(),
 	customer_id			 :: binary(),
-	user_id				 :: bitstring(),
+	user_id				 :: binary(),
 	source_addr			 :: addr(),
 	dest_addr			 :: addr(),
 	received 			 :: utcunix(), %% k1api retrieve sms request
@@ -63,10 +68,10 @@
 -record(k_mb_k1api_receipt, {
 	id					 :: binary(),
 	customer_id			 :: binary(),
-	user_id				 :: bitstring(),
+	user_id				 :: binary(),
 	source_addr			 :: addr(),
 	dest_addr			 :: addr(),
-	input_message_id	 :: bitstring(), % format?
+	input_message_id	 :: binary(), % format?
 	message_state		 :: message_state(),
 
 	delivery_attempt = 1 :: integer(),
@@ -77,10 +82,10 @@
 -record(k_mb_funnel_receipt, {
 	id					 :: binary(),
 	customer_id			 :: binary(),
-	user_id				 :: bitstring(),
+	user_id				 :: binary(),
 	source_addr			 :: addr(),
 	dest_addr			 :: addr(),
-	input_message_id	 :: bitstring(),
+	input_message_id	 :: binary(),
 	submit_date			 :: utcunix(),
 	done_date			 :: utcunix(),
 	message_state		 :: message_state(),
@@ -98,63 +103,42 @@
 %% Subscriptions
 %% ===================================================================
 
--define(K1API_RECEIPT_SUB, k_mb_k1api_receipt_sub).
--define(K1API_INCOMING_SMS_SUB, k_mb_k1api_incoming_sms_sub).
--define(K1API_SMS_REQ_RECEIPTS_SUB, k_mb_k1api_sms_req_receipts_sub).
--define(FUNNEL_SUB, k_mb_funnel_sub).
-
 -record(k_mb_k1api_receipt_sub, {
 	id 				:: binary(),
 	customer_id 	:: binary(),
-	user_id 		:: bitstring(),
-	queue_name 		:: bitstring(),
+	user_id 		:: binary(),
+	queue_name 		:: binary(),
 	dest_addr 		:: addr(),		%% rename to source_addr
-	notify_url 		:: bitstring(),
-	callback_data 	:: bitstring(),
+	notify_url 		:: binary(),
+	callback_data 	:: binary(),
 	created_at		:: utcunix()
 }).
 
 -record(k_mb_k1api_incoming_sms_sub, {
 	id 				:: binary(),
 	customer_id 	:: binary(),
-	user_id 		:: bitstring(),
+	user_id 		:: binary(),
 	priority 		:: integer(),
-	queue_name 		:: bitstring(),
+	queue_name 		:: binary(),
 	dest_addr 		:: addr(),
-	notify_url 		:: bitstring(),
-	criteria 		:: bitstring(),
-	callback_data 	:: bitstring(),
+	notify_url 		:: binary(),
+	criteria 		:: binary(),
+	callback_data 	:: binary(),
 	created_at 		:: utcunix()
 }).
 
 -record(k_mb_funnel_sub, {
 	id 				:: binary(),
 	customer_id 	:: binary(),
-	user_id 		:: bitstring(),
+	user_id 		:: binary(),
 	priority 		:: integer(),
-	queue_name 		:: bitstring(),
+	queue_name 		:: binary(),
 	created_at 		:: utcunix()
 }).
-
-%% subscriptions for specific k1api sms req messages
--record(k_mb_k1api_input_id_to_sub_id, {
-	input_id 		:: binary(),
-	subscription_id :: binary()
-}).
-%%
 
 -type k_mb_subscription() ::
 	#k_mb_k1api_receipt_sub{} |
 	#k_mb_k1api_incoming_sms_sub{} |
 	#k_mb_funnel_sub{}.
-
-%% storage for regular subscriptions
-%% (exclude k_mb_k1api_sms_req_receipts_sub)
--record(k_mb_subscription, {
-	key				:: binary(),
-	value 			:: #k_mb_k1api_receipt_sub{} |
-						#k_mb_k1api_incoming_sms_sub{} |
-						#k_mb_funnel_sub{}
-}).
 
 -endif. % k_mailbox_application_hrl

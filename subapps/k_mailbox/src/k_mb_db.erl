@@ -1,6 +1,3 @@
-%% @private
-%% @doc This module is rersponsible for all database operations.
-
 -module(k_mb_db).
 
 -include_lib("k_common/include/logging.hrl").
@@ -12,11 +9,10 @@
 							ClientType :: atom(),
 							MessageID :: bitstring()
 						}.
-
 %% API
 -export([
-	init/0,
 	save/1,
+	save_sub/1,
 
 	get_subscription/1,
 	get_subscription_for_k1api_receipt/1,
@@ -39,82 +35,195 @@
 %% API
 %% ===================================================================
 
-%% @doc Sure in table existance & creates it if neccessary.
-%% Used only at application initialization step.
--spec init() -> ok.
-init() ->
-	%% all permanent subscriptions as key - value
-	ok = k_mnesia_schema:ensure_table(
-		k_mb_subscription,
-		record_info(fields, k_mb_subscription)),
-
-	%% only k1api receipts for specific sms request
-	ok = k_mnesia_schema:ensure_table(
-		k_mb_k1api_receipt_sub,
-		record_info(fields, k_mb_k1api_receipt_sub)),
-
-	%% map k1api input sms id to specific subscription
-	ok = k_mnesia_schema:ensure_table(
-		k_mb_k1api_input_id_to_sub_id,
-		record_info(fields, k_mb_k1api_input_id_to_sub_id)),
-
-	ok = k_mnesia_schema:ensure_table(
-		k_mb_address,
-		record_info(fields, k_mb_address)),
-
-	ok = k_mnesia_schema:ensure_table(
-	    ?PENDING_ITEM,
-		record_info(fields, ?PENDING_ITEM)),
-	ok = k_mnesia_schema:ensure_table(
-		?INCOMING_SMS,
-		record_info(fields, ?INCOMING_SMS)),
-	ok = k_mnesia_schema:ensure_table(
-		?K1API_RECEIPT,
-		record_info(fields, ?K1API_RECEIPT)),
-	ok = k_mnesia_schema:ensure_table(
-		?FUNNEL_RECEIPT,
-		record_info(fields, ?FUNNEL_RECEIPT)).
-
-%% @doc Save known entries in database.
 -spec save(tuple()) -> ok.
+save(#k_mb_k1api_receipt_sub{} = Sub) ->
+	Selector = [{'_id', Sub#k_mb_k1api_receipt_sub.id}],
+	Plist = [
+		{customer_id, Sub#k_mb_k1api_receipt_sub.customer_id},
+		{user_id, Sub#k_mb_k1api_receipt_sub.user_id},
+		{queue_name, Sub#k_mb_k1api_receipt_sub.queue_name},
+		{dest_addr, k_storage:addr_to_doc(Sub#k_mb_k1api_receipt_sub.dest_addr)},
+		{notify_url, Sub#k_mb_k1api_receipt_sub.notify_url},
+		{callback_data, Sub#k_mb_k1api_receipt_sub.callback_data},
+		{created_at, Sub#k_mb_k1api_receipt_sub.created_at}
+	],
+	ok = mongodb_storage:upsert(?k1apiReceiptSubColl, Selector, Plist);
+save(#k_mb_incoming_sms{} = Sms) ->
+	Selector = [{'_id', Sms#k_mb_incoming_sms.id}],
+	Plist = [
+		{customer_id, Sms#k_mb_incoming_sms.customer_id},
+		{user_id, Sms#k_mb_incoming_sms.user_id},
+		{source_addr, k_storage:addr_to_doc(Sms#k_mb_incoming_sms.source_addr)},
+		{dest_addr, k_storage:addr_to_doc(Sms#k_mb_incoming_sms.dest_addr)},
+		{received, Sms#k_mb_incoming_sms.received},
+		{message_body, Sms#k_mb_incoming_sms.message_body},
+		{encoding, Sms#k_mb_incoming_sms.encoding},
+		{delivery_attempt, Sms#k_mb_incoming_sms.delivery_attempt},
+		{created_at, Sms#k_mb_incoming_sms.created_at}
+	],
+	ok = mongodb_storage:upsert(?incomingSmsColl, Selector, Plist);
+save(#k_mb_k1api_receipt{} = R) ->
+	Selector = [{'_id', R#k_mb_k1api_receipt.id}],
+	Plist = [
+		{customer_id, R#k_mb_k1api_receipt.customer_id},
+		{user_id, R#k_mb_k1api_receipt.user_id},
+		{source_addr, k_storage:addr_to_doc(R#k_mb_k1api_receipt.source_addr)},
+		{dest_addr, k_storage:addr_to_doc(R#k_mb_k1api_receipt.dest_addr)},
+		{input_message_id, R#k_mb_k1api_receipt.input_message_id},
+		{message_state, R#k_mb_k1api_receipt.message_state},
+		{delivery_attempt, R#k_mb_k1api_receipt.delivery_attempt},
+		{created_at, R#k_mb_k1api_receipt.created_at}
+	],
+	ok = mongodb_storage:upsert(?k1apiReceiptsColl, Selector, Plist);
+save(#k_mb_funnel_receipt{} = R) ->
+	Selector = [{'_id', R#k_mb_funnel_receipt.id}],
+	Plist = [
+		{customer_id, R#k_mb_funnel_receipt.customer_id},
+		{user_id, R#k_mb_funnel_receipt.user_id},
+		{source_addr, k_storage:addr_to_doc(R#k_mb_funnel_receipt.source_addr)},
+		{dest_addr, k_storage:addr_to_doc(R#k_mb_funnel_receipt.dest_addr)},
+		{input_message_id, R#k_mb_funnel_receipt.input_message_id},
+		{submit_date, R#k_mb_funnel_receipt.submit_date},
+		{done_date, R#k_mb_funnel_receipt.done_date},
+		{message_state, R#k_mb_funnel_receipt.message_state},
+		{delivery_attempt, R#k_mb_funnel_receipt.delivery_attempt},
+		{created_at, R#k_mb_funnel_receipt.created_at}
+	],
+	ok = mongodb_storage:upsert(?funnelReceiptsColl, Selector, Plist);
 save(Record) ->
 	ok = mnesia:dirty_write(Record).
 
-%% @doc Delete subscription from DB.
+save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
+	Selector = [{'_id', Sub#k_mb_k1api_receipt_sub.id}],
+	Plist = [
+		{type, k_mb_k1api_receipt_sub},
+		{customer_id, Sub#k_mb_k1api_receipt_sub.customer_id},
+		{user_id, Sub#k_mb_k1api_receipt_sub.user_id},
+		{queue_name, Sub#k_mb_k1api_receipt_sub.queue_name},
+		{dest_addr, k_storage:addr_to_doc(Sub#k_mb_k1api_receipt_sub.dest_addr)},
+		{notify_url, Sub#k_mb_k1api_receipt_sub.notify_url},
+		{callback_data, Sub#k_mb_k1api_receipt_sub.callback_data},
+		{created_at, Sub#k_mb_k1api_receipt_sub.created_at}
+	],
+	ok = mongodb_storage:upsert(?subscriptionsColl, Selector, Plist);
+save_sub(#k_mb_k1api_incoming_sms_sub{} = Sub) ->
+	Selector = [{'_id', Sub#k_mb_k1api_incoming_sms_sub.id}],
+	Plist = [
+		{type, k_mb_k1api_incoming_sms_sub},
+		{customer_id, Sub#k_mb_k1api_incoming_sms_sub.customer_id},
+		{user_id, Sub#k_mb_k1api_incoming_sms_sub.user_id},
+		{priority, Sub#k_mb_k1api_incoming_sms_sub.priority},
+		{queue_name, Sub#k_mb_k1api_incoming_sms_sub.queue_name},
+		{dest_addr, k_storage:addr_to_doc(Sub#k_mb_k1api_incoming_sms_sub.dest_addr)},
+		{notify_url, Sub#k_mb_k1api_incoming_sms_sub.notify_url},
+		{criteria, Sub#k_mb_k1api_incoming_sms_sub.criteria},
+		{callback_data, Sub#k_mb_k1api_incoming_sms_sub.callback_data},
+		{created_at, Sub#k_mb_k1api_incoming_sms_sub.created_at}
+	],
+	ok = mongodb_storage:upsert(?subscriptionsColl, Selector, Plist);
+save_sub(#k_mb_funnel_sub{} = Sub) ->
+	Selector = [{'_id', Sub#k_mb_funnel_sub.id}],
+	Plist = [
+		{type, k_mb_funnel_sub},
+		{customer_id, Sub#k_mb_funnel_sub.customer_id},
+		{user_id, Sub#k_mb_funnel_sub.user_id},
+		{priority, Sub#k_mb_funnel_sub.priority},
+		{queue_name, Sub#k_mb_funnel_sub.queue_name},
+		{created_at, Sub#k_mb_funnel_sub.created_at}
+	],
+	ok = mongodb_storage:upsert(?subscriptionsColl, Selector, Plist).
+
 -spec delete_subscription(SubscriptionID :: binary()) -> ok.
 delete_subscription(SubscriptionID) ->
-	ok = mnesia:dirty_delete(k_mb_subscription, SubscriptionID).
+	ok = mongodb_storage:delete(?subscriptionsColl, [{'_id', SubscriptionID}]).
 
-%% @doc Delete item from db
 -spec delete_item(k_mb_item()) -> ok.
 delete_item(Item = #k_mb_funnel_receipt{}) ->
-	delete_item(?FUNNEL_RECEIPT, Item#k_mb_funnel_receipt.id);
+	Selector = [
+		{'_id', Item#k_mb_funnel_receipt.id},
+		{customer_id, Item#k_mb_funnel_receipt.customer_id},
+		{user_id, Item#k_mb_funnel_receipt.user_id}
+	],
+	ok = mongodb_storage:delete(?funnelReceiptsColl, Selector),
+	ok = mongodb_storage:delete(?pendingItemsColl, Selector);
 delete_item(Item = #k_mb_k1api_receipt{}) ->
-	delete_item(?K1API_RECEIPT, Item#k_mb_k1api_receipt.id);
+	Selector = [
+		{'_id', Item#k_mb_k1api_receipt.id},
+		{customer_id, Item#k_mb_k1api_receipt.customer_id},
+		{user_id, Item#k_mb_k1api_receipt.user_id}
+	],
+	ok = mongodb_storage:delete(?k1apiReceiptsColl, Selector),
+	ok = mongodb_storage:delete(?pendingItemsColl, Selector);
 delete_item(Item = #k_mb_incoming_sms{}) ->
-	delete_item(?INCOMING_SMS, Item#k_mb_incoming_sms.id).
+	Selector = [
+		{'_id', Item#k_mb_incoming_sms.id},
+		{customer_id, Item#k_mb_incoming_sms.customer_id},
+		{user_id, Item#k_mb_incoming_sms.user_id}
+	],
+	ok = mongodb_storage:delete(?incomingSmsColl, Selector),
+	ok = mongodb_storage:delete(?pendingItemsColl, Selector).
 
-delete_item(ItemType, ItemID) ->
-	ok = mnesia:dirty_delete(ItemType, ItemID),
-	ok = mnesia:dirty_delete(?PENDING_ITEM, {ItemType, ItemID}).
-
-%% @doc Return all pending items from db
 -spec get_items() -> {ok, [binary()]}.
 get_items() ->
-	FunnelReceiptIds = mnesia:dirty_all_keys(k_mb_funnel_receipt),
-	K1APIReceiptIds = mnesia:dirty_all_keys(k_mb_k1api_receipt),
-	IncomingSmsIds = mnesia:dirty_all_keys(k_mb_incoming_sms),
-	{ok, [	{?FUNNEL_RECEIPT, FunnelReceiptIds},
-			{?K1API_RECEIPT, K1APIReceiptIds},
-			{?INCOMING_SMS, IncomingSmsIds}	]}.
+	{ok, FunnelReceiptDocs} = mongodb_storage:find(?funnelReceiptsColl, [], [{'_id', 1}]),
+	FunnelReceiptIds = [RID || {RID, _} <- FunnelReceiptDocs],
+	{ok, K1apiReceiptDocs} = mongodb_storage:find(?k1apiReceiptsColl, [], [{'_id', 1}]),
+	K1APIReceiptIds = [RID || {RID, _} <- K1apiReceiptDocs],
+	{ok, IncomingSmsDocs} = mongodb_storage:find(?incomingSmsColl, [], [{'_id', 1}]),
+	IncomingSmsIds = [ISID || {ISID, _} <- IncomingSmsDocs],
+	{ok, [	{k_mb_funnel_receipt, FunnelReceiptIds},
+			{k_mb_k1api_receipt, K1APIReceiptIds},
+			{k_mb_incoming_sms, IncomingSmsIds}	]}.
 
-%% @doc Return specified item from db
 -spec get_item(ItemType :: atom(), ItemID :: binary()) -> Item :: tuple().
+get_item(k_mb_k1api_receipt, ID) ->
+	{ok, [{_, Plist}]} = mongodb_storage:find(?k1apiReceiptsColl, [{'_id', ID}]),
+	{ok, #k_mb_k1api_receipt{
+		id = ID,
+		customer_id = proplists:get_value(customer_id, Plist),
+		user_id = proplists:get_value(user_id, Plist),
+		source_addr = k_storage:doc_to_addr(proplists:get_value(source_addr, Plist)),
+		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
+		input_message_id = proplists:get_value(input_message_id, Plist),
+		message_state = proplists:get_value(message_state, Plist),
+		delivery_attempt = proplists:get_value(delivery_attempt, Plist),
+		created_at = proplists:get_value(created_at, Plist)
+	}};
+get_item(k_mb_funnel_receipt, ID) ->
+	{ok, [{_, Plist}]} = mongodb_storage:find(?funnelReceiptsColl, [{'_id', ID}]),
+	{ok, #k_mb_funnel_receipt{
+		id = ID,
+		customer_id = proplists:get_value(customer_id, Plist),
+		user_id = proplists:get_value(user_id, Plist),
+		source_addr = k_storage:doc_to_addr(proplists:get_value(source_addr, Plist)),
+		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
+		input_message_id = proplists:get_value(input_message_id, Plist),
+		submit_date = proplists:get_value(submit_date, Plist),
+		done_date = proplists:get_value(done_date, Plist),
+		message_state = proplists:get_value(message_state, Plist),
+		delivery_attempt = proplists:get_value(delivery_attempt, Plist),
+		created_at = proplists:get_value(created_at, Plist)
+	}};
+get_item(k_mb_incoming_sms, ID) ->
+	Selector = [{'_id', ID}],
+	{ok, [{_, Plist}]} = mongodb_storage:find(?incomingSmsColl, Selector),
+	{ok, #k_mb_incoming_sms{
+		id = ID,
+		customer_id = proplists:get_value(customer_id, Plist),
+		user_id = proplists:get_value(user_id, Plist),
+		source_addr = k_storage:doc_to_addr(proplists:get_value(source_addr, Plist)),
+		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
+		received = proplists:get_value(received, Plist),
+		message_body = proplists:get_value(message_body, Plist),
+		encoding = proplists:get_value(encoding, Plist),
+		delivery_attempt = proplists:get_value(delivery_attempt, Plist),
+		created_at = proplists:get_value(created_at, Plist)
+	}};
 get_item(ItemType, ItemID) ->
 	[Item] = mnesia:dirty_read(ItemType, ItemID),
 	{ok, Item}.
 
-%% @doc Return subscription by k1api receipt
+
 -spec get_subscription_for_k1api_receipt(Receipt :: #k_mb_k1api_receipt{}) ->
 	undefined |
 	{ok, k_mb_subscription()}.
@@ -124,89 +233,140 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 	ClientType = k1api,
 	InputID = {CustomerID, ClientType, MessageID},
 	?log_debug("InputID: ~p", [InputID]),
-	case mnesia:dirty_read(k_mb_k1api_input_id_to_sub_id, InputID) of
-		[] ->
-			?log_debug("k1api InputID undefined", []),
+	Selector = [
+		{customer_id, CustomerID},
+		{client_type, ClientType},
+		{input_id, MessageID}
+	],
+	case mongodb_storage:find(?inputIdToSubIdColl, Selector) of
+		{ok, []} ->
+			?log_warn("k1api InputID undefined", []),
 			undefined;
-		[Record] ->
-			?log_debug("Record: ~p", [Record]),
-			SubID = Record#k_mb_k1api_input_id_to_sub_id.subscription_id,
+		{ok, [{_, Plist}]} ->
+			?log_debug("Plist: ~p", [Plist]),
+			SubID = proplists:get_value(subscription_id, Plist),
 			?log_debug("SubID: ~p", [SubID]),
-			[Sub] = mnesia:dirty_read(k_mb_k1api_receipt_sub, SubID),
+			{ok, [{_, SubPlist}]} = mongodb_storage:find(?k1apiReceiptSubColl, [{'_id', SubID}]),
+			Sub = #k_mb_k1api_receipt_sub{
+				id = SubID,
+				customer_id = proplists:get_value(customer_id, SubPlist),
+				user_id = proplists:get_value(user_id, SubPlist),
+				queue_name = proplists:get_value(queue_name, SubPlist),
+				dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, SubPlist)),
+				notify_url = proplists:get_value(notify_url, SubPlist),
+				callback_data = proplists:get_value(callback_data, SubPlist),
+				created_at = proplists:get_value(created_at, SubPlist)
+			},
 			?log_debug("FOUND suitable subscription: ~p", [Sub]),
 			{ok, Sub}
 	end.
 
-%% @doc Return subscription by id
 -spec get_subscription(SubscriptionID :: binary()) ->
 	{ok, k_mb_subscription()}.
 get_subscription(SubscriptionID) ->
-	[Subscription] = mnesia:dirty_read(k_mb_subscription, SubscriptionID),
-	{ok, Subscription#k_mb_subscription.value}.
+	{ok, [{_,Plist}]} = mongodb_storage:find(?subscriptionsColl, [{'_id', SubscriptionID}]),
+	get_subscription(proplists:get_value(type, Plist), SubscriptionID, Plist).
 
-%% @doc Return all subscriptions' ids
+get_subscription(k_mb_k1api_receipt_sub, ID, Plist) ->
+	{ok, #k_mb_k1api_receipt_sub{
+		id = ID,
+		customer_id = proplists:get_value(customer_id, Plist),
+		user_id = proplists:get_value(user_id, Plist),
+		queue_name = proplists:get_value(queue_name, Plist),
+		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
+		notify_url = proplists:get_value(notify_url, Plist),
+		callback_data = proplists:get_value(callback_data, Plist),
+		created_at = proplists:get_value(created_at, Plist)
+	}};
+get_subscription(k_mb_k1api_incoming_sms_sub, ID, Plist) ->
+	{ok, #k_mb_k1api_incoming_sms_sub{
+		id = ID,
+		customer_id = proplists:get_value(customer_id, Plist),
+		user_id = proplists:get_value(user_id, Plist),
+		priority = proplists:get_value(priority, Plist),
+		queue_name = proplists:get_value(queue_name, Plist),
+		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
+		notify_url = proplists:get_value(notify_url, Plist),
+		criteria = proplists:get_value(criteria, Plist),
+		callback_data = proplists:get_value(callback_data, Plist),
+		created_at = proplists:get_value(created_at, Plist)
+	}};
+get_subscription(k_mb_funnel_sub, ID, Plist) ->
+	{ok, #k_mb_funnel_sub{
+		id = ID,
+		customer_id = proplists:get_value(customer_id, Plist),
+		user_id = proplists:get_value(user_id, Plist),
+		priority = proplists:get_value(priority, Plist),
+		queue_name = proplists:get_value(queue_name, Plist),
+		created_at = proplists:get_value(created_at, Plist)
+	}}.
+
 -spec get_subscription_ids() -> {ok, [binary()]}.
 get_subscription_ids() ->
-	IDs = mnesia:dirty_all_keys(k_mb_subscription),
+	{ok, Docs} = mongodb_storage:find(?subscriptionsColl, [], [{'_id', 1}]),
+	IDs = [ID || {ID, _} <- Docs],
 	{ok, IDs}.
 
-%% @doc Delete expired pending items from db
-%% -spec delete_expired(Now :: integer()) -> ok.
-%% delete_expired(Now) ->
-%% 	{atomic, ItemIDs} = mnesia:transaction(fun() ->
-%% 		qlc:e(qlc:q([
-%% 				Item#k_mb_pending_item.item_id
-%% 				|| Item <- mnesia:table(k_mb_pending_item),
-%% 				Item#k_mb_pending_item.expire =< Now
-%% 		]))
-%% 	end),
-%% 	lists:foreach(fun delete_item/1, ItemIDs).
-	%% delete_item(ItemIDs).
-
-%% @doc Set 'wait_for_sub' item status
 -spec set_pending(atom(), binary(), binary(), bitstring()) -> ok.
 set_pending(ItemType, ItemID, CustomerID, UserID) ->
-	Record = #?PENDING_ITEM{
-		id = {ItemType, ItemID},
-		owner = {CustomerID, UserID}
-	},
-	ok = mnesia:dirty_write(Record).
+	Selector = [{'_id', ItemID}],
+	Plist = [
+		{type, ItemType},
+		{customer_id, CustomerID},
+		{user_id, UserID}
+	],
+	ok = mongodb_storage:upsert(?pendingItemsColl, Selector, Plist).
 
-%% @doc Return all pending items that waits for subscription
 -spec get_pending(CustomerID :: binary(), UserID :: bitstring()) ->
 	{ok, []} | {ok, [{ItemType :: atom(), ItemID :: binary()}]}.
 get_pending(CustomerID, UserID) ->
-	MatchHead = #?PENDING_ITEM{id = '$1', owner = '$2'},
-	Guard = {'=:=', '$2', {{CustomerID, UserID}}},
-	Result = '$1',
-	Items = mnesia:dirty_select(?PENDING_ITEM, [{MatchHead, [Guard], [Result]}]),
+	Selector = [
+		{customer_id, CustomerID},
+		{user_id, UserID}
+	],
+	{ok, Docs} = mongodb_storage:find(?pendingItemsColl, Selector),
+	Items = [{proplists:get_value(type, Plist), ID} || {ID, Plist} <- Docs],
 	{ok, Items}.
 
-%% @doc Return all incoming pending sms for k1api sms retrieve request
+
 -spec get_incoming_sms(binary(), bitstring(), addr(), integer() | undefined) ->
 	{ok, [#k_mb_incoming_sms{}], Total :: integer()}.
 get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
-	{atomic, AllItems} = mnesia:transaction(fun() ->
-		qlc:e(qlc:q([
-				Item || Item <- mnesia:table(k_mb_incoming_sms),
-				Item#k_mb_incoming_sms.customer_id == CustomerID andalso
-				Item#k_mb_incoming_sms.user_id == UserID andalso
-				Item#k_mb_incoming_sms.dest_addr == DestinationAddr
-		]))
-	end),
+	Selector = [
+		{customer_id, CustomerID},
+		{user_id, UserID},
+		{dest_addr, k_storage:addr_to_doc(DestinationAddr)}
+	],
+	{ok, ISDocs} = mongodb_storage:find(?incomingSmsColl, Selector),
+	AllItems =
+	[#k_mb_incoming_sms{
+		id = ID,
+		customer_id = proplists:get_value(customer_id, Plist),
+		user_id = proplists:get_value(user_id, Plist),
+		source_addr = k_storage:doc_to_addr(proplists:get_value(source_addr, Plist)),
+		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
+		received = proplists:get_value(received, Plist),
+		message_body = proplists:get_value(message_body, Plist),
+		encoding = proplists:get_value(encoding, Plist),
+		delivery_attempt = proplists:get_value(delivery_attempt, Plist),
+		created_at = proplists:get_value(created_at, Plist)
+	} || {ID, Plist} <- ISDocs],
 	Total = length(AllItems),
 	Items = first(AllItems, Limit),
 	{ok, Items, Total}.
 
-%% @doc Link k1api input sms id to specific subscription id
+
 -spec link_input_id_to_sub_id(	InputID :: input_sms_id(),
 								SubscriptionID :: binary()) -> ok.
-link_input_id_to_sub_id(InputID, SubscriptionID) ->
-	InputIDToSubID = #k_mb_k1api_input_id_to_sub_id{
-		input_id = InputID,
-		subscription_id = SubscriptionID
-	},
-	ok = mnesia:dirty_write(InputIDToSubID).
+link_input_id_to_sub_id({CID, k1api, ID} = _InputID, SubscriptionID) -> %% <- add user_name field
+	Plist = [
+		{customer_id, CID},
+		{client_type, k1api},
+		{input_id, ID},
+		{subscription_id, SubscriptionID}
+	],
+	{ok, _} = mongodb_storage:insert(?inputIdToSubIdColl, Plist),
+	ok.
 
 %% ===================================================================
 %% Internal

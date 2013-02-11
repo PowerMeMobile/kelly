@@ -55,12 +55,15 @@ dispatch_rules() ->
             {[<<"networks">>, '...'], gen_http_api, [k_http_api_handler_networks]},
             {[<<"providers">>, '...'], gen_http_api, [k_http_api_handler_providers]},
 		    {[<<"addr2cust">>, '...'], gen_http_api, [k_http_api_handler_addr2cust]},
+			{[<<"just">>, <<"reconfigure">>], gen_http_api, [k_http_api_handler_just]},
 			%% STATISTIC API
             {[<<"message_status">>, '_', <<"client">>, '_', <<"customer">>, '...'], gen_http_api, [k_http_api_handler_message_status]},
 			{[<<"report">>, <<"uplink">>], gen_http_api, [k_http_api_handler_uplink_stats]},
 			{[<<"report">>, <<"downlink">>], gen_http_api, [k_http_api_handler_downlink_stats]},
 			{[<<"report">>, <<"statuses">>], gen_http_api, [k_http_api_handler_statuses_stats]},
             {[<<"report">>, <<"messages">>, '_'], gen_http_api, [k_http_api_handler_msg_stats]},
+			{[<<"report">>, <<"mt_aggr">>], gen_http_api, [k_http_api_handler_mt_msg_aggr_stats]},
+			{[<<"report">>, <<"mt">>], gen_http_api, [k_http_api_handler_mt_msg_stats]},
 
 			%% GUI
             {[<<"gui">>], k_http_api_gui_index_router, []}, %% redirect to Index.html

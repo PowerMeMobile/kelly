@@ -6,8 +6,7 @@
   {applications, [
                   kernel,
                   stdlib,
-                  k_common,
-                  gproc
+                  k_common
                  ]},
   {mod, {k_mailbox_app, []} },
   {env, []}

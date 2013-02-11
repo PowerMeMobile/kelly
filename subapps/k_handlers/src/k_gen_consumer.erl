@@ -6,7 +6,7 @@
 -export([
 	start_link/2,
 	start_link/3,
-	requeue_message/1
+	subscribe/1
 ]).
 
 %% gen_server callbacks
@@ -31,8 +31,7 @@
 		amqp_xchg,
 		qname,
 		qtag,
-		ref_dict,
-		pid_dict,
+		dict,
 		module,
 		mod_state
 }).
@@ -60,18 +59,18 @@ behaviour_info(_) ->
 -spec start_link( {local, atom()}, atom(), [any()] ) -> {ok, pid()}.
 start_link({local, Name}, Module, Args) ->
 	{ok, Pid} = gen_server:start_link({local, Name}, ?MODULE, {Module, Args}, []),
-	gen_server:cast(Pid, do_subscribe),
+	subscribe(Pid),
 	{ok, Pid}.
 
 -spec start_link( atom(), [any()] ) -> {ok, pid()}.
 start_link(Module, Args) ->
 	{ok, Pid} = gen_server:start_link(?MODULE, {Module, Args}, []),
-	gen_server:cast(Pid, do_subscribe),
+	subscribe(Pid),
 	{ok, Pid}.
 
--spec requeue_message(pid()) -> ok.
-requeue_message(Pid) ->
-	ok = gen_server:call(Pid, requeue_message).
+-spec subscribe(pid()) -> ok.
+subscribe(Pid) ->
+	gen_server:cast(Pid, do_subscribe).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -86,19 +85,6 @@ init({ConsumerModule, ExtraParams}) ->
 		ignore ->
 			ignore
 	end.
-
-handle_call(requeue_message, {WPid, _}, State = #state{
-	ref_dict = RefDict,
-	pid_dict = PidDict,
-	amqp_chan = Channel
-}) ->
-	MonitorRef = dict:fetch(WPid, PidDict),
-	NewPidDict = dict:erase(WPid, PidDict),
-	{Tag, WPid} = dict:fetch(MonitorRef, RefDict),
-	rmql:basic_reject(Channel, Tag, true),
-	NewRefDict = dict:erase(MonitorRef, RefDict),
-	true = erlang:demonitor(MonitorRef, [flush]),
-	{reply, ok, State#state{ref_dict = NewRefDict, pid_dict = NewPidDict}};
 
 handle_call(Msg, From, State = #state{
 	mod_state = MState,
@@ -121,7 +107,6 @@ handle_call(Msg, From, State = #state{
 			{stop, Reason, State#state{mod_state = NewMState}}
 	end.
 
-
 handle_cast(do_subscribe, State = #state{
 	mod_state = MState,
 	module = Mod
@@ -133,21 +118,28 @@ handle_cast(do_subscribe, State = #state{
 	end,
 	{ok, Connection} = rmql:connection_start(),
 	{ok, Channel} = rmql:channel_open(Connection),
-	link(Channel),
 	declare_exchange(Channel, BXchg),
 	declare_queue(Channel, QName, DeclareQueue),
 	queue_bind(Channel, QName, BXchg),
 	ok = rmql:basic_qos(Channel, QoS),
-	{ok, QTag} = rmql:basic_consume(Channel, QName, false),
-	Dict = dict:new(),
-	{noreply, State#state{
-		amqp_chan = Channel,
-		amqp_xchg = BXchg,
-		qname = QName,
-		qtag = QTag,
-		ref_dict = Dict,
-		pid_dict = Dict,
-		mod_state = NewMState}};
+	case rmql:basic_consume(Channel, QName, false) of
+		{ok, QTag} ->
+			link(Channel),
+			Dict = dict:new(),
+			{noreply, State#state{
+						amqp_chan = Channel,
+						amqp_xchg = BXchg,
+						qname = QName,
+						qtag = QTag,
+						dict = Dict,
+						mod_state = NewMState}};
+		{error,{{shutdown,{server_initiated_close,404, _Description}},_}} ->
+			?log_warn("Queue [~p] not found. Retry after 5 sec.", [QName]),
+			{ok, _TRef} = timer:apply_after(5000, ?MODULE, subscribe, [self()]),
+			rmql:channel_close(Channel),
+			rmql:connection_close(Connection),
+			{noreply, State}
+	end;
 
 handle_cast(Msg, State = #state{
 	mod_state = MState,
@@ -187,8 +179,7 @@ handle_info({#'basic.deliver'{delivery_tag = Tag},
 			}, payload = Content}},
 			State = #state{
 				amqp_chan = Channel,
-				ref_dict = RefDict,
-				pid_dict = PidDict,
+				dict = Dict,
 				mod_state = ModState,
 				module = Mod}) ->
 	{ProcPid, NewState} =
@@ -198,38 +189,33 @@ handle_info({#'basic.deliver'{delivery_tag = Tag},
 		{noreply, NewMState} ->
 			{undefined, NewMState}
 	end,
-	{ok, NewRefDict, NewPidDict} = register(RefDict, PidDict, ProcPid, Tag),
+	{ok, NewDict} = register(Dict, ProcPid, Tag),
 
 	{noreply, State#state{
-		ref_dict = NewRefDict,
-		pid_dict = NewPidDict,
-		mod_state = 	NewState
+		dict = NewDict,
+		mod_state = NewState
 		}};
 
 handle_info({'DOWN', MonitorRef, _Type, _Object, normal}, State = #state{
-	ref_dict = RefDict,
-	pid_dict = PidDict,
 	module = _Mod,
+	dict = Dict,
 	amqp_chan = Channel
 }) ->
-	{DTag, WPid} = dict:fetch(MonitorRef, RefDict),
-	NewRefDict = dict:erase(MonitorRef, RefDict),
-	ok = rmql:basic_ack(Channel, DTag),
-	NewPidDict = dict:erase(WPid, PidDict),
-	{noreply, State#state{ref_dict = NewRefDict, pid_dict = NewPidDict}};
+	Tag = dict:fetch(MonitorRef, Dict),
+	NewDict = dict:erase(MonitorRef, Dict),
+	ok = rmql:basic_ack(Channel, Tag),
+	{noreply, State#state{dict = NewDict}};
 
 handle_info({'DOWN', MonitorRef, _Type, _Object, Info}, State = #state{
 	module = Mod,
-	ref_dict = RefDict,
-	pid_dict = PidDict,
+	dict = Dict,
 	amqp_chan = Channel
 }) ->
-	{Tag, WPid} = dict:fetch(MonitorRef, RefDict),
-	NewRefDict = dict:erase(MonitorRef, RefDict),
+	Tag = dict:fetch(MonitorRef, Dict),
+	NewDict = dict:erase(MonitorRef, Dict),
 	rmql:basic_reject(Channel, Tag, true),
 	?log_debug("worker[~p] -> Rejected: ~p", [Mod, Info]),
-	NewPidDict = dict:erase(WPid, PidDict),
-	{noreply, State#state{ref_dict = NewRefDict, pid_dict = NewPidDict}};
+	{noreply, State#state{dict = NewDict}};
 
 handle_info(Info, State = #state{
 	mod_state = MState,
@@ -268,7 +254,7 @@ code_change(OldVsn, State = #state{
 %% ===================================================================
 
 declare_queue(_Channel, QName, false) ->
-	?log_notice("Abort to declare queue [~p]: false flag", [QName]),
+	?log_debug("Abort to declare queue [~p]: false flag", [QName]),
 	ok;
 declare_queue(Channel, QName, DeclareQueue) when DeclareQueue == undefined orelse
 												 DeclareQueue == true ->
@@ -291,8 +277,10 @@ queue_bind(Channel, QName, Xchg) ->
 	ok = rmql:queue_bind(Channel, QName, Xchg),
 	?log_info("queue[~p] binding OK", [QName]).
 
-register(RefDict, PidDict, Pid, Tag) ->
+register(Dict, undefined, _Tag) ->
+	%% must save Tag (may be reject messsage here?)
+	{ok, Dict};
+register(Dict, Pid, Tag) ->
 	MonRef = erlang:monitor(process, Pid),
-	NewRefDict = dict:store(MonRef, {Tag, Pid}, RefDict),
-	NewPidDict = dict:store(Pid, MonRef, PidDict),
-	{ok, NewRefDict, NewPidDict}.
+	NewDict = dict:store(MonRef, Tag, Dict),
+	{ok, NewDict}.

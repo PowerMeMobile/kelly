@@ -127,7 +127,7 @@ create_k1api_receipt_subscription(CustomerID, UserID, DestAddr, NotifyURL, Callb
 link_input_id_to_sub_id(_, undefined) -> ok;
 link_input_id_to_sub_id([], _SubID) -> ok;
 link_input_id_to_sub_id([InputID | RestIDs], SubID) ->
-	ok = k_mailbox:link_input_id_to_sub_id(InputID, SubID),
+	ok = k_mb_db:link_input_id_to_sub_id(InputID, SubID),
 	link_input_id_to_sub_id(RestIDs, SubID).
 
 link_sms_request_id_to_message_ids(

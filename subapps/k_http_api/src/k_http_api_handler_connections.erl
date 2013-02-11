@@ -106,7 +106,7 @@ delete(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
 	ConnectionID = ?gv(id, Params),
 	ok = k_config:del_gateway_connection(GtwUUID, ConnectionID),
-	k_snmp:del_row(cnn, binary_to_list(GtwUUID) ++ [ConnectionID]),
+	k_snmp:delete_connection(GtwUUID, ConnectionID),
 	{http_code, 204}.
 
 %% ===================================================================
@@ -170,18 +170,7 @@ update_connection(Gtw, Params) ->
 					},
  			{ok, NewConnections} = replace_connection(NewConnection, Connections),
 			ok = k_config:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
-			SnmpConnID = binary_to_list(GtwID) ++ [ConnectionID],
-			k_snmp:set_row(cnn, SnmpConnID,
-				[{cnnType, NewType},
-				{cnnAddr, convert_to_snmp_ip(binary_to_list(NewAddr))},
-				{cnnPort, NewPort},
-				{cnnSystemId, binary_to_list(NewSysID)},
-				{cnnPassword, binary_to_list(NewPass)},
-				{cnnSystemType, binary_to_list(NewSysType)},
-				{cnnAddrTon, NewAddrTon},
-				{cnnAddrNpi, NewAddrNpi},
-				{cnnAddrRange, binary_to_list(NewAddrRange)}
-			    ]),
+			k_snmp:set_connection(GtwID, NewConnection),
 			{ok, [ConnPropList]} = prepare_connections(NewConnection),
 			?log_debug("ConnPropList: ~p", [ConnPropList]),
 			{http_code, 200, ConnPropList}
@@ -259,19 +248,7 @@ create_connection(Params) ->
 	},
 	GtwUUID = ?gv(gateway_id, Params),
 	k_config:set_gateway_connection(GtwUUID, Connection),
-
-	SnmpConnId = binary_to_list(GtwUUID) ++ [ConnectionID],
-	k_snmp:set_row(cnn, SnmpConnId,
-		[{cnnType, Type},
-		{cnnAddr, convert_to_snmp_ip(binary_to_list(Addr))},
-		{cnnPort, Port},
-		{cnnSystemId, binary_to_list(SysID)},
-		{cnnPassword, binary_to_list(Pass)},
-		{cnnSystemType, binary_to_list(SysType)},
-		{cnnAddrTon, AddrTON},
-		{cnnAddrNpi, AddrNPI},
-		{cnnAddrRange, binary_to_list(AddrRange)}
-	    ]),
+	k_snmp:set_connection(GtwUUID, Connection),
 	{ok, [ConnPropList]} = prepare_connections(Connection),
 	?log_debug("ConnPropList: ~p", [ConnPropList]),
 	{http_code, 201, ConnPropList}.
@@ -289,8 +266,3 @@ prepare_connections([Connection = #connection{} | Rest], Acc) ->
 	ConnFun = ?record_to_proplist(connection),
 	ConnPropList = ConnFun(Connection),
 	prepare_connections(Rest, [ConnPropList | Acc]).
-
-%% convert "127.0.0.1" to [127,0,0,1]
-convert_to_snmp_ip(Addr) when is_list(Addr) ->
-	Tokens = string:tokens(Addr, "."),
-	[list_to_integer(Token) || Token <- Tokens].
