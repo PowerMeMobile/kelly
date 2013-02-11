@@ -24,8 +24,6 @@ init([]) ->
 	?log_debug("init", []),
     {ok, {
 		{one_for_one, 5, 10}, [
-			{k_mnesia_schema,
-				{k_mnesia_schema, start_link, []}, permanent, 100000, worker, [k_mnesia_schema]},
 			{k_time_server,
 				{k_time_server, start_link, []}, permanent, 1000, worker, [k_time_server]}
 		]}
