@@ -20,8 +20,8 @@
 ]).
 
 -include("application.hrl").
--include_lib("k_common/include/gen_server_spec.hrl").
--include_lib("k_common/include/logging.hrl").
+-include("gen_server_spec.hrl").
+-include("logging.hrl").
 
 %% calendar:datetime_to_gregorian_seconds({{1970,1,1},{0,0,0}}) == 62167219200
 -define(GREGORIAN_SECS_BEFORE_UNIX_EPOCH, 62167219200).
