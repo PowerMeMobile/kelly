@@ -14,42 +14,46 @@
 -spec resolve(addr()) -> {ok, customer_id(), user_id()} |
 						 {error, addr_not_used}.
 resolve(Address = #addr{}) ->
-	Selector = [{address, k_storage:addr_to_doc(Address)}],
-	case mongodb_storage:find(?msisdnsColl, Selector) of
+	Selector = {
+		'address' , k_storage_utils:addr_to_doc(Address)
+	},
+	case mongodb_storage:find(k_static_storage, ?msisdnsColl, Selector) of
 		{ok, []} -> {error, addr_not_used};
-		{ok, [{_, Plist}]} ->
-			CustID = proplists:get_value(customer_id, Plist),
-			UserID = proplists:get_value(user_id, Plist),
+		{ok, [{_, Doc}]} ->
+			CustID = bson:at(customer_id, Doc),
+			UserID = bson:at(user_id, Doc),
 			{ok, CustID, UserID}
 	end.
 
 -spec link(addr(), customer_id(), user_id()) -> ok | {error, addr_in_use}.
 link(Address = #addr{}, CustID, UserID) ->
-	Plist = [
-		{address, k_storage:addr_to_doc(Address)},
-		{customer_id, CustID},
-		{user_id, UserID}
-	],
+	Modifier = {
+		'address'     , k_storage_utils:addr_to_doc(Address),
+		'customer_id' , CustID,
+		'user_id'     , UserID
+	},
 	case resolve(Address) of
 		{error, addr_not_used} ->
-			{ok, {_ID}} = mongodb_storage:insert(?msisdnsColl, Plist),
+			{ok, {_ID}} = mongodb_storage:insert(k_static_storage, ?msisdnsColl, Modifier),
 			ok;
 		_ -> {error, addr_in_use}
 	end.
 
 -spec unlink(addr()) -> ok | {error, addr_not_used}.
 unlink(Address = #addr{}) ->
-	Plist = k_storage:addr_to_doc(Address),
-	ok = mongodb_storage:delete(?msisdnsColl, [{address, Plist}]).
+	Selector = {
+		'address' , k_storage_utils:addr_to_doc(Address)
+	},
+	ok = mongodb_storage:delete(k_static_storage, ?msisdnsColl, Selector).
 
 -spec available_addresses(customer_id(), user_id()) ->
 	{ok, [addr()]}.
 available_addresses(CustID, UserID) ->
-	Selector = [
-		{customer_id, CustID},
-		{user_id, UserID}
-	],
-	{ok, Plists} = mongodb_storage:find(?msisdnsColl, Selector),
-	AddrDocs = [proplists:get_value(address, Plist) || {_, Plist} <- Plists],
-	Items = [k_storage:doc_to_addr(Doc) || Doc <- AddrDocs],
+	Selector = {
+		'customer_id' , CustID,
+		'user_id'     , UserID
+	},
+	{ok, Docs} = mongodb_storage:find(k_static_storage, ?msisdnsColl, Selector),
+	AddrDocs = [bson:at(address, Doc) || {_, Doc} <- Docs],
+	Items = [k_storage_utils:doc_to_addr(Doc) || Doc <- AddrDocs],
 	{ok, Items}.

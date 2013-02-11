@@ -37,139 +37,167 @@
 
 -spec save(tuple()) -> ok.
 save(#k_mb_k1api_receipt_sub{} = Sub) ->
-	Selector = [{'_id', Sub#k_mb_k1api_receipt_sub.id}],
-	Plist = [
-		{customer_id, Sub#k_mb_k1api_receipt_sub.customer_id},
-		{user_id, Sub#k_mb_k1api_receipt_sub.user_id},
-		{queue_name, Sub#k_mb_k1api_receipt_sub.queue_name},
-		{dest_addr, k_storage:addr_to_doc(Sub#k_mb_k1api_receipt_sub.dest_addr)},
-		{notify_url, Sub#k_mb_k1api_receipt_sub.notify_url},
-		{callback_data, Sub#k_mb_k1api_receipt_sub.callback_data},
-		{created_at, Sub#k_mb_k1api_receipt_sub.created_at}
-	],
-	ok = mongodb_storage:upsert(?k1apiReceiptSubColl, Selector, Plist);
+	Selector = {
+		'_id' , Sub#k_mb_k1api_receipt_sub.id
+	},
+	Modifier = {
+		'$set' , {
+			'customer_id'   , Sub#k_mb_k1api_receipt_sub.customer_id,
+			'user_id'       , Sub#k_mb_k1api_receipt_sub.user_id,
+			'queue_name'    , Sub#k_mb_k1api_receipt_sub.queue_name,
+			'dest_addr'     , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.dest_addr),
+			'notify_url'    , Sub#k_mb_k1api_receipt_sub.notify_url,
+			'callback_data' , Sub#k_mb_k1api_receipt_sub.callback_data,
+			'created_at'    , Sub#k_mb_k1api_receipt_sub.created_at
+		}
+	},
+	ok = mongodb_storage:upsert(k_static_storage, ?k1apiReceiptSubColl, Selector, Modifier);
 save(#k_mb_incoming_sms{} = Sms) ->
-	Selector = [{'_id', Sms#k_mb_incoming_sms.id}],
-	Plist = [
-		{customer_id, Sms#k_mb_incoming_sms.customer_id},
-		{user_id, Sms#k_mb_incoming_sms.user_id},
-		{source_addr, k_storage:addr_to_doc(Sms#k_mb_incoming_sms.source_addr)},
-		{dest_addr, k_storage:addr_to_doc(Sms#k_mb_incoming_sms.dest_addr)},
-		{received, Sms#k_mb_incoming_sms.received},
-		{message_body, Sms#k_mb_incoming_sms.message_body},
-		{encoding, Sms#k_mb_incoming_sms.encoding},
-		{delivery_attempt, Sms#k_mb_incoming_sms.delivery_attempt},
-		{created_at, Sms#k_mb_incoming_sms.created_at}
-	],
-	ok = mongodb_storage:upsert(?incomingSmsColl, Selector, Plist);
+	Selector = {
+		'_id' , Sms#k_mb_incoming_sms.id
+	},
+	Modifier = {
+		'$set' , {
+			'customer_id' , Sms#k_mb_incoming_sms.customer_id,
+			'user_id' , Sms#k_mb_incoming_sms.user_id,
+			'source_addr' , k_storage_utils:addr_to_doc(Sms#k_mb_incoming_sms.source_addr),
+			'dest_addr' , k_storage_utils:addr_to_doc(Sms#k_mb_incoming_sms.dest_addr),
+			'received' , Sms#k_mb_incoming_sms.received,
+			'message_body' , Sms#k_mb_incoming_sms.message_body,
+			'encoding' , Sms#k_mb_incoming_sms.encoding,
+			'delivery_attempt' , Sms#k_mb_incoming_sms.delivery_attempt,
+			'created_at' , Sms#k_mb_incoming_sms.created_at
+		}
+	},
+	ok = mongodb_storage:upsert(k_static_storage, ?incomingSmsColl, Selector, Modifier);
 save(#k_mb_k1api_receipt{} = R) ->
-	Selector = [{'_id', R#k_mb_k1api_receipt.id}],
-	Plist = [
-		{customer_id, R#k_mb_k1api_receipt.customer_id},
-		{user_id, R#k_mb_k1api_receipt.user_id},
-		{source_addr, k_storage:addr_to_doc(R#k_mb_k1api_receipt.source_addr)},
-		{dest_addr, k_storage:addr_to_doc(R#k_mb_k1api_receipt.dest_addr)},
-		{input_message_id, R#k_mb_k1api_receipt.input_message_id},
-		{message_state, R#k_mb_k1api_receipt.message_state},
-		{delivery_attempt, R#k_mb_k1api_receipt.delivery_attempt},
-		{created_at, R#k_mb_k1api_receipt.created_at}
-	],
-	ok = mongodb_storage:upsert(?k1apiReceiptsColl, Selector, Plist);
+	Selector = {
+		'_id' , R#k_mb_k1api_receipt.id
+	},
+	Modifier = {
+		'$set' , {
+			'customer_id'      , R#k_mb_k1api_receipt.customer_id,
+			'user_id'          , R#k_mb_k1api_receipt.user_id,
+			'source_addr'      , k_storage_utils:addr_to_doc(R#k_mb_k1api_receipt.source_addr),
+			'dest_addr'        , k_storage_utils:addr_to_doc(R#k_mb_k1api_receipt.dest_addr),
+			'input_message_id' , R#k_mb_k1api_receipt.input_message_id,
+			'message_state'    , R#k_mb_k1api_receipt.message_state,
+			'delivery_attempt' , R#k_mb_k1api_receipt.delivery_attempt,
+			'created_at'       , R#k_mb_k1api_receipt.created_at
+		}
+	},
+	ok = mongodb_storage:upsert(k_static_storage, ?k1apiReceiptsColl, Selector, Modifier);
 save(#k_mb_funnel_receipt{} = R) ->
-	Selector = [{'_id', R#k_mb_funnel_receipt.id}],
-	Plist = [
-		{customer_id, R#k_mb_funnel_receipt.customer_id},
-		{user_id, R#k_mb_funnel_receipt.user_id},
-		{source_addr, k_storage:addr_to_doc(R#k_mb_funnel_receipt.source_addr)},
-		{dest_addr, k_storage:addr_to_doc(R#k_mb_funnel_receipt.dest_addr)},
-		{input_message_id, R#k_mb_funnel_receipt.input_message_id},
-		{submit_date, R#k_mb_funnel_receipt.submit_date},
-		{done_date, R#k_mb_funnel_receipt.done_date},
-		{message_state, R#k_mb_funnel_receipt.message_state},
-		{delivery_attempt, R#k_mb_funnel_receipt.delivery_attempt},
-		{created_at, R#k_mb_funnel_receipt.created_at}
-	],
-	ok = mongodb_storage:upsert(?funnelReceiptsColl, Selector, Plist);
+	Selector = {
+		'_id' , R#k_mb_funnel_receipt.id
+	},
+	Modifier = {
+		'$set' , {
+			'customer_id'      , R#k_mb_funnel_receipt.customer_id,
+			'user_id'          , R#k_mb_funnel_receipt.user_id,
+			'source_addr'      , k_storage_utils:addr_to_doc(R#k_mb_funnel_receipt.source_addr),
+			'dest_addr'        , k_storage_utils:addr_to_doc(R#k_mb_funnel_receipt.dest_addr),
+			'input_message_id' , R#k_mb_funnel_receipt.input_message_id,
+			'submit_date'      , R#k_mb_funnel_receipt.submit_date,
+			'done_date'        , R#k_mb_funnel_receipt.done_date,
+			'message_state'    , R#k_mb_funnel_receipt.message_state,
+			'delivery_attempt' , R#k_mb_funnel_receipt.delivery_attempt,
+			'created_at'       , R#k_mb_funnel_receipt.created_at
+		}
+	},
+	ok = mongodb_storage:upsert(k_static_storage, ?funnelReceiptsColl, Selector, Modifier);
 save(Record) ->
 	ok = mnesia:dirty_write(Record).
 
 save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
-	Selector = [{'_id', Sub#k_mb_k1api_receipt_sub.id}],
-	Plist = [
-		{type, k_mb_k1api_receipt_sub},
-		{customer_id, Sub#k_mb_k1api_receipt_sub.customer_id},
-		{user_id, Sub#k_mb_k1api_receipt_sub.user_id},
-		{queue_name, Sub#k_mb_k1api_receipt_sub.queue_name},
-		{dest_addr, k_storage:addr_to_doc(Sub#k_mb_k1api_receipt_sub.dest_addr)},
-		{notify_url, Sub#k_mb_k1api_receipt_sub.notify_url},
-		{callback_data, Sub#k_mb_k1api_receipt_sub.callback_data},
-		{created_at, Sub#k_mb_k1api_receipt_sub.created_at}
-	],
-	ok = mongodb_storage:upsert(?subscriptionsColl, Selector, Plist);
+	Selector = {
+		'_id' , Sub#k_mb_k1api_receipt_sub.id
+	},
+	Modifier = {
+		'$set' , {
+			'type'          , k_mb_k1api_receipt_sub,
+			'customer_id'   , Sub#k_mb_k1api_receipt_sub.customer_id,
+			'user_id'       , Sub#k_mb_k1api_receipt_sub.user_id,
+			'queue_name'    , Sub#k_mb_k1api_receipt_sub.queue_name,
+			'dest_addr'     , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.dest_addr),
+			'notify_url'    , Sub#k_mb_k1api_receipt_sub.notify_url,
+			'callback_data' , Sub#k_mb_k1api_receipt_sub.callback_data,
+			'created_at'    , Sub#k_mb_k1api_receipt_sub.created_at
+		}
+	},
+	ok = mongodb_storage:upsert(k_static_storage, ?subscriptionsColl, Selector, Modifier);
 save_sub(#k_mb_k1api_incoming_sms_sub{} = Sub) ->
-	Selector = [{'_id', Sub#k_mb_k1api_incoming_sms_sub.id}],
-	Plist = [
-		{type, k_mb_k1api_incoming_sms_sub},
-		{customer_id, Sub#k_mb_k1api_incoming_sms_sub.customer_id},
-		{user_id, Sub#k_mb_k1api_incoming_sms_sub.user_id},
-		{priority, Sub#k_mb_k1api_incoming_sms_sub.priority},
-		{queue_name, Sub#k_mb_k1api_incoming_sms_sub.queue_name},
-		{dest_addr, k_storage:addr_to_doc(Sub#k_mb_k1api_incoming_sms_sub.dest_addr)},
-		{notify_url, Sub#k_mb_k1api_incoming_sms_sub.notify_url},
-		{criteria, Sub#k_mb_k1api_incoming_sms_sub.criteria},
-		{callback_data, Sub#k_mb_k1api_incoming_sms_sub.callback_data},
-		{created_at, Sub#k_mb_k1api_incoming_sms_sub.created_at}
-	],
-	ok = mongodb_storage:upsert(?subscriptionsColl, Selector, Plist);
+	Selector = {
+		'_id' , Sub#k_mb_k1api_incoming_sms_sub.id
+	},
+	Modifier = {
+		'$set' , {
+			'type'          , k_mb_k1api_incoming_sms_sub,
+			'customer_id'   , Sub#k_mb_k1api_incoming_sms_sub.customer_id,
+			'user_id'       , Sub#k_mb_k1api_incoming_sms_sub.user_id,
+			'priority'      , Sub#k_mb_k1api_incoming_sms_sub.priority,
+			'queue_name'    , Sub#k_mb_k1api_incoming_sms_sub.queue_name,
+			'dest_addr'     , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_incoming_sms_sub.dest_addr),
+			'notify_url'    , Sub#k_mb_k1api_incoming_sms_sub.notify_url,
+			'criteria'      , Sub#k_mb_k1api_incoming_sms_sub.criteria,
+			'callback_data' , Sub#k_mb_k1api_incoming_sms_sub.callback_data,
+			'created_at'    , Sub#k_mb_k1api_incoming_sms_sub.created_at
+		}
+	},
+	ok = mongodb_storage:upsert(k_static_storage, ?subscriptionsColl, Selector, Modifier);
 save_sub(#k_mb_funnel_sub{} = Sub) ->
-	Selector = [{'_id', Sub#k_mb_funnel_sub.id}],
-	Plist = [
-		{type, k_mb_funnel_sub},
-		{customer_id, Sub#k_mb_funnel_sub.customer_id},
-		{user_id, Sub#k_mb_funnel_sub.user_id},
-		{priority, Sub#k_mb_funnel_sub.priority},
-		{queue_name, Sub#k_mb_funnel_sub.queue_name},
-		{created_at, Sub#k_mb_funnel_sub.created_at}
-	],
-	ok = mongodb_storage:upsert(?subscriptionsColl, Selector, Plist).
+	Selector = {
+		'_id' , Sub#k_mb_funnel_sub.id
+	},
+	Modifier = {
+		'$set' , {
+			'type'        , k_mb_funnel_sub,
+			'customer_id' , Sub#k_mb_funnel_sub.customer_id,
+			'user_id'     , Sub#k_mb_funnel_sub.user_id,
+			'priority'    , Sub#k_mb_funnel_sub.priority,
+			'queue_name'  , Sub#k_mb_funnel_sub.queue_name,
+			'created_at'  , Sub#k_mb_funnel_sub.created_at
+		}
+	},
+	ok = mongodb_storage:upsert(k_static_storage, ?subscriptionsColl, Selector, Modifier).
 
 -spec delete_subscription(SubscriptionID :: binary()) -> ok.
 delete_subscription(SubscriptionID) ->
-	ok = mongodb_storage:delete(?subscriptionsColl, [{'_id', SubscriptionID}]).
+	ok = mongodb_storage:delete(k_static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}).
 
 -spec delete_item(k_mb_item()) -> ok.
 delete_item(Item = #k_mb_funnel_receipt{}) ->
-	Selector = [
-		{'_id', Item#k_mb_funnel_receipt.id},
-		{customer_id, Item#k_mb_funnel_receipt.customer_id},
-		{user_id, Item#k_mb_funnel_receipt.user_id}
-	],
-	ok = mongodb_storage:delete(?funnelReceiptsColl, Selector),
-	ok = mongodb_storage:delete(?pendingItemsColl, Selector);
+	Selector = {
+		'_id'         , Item#k_mb_funnel_receipt.id,
+		'customer_id' , Item#k_mb_funnel_receipt.customer_id,
+		'user_id'     , Item#k_mb_funnel_receipt.user_id
+	},
+	ok = mongodb_storage:delete(k_static_storage, ?funnelReceiptsColl, Selector),
+	ok = mongodb_storage:delete(k_static_storage, ?pendingItemsColl, Selector);
 delete_item(Item = #k_mb_k1api_receipt{}) ->
-	Selector = [
-		{'_id', Item#k_mb_k1api_receipt.id},
-		{customer_id, Item#k_mb_k1api_receipt.customer_id},
-		{user_id, Item#k_mb_k1api_receipt.user_id}
-	],
-	ok = mongodb_storage:delete(?k1apiReceiptsColl, Selector),
-	ok = mongodb_storage:delete(?pendingItemsColl, Selector);
+	Selector = {
+		'_id'         , Item#k_mb_k1api_receipt.id,
+		'customer_id' , Item#k_mb_k1api_receipt.customer_id,
+		'user_id'     , Item#k_mb_k1api_receipt.user_id
+	},
+	ok = mongodb_storage:delete(k_static_storage, ?k1apiReceiptsColl, Selector),
+	ok = mongodb_storage:delete(k_static_storage, ?pendingItemsColl, Selector);
 delete_item(Item = #k_mb_incoming_sms{}) ->
-	Selector = [
-		{'_id', Item#k_mb_incoming_sms.id},
-		{customer_id, Item#k_mb_incoming_sms.customer_id},
-		{user_id, Item#k_mb_incoming_sms.user_id}
-	],
-	ok = mongodb_storage:delete(?incomingSmsColl, Selector),
-	ok = mongodb_storage:delete(?pendingItemsColl, Selector).
+	Selector = {
+		'_id'         , Item#k_mb_incoming_sms.id,
+		'customer_id' , Item#k_mb_incoming_sms.customer_id,
+		'user_id'     , Item#k_mb_incoming_sms.user_id
+	},
+	ok = mongodb_storage:delete(k_static_storage, ?incomingSmsColl, Selector),
+	ok = mongodb_storage:delete(k_static_storage, ?pendingItemsColl, Selector).
 
 -spec get_items() -> {ok, [binary()]}.
 get_items() ->
-	{ok, FunnelReceiptDocs} = mongodb_storage:find(?funnelReceiptsColl, [], [{'_id', 1}]),
+	{ok, FunnelReceiptDocs} = mongodb_storage:find(k_static_storage, ?funnelReceiptsColl, {}, {'_id' , 1}),
 	FunnelReceiptIds = [RID || {RID, _} <- FunnelReceiptDocs],
-	{ok, K1apiReceiptDocs} = mongodb_storage:find(?k1apiReceiptsColl, [], [{'_id', 1}]),
+	{ok, K1apiReceiptDocs} = mongodb_storage:find(k_static_storage, ?k1apiReceiptsColl, {}, {'_id' , 1}),
 	K1APIReceiptIds = [RID || {RID, _} <- K1apiReceiptDocs],
-	{ok, IncomingSmsDocs} = mongodb_storage:find(?incomingSmsColl, [], [{'_id', 1}]),
+	{ok, IncomingSmsDocs} = mongodb_storage:find(k_static_storage, ?incomingSmsColl, {}, {'_id' , 1}),
 	IncomingSmsIds = [ISID || {ISID, _} <- IncomingSmsDocs],
 	{ok, [	{k_mb_funnel_receipt, FunnelReceiptIds},
 			{k_mb_k1api_receipt, K1APIReceiptIds},
@@ -177,52 +205,50 @@ get_items() ->
 
 -spec get_item(ItemType :: atom(), ItemID :: binary()) -> Item :: tuple().
 get_item(k_mb_k1api_receipt, ID) ->
-	{ok, [{_, Plist}]} = mongodb_storage:find(?k1apiReceiptsColl, [{'_id', ID}]),
+	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?k1apiReceiptsColl, {'_id' , ID}),
 	{ok, #k_mb_k1api_receipt{
 		id = ID,
-		customer_id = proplists:get_value(customer_id, Plist),
-		user_id = proplists:get_value(user_id, Plist),
-		source_addr = k_storage:doc_to_addr(proplists:get_value(source_addr, Plist)),
-		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
-		input_message_id = proplists:get_value(input_message_id, Plist),
-		message_state = proplists:get_value(message_state, Plist),
-		delivery_attempt = proplists:get_value(delivery_attempt, Plist),
-		created_at = proplists:get_value(created_at, Plist)
+		customer_id = bson:at(customer_id, Doc),
+		user_id = bson:at(user_id, Doc),
+		source_addr = k_storage_utils:doc_to_addr(bson:at(source_addr, Doc)),
+		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
+		input_message_id = bson:at(input_message_id, Doc),
+		message_state = bson:at(message_state, Doc),
+		delivery_attempt = bson:at(delivery_attempt, Doc),
+		created_at = bson:at(created_at, Doc)
 	}};
 get_item(k_mb_funnel_receipt, ID) ->
-	{ok, [{_, Plist}]} = mongodb_storage:find(?funnelReceiptsColl, [{'_id', ID}]),
+	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?funnelReceiptsColl, {'_id' , ID}),
 	{ok, #k_mb_funnel_receipt{
 		id = ID,
-		customer_id = proplists:get_value(customer_id, Plist),
-		user_id = proplists:get_value(user_id, Plist),
-		source_addr = k_storage:doc_to_addr(proplists:get_value(source_addr, Plist)),
-		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
-		input_message_id = proplists:get_value(input_message_id, Plist),
-		submit_date = proplists:get_value(submit_date, Plist),
-		done_date = proplists:get_value(done_date, Plist),
-		message_state = proplists:get_value(message_state, Plist),
-		delivery_attempt = proplists:get_value(delivery_attempt, Plist),
-		created_at = proplists:get_value(created_at, Plist)
+		customer_id = bson:at(customer_id, Doc),
+		user_id = bson:at(user_id, Doc),
+		source_addr = k_storage_utils:doc_to_addr(bson:at(source_addr, Doc)),
+		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
+		input_message_id = bson:at(input_message_id, Doc),
+		submit_date = bson:at(submit_date, Doc),
+		done_date = bson:at(done_date, Doc),
+		message_state = bson:at(message_state, Doc),
+		delivery_attempt = bson:at(delivery_attempt, Doc),
+		created_at = bson:at(created_at, Doc)
 	}};
 get_item(k_mb_incoming_sms, ID) ->
-	Selector = [{'_id', ID}],
-	{ok, [{_, Plist}]} = mongodb_storage:find(?incomingSmsColl, Selector),
+	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?incomingSmsColl, {'_id' , ID}),
 	{ok, #k_mb_incoming_sms{
 		id = ID,
-		customer_id = proplists:get_value(customer_id, Plist),
-		user_id = proplists:get_value(user_id, Plist),
-		source_addr = k_storage:doc_to_addr(proplists:get_value(source_addr, Plist)),
-		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
-		received = proplists:get_value(received, Plist),
-		message_body = proplists:get_value(message_body, Plist),
-		encoding = proplists:get_value(encoding, Plist),
-		delivery_attempt = proplists:get_value(delivery_attempt, Plist),
-		created_at = proplists:get_value(created_at, Plist)
+		customer_id = bson:at(customer_id, Doc),
+		user_id = bson:at(user_id, Doc),
+		source_addr = k_storage_utils:doc_to_addr(bson:at(source_addr, Doc)),
+		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
+		received = bson:at(received, Doc),
+		message_body = bson:at(message_body, Doc),
+		encoding = bson:at(encoding, Doc),
+		delivery_attempt = bson:at(delivery_attempt, Doc),
+		created_at = bson:at(created_at, Doc)
 	}};
 get_item(ItemType, ItemID) ->
 	[Item] = mnesia:dirty_read(ItemType, ItemID),
 	{ok, Item}.
-
 
 -spec get_subscription_for_k1api_receipt(Receipt :: #k_mb_k1api_receipt{}) ->
 	undefined |
@@ -233,29 +259,29 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 	ClientType = k1api,
 	InputID = {CustomerID, ClientType, MessageID},
 	?log_debug("InputID: ~p", [InputID]),
-	Selector = [
-		{customer_id, CustomerID},
-		{client_type, ClientType},
-		{input_id, MessageID}
-	],
-	case mongodb_storage:find(?inputIdToSubIdColl, Selector) of
+	Selector = {
+		'customer_id' , CustomerID,
+		'client_type' , ClientType,
+		'input_id'    , MessageID
+	},
+	case mongodb_storage:find(k_static_storage, ?inputIdToSubIdColl, Selector) of
 		{ok, []} ->
 			?log_warn("k1api InputID undefined", []),
 			undefined;
-		{ok, [{_, Plist}]} ->
-			?log_debug("Plist: ~p", [Plist]),
-			SubID = proplists:get_value(subscription_id, Plist),
+		{ok, [{_, Doc}]} ->
+			?log_debug("Doc: ~p", [Doc]),
+			SubID = bson:at(subscription_id, Doc),
 			?log_debug("SubID: ~p", [SubID]),
-			{ok, [{_, SubPlist}]} = mongodb_storage:find(?k1apiReceiptSubColl, [{'_id', SubID}]),
+			{ok, [{_, SubDoc}]} = mongodb_storage:find(k_static_storage, ?k1apiReceiptSubColl, {'_id' , SubID}),
 			Sub = #k_mb_k1api_receipt_sub{
 				id = SubID,
-				customer_id = proplists:get_value(customer_id, SubPlist),
-				user_id = proplists:get_value(user_id, SubPlist),
-				queue_name = proplists:get_value(queue_name, SubPlist),
-				dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, SubPlist)),
-				notify_url = proplists:get_value(notify_url, SubPlist),
-				callback_data = proplists:get_value(callback_data, SubPlist),
-				created_at = proplists:get_value(created_at, SubPlist)
+				customer_id = bson:at(customer_id, SubDoc),
+				user_id = bson:at(user_id, SubDoc),
+				queue_name = bson:at(queue_name, SubDoc),
+				dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, SubDoc)),
+				notify_url = bson:at(notify_url, SubDoc),
+				callback_data = bson:at(callback_data, SubDoc),
+				created_at = bson:at(created_at, SubDoc)
 			},
 			?log_debug("FOUND suitable subscription: ~p", [Sub]),
 			{ok, Sub}
@@ -264,108 +290,108 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 -spec get_subscription(SubscriptionID :: binary()) ->
 	{ok, k_mb_subscription()}.
 get_subscription(SubscriptionID) ->
-	{ok, [{_,Plist}]} = mongodb_storage:find(?subscriptionsColl, [{'_id', SubscriptionID}]),
-	get_subscription(proplists:get_value(type, Plist), SubscriptionID, Plist).
+	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}),
+	get_subscription(bson:at(type, Doc), SubscriptionID, Doc).
 
-get_subscription(k_mb_k1api_receipt_sub, ID, Plist) ->
+get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
 	{ok, #k_mb_k1api_receipt_sub{
 		id = ID,
-		customer_id = proplists:get_value(customer_id, Plist),
-		user_id = proplists:get_value(user_id, Plist),
-		queue_name = proplists:get_value(queue_name, Plist),
-		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
-		notify_url = proplists:get_value(notify_url, Plist),
-		callback_data = proplists:get_value(callback_data, Plist),
-		created_at = proplists:get_value(created_at, Plist)
+		customer_id = bson:at(customer_id, Doc),
+		user_id = bson:at(user_id, Doc),
+		queue_name = bson:at(queue_name, Doc),
+		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
+		notify_url = bson:at(notify_url, Doc),
+		callback_data = bson:at(callback_data, Doc),
+		created_at = bson:at(created_at, Doc)
 	}};
-get_subscription(k_mb_k1api_incoming_sms_sub, ID, Plist) ->
+get_subscription(k_mb_k1api_incoming_sms_sub, ID, Doc) ->
 	{ok, #k_mb_k1api_incoming_sms_sub{
 		id = ID,
-		customer_id = proplists:get_value(customer_id, Plist),
-		user_id = proplists:get_value(user_id, Plist),
-		priority = proplists:get_value(priority, Plist),
-		queue_name = proplists:get_value(queue_name, Plist),
-		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
-		notify_url = proplists:get_value(notify_url, Plist),
-		criteria = proplists:get_value(criteria, Plist),
-		callback_data = proplists:get_value(callback_data, Plist),
-		created_at = proplists:get_value(created_at, Plist)
+		customer_id = bson:at(customer_id, Doc),
+		user_id = bson:at(user_id, Doc),
+		priority = bson:at(priority, Doc),
+		queue_name = bson:at(queue_name, Doc),
+		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
+		notify_url = bson:at(notify_url, Doc),
+		criteria = bson:at(criteria, Doc),
+		callback_data = bson:at(callback_data, Doc),
+		created_at = bson:at(created_at, Doc)
 	}};
-get_subscription(k_mb_funnel_sub, ID, Plist) ->
+get_subscription(k_mb_funnel_sub, ID, Doc) ->
 	{ok, #k_mb_funnel_sub{
 		id = ID,
-		customer_id = proplists:get_value(customer_id, Plist),
-		user_id = proplists:get_value(user_id, Plist),
-		priority = proplists:get_value(priority, Plist),
-		queue_name = proplists:get_value(queue_name, Plist),
-		created_at = proplists:get_value(created_at, Plist)
+		customer_id = bson:at(customer_id, Doc),
+		user_id = bson:at(user_id, Doc),
+		priority = bson:at(priority, Doc),
+		queue_name = bson:at(queue_name, Doc),
+		created_at = bson:at(created_at, Doc)
 	}}.
 
 -spec get_subscription_ids() -> {ok, [binary()]}.
 get_subscription_ids() ->
-	{ok, Docs} = mongodb_storage:find(?subscriptionsColl, [], [{'_id', 1}]),
+	{ok, Docs} = mongodb_storage:find(k_static_storage, ?subscriptionsColl, {}, {'_id', 1}),
 	IDs = [ID || {ID, _} <- Docs],
 	{ok, IDs}.
 
 -spec set_pending(atom(), binary(), binary(), bitstring()) -> ok.
 set_pending(ItemType, ItemID, CustomerID, UserID) ->
-	Selector = [{'_id', ItemID}],
-	Plist = [
-		{type, ItemType},
-		{customer_id, CustomerID},
-		{user_id, UserID}
-	],
-	ok = mongodb_storage:upsert(?pendingItemsColl, Selector, Plist).
+	Selector = {'_id' , ItemID},
+	Modifier = {
+		'$set' , {
+			'type'        , ItemType,
+			'customer_id' , CustomerID,
+			'user_id'     , UserID
+		}
+	},
+	ok = mongodb_storage:upsert(k_static_storage, ?pendingItemsColl, Selector, Modifier).
 
 -spec get_pending(CustomerID :: binary(), UserID :: bitstring()) ->
 	{ok, []} | {ok, [{ItemType :: atom(), ItemID :: binary()}]}.
 get_pending(CustomerID, UserID) ->
-	Selector = [
-		{customer_id, CustomerID},
-		{user_id, UserID}
-	],
-	{ok, Docs} = mongodb_storage:find(?pendingItemsColl, Selector),
-	Items = [{proplists:get_value(type, Plist), ID} || {ID, Plist} <- Docs],
+	Selector = {
+		'customer_id' , CustomerID,
+		'user_id'     , UserID
+	},
+	{ok, Docs} = mongodb_storage:find(k_static_storage, ?pendingItemsColl, Selector),
+	Items = [{bson:at(type, Doc), ID} || {ID, Doc} <- Docs],
 	{ok, Items}.
-
 
 -spec get_incoming_sms(binary(), bitstring(), addr(), integer() | undefined) ->
 	{ok, [#k_mb_incoming_sms{}], Total :: integer()}.
 get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
-	Selector = [
-		{customer_id, CustomerID},
-		{user_id, UserID},
-		{dest_addr, k_storage:addr_to_doc(DestinationAddr)}
-	],
-	{ok, ISDocs} = mongodb_storage:find(?incomingSmsColl, Selector),
+	Selector = {
+		'customer_id' , CustomerID,
+		'user_id'     , UserID,
+		'dest_addr'   , k_storage_utils:addr_to_doc(DestinationAddr)
+	},
+	{ok, ISDocs} = mongodb_storage:find(k_static_storage, ?incomingSmsColl, Selector),
 	AllItems =
 	[#k_mb_incoming_sms{
 		id = ID,
-		customer_id = proplists:get_value(customer_id, Plist),
-		user_id = proplists:get_value(user_id, Plist),
-		source_addr = k_storage:doc_to_addr(proplists:get_value(source_addr, Plist)),
-		dest_addr = k_storage:doc_to_addr(proplists:get_value(dest_addr, Plist)),
-		received = proplists:get_value(received, Plist),
-		message_body = proplists:get_value(message_body, Plist),
-		encoding = proplists:get_value(encoding, Plist),
-		delivery_attempt = proplists:get_value(delivery_attempt, Plist),
-		created_at = proplists:get_value(created_at, Plist)
-	} || {ID, Plist} <- ISDocs],
+		customer_id = bson:at(customer_id, Doc),
+		user_id = bson:at(user_id, Doc),
+		source_addr = k_storage_utils:doc_to_addr(bson:at(source_addr, Doc)),
+		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
+		received = bson:at(received, Doc),
+		message_body = bson:at(message_body, Doc),
+		encoding = bson:at(encoding, Doc),
+		delivery_attempt = bson:at(delivery_attempt, Doc),
+		created_at = bson:at(created_at, Doc)
+	} || {ID, Doc} <- ISDocs],
 	Total = length(AllItems),
 	Items = first(AllItems, Limit),
 	{ok, Items, Total}.
 
-
 -spec link_input_id_to_sub_id(	InputID :: input_sms_id(),
 								SubscriptionID :: binary()) -> ok.
 link_input_id_to_sub_id({CID, k1api, ID} = _InputID, SubscriptionID) -> %% <- add user_name field
-	Plist = [
-		{customer_id, CID},
-		{client_type, k1api},
-		{input_id, ID},
-		{subscription_id, SubscriptionID}
-	],
-	{ok, _} = mongodb_storage:insert(?inputIdToSubIdColl, Plist),
+	Modifier = {
+		'customer_id'     , CID,
+		'client_type'     , k1api,
+		'input_id'        , ID,
+		'subscription_id' , SubscriptionID
+	},
+	{ok, _} = mongodb_storage:insert(k_static_storage, ?inputIdToSubIdColl, Modifier),
 	ok.
 
 %% ===================================================================
