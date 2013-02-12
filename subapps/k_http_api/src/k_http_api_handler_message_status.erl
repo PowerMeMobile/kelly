@@ -40,14 +40,9 @@ read(Params) ->
 	ClientType = ?gv(client_type, Params),
 	CustomerId = ?gv(customer_id, Params),
 	InMsgId = ?gv(message_id, Params),
-	case k_storage:get_mt_msg_info(CustomerId, ClientType, InMsgId) of
-		{ok, MsgInfo} ->
-			{ok, {message, [
-				{customer_id, CustomerId},
-				{message_id, InMsgId},
-				{client_type, ClientType},
-				{status, ?MSG_STATUS(MsgInfo)}
-			]}};
+	case k_statistic:msg_status_report(CustomerId, ClientType, InMsgId) of
+		{ok, Report} ->
+			{ok, Report};
 		{error, no_entry} ->
 			{exception, 'svc0003'}
 	end.
