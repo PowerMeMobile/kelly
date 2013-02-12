@@ -130,7 +130,7 @@ build_mt_report_response({{ID}, Doc}) ->
 	UnixEpoch  = k_datetime:timestamp_to_unixepoch(Timestamp),
 	Datetime = k_datetime:unixepoch_to_datetime(UnixEpoch),
 	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
-	[{message_id, base64:encode(ID)},
+	[{message_id, lists:flatten([io_lib:format("~2.16.0b", [X]) || X <- binary_to_list(ID)])},
 	{request_time, list_to_binary(ISO8601)},
 	{customer_id, bson:at(ci, Doc)},
 	{client_type, bson:at(ct, Doc)},
