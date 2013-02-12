@@ -57,8 +57,8 @@ get_report(From, To) ->
 		  'reduce' , ReduceF,
 		  'out' , { 'inline' , 1 }
 		},
-	{ok, MtBson} = k_dynamic_storage:command(MtCommand),
-	{ok, MoBson} = k_dynamic_storage:command(MoCommand),
+	{ok, MtBson} = mongodb_storage:command(k_curr_dynamic_storage, MtCommand),
+	{ok, MoBson} = mongodb_storage:command(k_curr_dynamic_storage, MoCommand),
 	ResultsMtBson = bson:at(results, MtBson),
 	ResultsMoBson = bson:at(results, MoBson),
 	ResultsBson = lists:sort(ResultsMtBson ++ ResultsMoBson),
@@ -69,24 +69,35 @@ get_report(From, To) ->
 
 -spec get_report(From::erlang:timestamp(), To::erlang:timestamp(), Status::status()) -> [any()].
 get_report(From, To, received) ->
-	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
+	Selector = {
+		'rqt' , {
+			'$gte' , From,
+			'$lt'  , To
+		}
+	},
 	get_raw_report(mo_messages, Selector);
 
 get_report(From, To, submitted) ->
-	Selector = [
-		{ 'rqt' , { '$gte' , From, '$lt' , To } },
-		{ 'rps' , { '$exists' , false } },
-		{ 'ds' , { '$exists' , false } }
-	],
+	Selector = {
+		'rqt' , {
+			'$gte' , From,
+			'$lt'  , To
+		},
+		'rps' , { '$exists' , false },
+		'ds'  , { '$exists' , false }
+	},
 	get_raw_report(mt_messages, Selector);
 
 get_report(From, To, Status) when
 	Status == success; Status == failure
 ->
-	Selector = [
-		{ 'rqt' , { '$gte' , From, '$lt' , To } },
-		{ 'rps' , Status }
-	],
+	Selector = {
+		'rqt' , {
+			'$gte' , From,
+			'$lt'  , To
+		},
+		'rps' , Status
+	},
 	get_raw_report(mt_messages, Selector);
 
 get_report(From, To, Status) when
@@ -94,10 +105,13 @@ get_report(From, To, Status) when
 	Status == deleted; Status == undeliverable; Status == accepted;
 	Status == unknown; Status == rejected; Status == unrecognized
 ->
-	Selector = [
-		{ 'rqt' , { '$gte' , From, '$lt' , To } },
-		{ 'ds' , Status }
-	],
+	Selector = {
+		'rqt' , {
+			'$gte' , From,
+			'$lt' , To
+		},
+		'ds' , Status
+	},
 	get_raw_report(mt_messages, Selector).
 
 %% ===================================================================
@@ -105,25 +119,25 @@ get_report(From, To, Status) when
 %% ===================================================================
 
 get_raw_report(Collection, Selector) ->
-	case k_dynamic_storage:find(Collection, Selector) of
-		{ok, List} ->
+	case mongodb_storage:find(k_curr_dynamic_storage, Collection, Selector) of
+		{ok, Docs} ->
 			{ok, {messages,
-				[prettify_plist(Plist) || {_Id, Plist} <- List]
+				[doc_to_message(Doc) || {_Id, Doc} <- Docs]
 			}};
 		Error ->
 			Error
 	end.
 
-prettify_plist(Plist) ->
-	InMsgId = proplists:get_value(imi, Plist),
-	GatewayId = proplists:get_value(gi, Plist),
-	CustomerId = proplists:get_value(ci, Plist),
-	Type = proplists:get_value(t, Plist),
-	Encoding = proplists:get_value(e, Plist),
-	Body = proplists:get_value(b, Plist),
-	SrcAddrDoc = proplists:get_value(sa, Plist),
-	DstAddrDoc = proplists:get_value(da, Plist),
-	ReqTime = proplists:get_value(rqt, Plist),
+doc_to_message(Doc) ->
+	InMsgId = bson:at(imi, Doc),
+	GatewayId = bson:at(gi, Doc),
+	CustomerId = bson:at(ci, Doc),
+	Type = bson:at(t, Doc),
+	Encoding = bson:at(e, Doc),
+	Body = bson:at(b, Doc),
+	SrcAddrDoc = bson:at(sa, Doc),
+	DstAddrDoc = bson:at(da, Doc),
+	ReqTime = bson:at(rqt, Doc),
 
 	Datetime = list_to_binary(
 		k_datetime:datetime_to_iso8601(

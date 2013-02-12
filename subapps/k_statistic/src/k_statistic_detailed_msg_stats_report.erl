@@ -7,17 +7,15 @@
 -include_lib("k_common/include/gateway.hrl").
 
 -type unixepoch() :: pos_integer().
+-type report() :: term().
 -type reason() :: term().
 
 %% ===================================================================
 %% API
 %% ===================================================================
 
--spec get_report(
-	FromUnix::unixepoch(),
-	ToUnix::unixepoch(),
-	SliceLength::pos_integer()
-) -> {ok, Report::term()} | {error, reason()}.
+-spec get_report(unixepoch(), unixepoch(), pos_integer()) ->
+	{ok, report()} | {error, reason()}.
 get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
 	SliceRanges = k_statistic_utils:get_timestamp_ranges(FromUnix, ToUnix, SliceLength),
 
@@ -45,18 +43,26 @@ get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
 	To::erlang:timestamp()
 ) -> {ok, [{gateway_id(), unixepoch()}]} | {error, reason()}.
 get_records(Collection, From, To) ->
-	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
-	Projector = [ { 'gi' , 1 } , { 'rqt' , 1 } ],
-	case k_dynamic_storage:find(Collection, Selector, Projector) of
-		{ok, List} ->
-			{ok, [strip_plist(Plist) || {_Id, Plist} <- List]};
+	Selector = {
+		'rqt' , {
+			'$gte' , From,
+			'$lt'  , To
+		}
+	},
+	Projector = {
+		'gi'  , 1,
+		'rqt' , 1
+	},
+	case mongodb_storage:find(k_curr_dynamic_storage, Collection, Selector, Projector) of
+		{ok, Docs} ->
+			{ok, [strip_doc(Doc) || {_Id, Doc} <- Docs]};
 		Error ->
 			Error
 	end.
 
-strip_plist(Plist) ->
-	GatewayId = proplists:get_value(gi, Plist),
-	ReqTime = proplists:get_value(rqt, Plist),
+strip_doc(Doc) ->
+	GatewayId = bson:at(gi, Doc),
+	ReqTime = bson:at(rqt, Doc),
 	ReqTimeUnix = k_datetime:timestamp_to_unixepoch(ReqTime),
 	{GatewayId, ReqTimeUnix}.
 

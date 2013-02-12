@@ -37,19 +37,28 @@ get_report(ReportType, From, To) when From < To ->
 %% ===================================================================
 
 get_records(Collection, From, To) ->
-	Selector = [ { 'rqt' , { '$gte' , From, '$lt' , To } } ],
-	Projector = [ { 'imi' , 1 } , { 'ci' , 1 } , { 'da.a' , 1 } ],
-	case k_dynamic_storage:find(Collection, Selector, Projector) of
-		{ok, List} ->
-			{ok, [strip_plist(Plist) || {_Id, Plist} <- List]};
+	Selector = {
+		'rqt' , {
+			'$gte' , From,
+			'$lt'  , To
+		}
+	},
+	Projector = {
+		'imi'  , 1,
+		'ci'   , 1,
+		'da.a' , 1
+	},
+	case mongodb_storage:find(k_curr_dynamic_storage, Collection, Selector, Projector) of
+		{ok, Docs} ->
+			{ok, [strip_doc(Doc) || {_Id, Doc} <- Docs]};
 		Error ->
 			Error
 	end.
 
-strip_plist(Plist) ->
-	InMsgId = proplists:get_value(imi, Plist),
-	CustomerId = proplists:get_value(ci, Plist),
-	{a, DstAddr} = proplists:get_value(da, Plist),
+strip_doc(Doc) ->
+	InMsgId = bson:at(imi, Doc),
+	CustomerId = bson:at(ci, Doc),
+	{a, DstAddr} = bson:at(da, Doc),
 	{InMsgId, CustomerId, DstAddr}.
 
 build_raw_records(Records, NetworkIdPrefixMap) ->
