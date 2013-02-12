@@ -16,8 +16,8 @@
 %% ===================================================================
 
 build_report(Params) ->
-	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(?gv(from, Params))),
-	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(?gv(to, Params))),
+	From = k_datetime:datetime_to_timestamp(?gv(from, Params)),
+	To = k_datetime:datetime_to_timestamp(?gv(to, Params)),
 	CustomerSelector =
 	case ?gv(customer_id, Params) of
 		undefined -> { '$exists' , 1 };
@@ -46,8 +46,8 @@ build_report(Params) ->
 	[build_mt_report_response(Doc) || Doc <- Docs].
 
 build_aggr_report(Params) ->
-	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(?gv(from, Params))),
-	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(?gv(to, Params))),
+	From = k_datetime:datetime_to_timestamp(?gv(from, Params)),
+	To = k_datetime:datetime_to_timestamp(?gv(to, Params)),
 	CustomerSelector =
 	case ?gv(customer_id, Params) of
 		undefined -> { '$exists' , 1 };
