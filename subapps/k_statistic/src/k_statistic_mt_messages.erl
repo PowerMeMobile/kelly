@@ -42,7 +42,7 @@ build_report(Params) ->
 		{'$gt', From}])},
 	{'ci', CustomerSelector},
 	{'da.a', RecipientSelector}] ++ StatusSelector,
-	{ok, Docs} = mongodb_storage:find(mt_messages, Selector),
+	{ok, Docs} = mongodb_storage:find(k_curr_dynamic_storage, mt_messages, bson:document(Selector)),
 	[build_mt_report_response(Doc) || Doc <- Docs].
 
 build_aggr_report(Params) ->
@@ -64,7 +64,7 @@ build_aggr_report(Params) ->
 			group(GroupBy),
 			project(GroupBy)
 	]},
-	{ok,{result, Docs,ok,1.0}} = mongodb_storage:command(Command),
+	{ok,{result, Docs,ok,1.0}} = mongodb_storage:command(k_curr_dynamic_storage, Command),
 	[bson:fields(Doc) || Doc <- Docs].
 
 %% ===================================================================
@@ -123,31 +123,31 @@ project(monthly) ->
 		'number' , <<"$sum">> } }.
 
 
-build_mt_report_response({{ID}, Plist}) ->
-	DstAddr = k_storage_utils:doc_to_addr(proplists:get_value(da, Plist)),
-	SrcAddr = k_storage_utils:doc_to_addr(proplists:get_value(sa, Plist)),
-	Timestamp = proplists:get_value(rqt, Plist),
+build_mt_report_response({{ID}, Doc}) ->
+	DstAddr = k_storage_utils:doc_to_addr(bson:at(da, Doc)),
+	SrcAddr = k_storage_utils:doc_to_addr(bson:at(sa, Doc)),
+	Timestamp = bson:at(rqt, Doc),
 	UnixEpoch  = k_datetime:timestamp_to_unixepoch(Timestamp),
 	Datetime = k_datetime:unixepoch_to_datetime(UnixEpoch),
 	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
 	[{message_id, base64:encode(ID)},
 	{request_time, list_to_binary(ISO8601)},
-	{customer_id, proplists:get_value(ci, Plist)},
-	{client_type, proplists:get_value(ct, Plist)},
-	{im_msg_id, proplists:get_value(imi, Plist)},
-	{gateway_id, proplists:get_value(gi, Plist)},
-	{type, proplists:get_value(t, Plist)},
-	{encoding, proplists:get_value(e, Plist)},
-	{body, proplists:get_value(b, Plist)},
+	{customer_id, bson:at(ci, Doc)},
+	{client_type, bson:at(ct, Doc)},
+	{im_msg_id, bson:at(imi, Doc)},
+	{gateway_id, bson:at(gi, Doc)},
+	{type, bson:at(t, Doc)},
+	{encoding, bson:at(e, Doc)},
+	{body, bson:at(b, Doc)},
 	{src_addr, SrcAddr#addr.addr},
 	{dst_addr, DstAddr#addr.addr},
-	{reg_dlr, proplists:get_value(rd, Plist)},
-	{out_msg_id, proplists:get_value(omi, Plist)},
-	{status, get_status(Plist)}].
+	{reg_dlr, bson:at(rd, Doc)},
+	{out_msg_id, bson:at(omi, Doc)},
+	{status, get_status(Doc)}].
 
-get_status(Plist) ->
-	DeliveryStatus = proplists:get_value(ds, Plist),
-	ResponseStatus = proplists:get_value(rps, Plist),
+get_status(Doc) ->
+	DeliveryStatus = bson:at(ds, Doc),
+	ResponseStatus = bson:at(rps, Doc),
 	get_status(DeliveryStatus, ResponseStatus).
 
 %% see alley_dto hrl for available message statuses
