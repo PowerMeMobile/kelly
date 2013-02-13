@@ -6,6 +6,7 @@
 -export([
 	start_link/2,
 	start_link/3,
+	requeue_message/1,
 	subscribe/1
 ]).
 
@@ -31,7 +32,8 @@
 		amqp_xchg,
 		qname,
 		qtag,
-		dict,
+		ref_dict,
+		pid_dict,
 		module,
 		mod_state
 }).
@@ -68,6 +70,10 @@ start_link(Module, Args) ->
 	subscribe(Pid),
 	{ok, Pid}.
 
+-spec requeue_message(pid()) -> ok.
+requeue_message(Pid) ->
+	ok = gen_server:call(Pid, requeue_message).
+
 -spec subscribe(pid()) -> ok.
 subscribe(Pid) ->
 	gen_server:cast(Pid, do_subscribe).
@@ -85,6 +91,19 @@ init({ConsumerModule, ExtraParams}) ->
 		ignore ->
 			ignore
 	end.
+
+handle_call(requeue_message, {WPid, _}, State = #state{
+	ref_dict = RefDict,
+	pid_dict = PidDict,
+	amqp_chan = Channel
+}) ->
+	MonitorRef = dict:fetch(WPid, PidDict),
+	NewPidDict = dict:erase(WPid, PidDict),
+	{Tag, WPid} = dict:fetch(MonitorRef, RefDict),
+	rmql:basic_reject(Channel, Tag, true),
+	NewRefDict = dict:erase(MonitorRef, RefDict),
+	true = erlang:demonitor(MonitorRef, [flush]),
+	{reply, ok, State#state{ref_dict = NewRefDict, pid_dict = NewPidDict}};
 
 handle_call(Msg, From, State = #state{
 	mod_state = MState,
@@ -132,7 +151,8 @@ handle_cast(do_subscribe, State = #state{
 						amqp_xchg = BXchg,
 						qname = QName,
 						qtag = QTag,
-						dict = Dict,
+						ref_dict = Dict,
+						pid_dict = Dict,
 						mod_state = NewMState}};
 		{error,{{shutdown,{server_initiated_close,404, _Description}},_}} ->
 			?log_warn("Queue [~p] not found. Retry after 5 sec.", [QName]),
@@ -180,7 +200,8 @@ handle_info({#'basic.deliver'{delivery_tag = Tag},
 			}, payload = Content}},
 			State = #state{
 				amqp_chan = Channel,
-				dict = Dict,
+				ref_dict = RefDict,
+				pid_dict = PidDict,
 				mod_state = ModState,
 				module = Mod}) ->
 	{ProcPid, NewState} =
@@ -190,33 +211,38 @@ handle_info({#'basic.deliver'{delivery_tag = Tag},
 		{noreply, NewMState} ->
 			{undefined, NewMState}
 	end,
-	{ok, NewDict} = register(Dict, ProcPid, Tag),
+	{ok, NewRefDict, NewPidDict} = register(RefDict, PidDict, ProcPid, Tag),
 
 	{noreply, State#state{
-		dict = NewDict,
+		ref_dict = NewRefDict,
+		pid_dict = NewPidDict,
 		mod_state = 	NewState
 		}};
 
 handle_info({'DOWN', MonitorRef, _Type, _Object, normal}, State = #state{
-	dict = Dict,
+	ref_dict = RefDict,
+	pid_dict = PidDict,
 	module = _Mod,
 	amqp_chan = Channel
 }) ->
-	DTag = dict:fetch(MonitorRef, Dict),
-	NewDict = dict:erase(MonitorRef, Dict),
+	{DTag, WPid} = dict:fetch(MonitorRef, RefDict),
+	NewRefDict = dict:erase(MonitorRef, RefDict),
 	ok = rmql:basic_ack(Channel, DTag),
-	{noreply, State#state{dict = NewDict}};
+	NewPidDict = dict:erase(WPid, PidDict),
+	{noreply, State#state{ref_dict = NewRefDict, pid_dict = NewPidDict}};
 
 handle_info({'DOWN', MonitorRef, _Type, _Object, Info}, State = #state{
 	module = Mod,
-	dict = Dict,
+	ref_dict = RefDict,
+	pid_dict = PidDict,
 	amqp_chan = Channel
 }) ->
-	Tag = dict:fetch(MonitorRef, Dict),
-	NewDict = dict:erase(MonitorRef, Dict),
+	{Tag, WPid} = dict:fetch(MonitorRef, RefDict),
+	NewRefDict = dict:erase(MonitorRef, RefDict),
 	rmql:basic_reject(Channel, Tag, true),
 	?log_debug("worker[~p] -> Rejected: ~p", [Mod, Info]),
-	{noreply, State#state{dict = NewDict}};
+	NewPidDict = dict:erase(WPid, PidDict),
+	{noreply, State#state{ref_dict = NewRefDict, pid_dict = NewPidDict}};
 
 handle_info(Info, State = #state{
 	mod_state = MState,
@@ -255,7 +281,7 @@ code_change(OldVsn, State = #state{
 %% ===================================================================
 
 declare_queue(_Channel, QName, false) ->
-	?log_debug("Abort to declare queue [~p]: false flag", [QName]),
+	?log_notice("Abort to declare queue [~p]: false flag", [QName]),
 	ok;
 declare_queue(Channel, QName, DeclareQueue) when DeclareQueue == undefined orelse
 												 DeclareQueue == true ->
@@ -278,10 +304,8 @@ queue_bind(Channel, QName, Xchg) ->
 	ok = rmql:queue_bind(Channel, QName, Xchg),
 	?log_info("queue[~p] binding OK", [QName]).
 
-register(Dict, undefined, _Tag) -> 	%% must save Tag (may be reject mes
-									%% here?)
-	{ok, Dict};
-register(Dict, Pid, Tag) ->
+register(RefDict, PidDict, Pid, Tag) ->
 	MonRef = erlang:monitor(process, Pid),
-	NewDict = dict:store(MonRef, Tag, Dict),
-	{ok, NewDict}.
+	NewRefDict = dict:store(MonRef, {Tag, Pid}, RefDict),
+	NewPidDict = dict:store(Pid, MonRef, PidDict),
+	{ok, NewRefDict, NewPidDict}.

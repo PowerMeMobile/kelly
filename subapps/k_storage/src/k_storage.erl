@@ -102,7 +102,10 @@ set_mt_dlr_info(#dlr_info{
 
 -spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(GatewayId, OutMsgId) ->
-	Selector = [{gi, GatewayId}, {omi, OutMsgId}],
+	Selector = [
+		{'gi'  , GatewayId},
+		{'omi' , OutMsgId},
+		{'rqt' , {'$exists', true}}], %% solves k_storage:doc_to_addr(undefined) problem
 	case mongodb_storage:find_one(mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_msg_info(Plist)};
@@ -112,7 +115,11 @@ get_mt_msg_info(GatewayId, OutMsgId) ->
 
 -spec get_mt_msg_info(customer_id(), funnel | k1api, msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
 get_mt_msg_info(CustomerId, ClientType, InMsgId) ->
-	Selector = [{ci, CustomerId}, {ct, ClientType}, {imi, InMsgId}],
+	Selector = [
+		{'ci'  , CustomerId},
+		{'ct'  , ClientType},
+		{'imi' , InMsgId},
+		{'rqt' , {'$exists', true}}], %% solves k_storage:doc_to_addr(undefined) problem
 	case mongodb_storage:find_one(mt_messages, Selector) of
 		{ok, Plist} ->
 			{ok, plist_to_msg_info(Plist)};

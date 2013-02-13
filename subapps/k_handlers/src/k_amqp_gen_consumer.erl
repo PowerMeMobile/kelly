@@ -60,7 +60,7 @@ handle_message(ContentType, Message, Channel, State = #state{
 	handler = Handler
 }) ->
 	%?log_debug("got message: ~p", [Message]),
-	{ok, Pid} = k_worker_sup:process(Handler, ContentType, Message, Channel),
+	{ok, Pid} = k_worker_sup:process(Handler, ContentType, Message, Channel, self()),
 	{noreply, Pid, State}.
 
 handle_consume_ok(State = #state{}) ->

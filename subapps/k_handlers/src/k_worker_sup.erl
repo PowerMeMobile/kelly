@@ -6,7 +6,7 @@
 	start_link/0
 ]).
 -export([
-	process/4
+	process/5
 ]).
 
 -export([
@@ -19,12 +19,12 @@
 start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
--spec process(atom(), binary(), binary(), pid()) -> {ok, pid()}.
-process(Module, ContentType, Message, Channel) ->
+-spec process(atom(), binary(), binary(), pid(), pid()) -> {ok, pid()}.
+process(Module, ContentType, Message, Channel, ConsumerPid) ->
 	{SupPid, _Value} = gproc:await({n, l, ?MODULE}),
-	{ok, Pid} = supervisor:start_child(SupPid, []),
-	gen_server:cast(Pid, {process, {Module, ContentType, Message, Channel}}),
-	{ok, Pid}.
+	{ok, WPid} = supervisor:start_child(SupPid, []),
+	gen_server:cast(WPid, {process, {Module, ContentType, Message, Channel, ConsumerPid}}),
+	{ok, WPid}.
 
 init(_Args) ->
 	gproc:add_local_name(?MODULE),
