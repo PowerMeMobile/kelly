@@ -156,7 +156,7 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 
 	Selector = {
 		'gi'  , GatewayId,
-		'imi', InMsgId
+		'imi' , InMsgId
 	},
 	Modifier = {
 		'$set' , {
