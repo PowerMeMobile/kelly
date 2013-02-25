@@ -22,7 +22,7 @@ process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
 	?log_debug("Got just sms response: ~p", [SmsResponse]),
 	RespInfos = sms_response_to_resp_info_list(SmsResponse),
 	case k_utils:safe_foreach(
-		fun k_storage:set_mt_resp_info/1, RespInfos, ok, {error, '_'}
+		fun k_dynamic_storage:set_mt_resp_info/1, RespInfos, ok, {error, '_'}
 	) of
 		ok ->
 			{ok, []};

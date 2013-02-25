@@ -23,7 +23,7 @@ process_sms_request(SmsRequest = #just_sms_request_dto{client_type = ClientType}
 	?log_debug("Got ~p sms request: ~p", [ClientType, SmsRequest]),
 	ReqInfos = sms_request_to_req_info_list(SmsRequest),
 	case k_utils:safe_foreach(
-		fun k_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
+		fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
 	) of
 		ok ->
 			{ok, []};

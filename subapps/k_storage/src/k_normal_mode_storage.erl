@@ -7,8 +7,7 @@
 
 	get_mt_msg_info/1,
 
-	set_mo_msg_info/2,
-	get_mo_msg_info/1
+	set_mo_msg_info/2
 ]).
 
 -type selector() :: bson:document().
@@ -38,7 +37,3 @@ get_mt_msg_info(Selector) ->
 -spec set_mo_msg_info(selector(), modifier()) -> ok | {error, reason()}.
 set_mo_msg_info(Selector, Modifier) ->
 	mongodb_storage:upsert(k_curr_dynamic_storage, mo_messages, Selector, Modifier).
-
--spec get_mo_msg_info(selector()) -> {ok, bson:document()} | {error, reason()}.
-get_mo_msg_info(Selector) ->
-	mongodb_storage:find_one(k_curr_dynamic_storage, mo_messages, Selector).

@@ -30,7 +30,7 @@
 
 -spec msg_status_report(customer_id(), client_type(), in_msg_id()) -> {ok, report()} | {error, reason()}.
 msg_status_report(CustomerId, ClientType, InMsgId) ->
-	case k_storage:get_mt_msg_info(CustomerId, ClientType, InMsgId) of
+	case k_shifted_storage:get_mt_msg_info(CustomerId, ClientType, InMsgId) of
 		{ok, MsgInfo} ->
 			{ok, {
 				message, [

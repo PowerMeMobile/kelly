@@ -85,6 +85,6 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		req_time = k_datetime:utc_timestamp()
 	},
 	%% store it.
-	ok = k_storage:set_mo_msg_info(MsgInfo),
+	ok = k_dynamic_storage:set_mo_msg_info(MsgInfo),
 	?log_debug("Incoming message stored: out:~p", [OutputId]),
 	{ok, []}.
