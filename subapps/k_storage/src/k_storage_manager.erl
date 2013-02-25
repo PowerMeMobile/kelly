@@ -150,21 +150,13 @@ start_dynamic_storage('Delivery') ->
 
 start_curr_dynamic_storage() ->
 	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
-	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
-	DbNameFmt = proplists:get_value(mongodb_dbname_fmt, DynamicProps),
 
-	CurrTime = k_datetime:utc_time(),
-	{{ShiftYear, ShiftMonth, _}, _} = k_storage_events_utils:get_curr_shift_time(CurrTime, ShiftFrequency),
-
-	%% build current db name in format YYYY-MM.
-	ShiftDateStr = lists:flatten(io_lib:format("~B_~2..0B", [ShiftYear, ShiftMonth])),
-
-	ShiftDbName = list_to_binary(io_lib:format(DbNameFmt, [ShiftDateStr])),
+	{ok, ShiftDbName} = k_storage_events_manager:get_curr_shift_db_name(),
 
 	%% start current dynamic storage.
-	CurProps = [{server_name, k_curr_dynamic_storage}, {mongodb_dbname, ShiftDbName} | DynamicProps],
+	CurrProps = [{server_name, k_curr_dynamic_storage}, {mongodb_dbname, ShiftDbName} | DynamicProps],
 
-	{ok, Pid} = k_storage_manager_sup:start_child(CurProps),
+	{ok, Pid} = k_storage_manager_sup:start_child(CurrProps),
 	true = register(k_curr_dynamic_storage, Pid),
 	?log_debug("~p registered as ~p", [Pid, k_curr_dynamic_storage]),
 
@@ -172,16 +164,8 @@ start_curr_dynamic_storage() ->
 
 start_prev_dynamic_storage() ->
 	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
-	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
-	DbNameFmt = proplists:get_value(mongodb_dbname_fmt, DynamicProps),
 
-	CurrTime = k_datetime:utc_time(),
-	{{ShiftYear, ShiftMonth, _}, _} = k_storage_events_utils:get_prev_shift_time(CurrTime, ShiftFrequency),
-
-	%% build previous db names in format YYYY-MM.
-	ShiftDateStr = lists:flatten(io_lib:format("~B_~2..0B", [ShiftYear, ShiftMonth])),
-
-	ShiftDbName = list_to_binary(io_lib:format(DbNameFmt, [ShiftDateStr])),
+	{ok, ShiftDbName} = k_storage_events_manager:get_prev_shift_db_name(),
 
 	%% start previous dynamic storage.
 	PrevProps = [{server_name, k_prev_dynamic_storage}, {mongodb_dbname, ShiftDbName} | DynamicProps],

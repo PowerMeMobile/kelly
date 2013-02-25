@@ -3,7 +3,9 @@
 %% API
 -export([
 	start_link/0,
-	get_storage_mode/0
+	get_storage_mode/0,
+	get_prev_shift_db_name/0,
+	get_curr_shift_db_name/0
 ]).
 
 %% gen_server callbacks
@@ -32,6 +34,7 @@
 
 	curr_shift_time :: calendar:datetime(),
 	next_shift_time :: calendar:datetime(),
+	shifts,
 
 	curr_mode :: storage_mode(),
 	next_event :: {event_name(), calendar:datetime()}
@@ -49,6 +52,16 @@ start_link() ->
 get_storage_mode() ->
 	{Pid, _} = gproc:await({n, l, ?MODULE}),
 	gen_server:call(Pid, get_curr_mode).
+
+-spec get_prev_shift_db_name() -> {ok, binary()}.
+get_prev_shift_db_name() ->
+	{Pid, _} = gproc:await({n, l, ?MODULE}),
+	gen_server:call(Pid, get_prev_shift_db_name).
+
+-spec get_curr_shift_db_name() -> {ok, binary()}.
+get_curr_shift_db_name() ->
+	{Pid, _} = gproc:await({n, l, ?MODULE}),
+	gen_server:call(Pid, get_curr_shift_db_name).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -79,6 +92,14 @@ handle_call(get_curr_mode, _From, State = #state{
 	curr_mode = CurrMode
 }) ->
 	{reply, {ok, CurrMode}, State};
+
+handle_call(get_prev_shift_db_name, _From, State = #state{}) ->
+	{ok, ShiftDbName} = prev_shift_db_name(),
+	{reply, {ok, ShiftDbName}, State};
+
+handle_call(get_curr_shift_db_name, _From, State = #state{}) ->
+	{ok, ShiftDbName} = curr_shift_db_name(),
+	{reply, {ok, ShiftDbName}, State};
 
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
@@ -133,6 +154,7 @@ read_storage_state() ->
 			DeliveryFrame = bson:at(delivery_frame, Doc),
 			CurrShiftTime = bson:at(curr_shift_time, Doc),
 			NextShiftTime = bson:at(next_shift_time, Doc),
+			Shifts = bson:at(shifts, Doc),
 			CurrMode = bson:at(curr_mode, Doc),
 			NextEvent = bson:at(next_event, Doc),
 			NextEventTime = bson:at(next_event_time, Doc),
@@ -142,6 +164,7 @@ read_storage_state() ->
 				delivery_frame = DeliveryFrame,
 				curr_shift_time = k_datetime:timestamp_to_datetime(CurrShiftTime),
 				next_shift_time = k_datetime:timestamp_to_datetime(NextShiftTime),
+				shifts = Shifts,
 				curr_mode = CurrMode,
 				next_event = {NextEvent, k_datetime:timestamp_to_datetime(NextEventTime)}
 			},
@@ -156,6 +179,7 @@ write_storage_state(#state{
 	delivery_frame = DeliveryFrame,
 	curr_shift_time = CurrShiftTime,
 	next_shift_time = NextShiftTime,
+	shifts = Shifts,
 	curr_mode = CurrMode,
 	next_event = {NextEvent, NextEventTime}
 }) ->
@@ -165,6 +189,7 @@ write_storage_state(#state{
 		delivery_frame  , DeliveryFrame,
 		curr_shift_time , k_datetime:datetime_to_timestamp(CurrShiftTime),
 		next_shift_time , k_datetime:datetime_to_timestamp(NextShiftTime),
+		shifts          , Shifts,
 		curr_mode       , CurrMode,
 		next_event      , NextEvent,
 		next_event_time , k_datetime:datetime_to_timestamp(NextEventTime)
@@ -179,6 +204,7 @@ check_storage_state(_CurrTime, State = #state{
 
 	curr_shift_time = _CurrShiftTime,
 	next_shift_time = _NextShiftTime,
+	shifts = _Shifts,
 
 	curr_mode = _CurrMode,
 	next_event = _NextEvent
@@ -196,7 +222,10 @@ make_storage_state(CurrTime) ->
 	CurrShiftTime = k_storage_events_utils:get_curr_shift_time(CurrTime, ShiftFrame),
 	NextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrame),
 
-	CurrMode = get_curr_mode(CurrTime, CurrShiftTime, ResponseFrame, DeliveryFrame),
+	{ok, NewShiftDbName} = curr_shift_db_name(),
+
+	%% if it's a clear start, then the current mode is 'Normal'.
+	CurrMode = 'Normal',
 	NextEvent = get_next_event(CurrMode, CurrShiftTime, ResponseFrame, DeliveryFrame, NextShiftTime),
 
 	{ok, #state{
@@ -206,6 +235,8 @@ make_storage_state(CurrTime) ->
 
 		curr_shift_time = CurrShiftTime,
 		next_shift_time = NextShiftTime,
+		shifts = [NewShiftDbName],
+
 		curr_mode = CurrMode,
 		next_event = NextEvent
 	}}.
@@ -215,6 +246,7 @@ process_event(CurrEvent = 'ShiftEvent', CurrTime, State = #state{
 	response_frame = ResponseFrame,
 	delivery_frame = DeliveryFrame,
 	next_shift_time = NextShiftTime,
+	shifts = Shifts,
 	curr_mode = CurrMode
 }) ->
 	NextMode = get_next_mode(CurrMode, CurrEvent),
@@ -225,9 +257,13 @@ process_event(CurrEvent = 'ShiftEvent', CurrTime, State = #state{
 	),
 	?log_info("~p -> ~p -> ~p ~p", [CurrMode, CurrEvent, NextMode, NextEvent]),
 	ok = k_storage_manager:notify_event({CurrMode, CurrEvent, NextMode}),
+
+	{ok, NewShiftDbName} = curr_shift_db_name(),
+
 	NewState = State#state{
 		curr_shift_time = NextShiftTime,
 		next_shift_time = NewNextShiftTime,
+		shifts = [NewShiftDbName | Shifts],
 		curr_mode = NextMode,
 		next_event = NextEvent
 	},
@@ -254,21 +290,24 @@ process_event(CurrEvent, _CurrTime, State = #state{
 	ok = write_storage_state(NewState),
 	{ok, NewState}.
 
-get_curr_mode(CurrTime, CurrShiftTime, ResponseFrame, DeliveryFrame) ->
-	CurrShiftSecs = calendar:datetime_to_gregorian_seconds(CurrShiftTime),
-	CurrTimeSecs = calendar:datetime_to_gregorian_seconds(CurrTime),
-	ResponseFrameSecs = k_storage_events_utils:to_seconds(ResponseFrame),
-	DeliveryFrameSecs = k_storage_events_utils:to_seconds(DeliveryFrame),
+prev_shift_db_name() ->
+	make_shift_db_name(fun k_storage_events_utils:get_prev_shift_time/2).
 
-	DiffSecs = CurrTimeSecs - CurrShiftSecs,
-	if
-		DiffSecs < ResponseFrameSecs ->
-			'Response';
-		DiffSecs < DeliveryFrameSecs ->
-			'Delivery';
-		true ->
-			'Normal'
-	end.
+curr_shift_db_name() ->
+	make_shift_db_name(fun k_storage_events_utils:get_curr_shift_time/2).
+
+make_shift_db_name(GetShiftTimeFun) ->
+	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
+	ShiftFrame = proplists:get_value(shift_frame, DynamicProps),
+	DbNameFmt = proplists:get_value(mongodb_dbname_fmt, DynamicProps),
+
+	CurrTime = k_datetime:utc_time(),
+	{{ShiftYear, ShiftMonth, ShiftDay}, _} = GetShiftTimeFun(CurrTime, ShiftFrame),
+
+	%% build db name in format YYYY-MM-DD.
+	ShiftDateStr = lists:flatten(io_lib:format("~B_~2..0B_~2..0B", [ShiftYear, ShiftMonth, ShiftDay])),
+	ShiftDbName = list_to_binary(io_lib:format(DbNameFmt, [ShiftDateStr])),
+	{ok, ShiftDbName}.
 
 get_next_event('Normal', _CurrShiftTime, _ResponseFrame, _DeliveryFrame, NextShiftTime) ->
 	{'ShiftEvent', NextShiftTime};
