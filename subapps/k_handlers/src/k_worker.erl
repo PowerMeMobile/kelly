@@ -50,7 +50,7 @@ handle_cast({process, {Module, ContentType, Message, Channel, Pid}}, State = #st
 			send_response(Channel, List),
 			{stop, normal, State};
 		{error, not_enough_data_to_proceed} ->
-			?log_info("Not enough data to process receipt. Requeue.", []),
+			?log_debug("Not enough data to process receipt. Requeue.", []),
 			k_gen_consumer:requeue_message(Pid),
 			{stop, normal, State};
 		{error, Reason} ->
