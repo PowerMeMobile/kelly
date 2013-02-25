@@ -40,7 +40,7 @@ read(Params) ->
 	ClientType = ?gv(client_type, Params),
 	CustomerId = ?gv(customer_id, Params),
 	InMsgId = ?gv(message_id, Params),
-	case k_statistic:msg_status_report(CustomerId, ClientType, InMsgId) of
+	case k_statistic:get_mt_msg_status_report(CustomerId, ClientType, InMsgId) of
 		{ok, Report} ->
 			{ok, Report};
 		{error, no_entry} ->

@@ -43,7 +43,7 @@ read(Params) ->
 		{ok, Report} ->
 			{ok, Report};
 		{error, Error} ->
-			?log_debug("Statuses stats report failed with: ~p", [Error]),
+			?log_debug("Statuses report failed with: ~p", [Error]),
 			{exception, 'svc0003'}
 	end.
 
@@ -61,10 +61,10 @@ delete(_Params) ->
 %% ===================================================================
 
 build_report(From, To, undefined) ->
-	k_statistic:status_stats_report(From, To);
+	k_statistic:get_aggregated_statuses_report(From, To);
 
 build_report(From, To, Status) ->
- 	k_statistic:status_stats_report(From, To, Status).
+ 	k_statistic:get_msgs_by_status_report(From, To, Status).
 
 %% convert_datetime(<<"2012-12-11T13:20">>) => {{2012,12,11},{13,20,0}}.
 -spec convert_datetime(binary()) -> calendar:datetime().

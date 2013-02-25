@@ -1,10 +1,9 @@
 -module(k_statistic).
 
 -export([
-	msg_status_report/3,
-
-	status_stats_report/2,
-	status_stats_report/3,
+	get_mt_msg_status_report/3,
+	get_aggregated_statuses_report/2,
+	get_msgs_by_status_report/3,
 
 	msg_stats_report/3,
 	detailed_msg_stats_report/3,
@@ -18,7 +17,7 @@
 -include_lib("k_common/include/storages.hrl").
 
 -type customer_id() :: binary().
--type client_type() :: binary().
+-type client_type() :: funnel | k1api.
 -type in_msg_id() :: binary().
 -type report() :: term().
 -type reason() :: term().
@@ -28,35 +27,23 @@
 %% API
 %% ===================================================================
 
--spec msg_status_report(customer_id(), client_type(), in_msg_id()) -> {ok, report()} | {error, reason()}.
-msg_status_report(CustomerId, ClientType, InMsgId) ->
-	case k_shifted_storage:get_mt_msg_info(CustomerId, ClientType, InMsgId) of
-		{ok, MsgInfo} ->
-			{ok, {
-				message, [
-					{customer_id, CustomerId},
-					{message_id, InMsgId},
-					{client_type, ClientType},
-					{status, ?MSG_STATUS(MsgInfo)}
-				]
-			}};
-		Error ->
-			Error
-	end.
+-spec get_mt_msg_status_report(customer_id(), client_type(), in_msg_id()) -> {ok, report()} | {error, reason()}.
+get_mt_msg_status_report(CustomerId, ClientType, InMsgId) ->
+	k_statistic_status_reports:get_mt_msg_status_report(CustomerId, ClientType, InMsgId).
 
--spec status_stats_report(calendar:datetime(), calendar:datetime()) ->
+-spec get_aggregated_statuses_report(calendar:datetime(), calendar:datetime()) ->
 	{ok, report()} | {error, reason()}.
-status_stats_report(FromDate, ToDate) when FromDate < ToDate ->
-	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(FromDate)),
-	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(ToDate)),
-	k_statistic_status_stats_report:get_report(From, To).
+get_aggregated_statuses_report(FromDate, ToDate) when FromDate < ToDate ->
+	From = k_datetime:datetime_to_timestamp(FromDate),
+	To = k_datetime:datetime_to_timestamp(ToDate),
+	k_statistic_status_reports:get_aggregated_statuses_report(From, To).
 
--spec status_stats_report(calendar:datetime(), calendar:datetime(), status()) ->
+-spec get_msgs_by_status_report(calendar:datetime(), calendar:datetime(), status()) ->
 	{ok, report()} | {error, reason()}.
-status_stats_report(FromDate, ToDate, Status) when FromDate < ToDate ->
-	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(FromDate)),
-	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(ToDate)),
-	k_statistic_status_stats_report:get_report(From, To, Status).
+get_msgs_by_status_report(FromDate, ToDate, Status) when FromDate < ToDate ->
+	From = k_datetime:datetime_to_timestamp(FromDate),
+	To = k_datetime:datetime_to_timestamp(ToDate),
+	k_statistic_status_reports:get_msgs_by_status_report(From, To, Status).
 
 -spec msg_stats_report(integer(), calendar:datetime(), calendar:datetime()) ->
 	{ok, report()} | {error, reason()}.

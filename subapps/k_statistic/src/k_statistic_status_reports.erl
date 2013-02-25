@@ -1,11 +1,19 @@
--module(k_statistic_status_stats_report).
+-module(k_statistic_status_reports).
 
 -export([
-	get_report/2,
-	get_report/3
+	get_mt_msg_status_report/3,
+	get_aggregated_statuses_report/2,
+	get_msgs_by_status_report/3
 ]).
 
 -include_lib("k_common/include/msg_info.hrl").
+
+-type customer_id() :: binary().
+-type client_type() :: funnel | k1api.
+-type in_msg_id() :: binary().
+-type report() :: term().
+-type reason() :: term().
+-type timestamp() :: erlang:timestamp().
 
 -type status() ::
 	received
@@ -17,8 +25,31 @@
 %% API
 %% ===================================================================
 
--spec get_report(From::erlang:timestamp(), To::erlang:timestamp()) -> [any()].
-get_report(From, To) ->
+-spec get_mt_msg_status_report(customer_id(), client_type(), in_msg_id()) -> {ok, report()} | {error, reason()}.
+get_mt_msg_status_report(CustomerId, ClientType, InMsgId) ->
+	Selector = {
+		'ci'  , CustomerId,
+		'ct'  , ClientType,
+		'imi' , InMsgId,
+		'rqt' , {'$exists', true}
+	},
+	case k_shifted_storage:find_one(mt_messages, Selector) of
+		{ok, Doc} ->
+			MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
+			{ok, {
+				message, [
+					{customer_id, CustomerId},
+					{message_id, InMsgId},
+					{client_type, ClientType},
+					{status, ?MSG_STATUS(MsgInfo)}
+				]
+			}};
+		Error ->
+			Error
+	end.
+
+-spec get_aggregated_statuses_report(timestamp(), timestamp()) -> {ok, report()} | {error, reason()}.
+get_aggregated_statuses_report(From, To) ->
 	MtMapF =
 <<"
 	function() {
@@ -43,32 +74,41 @@ get_report(From, To) ->
 		return Array.sum(values);
 	};
 ">>,
-	MtCommand =
-		{ 'mapreduce' , <<"mt_messages">>,
-		  'query' , { 'rqt' , { '$gte' , From, '$lt' , To } },
-		  'map' , MtMapF,
-		  'reduce' , ReduceF,
-		  'out' , { 'inline' , 1 }
-		},
-	MoCommand =
-		{ 'mapreduce' , <<"mo_messages">>,
-		  'query' , { 'rqt' , { '$gte' , From, '$lt' , To } },
-		  'map' , MoMapF,
-		  'reduce' , ReduceF,
-		  'out' , { 'inline' , 1 }
-		},
-	{ok, MtBson} = mongodb_storage:command(k_curr_dynamic_storage, MtCommand),
-	{ok, MoBson} = mongodb_storage:command(k_curr_dynamic_storage, MoCommand),
-	ResultsMtBson = bson:at(results, MtBson),
-	ResultsMoBson = bson:at(results, MoBson),
-	ResultsBson = lists:sort(ResultsMtBson ++ ResultsMoBson),
-	Results = [
-	 	{list_to_existing_atom(binary_to_list(Status)), round(Hits)} || {'_id', Status, value, Hits} <- ResultsBson
-	 ],
+	MtCommand = {
+		'mapreduce' , <<"mt_messages">>,
+		'query' , { 'rqt' , { '$gte' , From, '$lt' , To } },
+		'map' , MtMapF,
+		'reduce' , ReduceF,
+		'out' , { 'inline' , 1 }
+	},
+	MoCommand = {
+		'mapreduce' , <<"mo_messages">>,
+		'query' , { 'rqt' , { '$gte' , From, '$lt' , To } },
+		'map' , MoMapF,
+		'reduce' , ReduceF,
+		'out' , { 'inline' , 1 }
+	},
+	{ok, MtDocs} = k_shifted_storage:command(MtCommand),
+	{ok, MoDocs} = k_shifted_storage:command(MoCommand),
+	Docs = MtDocs ++ MoDocs,
+	Results = merge([
+	 	{list_to_existing_atom(binary_to_list(Status)), round(Hits)} || {'_id', Status, value, Hits} <- Docs
+	 ]),
 	{ok, {statuses, Results}}.
 
--spec get_report(From::erlang:timestamp(), To::erlang:timestamp(), Status::status()) -> [any()].
-get_report(From, To, received) ->
+merge(Pairs) ->
+	dict:to_list(
+		merge(Pairs, dict:new())
+	).
+
+merge([], Dict) ->
+	Dict;
+merge([{Key, Value}|Pairs], Dict) ->
+	NewDict = dict:update_counter(Key, Value, Dict),
+	merge(Pairs, NewDict).
+
+-spec get_msgs_by_status_report(timestamp(), timestamp(), status()) -> {ok, report()} | {error, reason()}.
+get_msgs_by_status_report(From, To, received) ->
 	Selector = {
 		'rqt' , {
 			'$gte' , From,
@@ -77,7 +117,7 @@ get_report(From, To, received) ->
 	},
 	get_raw_report(mo_messages, Selector);
 
-get_report(From, To, submitted) ->
+get_msgs_by_status_report(From, To, submitted) ->
 	Selector = {
 		'rqt' , {
 			'$gte' , From,
@@ -88,7 +128,7 @@ get_report(From, To, submitted) ->
 	},
 	get_raw_report(mt_messages, Selector);
 
-get_report(From, To, Status) when
+get_msgs_by_status_report(From, To, Status) when
 	Status == success; Status == failure
 ->
 	Selector = {
@@ -100,7 +140,7 @@ get_report(From, To, Status) when
 	},
 	get_raw_report(mt_messages, Selector);
 
-get_report(From, To, Status) when
+get_msgs_by_status_report(From, To, Status) when
 	Status == enroute; Status == delivered; Status == expired;
 	Status == deleted; Status == undeliverable; Status == accepted;
 	Status == unknown; Status == rejected; Status == unrecognized
@@ -119,7 +159,7 @@ get_report(From, To, Status) when
 %% ===================================================================
 
 get_raw_report(Collection, Selector) ->
-	case mongodb_storage:find(k_curr_dynamic_storage, Collection, Selector) of
+	case k_shifted_storage:find(Collection, Selector) of
 		{ok, Docs} ->
 			{ok, {messages,
 				[doc_to_message(Doc) || {_Id, Doc} <- Docs]
