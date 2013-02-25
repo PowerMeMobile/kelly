@@ -162,7 +162,7 @@ mark_as_pending(Item = #k_mb_funnel_receipt{}) ->
 
 send_item(Item, Subscription) ->
 	{ok, ItemID, QName, Binary} = build_dto(Item, Subscription),
-	?log_debug("Send item to queue [~p]", [QName]),
+	?log_debug("Send item [~p] to queue [~p]", [ItemID, QName]),
 	ContentType =
 	case Item of
 		#k_mb_incoming_sms{} -> <<"OutgoingBatch">>;
@@ -172,7 +172,7 @@ send_item(Item, Subscription) ->
 	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
 	case Result of
 		{ok, delivered} ->
-			?log_debug("Successfully delivered [item:~p]", [ItemID]),
+			?log_debug("Item successfully delivered [~p]", [ItemID]),
 			estatsd:increment(delivered_incoming_item),
 			k_mb_db:delete_item(Item);
 		{error, timeout} ->
