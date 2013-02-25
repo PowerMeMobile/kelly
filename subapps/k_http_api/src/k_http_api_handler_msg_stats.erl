@@ -62,14 +62,14 @@ delete(_Params) ->
 %% ===================================================================
 
 build_report(From, To, customers, _Params) ->
-	k_statistic:msg_stats_report(customers, From, To);
+	k_statistic:get_msg_stats_report(customers, From, To);
 
 build_report(From, To, networks, _Params) ->
-	k_statistic:msg_stats_report(networks, From, To);
+	k_statistic:get_msg_stats_report(networks, From, To);
 
 build_report(From, To, details, Params) ->
 	SliceLengthSecs = convert_slice_length(?gv(slice_length, Params)),
-	k_statistic:detailed_msg_stats_report(From, To, SliceLengthSecs).
+	k_statistic:get_detailed_msg_stats_report(From, To, SliceLengthSecs).
 
 %% convert_datetime(<<"2012-12-11T13:20">>) => {{2012,12,11},{13,20,0}}.
 -spec convert_datetime(binary()) -> calendar:datetime().

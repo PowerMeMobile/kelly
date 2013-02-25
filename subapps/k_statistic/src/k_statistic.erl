@@ -5,8 +5,8 @@
 	get_aggregated_statuses_report/2,
 	get_msgs_by_status_report/3,
 
-	msg_stats_report/3,
-	detailed_msg_stats_report/3,
+	get_msg_stats_report/3,
+	get_detailed_msg_stats_report/3,
 
 	uplink_report/0,
 	downlink_report/0
@@ -45,16 +45,16 @@ get_msgs_by_status_report(FromDate, ToDate, Status) when FromDate < ToDate ->
 	To = k_datetime:datetime_to_timestamp(ToDate),
 	k_statistic_status_reports:get_msgs_by_status_report(From, To, Status).
 
--spec msg_stats_report(integer(), calendar:datetime(), calendar:datetime()) ->
+-spec get_msg_stats_report(integer(), calendar:datetime(), calendar:datetime()) ->
 	{ok, report()} | {error, reason()}.
-msg_stats_report(ReportType, FromDate, ToDate) when FromDate < ToDate ->
-	From = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(FromDate)),
-	To = k_datetime:unixepoch_to_timestamp(k_datetime:datetime_to_unixepoch(ToDate)),
+get_msg_stats_report(ReportType, FromDate, ToDate) when FromDate < ToDate ->
+	From = k_datetime:datetime_to_timestamp(FromDate),
+	To = k_datetime:datetime_to_timestamp(ToDate),
 	k_statistic_msg_stats_report:get_report(ReportType, From, To).
 
--spec detailed_msg_stats_report(calendar:datetime(), calendar:datetime(), pos_integer()) ->
+-spec get_detailed_msg_stats_report(calendar:datetime(), calendar:datetime(), pos_integer()) ->
 	{ok, report()} | {error, reason()}.
-detailed_msg_stats_report(FromDate, ToDate, SliceLength) when FromDate < ToDate ->
+get_detailed_msg_stats_report(FromDate, ToDate, SliceLength) when FromDate < ToDate ->
 	FromUnix = k_datetime:datetime_to_unixepoch(FromDate),
 	ToUnix = k_datetime:datetime_to_unixepoch(ToDate),
 	k_statistic_detailed_msg_stats_report:get_report(FromUnix, ToUnix, SliceLength).

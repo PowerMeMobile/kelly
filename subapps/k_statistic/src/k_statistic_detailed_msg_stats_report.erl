@@ -53,7 +53,7 @@ get_records(Collection, From, To) ->
 		'gi'  , 1,
 		'rqt' , 1
 	},
-	case mongodb_storage:find(k_curr_dynamic_storage, Collection, Selector, Projector) of
+	case k_shifted_storage:find(Collection, Selector, Projector) of
 		{ok, Docs} ->
 			{ok, [strip_doc(Doc) || {_Id, Doc} <- Docs]};
 		Error ->
