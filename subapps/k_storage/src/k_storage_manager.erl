@@ -201,9 +201,9 @@ shift_storages() ->
 			ok = mongodb_storage:stop(PrevPid)
 	end,
 	%% turn the current storage into previous.
-	CurPid = whereis(k_curr_dynamic_storage),
+	CurrPid = whereis(k_curr_dynamic_storage),
 	true = unregister(k_curr_dynamic_storage),
-	true = register(k_prev_dynamic_storage, CurPid),
+	true = register(k_prev_dynamic_storage, CurrPid),
 	%% start new current storage.
 	ok = start_curr_dynamic_storage().
 

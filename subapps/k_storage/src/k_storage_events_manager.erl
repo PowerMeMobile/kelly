@@ -26,7 +26,7 @@
 -record(state, {
 	heartbeat_timer_ref :: reference(),
 
-	shift_frequency,
+	shift_frame,
 	response_frame,
 	delivery_frame,
 
@@ -128,7 +128,7 @@ start_heartbeat_timer() ->
 read_storage_state() ->
 	case mongodb_storage:find_one(k_static_storage, 'storage.state', {}) of
 		{ok, Doc} ->
-			ShiftFrequency = bson:at(shift_frequency, Doc),
+			ShiftFrame = bson:at(shift_frame, Doc),
 			ResponseFrame = bson:at(response_frame, Doc),
 			DeliveryFrame = bson:at(delivery_frame, Doc),
 			CurrShiftTime = bson:at(curr_shift_time, Doc),
@@ -137,7 +137,7 @@ read_storage_state() ->
 			NextEvent = bson:at(next_event, Doc),
 			NextEventTime = bson:at(next_event_time, Doc),
 			State = #state{
-				shift_frequency = ShiftFrequency,
+				shift_frame = ShiftFrame,
 				response_frame = ResponseFrame,
 				delivery_frame = DeliveryFrame,
 				curr_shift_time = k_datetime:timestamp_to_datetime(CurrShiftTime),
@@ -151,7 +151,7 @@ read_storage_state() ->
 	end.
 
 write_storage_state(#state{
-	shift_frequency = ShiftFrequency,
+	shift_frame = ShiftFrame,
 	response_frame = ResponseFrame,
 	delivery_frame = DeliveryFrame,
 	curr_shift_time = CurrShiftTime,
@@ -160,7 +160,7 @@ write_storage_state(#state{
 	next_event = {NextEvent, NextEventTime}
 }) ->
 	Modifier = {
-		shift_frequency , ShiftFrequency,
+		shift_frame 	, ShiftFrame,
 		response_frame  , ResponseFrame,
 		delivery_frame  , DeliveryFrame,
 		curr_shift_time , k_datetime:datetime_to_timestamp(CurrShiftTime),
@@ -173,7 +173,7 @@ write_storage_state(#state{
 	ok.
 
 check_storage_state(_CurrTime, State = #state{
-	shift_frequency = _ShiftFrequency,
+	shift_frame = _ShiftFrame,
 	response_frame = _ResponseFrame,
 	delivery_frame = _DeliveryFrame,
 
@@ -183,24 +183,24 @@ check_storage_state(_CurrTime, State = #state{
 	curr_mode = _CurrMode,
 	next_event = _NextEvent
 }) ->
-	%% put here code that is supporsed to check/fix any storage state
+	%% put here code that is supposed to check/fix any storage state
 	%% inconsistencies, caused by state and current time, etc.
 	{ok, State}.
 
 make_storage_state(CurrTime) ->
 	{ok, DynamicProps} = application:get_env(?APP, dynamic_storage),
-	ShiftFrequency = proplists:get_value(shift_frequency, DynamicProps),
+	ShiftFrame = proplists:get_value(shift_frame, DynamicProps),
 	ResponseFrame = proplists:get_value(response_frame, DynamicProps),
 	DeliveryFrame = proplists:get_value(delivery_frame, DynamicProps),
 
-	CurrShiftTime = k_storage_events_utils:get_curr_shift_time(CurrTime, ShiftFrequency),
-	NextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrequency),
+	CurrShiftTime = k_storage_events_utils:get_curr_shift_time(CurrTime, ShiftFrame),
+	NextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrame),
 
 	CurrMode = get_curr_mode(CurrTime, CurrShiftTime, ResponseFrame, DeliveryFrame),
 	NextEvent = get_next_event(CurrMode, CurrShiftTime, ResponseFrame, DeliveryFrame, NextShiftTime),
 
 	{ok, #state{
-		shift_frequency = ShiftFrequency,
+		shift_frame = ShiftFrame,
 		response_frame = ResponseFrame,
 		delivery_frame = DeliveryFrame,
 
@@ -211,7 +211,7 @@ make_storage_state(CurrTime) ->
 	}}.
 
 process_event(CurrEvent = 'ShiftEvent', CurrTime, State = #state{
-	shift_frequency = ShiftFrequency,
+	shift_frame = ShiftFrame,
 	response_frame = ResponseFrame,
 	delivery_frame = DeliveryFrame,
 	next_shift_time = NextShiftTime,
@@ -219,7 +219,7 @@ process_event(CurrEvent = 'ShiftEvent', CurrTime, State = #state{
 }) ->
 	NextMode = get_next_mode(CurrMode, CurrEvent),
 
-	NewNextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrequency),
+	NewNextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrame),
 	NextEvent = get_next_event(
 			NextMode, NextShiftTime, ResponseFrame, DeliveryFrame, NewNextShiftTime
 	),

@@ -17,22 +17,19 @@
 %% ===================================================================
 
 -spec get_prev_shift_time(calendar:datetime(), frame()) -> calendar:datetime().
-get_prev_shift_time(CurrTime, ShiftFrequency) ->
+get_prev_shift_time(CurrTime, {months, 1}) ->
 	{{Year, Month, _}, _} = CurrTime,
-	{months, 1} = ShiftFrequency,
 	{PrevYear, PrevMonth, _} = edate:shift({Year, Month, 1}, -1, month),
 	{{PrevYear, PrevMonth, 1}, {0, 0, 0}}.
 
 -spec get_curr_shift_time(calendar:datetime(), frame()) -> calendar:datetime().
-get_curr_shift_time(CurrTime, ShiftFrequency) ->
+get_curr_shift_time(CurrTime, {months, 1}) ->
 	{{Year, Month, _}, _} = CurrTime,
-	{months, 1} = ShiftFrequency,
 	{{Year, Month, 1}, {0, 0, 0}}.
 
 -spec get_next_shift_time(calendar:datetime(), frame()) -> calendar:datetime().
-get_next_shift_time(CurrTime, ShiftFrequency) ->
+get_next_shift_time(CurrTime, {months, N}) ->
 	{{Year, Month, _}, _} = CurrTime,
-	{months, N} = ShiftFrequency,
 	{NextYear, NextMonth, NextDay} = edate:shift({Year, Month, 1}, N, month),
 	{{NextYear, NextMonth, NextDay}, {0, 0, 0}}.
 
