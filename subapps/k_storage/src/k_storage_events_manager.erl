@@ -5,7 +5,8 @@
 	start_link/0,
 	get_storage_mode/0,
 	get_prev_shift_db_name/0,
-	get_curr_shift_db_name/0
+	get_curr_shift_db_name/0,
+	get_shifts/0
 ]).
 
 %% gen_server callbacks
@@ -34,7 +35,7 @@
 
 	curr_shift_time :: calendar:datetime(),
 	next_shift_time :: calendar:datetime(),
-	shifts,
+	shifts :: [binary()],
 
 	curr_mode :: storage_mode(),
 	next_event :: {event_name(), calendar:datetime()}
@@ -62,6 +63,11 @@ get_prev_shift_db_name() ->
 get_curr_shift_db_name() ->
 	{Pid, _} = gproc:await({n, l, ?MODULE}),
 	gen_server:call(Pid, get_curr_shift_db_name).
+
+-spec get_shifts() -> {ok, [binary()]}.
+get_shifts() ->
+	{Pid, _} = gproc:await({n, l, ?MODULE}),
+	gen_server:call(Pid, get_shifts).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -100,6 +106,11 @@ handle_call(get_prev_shift_db_name, _From, State = #state{}) ->
 handle_call(get_curr_shift_db_name, _From, State = #state{}) ->
 	{ok, ShiftDbName} = curr_shift_db_name(),
 	{reply, {ok, ShiftDbName}, State};
+
+handle_call(get_shifts, _From, State = #state{
+	shifts = Shifts
+}) ->
+	{reply, {ok, Shifts}, State};
 
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
