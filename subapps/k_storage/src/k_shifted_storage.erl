@@ -11,9 +11,6 @@
 ]).
 
 -include("application.hrl").
--include_lib("k_common/include/msg_id.hrl").
--include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/customer.hrl").
 
 -type reason() :: any().
 
