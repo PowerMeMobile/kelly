@@ -100,6 +100,9 @@ command([ShiftDbName|Shifts], Command, Acc) ->
 		{ok, {results, Docs, _, _, _, _, ok, 1.0}} ->
 			NewAcc = Docs ++ Acc,
 			command(Shifts, Command, NewAcc);
+		{ok, {result, Docs, ok, 1.0}} ->
+			NewAcc = Docs ++ Acc,
+			command(Shifts, Command, NewAcc);
 		Error ->
 			Error
 	end.
