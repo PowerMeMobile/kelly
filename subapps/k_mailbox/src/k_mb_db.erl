@@ -167,11 +167,7 @@ delete_subscription(SubscriptionID) ->
 
 -spec delete_item(k_mb_item()) -> ok.
 delete_item(Item = #k_mb_funnel_receipt{}) ->
-	Selector = {
-		'_id'         , Item#k_mb_funnel_receipt.id,
-		'customer_id' , Item#k_mb_funnel_receipt.customer_id,
-		'user_id'     , Item#k_mb_funnel_receipt.user_id
-	},
+	Selector = {'_id', Item#k_mb_funnel_receipt.id},
 	ok = mongodb_storage:delete(k_static_storage, ?funnelReceiptsColl, Selector),
 	ok = mongodb_storage:delete(k_static_storage, ?pendingItemsColl, Selector);
 delete_item(Item = #k_mb_k1api_receipt{}) ->
