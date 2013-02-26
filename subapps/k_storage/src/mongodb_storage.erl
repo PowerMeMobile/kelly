@@ -38,11 +38,11 @@
 -type server_name() :: atom().
 -type collection() :: atom() | binary().
 -type plist() :: [{atom(), term()}].
+-type key() :: term().
+-type document() :: bson:document().
 -type selector() :: bson:document().
 -type projector() :: bson:document().
 -type modifier() :: bson:document().
--type key() :: term().
--type value() :: term().
 -type command() :: bson:document().
 -type index_spec() :: bson:document().
 -type reason() :: no_entry | term().
@@ -60,12 +60,12 @@ stop(ServerName) ->
 	gen_server:cast(ServerName, stop).
 
 -spec find(server_name(), collection(), selector()) ->
-	{ok, [{key(), value()}]} | {error, reason()}.
+	{ok, [{key(), document()}]} | {error, reason()}.
 find(ServerName, Coll, Selector) ->
 	find(ServerName, Coll, Selector, {}).
 
 -spec find(server_name(), collection(), selector(), projector()) ->
-	{ok, [{key(), value()}]} | {error, reason()}.
+	{ok, [{key(), document()}]} | {error, reason()}.
 find(ServerName, Coll, Selector, Projector) ->
 	mongo_do(ServerName, safe, master,
 		fun() ->
@@ -83,12 +83,12 @@ find(ServerName, Coll, Selector, Projector) ->
 	).
 
 -spec find_one(server_name(), collection(), selector()) ->
-	{ok, Plist::[tuple()]} | {error, reason()}.
+	{ok, document()} | {error, reason()}.
 find_one(ServerName, Coll, Selector) ->
 	find_one(ServerName, Coll, Selector, {}).
 
 -spec find_one(server_name(), collection(), selector(), projector()) ->
-	{ok, Plist::[tuple()]} | {error, reason()}.
+	{ok, document()} | {error, reason()}.
 find_one(ServerName, Coll, Selector, Projector) ->
 	mongo_do(ServerName, safe, master,
 		fun() ->
@@ -129,7 +129,7 @@ delete(ServerName, Coll, Selector) ->
 	).
 
 -spec command(server_name(), command()) ->
-	{ok, Result::term()} | {error, reason()}.
+	{ok, document()} | {error, reason()}.
 command(ServerName, Command) ->
 	mongo_do(ServerName, safe, master,
 		fun() ->
