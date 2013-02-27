@@ -34,17 +34,17 @@ set_mt_req_info(#req_info{
 }) ->
 	Selector = {
 		'ci' , CustomerId,
-		'ct' , ClientType,
+		'ct' , bsondoc:atom_to_binary(ClientType),
 		'imi', InMsgId
 	},
 	Modifier = {
 		'$set', {
-			'ct' , ClientType,
+			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
 			'imi', InMsgId,
 			'gi' , GatewayId,
-			't'  , Type,
-			'e'  , Encoding,
+			't'  , bsondoc:atom_to_binary(Type),
+			'e'  , bsondoc:atom_to_binary(Encoding),
 			'b'  , Message,
 			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
 			'da' , k_storage_utils:addr_to_doc(DstAddr),
@@ -67,18 +67,18 @@ set_mt_resp_info(#resp_info{
 }) ->
 	Selector = {
 		'ci' , CustomerId,
-		'ct' , ClientType,
+		'ct' , bsondoc:atom_to_binary(ClientType),
 		'imi', InMsgId
 	},
 	Modifier = {
 		'$set', {
-			'ct' , ClientType,
+			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
 			'imi', InMsgId,
 			'gi' , GatewayId,
 			'omi', OutMsgId,
 			'rpt', RespTime,
-			'rps', RespStatus
+			'rps', bsondoc:atom_to_binary(RespStatus)
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
@@ -101,7 +101,7 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
 			'gi' , GatewayId,
 			'omi', OutMsgId,
 			'dt' , DlrTime,
-			'ds' , DlrStatus
+			'ds' , bsondoc:atom_to_binary(DlrStatus)
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
@@ -134,8 +134,8 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 			'imi', InMsgId,
 			'gi' , GatewayId,
 			'ci' , CustomerId,
-			't'  , Type,
-			'e'  , Encoding,
+			't'  , bsondoc:atom_to_binary(Type),
+			'e'  , bsondoc:atom_to_binary(Encoding),
 			'b'  , MessageBody,
 			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
 			'da' , k_storage_utils:addr_to_doc(DstAddr),

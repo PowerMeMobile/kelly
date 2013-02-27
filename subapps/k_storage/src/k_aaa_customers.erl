@@ -31,7 +31,11 @@ set_customer(CustomerId, Customer) ->
 		end,
 
 	UsersDocList = [
-		{'id' , User#user.id, 'pswd_hash' , User#user.pswd_hash, 'permitted_smpp_types' , User#user.permitted_smpp_types}
+		{
+			'id' , User#user.id,
+			'pswd_hash' , User#user.pswd_hash,
+			'permitted_smpp_types' , lists:map(fun bsondoc:atom_to_binary/1, User#user.permitted_smpp_types)
+		}
 		|| User <- Customer#customer.users
 	],
 
@@ -51,7 +55,7 @@ set_customer(CustomerId, Customer) ->
 			'default_validity'    , Customer#customer.default_validity,
 			'max_validity'        , Customer#customer.max_validity,
 			'users'               , UsersDocList,
-			'billing_type'        , Customer#customer.billing_type,
+			'billing_type'        , bsondoc:atom_to_binary(Customer#customer.billing_type),
 			'state'               , Customer#customer.state
 		}
 	},
@@ -100,7 +104,7 @@ doc_to_record(Doc) ->
 		#user{
 			id = bsondoc:at(id, User),
 			pswd_hash = bsondoc:at(pswd_hash, User),
-			permitted_smpp_types = bsondoc:at(permitted_smpp_types, User)
+			permitted_smpp_types = lists:map(fun bsondoc:binary_to_atom/1, bsondoc:at(permitted_smpp_types, User))
 		}
 		|| User <- UsersDocs],
 
@@ -135,7 +139,7 @@ doc_to_record(Doc) ->
 	NoRetry = bsondoc:at(no_retry, Doc),
 	DefValidity = bsondoc:at(default_validity, Doc),
 	MaxValidity = bsondoc:at(max_validity, Doc),
-	BillingType = bsondoc:at(billing_type, Doc),
+	BillingType = bsondoc:binary_to_atom(bsondoc:at(billing_type, Doc)),
 	State = bsondoc:at(state, Doc),
 
  	#customer{

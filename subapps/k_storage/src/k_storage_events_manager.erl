@@ -166,8 +166,8 @@ read_storage_state() ->
 			CurrShiftTime = bsondoc:at(curr_shift_time, Doc),
 			NextShiftTime = bsondoc:at(next_shift_time, Doc),
 			Shifts = bsondoc:at(shifts, Doc),
-			CurrMode = bsondoc:at(curr_mode, Doc),
-			NextEvent = bsondoc:at(next_event, Doc),
+			CurrMode = bsondoc:binary_to_atom(bsondoc:at(curr_mode, Doc)),
+			NextEvent = bsondoc:binary_to_atom(bsondoc:at(next_event, Doc)),
 			NextEventTime = bsondoc:at(next_event_time, Doc),
 			State = #state{
 				shift_frame = ShiftFrame,
@@ -195,14 +195,14 @@ write_storage_state(#state{
 	next_event = {NextEvent, NextEventTime}
 }) ->
 	Modifier = {
-		shift_frame 	, ShiftFrame,
+		shift_frame     , ShiftFrame,
 		response_frame  , ResponseFrame,
 		delivery_frame  , DeliveryFrame,
 		curr_shift_time , k_datetime:datetime_to_timestamp(CurrShiftTime),
 		next_shift_time , k_datetime:datetime_to_timestamp(NextShiftTime),
 		shifts          , Shifts,
-		curr_mode       , CurrMode,
-		next_event      , NextEvent,
+		curr_mode       , bsondoc:atom_to_binary(CurrMode),
+		next_event      , bsondoc:atom_to_binary(NextEvent),
 		next_event_time , k_datetime:datetime_to_timestamp(NextEventTime)
 	},
 	ok = mongodb_storage:upsert(k_static_storage, 'storage.state', {}, Modifier),

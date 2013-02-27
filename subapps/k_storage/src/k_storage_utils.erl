@@ -46,22 +46,22 @@ doc_to_mt_msg_info(Doc) ->
 	SrcAddrDoc = bsondoc:at(sa, Doc),
 	DstAddrDoc = bsondoc:at(da, Doc),
 	#msg_info{
-		client_type = bsondoc:at(ct, Doc),
+		client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
 		customer_id = bsondoc:at(ci, Doc),
 		in_msg_id = bsondoc:at(imi, Doc),
 		gateway_id = bsondoc:at(gi, Doc),
 		out_msg_id = bsondoc:at(omi, Doc),
-		type = bsondoc:at(t, Doc),
-		encoding = bsondoc:at(e, Doc),
+		type = bsondoc:binary_to_atom(bsondoc:at(t, Doc)),
+		encoding = bsondoc:binary_to_atom(bsondoc:at(e, Doc)),
 		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),
 		reg_dlr = bsondoc:at(rd, Doc),
 		req_time = bsondoc:at(rqt, Doc),
 		resp_time = bsondoc:at(rpt, Doc),
-		resp_status = bsondoc:at(rps, Doc),
+		resp_status = bsondoc:binary_to_atom(bsondoc:at(rps, Doc)),
 		dlr_time = bsondoc:at(dt, Doc),
-		dlr_status = bsondoc:at(ds, Doc)
+		dlr_status = bsondoc:binary_to_atom(bsondoc:at(ds, Doc))
 	}.
 
 -spec doc_to_mo_msg_info(bson:document()) -> #msg_info{}.
@@ -72,8 +72,8 @@ doc_to_mo_msg_info(Doc) ->
 		customer_id = bsondoc:at(ci, Doc),
 		in_msg_id = bsondoc:at(imi, Doc),
 		gateway_id = bsondoc:at(gi, Doc),
-		type = bsondoc:at(t, Doc),
-		encoding = bsondoc:at(e, Doc),
+		type = bsondoc:binary_to_atom(bsondoc:at(t, Doc)),
+		encoding = bsondoc:binary_to_atom(bsondoc:at(e, Doc)),
 		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),

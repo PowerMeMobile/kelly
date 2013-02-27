@@ -29,7 +29,7 @@
 get_mt_msg_status_report(CustomerId, ClientType, InMsgId) ->
 	Selector = {
 		'ci'  , CustomerId,
-		'ct'  , ClientType,
+		'ct'  , bsondoc:atom_to_binary(ClientType),
 		'imi' , InMsgId,
 		'rqt' , {'$exists', true}
 	},
@@ -150,7 +150,7 @@ get_msgs_by_status_report(From, To, Status) when
 			'$gte' , From,
 			'$lt' , To
 		},
-		'ds' , Status
+		'ds' , bsondoc:atom_to_binary(Status)
 	},
 	get_raw_report(mt_messages, Selector).
 
