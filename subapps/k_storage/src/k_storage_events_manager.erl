@@ -160,15 +160,15 @@ start_heartbeat_timer() ->
 read_storage_state() ->
 	case mongodb_storage:find_one(k_static_storage, 'storage.state', {}) of
 		{ok, Doc} ->
-			ShiftFrame = bson:at(shift_frame, Doc),
-			ResponseFrame = bson:at(response_frame, Doc),
-			DeliveryFrame = bson:at(delivery_frame, Doc),
-			CurrShiftTime = bson:at(curr_shift_time, Doc),
-			NextShiftTime = bson:at(next_shift_time, Doc),
-			Shifts = bson:at(shifts, Doc),
-			CurrMode = bson:at(curr_mode, Doc),
-			NextEvent = bson:at(next_event, Doc),
-			NextEventTime = bson:at(next_event_time, Doc),
+			ShiftFrame = bsondoc:at(shift_frame, Doc),
+			ResponseFrame = bsondoc:at(response_frame, Doc),
+			DeliveryFrame = bsondoc:at(delivery_frame, Doc),
+			CurrShiftTime = bsondoc:at(curr_shift_time, Doc),
+			NextShiftTime = bsondoc:at(next_shift_time, Doc),
+			Shifts = bsondoc:at(shifts, Doc),
+			CurrMode = bsondoc:at(curr_mode, Doc),
+			NextEvent = bsondoc:at(next_event, Doc),
+			NextEventTime = bsondoc:at(next_event_time, Doc),
 			State = #state{
 				shift_frame = ShiftFrame,
 				response_frame = ResponseFrame,

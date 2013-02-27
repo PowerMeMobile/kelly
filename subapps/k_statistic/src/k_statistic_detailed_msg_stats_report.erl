@@ -61,8 +61,8 @@ get_records(Collection, From, To) ->
 	end.
 
 strip_doc(Doc) ->
-	GatewayId = bson:at(gi, Doc),
-	ReqTime = bson:at(rqt, Doc),
+	GatewayId = bsondoc:at(gi, Doc),
+	ReqTime = bsondoc:at(rqt, Doc),
 	ReqTimeUnix = k_datetime:timestamp_to_unixepoch(ReqTime),
 	{GatewayId, ReqTimeUnix}.
 

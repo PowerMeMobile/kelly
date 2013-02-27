@@ -169,15 +169,15 @@ get_raw_report(Collection, Selector) ->
 	end.
 
 doc_to_message(Doc) ->
-	InMsgId = bson:at(imi, Doc),
-	GatewayId = bson:at(gi, Doc),
-	CustomerId = bson:at(ci, Doc),
-	Type = bson:at(t, Doc),
-	Encoding = bson:at(e, Doc),
-	Body = bson:at(b, Doc),
-	SrcAddrDoc = bson:at(sa, Doc),
-	DstAddrDoc = bson:at(da, Doc),
-	ReqTime = bson:at(rqt, Doc),
+	InMsgId = bsondoc:at(imi, Doc),
+	GatewayId = bsondoc:at(gi, Doc),
+	CustomerId = bsondoc:at(ci, Doc),
+	Type = bsondoc:at(t, Doc),
+	Encoding = bsondoc:at(e, Doc),
+	Body = bsondoc:at(b, Doc),
+	SrcAddrDoc = bsondoc:at(sa, Doc),
+	DstAddrDoc = bsondoc:at(da, Doc),
+	ReqTime = bsondoc:at(rqt, Doc),
 
 	Datetime = list_to_binary(
 		k_datetime:datetime_to_iso8601(

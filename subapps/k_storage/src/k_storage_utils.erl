@@ -43,40 +43,40 @@ doc_to_addr({a, Addr, t, Ton, n, Npi, r, RefNum}) ->
 
 -spec doc_to_mt_msg_info(bson:document()) -> #msg_info{}.
 doc_to_mt_msg_info(Doc) ->
-	SrcAddrDoc = bson:at(sa, Doc),
-	DstAddrDoc = bson:at(da, Doc),
+	SrcAddrDoc = bsondoc:at(sa, Doc),
+	DstAddrDoc = bsondoc:at(da, Doc),
 	#msg_info{
-		client_type = bson:at(ct, Doc),
-		customer_id = bson:at(ci, Doc),
-		in_msg_id = bson:at(imi, Doc),
-		gateway_id = bson:at(gi, Doc),
-		out_msg_id = bson:at(omi, Doc),
-		type = bson:at(t, Doc),
-		encoding = bson:at(e, Doc),
-		body = bson:at(b, Doc),
+		client_type = bsondoc:at(ct, Doc),
+		customer_id = bsondoc:at(ci, Doc),
+		in_msg_id = bsondoc:at(imi, Doc),
+		gateway_id = bsondoc:at(gi, Doc),
+		out_msg_id = bsondoc:at(omi, Doc),
+		type = bsondoc:at(t, Doc),
+		encoding = bsondoc:at(e, Doc),
+		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),
-		reg_dlr = bson:at(rd, Doc),
-		req_time = bson:at(rqt, Doc),
-		resp_time = bson:at(rpt, Doc),
-		resp_status = bson:at(rps, Doc),
-		dlr_time = bson:at(dt, Doc),
-		dlr_status = bson:at(ds, Doc)
+		reg_dlr = bsondoc:at(rd, Doc),
+		req_time = bsondoc:at(rqt, Doc),
+		resp_time = bsondoc:at(rpt, Doc),
+		resp_status = bsondoc:at(rps, Doc),
+		dlr_time = bsondoc:at(dt, Doc),
+		dlr_status = bsondoc:at(ds, Doc)
 	}.
 
 -spec doc_to_mo_msg_info(bson:document()) -> #msg_info{}.
 doc_to_mo_msg_info(Doc) ->
-	SrcAddrDoc = bson:at(sa, Doc),
-	DstAddrDoc = bson:at(da, Doc),
+	SrcAddrDoc = bsondoc:at(sa, Doc),
+	DstAddrDoc = bsondoc:at(da, Doc),
 	#msg_info{
-		customer_id = bson:at(ci, Doc),
-		in_msg_id = bson:at(imi, Doc),
-		gateway_id = bson:at(gi, Doc),
-		type = bson:at(t, Doc),
-		encoding = bson:at(e, Doc),
-		body = bson:at(b, Doc),
+		customer_id = bsondoc:at(ci, Doc),
+		in_msg_id = bsondoc:at(imi, Doc),
+		gateway_id = bsondoc:at(gi, Doc),
+		type = bsondoc:at(t, Doc),
+		encoding = bsondoc:at(e, Doc),
+		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),
-		reg_dlr = bson:at(rd, Doc),
-		req_time = bson:at(rqt, Doc)
+		reg_dlr = bsondoc:at(rd, Doc),
+		req_time = bsondoc:at(rqt, Doc)
 	}.

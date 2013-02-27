@@ -56,10 +56,10 @@ del_provider(ProviderId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
-	Name = bson:at(name, Doc),
-	Gtw = bson:at(gateway, Doc),
-	BulkGtw = bson:at(bulk_gateway, Doc),
-	ReceiptsSupported = bson:at(receipts_supported, Doc),
+	Name = bsondoc:at(name, Doc),
+	Gtw = bsondoc:at(gateway, Doc),
+	BulkGtw = bsondoc:at(bulk_gateway, Doc),
+	ReceiptsSupported = bsondoc:at(receipts_supported, Doc),
  	#provider{
 		name = Name,
 		gateway = Gtw,

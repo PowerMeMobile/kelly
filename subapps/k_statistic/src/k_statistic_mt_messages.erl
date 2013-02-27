@@ -143,30 +143,30 @@ project(monthly) ->
 
 
 build_mt_report_response({{ID}, Doc}) ->
-	DstAddr = k_storage_utils:doc_to_addr(bson:at(da, Doc)),
-	SrcAddr = k_storage_utils:doc_to_addr(bson:at(sa, Doc)),
-	Timestamp = bson:at(rqt, Doc),
+	DstAddr = k_storage_utils:doc_to_addr(bsondoc:at(da, Doc)),
+	SrcAddr = k_storage_utils:doc_to_addr(bsondoc:at(sa, Doc)),
+	Timestamp = bsondoc:at(rqt, Doc),
 	UnixEpoch  = k_datetime:timestamp_to_unixepoch(Timestamp),
 	Datetime = k_datetime:unixepoch_to_datetime(UnixEpoch),
 	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
 	[{message_id, lists:flatten([io_lib:format("~2.16.0b", [X]) || X <- binary_to_list(ID)])},
 	{request_time, list_to_binary(ISO8601)},
-	{customer_id, bson:at(ci, Doc)},
-	{client_type, bson:at(ct, Doc)},
-	{im_msg_id, bson:at(imi, Doc)},
-	{gateway_id, bson:at(gi, Doc)},
-	{type, bson:at(t, Doc)},
-	{encoding, bson:at(e, Doc)},
-	{body, bson:at(b, Doc)},
+	{customer_id, bsondoc:at(ci, Doc)},
+	{client_type, bsondoc:at(ct, Doc)},
+	{im_msg_id, bsondoc:at(imi, Doc)},
+	{gateway_id, bsondoc:at(gi, Doc)},
+	{type, bsondoc:at(t, Doc)},
+	{encoding, bsondoc:at(e, Doc)},
+	{body, bsondoc:at(b, Doc)},
 	{src_addr, SrcAddr#addr.addr},
 	{dst_addr, DstAddr#addr.addr},
-	{reg_dlr, bson:at(rd, Doc)},
-	{out_msg_id, bson:at(omi, Doc)},
+	{reg_dlr, bsondoc:at(rd, Doc)},
+	{out_msg_id, bsondoc:at(omi, Doc)},
 	{status, get_status(Doc)}].
 
 get_status(Doc) ->
-	DeliveryStatus = bson:at(ds, Doc),
-	ResponseStatus = bson:at(rps, Doc),
+	DeliveryStatus = bsondoc:at(ds, Doc),
+	ResponseStatus = bsondoc:at(rps, Doc),
 	get_status(DeliveryStatus, ResponseStatus).
 
 %% see alley_dto hrl for available message statuses

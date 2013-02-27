@@ -57,11 +57,11 @@ del_network(NetworkId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
-	Name = bson:at(name, Doc),
-	CountryCode = bson:at(country_code, Doc),
-	NumbersLen = bson:at(numbers_len, Doc),
-	Prefixes = bson:at(prefixes, Doc),
-	ProviderId = bson:at(provider_id, Doc),
+	Name = bsondoc:at(name, Doc),
+	CountryCode = bsondoc:at(country_code, Doc),
+	NumbersLen = bsondoc:at(numbers_len, Doc),
+	Prefixes = bsondoc:at(prefixes, Doc),
+	ProviderId = bsondoc:at(provider_id, Doc),
 	#network{
 		name = Name,
 		country_code = CountryCode,

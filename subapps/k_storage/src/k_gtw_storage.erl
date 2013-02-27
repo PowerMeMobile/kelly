@@ -69,21 +69,21 @@ del_gateway(GatewayId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
-	Name = bson:at(name, Doc),
-	RPS = bson:at(rps, Doc),
-	ConnectionsDoc = bson:at(connections, Doc),
+	Name = bsondoc:at(name, Doc),
+	RPS = bsondoc:at(rps, Doc),
+	ConnectionsDoc = bsondoc:at(connections, Doc),
 	Connections = [
 		#connection{
-			id = bson:at(id, ConnDoc),
-			type = bson:at(type, ConnDoc),
-			addr = bson:at(addr, ConnDoc),
-			port = bson:at(port, ConnDoc),
-			sys_id = bson:at(sys_id, ConnDoc),
-			pass = bson:at(pass, ConnDoc),
-			sys_type = bson:at(sys_type, ConnDoc),
-			addr_ton = bson:at(addr_ton, ConnDoc),
-			addr_npi = bson:at(addr_npi, ConnDoc),
-			addr_range = bson:at(addr_range, ConnDoc)
+			id = bsondoc:at(id, ConnDoc),
+			type = bsondoc:at(type, ConnDoc),
+			addr = bsondoc:at(addr, ConnDoc),
+			port = bsondoc:at(port, ConnDoc),
+			sys_id = bsondoc:at(sys_id, ConnDoc),
+			pass = bsondoc:at(pass, ConnDoc),
+			sys_type = bsondoc:at(sys_type, ConnDoc),
+			addr_ton = bsondoc:at(addr_ton, ConnDoc),
+			addr_npi = bsondoc:at(addr_npi, ConnDoc),
+			addr_range = bsondoc:at(addr_range, ConnDoc)
 		}
 		|| ConnDoc <- ConnectionsDoc],
  	#gateway{

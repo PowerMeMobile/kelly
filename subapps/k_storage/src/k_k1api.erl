@@ -45,7 +45,7 @@ get_msg_ids_by_sms_request_id(CustomerId, UserId, SrcAddr, SmsRequestId) ->
 	},
 	case mongodb_storage:find_one(k_static_storage, k1api_sms_request_id_to_msg_ids, Selector) of
 		{ok, Doc} ->
-			MsgIds = bson:at(msg_ids, Doc),
+			MsgIds = bsondoc:at(msg_ids, Doc),
 			{ok, [{CId, Client, MId} || {_, CId, _, Client, _, MId} <- MsgIds]};
 		Error ->
 			Error

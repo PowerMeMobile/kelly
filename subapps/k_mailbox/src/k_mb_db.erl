@@ -204,43 +204,43 @@ get_item(k_mb_k1api_receipt, ID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?k1apiReceiptsColl, {'_id' , ID}),
 	{ok, #k_mb_k1api_receipt{
 		id = ID,
-		customer_id = bson:at(customer_id, Doc),
-		user_id = bson:at(user_id, Doc),
-		source_addr = k_storage_utils:doc_to_addr(bson:at(source_addr, Doc)),
-		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
-		input_message_id = bson:at(input_message_id, Doc),
-		message_state = bson:at(message_state, Doc),
-		delivery_attempt = bson:at(delivery_attempt, Doc),
-		created_at = bson:at(created_at, Doc)
+		customer_id = bsondoc:at(customer_id, Doc),
+		user_id = bsondoc:at(user_id, Doc),
+		source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
+		dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+		input_message_id = bsondoc:at(input_message_id, Doc),
+		message_state = bsondoc:at(message_state, Doc),
+		delivery_attempt = bsondoc:at(delivery_attempt, Doc),
+		created_at = bsondoc:at(created_at, Doc)
 	}};
 get_item(k_mb_funnel_receipt, ID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?funnelReceiptsColl, {'_id' , ID}),
 	{ok, #k_mb_funnel_receipt{
 		id = ID,
-		customer_id = bson:at(customer_id, Doc),
-		user_id = bson:at(user_id, Doc),
-		source_addr = k_storage_utils:doc_to_addr(bson:at(source_addr, Doc)),
-		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
-		input_message_id = bson:at(input_message_id, Doc),
-		submit_date = bson:at(submit_date, Doc),
-		done_date = bson:at(done_date, Doc),
-		message_state = bson:at(message_state, Doc),
-		delivery_attempt = bson:at(delivery_attempt, Doc),
-		created_at = bson:at(created_at, Doc)
+		customer_id = bsondoc:at(customer_id, Doc),
+		user_id = bsondoc:at(user_id, Doc),
+		source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
+		dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+		input_message_id = bsondoc:at(input_message_id, Doc),
+		submit_date = bsondoc:at(submit_date, Doc),
+		done_date = bsondoc:at(done_date, Doc),
+		message_state = bsondoc:at(message_state, Doc),
+		delivery_attempt = bsondoc:at(delivery_attempt, Doc),
+		created_at = bsondoc:at(created_at, Doc)
 	}};
 get_item(k_mb_incoming_sms, ID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?incomingSmsColl, {'_id' , ID}),
 	{ok, #k_mb_incoming_sms{
 		id = ID,
-		customer_id = bson:at(customer_id, Doc),
-		user_id = bson:at(user_id, Doc),
-		source_addr = k_storage_utils:doc_to_addr(bson:at(source_addr, Doc)),
-		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
-		received = bson:at(received, Doc),
-		message_body = bson:at(message_body, Doc),
-		encoding = bson:at(encoding, Doc),
-		delivery_attempt = bson:at(delivery_attempt, Doc),
-		created_at = bson:at(created_at, Doc)
+		customer_id = bsondoc:at(customer_id, Doc),
+		user_id = bsondoc:at(user_id, Doc),
+		source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
+		dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+		received = bsondoc:at(received, Doc),
+		message_body = bsondoc:at(message_body, Doc),
+		encoding = bsondoc:at(encoding, Doc),
+		delivery_attempt = bsondoc:at(delivery_attempt, Doc),
+		created_at = bsondoc:at(created_at, Doc)
 	}};
 get_item(ItemType, ItemID) ->
 	[Item] = mnesia:dirty_read(ItemType, ItemID),
@@ -266,18 +266,18 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 			undefined;
 		{ok, [{_, Doc}]} ->
 			?log_debug("Doc: ~p", [Doc]),
-			SubID = bson:at(subscription_id, Doc),
+			SubID = bsondoc:at(subscription_id, Doc),
 			?log_debug("SubID: ~p", [SubID]),
 			{ok, [{_, SubDoc}]} = mongodb_storage:find(k_static_storage, ?k1apiReceiptSubColl, {'_id' , SubID}),
 			Sub = #k_mb_k1api_receipt_sub{
 				id = SubID,
-				customer_id = bson:at(customer_id, SubDoc),
-				user_id = bson:at(user_id, SubDoc),
-				queue_name = bson:at(queue_name, SubDoc),
-				dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, SubDoc)),
-				notify_url = bson:at(notify_url, SubDoc),
-				callback_data = bson:at(callback_data, SubDoc),
-				created_at = bson:at(created_at, SubDoc)
+				customer_id = bsondoc:at(customer_id, SubDoc),
+				user_id = bsondoc:at(user_id, SubDoc),
+				queue_name = bsondoc:at(queue_name, SubDoc),
+				dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, SubDoc)),
+				notify_url = bsondoc:at(notify_url, SubDoc),
+				callback_data = bsondoc:at(callback_data, SubDoc),
+				created_at = bsondoc:at(created_at, SubDoc)
 			},
 			?log_debug("FOUND suitable subscription: ~p", [Sub]),
 			{ok, Sub}
@@ -287,40 +287,40 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 	{ok, k_mb_subscription()}.
 get_subscription(SubscriptionID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}),
-	get_subscription(bson:at(type, Doc), SubscriptionID, Doc).
+	get_subscription(bsondoc:at(type, Doc), SubscriptionID, Doc).
 
 get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
 	{ok, #k_mb_k1api_receipt_sub{
 		id = ID,
-		customer_id = bson:at(customer_id, Doc),
-		user_id = bson:at(user_id, Doc),
-		queue_name = bson:at(queue_name, Doc),
-		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
-		notify_url = bson:at(notify_url, Doc),
-		callback_data = bson:at(callback_data, Doc),
-		created_at = bson:at(created_at, Doc)
+		customer_id = bsondoc:at(customer_id, Doc),
+		user_id = bsondoc:at(user_id, Doc),
+		queue_name = bsondoc:at(queue_name, Doc),
+		dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+		notify_url = bsondoc:at(notify_url, Doc),
+		callback_data = bsondoc:at(callback_data, Doc),
+		created_at = bsondoc:at(created_at, Doc)
 	}};
 get_subscription(k_mb_k1api_incoming_sms_sub, ID, Doc) ->
 	{ok, #k_mb_k1api_incoming_sms_sub{
 		id = ID,
-		customer_id = bson:at(customer_id, Doc),
-		user_id = bson:at(user_id, Doc),
-		priority = bson:at(priority, Doc),
-		queue_name = bson:at(queue_name, Doc),
-		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
-		notify_url = bson:at(notify_url, Doc),
-		criteria = bson:at(criteria, Doc),
-		callback_data = bson:at(callback_data, Doc),
-		created_at = bson:at(created_at, Doc)
+		customer_id = bsondoc:at(customer_id, Doc),
+		user_id = bsondoc:at(user_id, Doc),
+		priority = bsondoc:at(priority, Doc),
+		queue_name = bsondoc:at(queue_name, Doc),
+		dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+		notify_url = bsondoc:at(notify_url, Doc),
+		criteria = bsondoc:at(criteria, Doc),
+		callback_data = bsondoc:at(callback_data, Doc),
+		created_at = bsondoc:at(created_at, Doc)
 	}};
 get_subscription(k_mb_funnel_sub, ID, Doc) ->
 	{ok, #k_mb_funnel_sub{
 		id = ID,
-		customer_id = bson:at(customer_id, Doc),
-		user_id = bson:at(user_id, Doc),
-		priority = bson:at(priority, Doc),
-		queue_name = bson:at(queue_name, Doc),
-		created_at = bson:at(created_at, Doc)
+		customer_id = bsondoc:at(customer_id, Doc),
+		user_id = bsondoc:at(user_id, Doc),
+		priority = bsondoc:at(priority, Doc),
+		queue_name = bsondoc:at(queue_name, Doc),
+		created_at = bsondoc:at(created_at, Doc)
 	}}.
 
 -spec get_subscription_ids() -> {ok, [binary()]}.
@@ -349,7 +349,7 @@ get_pending(CustomerID, UserID) ->
 		'user_id'     , UserID
 	},
 	{ok, Docs} = mongodb_storage:find(k_static_storage, ?pendingItemsColl, Selector),
-	Items = [{bson:at(type, Doc), ID} || {ID, Doc} <- Docs],
+	Items = [{bsondoc:at(type, Doc), ID} || {ID, Doc} <- Docs],
 	{ok, Items}.
 
 -spec get_incoming_sms(binary(), bitstring(), addr(), integer() | undefined) ->
@@ -364,15 +364,15 @@ get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
 	AllItems =
 	[#k_mb_incoming_sms{
 		id = ID,
-		customer_id = bson:at(customer_id, Doc),
-		user_id = bson:at(user_id, Doc),
-		source_addr = k_storage_utils:doc_to_addr(bson:at(source_addr, Doc)),
-		dest_addr = k_storage_utils:doc_to_addr(bson:at(dest_addr, Doc)),
-		received = bson:at(received, Doc),
-		message_body = bson:at(message_body, Doc),
-		encoding = bson:at(encoding, Doc),
-		delivery_attempt = bson:at(delivery_attempt, Doc),
-		created_at = bson:at(created_at, Doc)
+		customer_id = bsondoc:at(customer_id, Doc),
+		user_id = bsondoc:at(user_id, Doc),
+		source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
+		dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+		received = bsondoc:at(received, Doc),
+		message_body = bsondoc:at(message_body, Doc),
+		encoding = bsondoc:at(encoding, Doc),
+		delivery_attempt = bsondoc:at(delivery_attempt, Doc),
+		created_at = bsondoc:at(created_at, Doc)
 	} || {ID, Doc} <- ISDocs],
 	Total = length(AllItems),
 	Items = first(AllItems, Limit),

@@ -95,48 +95,48 @@ del_customer(CustomerId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
-	UsersDocs = bson:at(users, Doc),
+	UsersDocs = bsondoc:at(users, Doc),
 	Users = [
 		#user{
-			id = bson:at(id, User),
-			pswd_hash = bson:at(pswd_hash, User),
-			permitted_smpp_types = bson:at(permitted_smpp_types, User)
+			id = bsondoc:at(id, User),
+			pswd_hash = bsondoc:at(pswd_hash, User),
+			permitted_smpp_types = bsondoc:at(permitted_smpp_types, User)
 		}
 		|| User <- UsersDocs],
 
-	AllowedSourcesDocs = bson:at(allowed_sources, Doc),
+	AllowedSourcesDocs = bsondoc:at(allowed_sources, Doc),
 	AllowedSources = [
 		#addr{
-			addr = bson:at(addr, Addr),
-			ton = bson:at(ton, Addr),
-			npi = bson:at(npi, Addr)
+			addr = bsondoc:at(addr, Addr),
+			ton = bsondoc:at(ton, Addr),
+			npi = bsondoc:at(npi, Addr)
 		}
 		|| Addr <- AllowedSourcesDocs],
 
 	DefaultSource =
-		case bson:at(default_source, Doc) of
+		case bsondoc:at(default_source, Doc) of
 			undefined -> undefined;
 			AddrDoc when is_tuple(AddrDoc) ->
 				#addr{
-					addr = bson:at(addr, AddrDoc),
-					ton = bson:at(ton, AddrDoc),
-					npi = bson:at(npi, AddrDoc)
+					addr = bsondoc:at(addr, AddrDoc),
+					ton = bsondoc:at(ton, AddrDoc),
+					npi = bsondoc:at(npi, AddrDoc)
 				}
 		end,
 
-	ID = bson:at(id, Doc),
-	UUID = bson:at(uuid, Doc),
-	Name = bson:at(name, Doc),
-	Priority = bson:at(priority, Doc),
-	RPS = bson:at(rps, Doc),
-	NetworkIds = bson:at(networks, Doc),
-	DefProviderID = bson:at(default_provider_id, Doc),
-	ReceiptsAllowed = bson:at(receipts_allowed, Doc),
-	NoRetry = bson:at(no_retry, Doc),
-	DefValidity = bson:at(default_validity, Doc),
-	MaxValidity = bson:at(max_validity, Doc),
-	BillingType = bson:at(billing_type, Doc),
-	State = bson:at(state, Doc),
+	ID = bsondoc:at(id, Doc),
+	UUID = bsondoc:at(uuid, Doc),
+	Name = bsondoc:at(name, Doc),
+	Priority = bsondoc:at(priority, Doc),
+	RPS = bsondoc:at(rps, Doc),
+	NetworkIds = bsondoc:at(networks, Doc),
+	DefProviderID = bsondoc:at(default_provider_id, Doc),
+	ReceiptsAllowed = bsondoc:at(receipts_allowed, Doc),
+	NoRetry = bsondoc:at(no_retry, Doc),
+	DefValidity = bsondoc:at(default_validity, Doc),
+	MaxValidity = bsondoc:at(max_validity, Doc),
+	BillingType = bsondoc:at(billing_type, Doc),
+	State = bsondoc:at(state, Doc),
 
  	#customer{
 		id = ID,

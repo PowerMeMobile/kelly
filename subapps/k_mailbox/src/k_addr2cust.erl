@@ -20,8 +20,8 @@ resolve(Address = #addr{}) ->
 	case mongodb_storage:find(k_static_storage, ?msisdnsColl, Selector) of
 		{ok, []} -> {error, addr_not_used};
 		{ok, [{_, Doc}]} ->
-			CustID = bson:at(customer_id, Doc),
-			UserID = bson:at(user_id, Doc),
+			CustID = bsondoc:at(customer_id, Doc),
+			UserID = bsondoc:at(user_id, Doc),
 			{ok, CustID, UserID}
 	end.
 
@@ -54,6 +54,6 @@ available_addresses(CustID, UserID) ->
 		'user_id'     , UserID
 	},
 	{ok, Docs} = mongodb_storage:find(k_static_storage, ?msisdnsColl, Selector),
-	AddrDocs = [bson:at(address, Doc) || {_, Doc} <- Docs],
+	AddrDocs = [bsondoc:at(address, Doc) || {_, Doc} <- Docs],
 	Items = [k_storage_utils:doc_to_addr(Doc) || Doc <- AddrDocs],
 	{ok, Items}.

@@ -56,9 +56,9 @@ get_records(Collection, From, To) ->
 	end.
 
 strip_doc(Doc) ->
-	InMsgId = bson:at(imi, Doc),
-	CustomerId = bson:at(ci, Doc),
-	{a, DstAddr} = bson:at(da, Doc),
+	InMsgId = bsondoc:at(imi, Doc),
+	CustomerId = bsondoc:at(ci, Doc),
+	{a, DstAddr} = bsondoc:at(da, Doc),
 	{InMsgId, CustomerId, DstAddr}.
 
 build_raw_records(Records, NetworkIdPrefixMap) ->
