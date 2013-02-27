@@ -51,21 +51,20 @@ traverse_delivery_receipts(_GatewayId, _DlrTime, []) ->
 	ok;
 traverse_delivery_receipts(GatewayId, DlrTime,
 	[#just_receipt_dto{message_id = OutMsgId, message_state = DlrStatus} | Receipts]) ->
-	%% we must be sure that the messsage is already stored.
-	%% unfortunately there's not a workaround for this limitation.
-	case k_dynamic_storage:get_mt_msg_info(GatewayId, OutMsgId) of
+	%% note that this is one-shot call. it tries to store #dlr_info{}
+	%% and, if succeeds, it returns the whole document.
+	DlrInfo = #dlr_info{
+		gateway_id = GatewayId,
+		out_msg_id = OutMsgId,
+		dlr_time = DlrTime,
+		dlr_status = DlrStatus
+	},
+	case k_dynamic_storage:set_mt_dlr_info_and_get_msg_info(DlrInfo) of
 		{ok, MsgInfo = #msg_info{
 			client_type = ClientType,
 			customer_id = CustomerId,
 			in_msg_id = InMsgId
 		}} ->
-			DlrInfo = #dlr_info{
-				gateway_id = GatewayId,
-				out_msg_id = OutMsgId,
-				dlr_time = DlrTime,
-				dlr_status = DlrStatus
-			},
-			ok = k_dynamic_storage:set_mt_dlr_info(DlrInfo),
 			ok = register_delivery_receipt(ClientType, CustomerId, InMsgId, MsgInfo, DlrTime, DlrStatus),
 			%% process the rest receipts.
 			traverse_delivery_receipts(GatewayId, DlrTime, Receipts);

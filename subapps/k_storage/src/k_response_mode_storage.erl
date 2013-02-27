@@ -3,16 +3,14 @@
 -export([
 	set_mt_req_info/2,
 	set_mt_resp_info/2,
-	set_mt_dlr_info/2,
-
-	get_mt_msg_info/1,
+	set_mt_dlr_info_and_get_msg_info/2,
 
 	set_mo_msg_info/2
 ]).
 
 -type selector() :: bson:document().
 -type modifier() :: bson:document().
--type reason() :: any().
+-type reason() :: no_entry | term().
 
 %% ===================================================================
 %% API
@@ -21,9 +19,9 @@
 -spec set_mt_req_info(selector(), modifier()) -> ok | {error, reason()}.
 set_mt_req_info(Selector, Modifier) ->
 	Command = {
-		'findandmodify' , <<"mt_messages">>,
-		'query'  , Selector,
-		'update' , Modifier
+		'findandmodify', <<"mt_messages">>,
+		'query', Selector,
+		'update', Modifier
 	},
 	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
 		{ok, {value, _, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
@@ -37,9 +35,9 @@ set_mt_req_info(Selector, Modifier) ->
 -spec set_mt_resp_info(selector(), modifier()) -> ok | {error, reason()}.
 set_mt_resp_info(Selector, Modifier) ->
 	Command = {
-		'findandmodify' , <<"mt_messages">>,
-		'query'  , Selector,
-		'update' , Modifier
+		'findandmodify', <<"mt_messages">>,
+		'query', Selector,
+		'update', Modifier
 	},
 	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
 		{ok, {value, _, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
@@ -50,29 +48,26 @@ set_mt_resp_info(Selector, Modifier) ->
 			Error
 	end.
 
--spec set_mt_dlr_info(selector(), modifier()) -> ok | {error, reason()}.
-set_mt_dlr_info(Selector, Modifier) ->
+-spec set_mt_dlr_info_and_get_msg_info(selector(), modifier()) -> {ok, bson:document()} | {error, reason()}.
+set_mt_dlr_info_and_get_msg_info(Selector, Modifier) ->
 	Command = {
-		'findandmodify' , <<"mt_messages">>,
-		'query'  , Selector,
-		'update' , Modifier
+		'findandmodify', <<"mt_messages">>,
+		'query', Selector,
+		'update', Modifier,
+		'new', true
 	},
 	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
-		{ok, {value, _, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
-			ok;
-		{ok, {value, undefined, ok, _}} ->
-			mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Modifier);
-		Error ->
-			Error
-	end.
-
--spec get_mt_msg_info(selector()) -> {ok, bson:document()} | {error, reason()}.
-get_mt_msg_info(Selector) ->
-	case mongodb_storage:find_one(k_curr_dynamic_storage, mt_messages, Selector) of
-		{ok, Doc} ->
+		{ok, {value, Doc, {updatedExisting, true, n, 1}, ok, _}} ->
 			{ok, Doc};
-		{error, no_entry} ->
-			mongodb_storage:find_one(k_prev_dynamic_storage, mt_messages, Selector);
+		{ok, {value, undefined, ok, _}} ->
+			case mongodb_storage:command(k_curr_dynamic_storage, Command) of
+				{ok, {value, Doc, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
+					{ok, Doc};
+				{ok, {value, undefined, ok, _}} ->
+					{error, no_entry};
+				Error ->
+					Error
+			end;
 		Error ->
 			Error
 	end.

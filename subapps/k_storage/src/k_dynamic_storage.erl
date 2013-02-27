@@ -3,9 +3,7 @@
 -export([
 	set_mt_req_info/1,
 	set_mt_resp_info/1,
-	set_mt_dlr_info/1,
-
-	get_mt_msg_info/2,
+	set_mt_dlr_info_and_get_msg_info/1,
 
 	set_mo_msg_info/1
 ]).
@@ -41,17 +39,17 @@ set_mt_req_info(#req_info{
 	},
 	Modifier = {
 		'$set', {
-			'ct'  , ClientType,
-			'ci'  , CustomerId,
-			'imi' , InMsgId,
-			'gi'  , GatewayId,
-			't'   , Type,
-			'e'   , Encoding,
-			'b'   , Message,
-			'sa'  , k_storage_utils:addr_to_doc(SrcAddr),
-			'da'  , k_storage_utils:addr_to_doc(DstAddr),
-			'rd'  , RegDlr,
-			'rqt' , ReqTime
+			'ct' , ClientType,
+			'ci' , CustomerId,
+			'imi', InMsgId,
+			'gi' , GatewayId,
+			't'  , Type,
+			'e'  , Encoding,
+			'b'  , Message,
+			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+			'da' , k_storage_utils:addr_to_doc(DstAddr),
+			'rd' , RegDlr,
+			'rqt', ReqTime
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
@@ -68,55 +66,46 @@ set_mt_resp_info(#resp_info{
 	resp_status = RespStatus
 }) ->
 	Selector = {
-		'ci'  , CustomerId,
-		'ct'  , ClientType,
-		'imi' , InMsgId
+		'ci' , CustomerId,
+		'ct' , ClientType,
+		'imi', InMsgId
 	},
 	Modifier = {
 		'$set', {
-			'ct'  , ClientType,
-			'ci'  , CustomerId,
-			'imi' , InMsgId,
-			'gi'  , GatewayId,
-			'omi' , OutMsgId,
-			'rpt' , RespTime,
-			'rps' , RespStatus
+			'ct' , ClientType,
+			'ci' , CustomerId,
+			'imi', InMsgId,
+			'gi' , GatewayId,
+			'omi', OutMsgId,
+			'rpt', RespTime,
+			'rps', RespStatus
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
 	StorageMode:set_mt_resp_info(Selector, Modifier).
 
--spec set_mt_dlr_info(#dlr_info{}) -> ok | {error, reason()}.
-set_mt_dlr_info(#dlr_info{
+-spec set_mt_dlr_info_and_get_msg_info(#dlr_info{}) -> {ok, #msg_info{}} | {error, reason()}.
+set_mt_dlr_info_and_get_msg_info(#dlr_info{
 	gateway_id = GatewayId,
 	out_msg_id = OutMsgId,
 	dlr_time = DlrTime,
 	dlr_status = DlrStatus
 }) ->
 	Selector = {
-		'gi'  , GatewayId,
-		'omi' , OutMsgId
+		'gi' , GatewayId,
+		'omi', OutMsgId,
+		'rqt', {'$exists', true}
 	},
 	Modifier = {
 		'$set', {
-			'gi'  , GatewayId,
-			'omi' , OutMsgId,
-			'dt'  , DlrTime,
-			'ds'  , DlrStatus
+			'gi' , GatewayId,
+			'omi', OutMsgId,
+			'dt' , DlrTime,
+			'ds' , DlrStatus
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
-	StorageMode:set_mt_dlr_info(Selector, Modifier).
-
--spec get_mt_msg_info(gateway_id(), msg_id()) -> {ok, #msg_info{}} | {error, reason()}.
-get_mt_msg_info(GatewayId, OutMsgId) ->
-	Selector = {
-		'gi'  , GatewayId,
-		'omi' , OutMsgId,
-		'rqt' , {'$exists', true}
-	},
-	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
-	case StorageMode:get_mt_msg_info(Selector) of
+	case StorageMode:set_mt_dlr_info_and_get_msg_info(Selector, Modifier) of
 		{ok, Doc} ->
 			{ok, k_storage_utils:doc_to_mt_msg_info(Doc)};
 		Error ->
@@ -137,21 +126,21 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 	ReqTime = MsgInfo#msg_info.req_time,
 
 	Selector = {
-		'gi'  , GatewayId,
-		'imi' , InMsgId
+		'gi' , GatewayId,
+		'imi', InMsgId
 	},
 	Modifier = {
 		'$set' , {
-			'imi' , InMsgId,
-			'gi'  , GatewayId,
-			'ci'  , CustomerId,
-			't'   , Type,
-			'e'   , Encoding,
-			'b'   , MessageBody,
-			'sa'  , k_storage_utils:addr_to_doc(SrcAddr),
-			'da'  , k_storage_utils:addr_to_doc(DstAddr),
-			'rd'  , RegDlr,
-			'rqt' , ReqTime
+			'imi', InMsgId,
+			'gi' , GatewayId,
+			'ci' , CustomerId,
+			't'  , Type,
+			'e'  , Encoding,
+			'b'  , MessageBody,
+			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+			'da' , k_storage_utils:addr_to_doc(DstAddr),
+			'rd' , RegDlr,
+			'rqt', ReqTime
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
