@@ -64,7 +64,7 @@ save(#k_mb_incoming_sms{} = Sms) ->
 			'dest_addr' , k_storage_utils:addr_to_doc(Sms#k_mb_incoming_sms.dest_addr),
 			'received' , Sms#k_mb_incoming_sms.received,
 			'message_body' , Sms#k_mb_incoming_sms.message_body,
-			'encoding' , Sms#k_mb_incoming_sms.encoding,
+			'encoding' , bsondoc:atom_to_binary(Sms#k_mb_incoming_sms.encoding),
 			'delivery_attempt' , Sms#k_mb_incoming_sms.delivery_attempt,
 			'created_at' , Sms#k_mb_incoming_sms.created_at
 		}
@@ -335,7 +335,7 @@ set_pending(ItemType, ItemID, CustomerID, UserID) ->
 	Modifier = {
 		'$set' , {
 			'type'        , bsondoc:atom_to_binary(ItemType),
-			'customer_id' , bsondoc:atom_to_binary(CustomerID),
+			'customer_id' , CustomerID,
 			'user_id'     , UserID
 		}
 	},
