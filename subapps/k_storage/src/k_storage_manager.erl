@@ -117,8 +117,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal
 %% ===================================================================
 
-ensure_static_storage_index(_ServerName) ->
-	ok.
+ensure_static_storage_index(ServerName) ->
+	ok = mongodb_storage:ensure_index(ServerName, k1api_sms_request_id_to_msg_ids,
+	{key, {customer_id, 1, user_id, 1, src_addr, 1, req_id, 1}}).
 
 ensure_dynamic_storage_index(ServerName) ->
 	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
