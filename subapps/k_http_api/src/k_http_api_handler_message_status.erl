@@ -24,7 +24,7 @@ init() ->
 				path = [<<"message_status">>, message_id, <<"client">>, client_type, <<"customer">>, customer_id],
 				params = [
 					#param{name = message_id, mandatory = true, repeated = false, type = binary},
-					#param{name = client_type, mandatory = true, repeated = false, type = binary},
+					#param{name = client_type, mandatory = true, repeated = false, type = atom},
 					#param{name = customer_id, mandatory = true, repeated = false, type = binary}
 				]},
 

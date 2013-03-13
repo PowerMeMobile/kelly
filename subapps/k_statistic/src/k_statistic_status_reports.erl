@@ -8,18 +8,8 @@
 
 -include_lib("k_common/include/msg_info.hrl").
 
--type customer_id() :: binary().
--type client_type() :: funnel | k1api.
--type in_msg_id() :: binary().
 -type report() :: term().
 -type reason() :: term().
--type timestamp() :: erlang:timestamp().
-
--type status() ::
-	received
-  | submitted
-  | resp_status()
-  | dlr_status().
 
 %% ===================================================================
 %% API

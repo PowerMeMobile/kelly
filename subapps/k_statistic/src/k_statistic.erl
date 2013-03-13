@@ -12,16 +12,11 @@
 	downlink_report/0
 ]).
 
--include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/storages.hrl").
 
--type customer_id() :: binary().
--type client_type() :: funnel | k1api.
--type in_msg_id() :: binary().
 -type report() :: term().
 -type reason() :: term().
--type status() :: atom().
 
 %% ===================================================================
 %% API

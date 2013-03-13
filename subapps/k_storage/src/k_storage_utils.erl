@@ -9,7 +9,6 @@
 ]).
 
 -include_lib("alley_dto/include/addr.hrl").
--include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 
 %% ===================================================================
