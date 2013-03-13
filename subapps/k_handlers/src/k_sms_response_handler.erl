@@ -32,7 +32,7 @@ process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
 
 -spec sms_response_to_resp_info_list(#just_sms_response_dto{}) -> [#resp_info{}].
 sms_response_to_resp_info_list(#just_sms_response_dto{
-	id = _Id,
+	id = _RequestId,
 	customer_id = CustomerId,
 	client_type = ClientType,
 	gateway_id = GatewayId,

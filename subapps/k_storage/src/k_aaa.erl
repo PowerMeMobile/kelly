@@ -42,9 +42,9 @@ get_customer_by_id(CustomerId) ->
 del_customer(CustomerId) ->
 	k_aaa_customers:del_customer(CustomerId).
 
--spec get_customer_user(#customer{}, UserID :: string()) -> {ok, #user{}} | {error, no_entry} | {error, term()}.
-get_customer_user(#customer{users = UserList}, UserID) ->
-	find_user(UserList, UserID).
+-spec get_customer_user(#customer{}, UserId :: string()) -> {ok, #user{}} | {error, no_entry} | {error, term()}.
+get_customer_user(#customer{users = UserList}, UserId) ->
+	find_user(UserList, UserId).
 
 -spec set_customer_user(#user{}, customer_id()) -> ok | {error, no_entry} | {error, term()}.
 set_customer_user(User = #user{id = UserId}, CustomerUUID) ->

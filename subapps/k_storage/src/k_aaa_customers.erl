@@ -128,13 +128,13 @@ doc_to_record(Doc) ->
 				}
 		end,
 
-	ID = bsondoc:at(id, Doc),
+	Id = bsondoc:at(id, Doc),
 	UUID = bsondoc:at(uuid, Doc),
 	Name = bsondoc:at(name, Doc),
 	Priority = bsondoc:at(priority, Doc),
 	RPS = bsondoc:at(rps, Doc),
 	NetworkIds = bsondoc:at(networks, Doc),
-	DefProviderID = bsondoc:at(default_provider_id, Doc),
+	DefProviderId = bsondoc:at(default_provider_id, Doc),
 	ReceiptsAllowed = bsondoc:at(receipts_allowed, Doc),
 	NoRetry = bsondoc:at(no_retry, Doc),
 	DefValidity = bsondoc:at(default_validity, Doc),
@@ -143,7 +143,7 @@ doc_to_record(Doc) ->
 	State = bsondoc:at(state, Doc),
 
  	#customer{
-		id = ID,
+		id = Id,
 		uuid = UUID,
 		name = Name,
 		priority = Priority,
@@ -151,7 +151,7 @@ doc_to_record(Doc) ->
 		allowed_sources = AllowedSources,
 		default_source = DefaultSource,
 		networks = NetworkIds,
-		default_provider_id = DefProviderID,
+		default_provider_id = DefProviderId,
 		receipts_allowed = ReceiptsAllowed,
 		no_retry = NoRetry,
 		default_validity = DefValidity,
