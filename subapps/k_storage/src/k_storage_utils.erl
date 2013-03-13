@@ -45,6 +45,7 @@ doc_to_mt_msg_info(Doc) ->
 	SrcAddrDoc = bsondoc:at(sa, Doc),
 	DstAddrDoc = bsondoc:at(da, Doc),
 	#msg_info{
+		msg_id = bsondoc:at('_id', Doc),
 		client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
 		customer_id = bsondoc:at(ci, Doc),
 		in_msg_id = bsondoc:at(imi, Doc),

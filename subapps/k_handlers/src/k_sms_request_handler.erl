@@ -42,7 +42,7 @@ get_param_by_name(Name, Params) ->
 
 -spec sms_request_to_req_info_list(#just_sms_request_dto{}) -> [#req_info{}].
 sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
-	id = _RequestId,
+	id = RequestId,
 	gateway_id = GatewayId,
 	customer_id = CustomerId,
 	client_type = ClientType,
@@ -69,6 +69,7 @@ sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
 	process_k1api_req(SmsRequest, AllPairs),
 	lists:map(fun({DestAddr, MessageId}) ->
 				#req_info{
+					req_id = RequestId,
 					client_type = ClientType,
 					customer_id = CustomerId,
 					in_msg_id = MessageId,

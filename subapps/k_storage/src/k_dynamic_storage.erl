@@ -19,6 +19,7 @@
 
 -spec set_mt_req_info(#req_info{}) -> ok | {error, reason()}.
 set_mt_req_info(#req_info{
+	req_id = ReqId,
 	client_type = ClientType,
 	customer_id = CustomerId,
 	in_msg_id = InMsgId,
@@ -32,9 +33,7 @@ set_mt_req_info(#req_info{
 	req_time = ReqTime
 }) ->
 	Selector = {
-		'ci' , CustomerId,
-		'ct' , bsondoc:atom_to_binary(ClientType),
-		'imi', InMsgId
+		'_id', ?MAKE_MSG_ID(ReqId, InMsgId)
 	},
 	Modifier = {
 		'$set', {
@@ -56,6 +55,7 @@ set_mt_req_info(#req_info{
 
 -spec set_mt_resp_info(#resp_info{}) -> ok | {error, reason()}.
 set_mt_resp_info(#resp_info{
+	req_id = ReqId,
 	client_type = ClientType,
 	customer_id = CustomerId,
 	in_msg_id = InMsgId,
@@ -65,9 +65,7 @@ set_mt_resp_info(#resp_info{
 	resp_status = RespStatus
 }) ->
 	Selector = {
-		'ci' , CustomerId,
-		'ct' , bsondoc:atom_to_binary(ClientType),
-		'imi', InMsgId
+		'_id', ?MAKE_MSG_ID(ReqId, InMsgId)
 	},
 	Modifier = {
 		'$set', {
