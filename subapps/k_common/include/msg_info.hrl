@@ -1,11 +1,9 @@
 -ifndef(msg_info_hrl).
 -define(msg_info_hrl, included).
 
+-include("customer.hrl").
 -include_lib("alley_dto/include/addr.hrl").
-
--type encoding() :: atom() | integer().
--type src_addr() :: #addr{}.
--type dst_addr() :: #addr{}.
+-include_lib("alley_dto/include/adto_types.hrl").
 
 -type resp_status() ::
 	success
@@ -22,38 +20,56 @@
   | rejected
   | unrecognized.
 
+-type status() ::
+	received
+  | submitted
+  | resp_status()
+  | dlr_status().
+
+-type req_id() :: binary().
+-type in_msg_id() :: binary().
+-type out_msg_id() :: binary().
+-type encoding() :: atom() | integer().
+-type src_addr() :: #addr{}.
+-type dst_addr() :: #addr{}.
+-type timestamp() :: erlang:timestamp().
+-type msg_id() :: binary(). %% <<req_id()/binary, $#, in_msg_id()>>
+
 -record(req_info, {
-    client_type :: funnel | k1api,
-    customer_id :: binary(),
-	in_msg_id :: binary(),
-    gateway_id :: binary(),
+	req_id :: req_id(),
+    client_type :: client_type(),
+    customer_id :: customer_id(),
+	in_msg_id :: in_msg_id(),
+    gateway_id :: gateway_id(),
     type :: atom(),
     encoding :: encoding(),
     body :: binary(),
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
-	req_time :: erlang:timestamp()
+	req_time :: timestamp()
 }).
 
 -record(resp_info, {
-    client_type :: funnel | k1api,
-    customer_id :: binary(),
-	in_msg_id :: binary(),
-    gateway_id :: binary(),
-	out_msg_id :: binary(),
-	resp_time :: erlang:timestamp(),
+	req_id :: req_id(),
+    client_type :: client_type(),
+    customer_id :: customer_id(),
+	in_msg_id :: in_msg_id(),
+    gateway_id :: gateway_id(),
+	out_msg_id :: out_msg_id(),
+	resp_time :: timestamp(),
 	resp_status :: resp_status()
 }).
 
 -record(dlr_info, {
-    gateway_id :: binary(),
-	out_msg_id :: binary(),
-	dlr_time :: erlang:timestamp(),
+    gateway_id :: gateway_id(),
+	out_msg_id :: out_msg_id(),
+	dlr_time :: timestamp(),
 	dlr_status :: dlr_status()
 }).
 
 -record(msg_info, {
+	msg_id :: msg_id(),
     client_type :: funnel | k1api,
     customer_id :: binary(),
 	in_msg_id :: binary(),
@@ -65,10 +81,10 @@
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
-	req_time :: erlang:timestamp(),
-	resp_time :: erlang:timestamp(),
+	req_time :: timestamp(),
+	resp_time :: timestamp(),
 	resp_status :: resp_status(),
-	dlr_time :: erlang:timestamp(),
+	dlr_time :: timestamp(),
 	dlr_status :: dlr_status()
 }).
 
@@ -84,5 +100,7 @@
 			DlrStatus
 	end
 ).
+
+-define(MAKE_MSG_ID(ReqId, InMsgId), <<ReqId/binary, $#, InMsgId/binary>>).
 
 -endif. % msg_info_hrl

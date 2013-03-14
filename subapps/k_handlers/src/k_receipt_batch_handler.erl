@@ -3,7 +3,6 @@
 -export([process/2]).
 
 -include("amqp_worker_reply.hrl").
--include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").

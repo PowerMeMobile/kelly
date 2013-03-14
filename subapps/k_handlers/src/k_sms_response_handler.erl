@@ -3,7 +3,6 @@
 -export([process/2]).
 
 -include("amqp_worker_reply.hrl").
--include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
@@ -32,7 +31,7 @@ process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
 
 -spec sms_response_to_resp_info_list(#just_sms_response_dto{}) -> [#resp_info{}].
 sms_response_to_resp_info_list(#just_sms_response_dto{
-	id = _Id,
+	id = RequestId,
 	customer_id = CustomerId,
 	client_type = ClientType,
 	gateway_id = GatewayId,
@@ -49,6 +48,7 @@ sms_response_to_resp_info_list(#just_sms_response_dto{
 					error_code = _ErrorCode
 				 }) ->
 					#resp_info{
+						req_id = RequestId,
 						client_type = ClientType,
 						customer_id = CustomerId,
 						in_msg_id = OriginalId,

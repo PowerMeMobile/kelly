@@ -34,7 +34,7 @@
 	billing_type		:: billing_type(),
 	state = 0			:: non_neg_integer() %% 0 blocked, 1 active
 }).
--type customer_id() 	:: uuid().
+-type customer_id() 	:: binary().
 -type system_id() 		:: binary().
 -type customer() 		:: #customer{}.
 

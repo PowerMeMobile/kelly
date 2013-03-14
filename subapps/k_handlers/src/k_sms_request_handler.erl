@@ -3,7 +3,6 @@
 -export([process/2]).
 
 -include("amqp_worker_reply.hrl").
--include_lib("k_common/include/msg_id.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
@@ -43,7 +42,7 @@ get_param_by_name(Name, Params) ->
 
 -spec sms_request_to_req_info_list(#just_sms_request_dto{}) -> [#req_info{}].
 sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
-	id = _SmsRequestID,
+	id = RequestId,
 	gateway_id = GatewayId,
 	customer_id = CustomerId,
 	client_type = ClientType,
@@ -70,6 +69,7 @@ sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
 	process_k1api_req(SmsRequest, AllPairs),
 	lists:map(fun({DestAddr, MessageId}) ->
 				#req_info{
+					req_id = RequestId,
 					client_type = ClientType,
 					customer_id = CustomerId,
 					in_msg_id = MessageId,
@@ -84,37 +84,35 @@ sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
 				} end, AllPairs).
 
 -spec split(binary()) -> [binary()].
-split(BinIDs) ->
-	binary:split(BinIDs, <<":">>, [global, trim]).
+split(BinIds) ->
+	binary:split(BinIds, <<":">>, [global, trim]).
 
-process_k1api_req(SmsRequest = #just_sms_request_dto{client_type = k1api}, SmsIDs) ->
+process_k1api_req(SmsRequest = #just_sms_request_dto{client_type = k1api}, SmsIds) ->
 	#just_sms_request_dto{
-		id = SmsRequestID,
-		customer_id = CustomerID,
+		id = RequestId,
+		customer_id = CustomerId,
 		params = Params,
 		source_addr = SourceAddr
 	} = SmsRequest,
-	InputMessageIDs = lists:map(fun({_Addr, ID}) ->
-		{CustomerID, k1api, ID}
-	end, SmsIDs),
+	InputMessageIds = lists:map(fun({_Addr, Id}) -> {CustomerId, k1api, Id} end, SmsIds),
 	NotifyURL = get_param_by_name(<<"k1api_notify_url">>, Params),
 	?log_debug("NotifyURL: ~p", [NotifyURL]),
 	CallbackData = get_param_by_name(<<"k1api_callback_data">>, Params),
 	?log_debug("CallbackData: ~p", [CallbackData]),
-	SubID = create_k1api_receipt_subscription(CustomerID, <<"undefined">>, SourceAddr, NotifyURL, CallbackData),
-	ok = link_input_id_to_sub_id(InputMessageIDs, SubID),
-	ok = link_sms_request_id_to_message_ids(CustomerID, undefined, SourceAddr, SmsRequestID, InputMessageIDs);
+	SubId = create_k1api_receipt_subscription(CustomerId, <<"undefined">>, SourceAddr, NotifyURL, CallbackData),
+	ok = link_input_id_to_sub_id(InputMessageIds, SubId),
+	ok = link_sms_request_id_to_message_ids(CustomerId, undefined, SourceAddr, RequestId, InputMessageIds);
 process_k1api_req(_, _) ->
 	ok.
 
 create_k1api_receipt_subscription(_, _, _, undefined, _) -> undefined;
-create_k1api_receipt_subscription(CustomerID, UserID, DestAddr, NotifyURL, CallbackData) ->
+create_k1api_receipt_subscription(CustomerId, UserId, DestAddr, NotifyURL, CallbackData) ->
 	QName = <<"pmm.k1api.incoming">>,
-	SubscriptionID = uuid:newid(),
+	SubscriptionId = uuid:newid(),
 	Subscription = #k_mb_k1api_receipt_sub{
-		id = SubscriptionID,
-		customer_id = CustomerID,
-		user_id = UserID,
+		id = SubscriptionId,
+		customer_id = CustomerId,
+		user_id = UserId,
 		queue_name = QName,
 		dest_addr = DestAddr,
 		notify_url = NotifyURL,
@@ -122,20 +120,19 @@ create_k1api_receipt_subscription(CustomerID, UserID, DestAddr, NotifyURL, Callb
 		created_at = k_datetime:utc_timestamp()
 	},
 	ok = k_mailbox:register_sms_req_receipts_subscription(Subscription),
-	SubscriptionID.
+	SubscriptionId.
 
 link_input_id_to_sub_id(_, undefined) -> ok;
-link_input_id_to_sub_id([], _SubID) -> ok;
-link_input_id_to_sub_id([InputID | RestIDs], SubID) ->
-	ok = k_mb_db:link_input_id_to_sub_id(InputID, SubID),
-	link_input_id_to_sub_id(RestIDs, SubID).
+link_input_id_to_sub_id([], _SubId) -> ok;
+link_input_id_to_sub_id([InputId | RestIds], SubId) ->
+	ok = k_mb_db:link_input_id_to_sub_id(InputId, SubId),
+	link_input_id_to_sub_id(RestIds, SubId).
 
 link_sms_request_id_to_message_ids(
-	CustomerID, UserID, SenderAddress, SmsRequestID, InputMessageIDs
+	CustomerId, UserId, SenderAddress, SmsRequestId, InputMessageIds
 ) ->
-	%% Include CustomerID & UserID to Key to avoid access to another's
+	%% Include CustomerId & UserId to Key to avoid access to another's
 	%% sms statuses
-	%% Include SenderAddress into Key to make SmsRequestID unique
+	%% Include SenderAddress into Key to make SmsRequestId unique
 	%% within specific SenderAddress
-
-	ok = k_k1api:link_sms_request_id_to_msg_ids(CustomerID, UserID, SenderAddress, SmsRequestID, InputMessageIDs).
+	ok = k_k1api:link_sms_request_id_to_msg_ids(CustomerId, UserId, SenderAddress, SmsRequestId, InputMessageIds).

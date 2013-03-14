@@ -8,18 +8,8 @@
 
 -include_lib("k_common/include/msg_info.hrl").
 
--type customer_id() :: binary().
--type client_type() :: funnel | k1api.
--type in_msg_id() :: binary().
 -type report() :: term().
 -type reason() :: term().
--type timestamp() :: erlang:timestamp().
-
--type status() ::
-	received
-  | submitted
-  | resp_status()
-  | dlr_status().
 
 %% ===================================================================
 %% API
@@ -38,9 +28,10 @@ get_mt_msg_status_report(CustomerId, ClientType, InMsgId) ->
 			MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
 			{ok, {
 				message, [
-					{customer_id, CustomerId},
-					{message_id, InMsgId},
+					{msg_id, MsgInfo#msg_info.msg_id},
 					{client_type, ClientType},
+					{customer_id, CustomerId},
+					{in_msg_id, InMsgId},
 					{status, ?MSG_STATUS(MsgInfo)}
 				]
 			}};
@@ -97,9 +88,7 @@ get_aggregated_statuses_report(From, To) ->
 	{ok, {statuses, Results}}.
 
 merge(Pairs) ->
-	dict:to_list(
-		merge(Pairs, dict:new())
-	).
+	dict:to_list(merge(Pairs, dict:new())).
 
 merge([], Dict) ->
 	Dict;
