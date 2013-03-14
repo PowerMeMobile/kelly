@@ -18,14 +18,6 @@
 ## Tweak GC to run more often
 ##-env ERL_FULLSWEEP_AFTER 10
 
-## Mnesia settings
--mnesia dir '"data/mnesia"'
-## To eliminate: ** WARNING ** Mnesia is overloaded: {dump_log, write_threshold}
-## For more detail see:
-## http://streamhacker.wordpress.com/2008/12/10/how-to-eliminate-mnesia-overload-events/
--mnesia dc_dump_limit 40
--mnesia dump_log_write_threshold 50000
-
 ## Sync settings
 # disable notifications
 -sync growl false

@@ -105,9 +105,7 @@ save(#k_mb_funnel_receipt{} = R) ->
 			'created_at'       , R#k_mb_funnel_receipt.created_at
 		}
 	},
-	ok = mongodb_storage:upsert(k_static_storage, ?funnelReceiptsColl, Selector, Modifier);
-save(Record) ->
-	ok = mnesia:dirty_write(Record).
+	ok = mongodb_storage:upsert(k_static_storage, ?funnelReceiptsColl, Selector, Modifier).
 
 save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
 	Selector = {
@@ -241,10 +239,7 @@ get_item(k_mb_incoming_sms, ID) ->
 		encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
 		delivery_attempt = bsondoc:at(delivery_attempt, Doc),
 		created_at = bsondoc:at(created_at, Doc)
-	}};
-get_item(ItemType, ItemID) ->
-	[Item] = mnesia:dirty_read(ItemType, ItemID),
-	{ok, Item}.
+	}}.
 
 -spec get_subscription_for_k1api_receipt(Receipt :: #k_mb_k1api_receipt{}) ->
 	undefined |
