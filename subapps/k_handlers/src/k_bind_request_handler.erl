@@ -118,7 +118,7 @@ build_customer_response(#funnel_auth_request_dto{
 			numbers_len = NL,
 			prefixes = Pref,
 			provider_id = ProviderId
-			} = Network,
+		} = Network,
 		NNew = #network_dto{
 			id = NetworkId,
 			country_code = CC,

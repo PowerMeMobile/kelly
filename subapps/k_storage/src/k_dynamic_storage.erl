@@ -22,6 +22,7 @@ set_mt_req_info(#req_info{
 	req_id = ReqId,
 	client_type = ClientType,
 	customer_id = CustomerId,
+	user_id = UserId,
 	in_msg_id = InMsgId,
 	gateway_id = GatewayId,
 	type = Type,
@@ -39,6 +40,7 @@ set_mt_req_info(#req_info{
 		'$set', {
 			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
+			'ui' , UserId,
 			'imi', InMsgId,
 			'gi' , GatewayId,
 			't'  , bsondoc:atom_to_binary(Type),
