@@ -89,21 +89,22 @@ sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
 split(BinIds) ->
 	binary:split(BinIds, <<":">>, [global, trim]).
 
-process_k1api_req(SmsRequest = #just_sms_request_dto{client_type = k1api}, SmsIds) ->
-	#just_sms_request_dto{
-		id = RequestId,
-		customer_id = CustomerId,
-		params = Params,
-		source_addr = SourceAddr
-	} = SmsRequest,
+process_k1api_req(#just_sms_request_dto{
+	client_type = k1api,
+	id = RequestId,
+	customer_id = CustomerId,
+	user_id = UserId,
+	params = Params,
+	source_addr = SourceAddr
+}, SmsIds) ->
 	InputMessageIds = lists:map(fun({_Addr, Id}) -> {CustomerId, k1api, Id} end, SmsIds),
 	NotifyURL = get_param_by_name(<<"k1api_notify_url">>, Params),
 	?log_debug("NotifyURL: ~p", [NotifyURL]),
 	CallbackData = get_param_by_name(<<"k1api_callback_data">>, Params),
 	?log_debug("CallbackData: ~p", [CallbackData]),
-	SubId = create_k1api_receipt_subscription(CustomerId, <<"undefined">>, SourceAddr, NotifyURL, CallbackData),
+	SubId = create_k1api_receipt_subscription(CustomerId, UserId, SourceAddr, NotifyURL, CallbackData),
 	ok = link_input_id_to_sub_id(InputMessageIds, SubId),
-	ok = link_sms_request_id_to_message_ids(CustomerId, undefined, SourceAddr, RequestId, InputMessageIds);
+	ok = link_sms_request_id_to_message_ids(CustomerId, UserId, SourceAddr, RequestId, InputMessageIds);
 process_k1api_req(_, _) ->
 	ok.
 
