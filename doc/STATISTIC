@@ -5,6 +5,26 @@ Default is `json'.
 Statistical interface for statuses
 
 REST call:
+GET /message_status/MsgID/client/ClientType/customer/CustUUID
+Where
+	ClientType - client type
+	MsgID - input message id
+	CustUUID - customer uuid
+
+Example:
+http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73
+
+Result:
+<message>
+	<msg_id>d95df7c1-0e95-4ac0-bc66-bc514b7bbd86#59</msg_id>
+	<client_type>funnel</client_type>
+	<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+	<message_id>59</message_id>
+	<status>delivered</status>
+</message>
+
+
+REST call:
 GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
 Where
 	YYYY - year
@@ -26,11 +46,12 @@ Result:
 	<undeliverable>11</undeliverable>
 </statuses>
 
+
 REST call:
 GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&status=STATUS
 Where
-	STATUS - mt: submitted (no response nor delivery status yet received)
-		   	 	 success, failure (response status, no delivery status received)
+	STATUS - mt: pending (no response nor delivery status has been received)
+		   	 	 sent, failed (response status, no delivery status received)
 				 accepted, deleted, delivered, expired, rejected, undeliverable, unknown (delivery status)
 		     mo: received
 	YYYY - year
@@ -45,64 +66,31 @@ http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&
 Result:
 <messages>
 	<item>
-		<datetime>2012-07-09T14:36:58</datetime>
-		<message_id>17041</message_id>
+		<msg_id>5ede494b-c0ad-4981-b7a0-3f3fa73a7108#416</msg_id>
+		<client_type>funnel</client_type>
 		<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+		<user_id>user1</user_id>
+		<in_msg_id>416</in_msg_id>
 		<gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+		<out_msg_id>17564</out_msg_id>
+		<type>regular</type>
+		<encoding>default</encoding>
+		<body>Hello</body>
 		<src_addr>
-			<addr>375296662323</addr>
+			<addr>375296660001</addr>
 			<ton>1</ton>
 			<npi>1</npi>
 		</src_addr>
 		<dst_addr>
-			<addr>375448413713</addr>
+			<addr>375292474326</addr>
 			<ton>1</ton>
 			<npi>1</npi>
 		</dst_addr>
-		<message_text>Hello, there!</message_text>
+		<reg_dlr>false</reg_dlr>
+		<req_time>2013-01-01T00:14:08</req_time>
 	</item>
 </messages>
 
-Statistical interface for uplink and downlink
-
-REST call
-GET /report/uplink
-
-Example:
-http://localhost:8080/report/uplink
-
-Result:
-<gateways>
-	<item>
-		<id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
-		<name>test_gtw</name>
-		<status>1</status>
-		<max_rps>1000</max_rps>
-		<actual_rps>N/A</actual_rps>
-	</item>
-</gateways>
-
-
-REST call
-GET /report/downlink
-
-Example:
-http://localhost:8080/report/downlink
-
-Result:
-<connections>
-	<item>
-		<id>7185a36c-ccea-4437-aba7-c86c23d4b888</id>
-		<remote_ip>127.0.0.1</remote_ip>
-		<customer_id>test-sys-id</customer_id>
-		<user_id>user</user_id>
-		<connected_at>120704112550</connected_at>
-		<type>transceiver</type>
-		<msgs_received>200</msgs_received>
-		<msgs_sent>0</msgs_sent>
-		<errors/>
-	</item>
-</connections>
 
 Statistical interface for Messages
 
@@ -214,22 +202,44 @@ Result:
     </item>
 </networks>
 
-Message status request.
+Statistical interface for uplink and downlink
 
-REST call:
-GET /message_status/MsgID/client/ClientType/customer/CustUUID
-Where
-	ClientType - client type
-	MsgID - input message id
-	CustUUID - customer uuid
+REST call
+GET /report/uplink
 
 Example:
-http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73
+http://localhost:8080/report/uplink
 
 Result:
-<message>
-	<client_type>funnel</client_type>
-	<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
-	<message_id>59</message_id>
-	<status>delivered</status>
-</message>
+<gateways>
+	<item>
+		<id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
+		<name>test_gtw</name>
+		<status>1</status>
+		<max_rps>1000</max_rps>
+		<actual_rps>N/A</actual_rps>
+	</item>
+</gateways>
+
+
+REST call
+GET /report/downlink
+
+Example:
+http://localhost:8080/report/downlink
+
+Result:
+<connections>
+	<item>
+		<id>7185a36c-ccea-4437-aba7-c86c23d4b888</id>
+		<remote_ip>127.0.0.1</remote_ip>
+		<customer_id>test-sys-id</customer_id>
+		<user_id>user</user_id>
+		<connected_at>120704112550</connected_at>
+		<type>transceiver</type>
+		<msgs_received>200</msgs_received>
+		<msgs_sent>0</msgs_sent>
+		<errors/>
+	</item>
+</connections>
+

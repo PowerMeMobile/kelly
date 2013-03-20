@@ -151,6 +151,7 @@ build_mt_report_response(Doc) ->
 		{msg_id, MsgInfo#msg_info.msg_id},
 		{client_type, MsgInfo#msg_info.client_type},
 		{customer_id, MsgInfo#msg_info.customer_id},
+		{user_id, MsgInfo#msg_info.user_id},
 		{in_msg_id, MsgInfo#msg_info.in_msg_id},
 		{gateway_id, MsgInfo#msg_info.gateway_id},
 		{out_msg_id, MsgInfo#msg_info.out_msg_id},

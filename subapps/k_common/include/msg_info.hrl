@@ -6,8 +6,8 @@
 -include_lib("alley_dto/include/adto_types.hrl").
 
 -type resp_status() ::
-	success
-  | failure.
+	sent
+  | failed.
 
 -type dlr_status() ::
 	enroute
@@ -22,7 +22,7 @@
 
 -type status() ::
 	received
-  | submitted
+  | pending
   | resp_status()
   | dlr_status().
 
@@ -93,9 +93,11 @@
 -define(MSG_STATUS(MsgInfo),
 	case {MsgInfo#msg_info.resp_status, MsgInfo#msg_info.dlr_status} of
 		{undefined, undefined} ->
-			submitted;
-		{RespStatus, undefined} ->
-			RespStatus;
+			pending;
+		{success, undefined} ->
+			sent;
+		{failure, undefined} ->
+			failed;
 		{undefined, DlrStatus} ->
 			DlrStatus;
 		{_dont_care, DlrStatus} ->

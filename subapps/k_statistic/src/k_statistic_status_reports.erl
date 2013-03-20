@@ -49,7 +49,7 @@ get_aggregated_statuses_report(From, To) ->
 		} else if (this.rps) {
 			emit(this.rps, 1);
 		} else {
-			emit(\"submitted\", 1);
+			emit(\"pending\", 1);
 		}
 	};
 ">>,
@@ -83,7 +83,8 @@ get_aggregated_statuses_report(From, To) ->
 	{ok, MoDocs} = k_shifted_storage:command(MoCommand),
 	Docs = MtDocs ++ MoDocs,
 	Results = merge([
-	 	{list_to_existing_atom(binary_to_list(Status)), round(Hits)} || {'_id', Status, value, Hits} <- Docs
+		{list_to_existing_atom(binary_to_list(fix_status(Status))), round(Hits)}
+		|| {'_id', Status, value, Hits} <- Docs
 	 ]),
 	{ok, {statuses, Results}}.
 
@@ -96,6 +97,12 @@ merge([{Key, Value}|Pairs], Dict) ->
 	NewDict = dict:update_counter(Key, Value, Dict),
 	merge(Pairs, NewDict).
 
+fix_status(<<"success">>) -> <<"sent">>;
+fix_status(<<"failure">>) -> <<"failed">>;
+fix_status(sent)          -> <<"success">>;
+fix_status(failed)        -> <<"failure">>;
+fix_status(Status)        -> Status.
+
 -spec get_msgs_by_status_report(timestamp(), timestamp(), status()) -> {ok, report()} | {error, reason()}.
 get_msgs_by_status_report(From, To, received) ->
 	Selector = {
@@ -106,7 +113,7 @@ get_msgs_by_status_report(From, To, received) ->
 	},
 	get_raw_report(mo_messages, Selector);
 
-get_msgs_by_status_report(From, To, submitted) ->
+get_msgs_by_status_report(From, To, pending) ->
 	Selector = {
 		'rqt' , {
 			'$gte' , From,
@@ -118,14 +125,15 @@ get_msgs_by_status_report(From, To, submitted) ->
 	get_raw_report(mt_messages, Selector);
 
 get_msgs_by_status_report(From, To, Status) when
-	Status == success; Status == failure
+	Status == sent; Status == failed
 ->
 	Selector = {
 		'rqt' , {
 			'$gte' , From,
 			'$lt'  , To
 		},
-		'rps' , Status
+		'rps' , fix_status(Status),
+		'ds'  , { '$exists' , false }
 	},
 	get_raw_report(mt_messages, Selector);
 
@@ -151,37 +159,50 @@ get_raw_report(Collection, Selector) ->
 	case k_shifted_storage:find(Collection, Selector) of
 		{ok, Docs} ->
 			{ok, {messages,
-				[doc_to_message(Doc) || {_Id, Doc} <- Docs]
+				[doc_to_message(Collection, Doc) || {_Id, Doc} <- Docs]
 			}};
 		Error ->
 			Error
 	end.
 
-doc_to_message(Doc) ->
-	InMsgId = bsondoc:at(imi, Doc),
-	GatewayId = bsondoc:at(gi, Doc),
-	CustomerId = bsondoc:at(ci, Doc),
-	Type = bsondoc:at(t, Doc),
-	Encoding = bsondoc:at(e, Doc),
-	Body = bsondoc:at(b, Doc),
-	SrcAddrDoc = bsondoc:at(sa, Doc),
-	DstAddrDoc = bsondoc:at(da, Doc),
-	ReqTime = bsondoc:at(rqt, Doc),
-
-	Datetime = list_to_binary(
-		k_datetime:datetime_to_iso8601(
-			k_datetime:unixepoch_to_datetime(
-				k_datetime:timestamp_to_unixepoch(ReqTime)))),
+doc_to_message(mt_messages, Doc) ->
+	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
+	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+	ISO8601 = list_to_binary(k_datetime:datetime_to_iso8601(Datetime)),
 	[
-		{datetime, Datetime},
-		{message_id, InMsgId},
-		{gateway_id, GatewayId},
-		{customer_id, CustomerId},
-		{src_addr, addr_to_proplist(k_storage_utils:doc_to_addr(SrcAddrDoc))},
-		{dst_addr, addr_to_proplist(k_storage_utils:doc_to_addr(DstAddrDoc))},
-		{type, Type},
-		{encoding, Encoding},
-		{message_text, Body}
+		{msg_id, MsgInfo#msg_info.msg_id},
+		{client_type, MsgInfo#msg_info.client_type},
+		{customer_id, MsgInfo#msg_info.customer_id},
+		{user_id, MsgInfo#msg_info.user_id},
+		{in_msg_id, MsgInfo#msg_info.in_msg_id},
+		{gateway_id, MsgInfo#msg_info.gateway_id},
+		{out_msg_id, MsgInfo#msg_info.out_msg_id},
+		{type, MsgInfo#msg_info.type},
+		{encoding, MsgInfo#msg_info.encoding},
+		{body, MsgInfo#msg_info.body},
+		{src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
+		{dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
+		{reg_dlr, MsgInfo#msg_info.reg_dlr},
+		{req_time, ISO8601}
+	];
+doc_to_message(mo_messages, Doc) ->
+	MsgInfo = k_storage_utils:doc_to_mo_msg_info(Doc),
+	MsgId = MsgInfo#msg_info.msg_id,
+	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+	ISO8601 = list_to_binary(k_datetime:datetime_to_iso8601(Datetime)),
+	[
+		{msg_id, lists:flatten([io_lib:format("~2.16.0b", [X]) || X <- binary_to_list(MsgId)])},
+		{customer_id, MsgInfo#msg_info.customer_id},
+		{in_msg_id, MsgInfo#msg_info.in_msg_id},
+		{gateway_id, MsgInfo#msg_info.gateway_id},
+		{out_msg_id, MsgInfo#msg_info.out_msg_id},
+		{type, MsgInfo#msg_info.type},
+		{encoding, MsgInfo#msg_info.encoding},
+		{body, MsgInfo#msg_info.body},
+		{src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
+		{dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
+		{reg_dlr, MsgInfo#msg_info.reg_dlr},
+		{req_time, ISO8601}
 	].
 
 addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->

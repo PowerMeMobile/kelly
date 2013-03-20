@@ -67,9 +67,11 @@ doc_to_mt_msg_info(Doc) ->
 
 -spec doc_to_mo_msg_info(bson:document()) -> #msg_info{}.
 doc_to_mo_msg_info(Doc) ->
+	{MsgId} = bsondoc:at('_id', Doc),
 	SrcAddrDoc = bsondoc:at(sa, Doc),
 	DstAddrDoc = bsondoc:at(da, Doc),
 	#msg_info{
+		msg_id = MsgId,
 		customer_id = bsondoc:at(ci, Doc),
 		in_msg_id = bsondoc:at(imi, Doc),
 		gateway_id = bsondoc:at(gi, Doc),
