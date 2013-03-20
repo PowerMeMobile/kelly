@@ -30,64 +30,75 @@ process_sms_request(SmsRequest = #just_sms_request_dto{client_type = ClientType}
 			Error
 	end.
 
--spec get_param_by_name(string(), [#just_sms_request_param_dto{}]) -> {ok, #just_sms_request_param_dto{}} | {error, no_entry}.
-get_param_by_name(Name, Params) ->
-	Result = lists:keyfind(Name, #just_sms_request_param_dto.name, Params),
-	case Result of
-		false ->
-			undefined;
-		#just_sms_request_param_dto{value = {_, Value}} ->
-			Value
-	end.
-
 -spec sms_request_to_req_info_list(#just_sms_request_dto{}) -> [#req_info{}].
 sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
-	id = RequestId,
-	gateway_id = GatewayId,
+	client_type = funnel,
+	dest_addrs = {_, DstAddrs},
+	message_ids = MsgIds
+}) ->
+	ReqTime = k_datetime:utc_timestamp(),
+	Pairs = zip_addrs_and_ids(DstAddrs, MsgIds),
+	[build_req_info(SmsRequest, ReqTime, DstAddr, InMsgId) || {DstAddr, InMsgId} <- Pairs];
+sms_request_to_req_info_list(SmsRequest = #just_sms_request_dto{
+	client_type = k1api,
+	dest_addrs = {_, DstAddrs},
+	message_ids = MsgIds
+}) ->
+	ReqTime = k_datetime:utc_timestamp(),
+	Pairs = zip_addrs_and_ids(DstAddrs, MsgIds),
+	process_k1api_req(SmsRequest, Pairs),
+	[build_req_info(SmsRequest, ReqTime, DstAddr, InMsgId) || {DstAddr, InMsgId} <- Pairs].
+
+build_req_info(#just_sms_request_dto{
+	id = ReqId,
+	client_type = ClientType,
 	customer_id = CustomerId,
 	user_id = UserId,
-	client_type = ClientType,
+	gateway_id = GatewayId,
 	type = Type,
 	message = Message,
 	encoding = Encoding,
 	params = Params,
-	source_addr = SourceAddr,
-	dest_addrs = {_, DestAddrs},
-	message_ids = MessageIds}) ->
-	%% Message ids come in ["ID1", "ID2:ID3", "ID4"], where "ID2:ID3" is a multipart message ids.
-	%% Destination addrs come in ["ADDR1", "ADDR2", "ADDR3"]. The task is to get {ADDRX, IDY} pairs
-	%% like that [{"ADDR1", "ID1"}, {"ADDR2", "ID2"}, {"ADDR2", "ID3"}, {"ADDR3", "ID4"}].
-	AllPairs = lists:foldr(
-		fun({Addr, ID}, Acc) ->
-			Ids = lists:map(fun(Id) -> {Addr, Id} end, split(ID)),
-			Ids ++ Acc
-		end, [], lists:zip(DestAddrs, MessageIds)),
-	RegDlr =
-		case get_param_by_name(<<"registered_delivery">>, Params) of
-			undefined -> false;
-			Any -> Any
-		end,
-	process_k1api_req(SmsRequest, AllPairs),
-	lists:map(fun({DestAddr, MessageId}) ->
-				#req_info{
-					req_id = RequestId,
-					client_type = ClientType,
-					customer_id = CustomerId,
-					user_id = UserId,
-					in_msg_id = MessageId,
-					gateway_id = GatewayId,
-					type = Type,
-					encoding = Encoding,
-					body = Message,
-					src_addr = SourceAddr,
-					dst_addr = DestAddr,
-					reg_dlr = RegDlr,
-					req_time = k_datetime:utc_timestamp()
-				} end, AllPairs).
+	source_addr = SrcAddr
+}, ReqTime, DstAddr, InMsgId) ->
+	RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
+	#req_info{
+		req_id = ReqId,
+		client_type = ClientType,
+		customer_id = CustomerId,
+		user_id = UserId,
+		in_msg_id = InMsgId,
+		gateway_id = GatewayId,
+		type = Type,
+		encoding = Encoding,
+		body = Message,
+		src_addr = SrcAddr,
+		dst_addr = DstAddr,
+		reg_dlr = RegDlr,
+		req_time = ReqTime
+	}.
 
--spec split(binary()) -> [binary()].
-split(BinIds) ->
-	binary:split(BinIds, <<":">>, [global, trim]).
+%% Message ids come in ["ID1", "ID2:ID3", "ID4"], where "ID2:ID3" is a multipart message ids.
+%% Destination addrs come in ["ADDR1", "ADDR2", "ADDR3"]. The task is to get {ADDRX, IDY} pairs
+%% like that [{"ADDR1", "ID1"}, {"ADDR2", "ID2"}, {"ADDR2", "ID3"}, {"ADDR3", "ID4"}].
+zip_addrs_and_ids(Addrs, MsgIds) ->
+	zip_addrs_and_ids(Addrs, MsgIds, []).
+
+zip_addrs_and_ids([], [], Acc) ->
+	Acc;
+zip_addrs_and_ids([Addr|Addrs], [MsgId|MsgIds], Acc) ->
+	Ids = binary:split(MsgId, <<":">>, [global, trim]),
+	Pairs = [{Addr, Id} || Id <- Ids],
+	zip_addrs_and_ids(Addrs, MsgIds, Pairs ++ Acc).
+
+-spec get_param_by_name(binary(), [#just_sms_request_param_dto{}], term()) -> term().
+get_param_by_name(Name, Params, Default) ->
+	case lists:keyfind(Name, #just_sms_request_param_dto.name, Params) of
+		false ->
+			Default;
+		#just_sms_request_param_dto{value = {_, Value}} ->
+			Value
+	end.
 
 process_k1api_req(#just_sms_request_dto{
 	client_type = k1api,
@@ -98,9 +109,9 @@ process_k1api_req(#just_sms_request_dto{
 	source_addr = SourceAddr
 }, SmsIds) ->
 	InputMessageIds = lists:map(fun({_Addr, Id}) -> {CustomerId, k1api, Id} end, SmsIds),
-	NotifyURL = get_param_by_name(<<"k1api_notify_url">>, Params),
+	NotifyURL = get_param_by_name(<<"k1api_notify_url">>, Params, undefined),
 	?log_debug("NotifyURL: ~p", [NotifyURL]),
-	CallbackData = get_param_by_name(<<"k1api_callback_data">>, Params),
+	CallbackData = get_param_by_name(<<"k1api_callback_data">>, Params, undefined),
 	?log_debug("CallbackData: ~p", [CallbackData]),
 	SubId = create_k1api_receipt_subscription(CustomerId, <<"undefined">>, SourceAddr, NotifyURL, CallbackData),
 	ok = link_input_id_to_sub_id(InputMessageIds, SubId),
