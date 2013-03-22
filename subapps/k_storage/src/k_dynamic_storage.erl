@@ -97,8 +97,6 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
 	},
 	Modifier = {
 		'$set', {
-			'gi' , GatewayId,
-			'omi', OutMsgId,
 			'dt' , DlrTime,
 			'ds' , bsondoc:atom_to_binary(DlrStatus)
 		}
