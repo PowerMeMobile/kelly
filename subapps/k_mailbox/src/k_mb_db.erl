@@ -382,8 +382,7 @@ link_input_id_to_sub_id({CID, k1api, ID} = _InputID, SubscriptionID) -> %% <- ad
 		'input_id'        , ID,
 		'subscription_id' , SubscriptionID
 	},
-	{ok, _} = mongodb_storage:insert(k_static_storage, ?inputIdToSubIdColl, Modifier),
-	ok.
+	ok = mongodb_storage:insert(k_static_storage, ?inputIdToSubIdColl, Modifier).
 
 %% ===================================================================
 %% Internal
