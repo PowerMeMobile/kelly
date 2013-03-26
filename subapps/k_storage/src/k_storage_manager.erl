@@ -91,7 +91,7 @@ handle_cast(start_static_storage, State = #state{}) ->
 			%% signal static storage is ready even though it's not.
 			%% the code that depends on this will crash shortly anyway.
 			gproc:reg({n, l, k_static_storage}),
-			{stop, {Exc, Err}, State}
+			{stop, {Exc, Err, erlang:get_stacktrace()}, State}
 	end;
 
 handle_cast(start_dynamic_storage, State = #state{}) ->
