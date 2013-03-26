@@ -34,10 +34,12 @@ set_mt_req_info(#req_info{
 	req_time = ReqTime
 }) ->
 	Selector = {
-		'_id', ?MAKE_MSG_ID(ReqId, InMsgId)
+		'ri' , ReqId,
+		'imi', InMsgId
 	},
 	Modifier = {
 		'$set', {
+			'ri' , ReqId,
 			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
 			'ui' , UserId,
@@ -58,23 +60,20 @@ set_mt_req_info(#req_info{
 -spec set_mt_resp_info(#resp_info{}) -> ok | {error, reason()}.
 set_mt_resp_info(#resp_info{
 	req_id = ReqId,
-	client_type = ClientType,
-	customer_id = CustomerId,
+	client_type = _ClientType,
+	customer_id = _CustomerId,
 	in_msg_id = InMsgId,
-	gateway_id = GatewayId,
+	gateway_id = _GatewayId,
 	out_msg_id = OutMsgId,
 	resp_time = RespTime,
 	resp_status = RespStatus
 }) ->
 	Selector = {
-		'_id', ?MAKE_MSG_ID(ReqId, InMsgId)
+		'ri' , ReqId,
+		'imi', InMsgId
 	},
 	Modifier = {
 		'$set', {
-			'ct' , bsondoc:atom_to_binary(ClientType),
-			'ci' , CustomerId,
-			'imi', InMsgId,
-			'gi' , GatewayId,
 			'omi', OutMsgId,
 			'rpt', RespTime,
 			'rps', bsondoc:atom_to_binary(RespStatus)
@@ -97,8 +96,8 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
 	},
 	Modifier = {
 		'$set', {
-			'dt' , DlrTime,
-			'ds' , bsondoc:atom_to_binary(DlrStatus)
+			'dt', DlrTime,
+			'ds', bsondoc:atom_to_binary(DlrStatus)
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),

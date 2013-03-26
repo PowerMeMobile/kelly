@@ -131,6 +131,8 @@ ensure_static_storage_index(ServerName) ->
 
 ensure_dynamic_storage_index(ServerName) ->
 	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
+		{key, {ri, 1, imi, 1}}),
+	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
 		{key, {ci, 1, ct, 1, imi, 1}}),
 	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
 		{key, {gi, 1, omi, 1}}),
