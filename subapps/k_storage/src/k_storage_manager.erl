@@ -79,12 +79,20 @@ handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
 
 handle_cast(start_static_storage, State = #state{}) ->
-	ok = start_static_storage(),
-	%% signal static storage is ready.
-	gproc:reg({n, l, k_static_storage}),
-	%% initialize dynamic storage.
-	gen_server:cast(self(), start_dynamic_storage),
-	{noreply, State};
+	try start_static_storage() of
+		ok ->
+			%% initialize dynamic storage.
+			gen_server:cast(self(), start_dynamic_storage),
+			%% signal static storage is ready.
+			gproc:reg({n, l, k_static_storage}),
+			{noreply, State}
+	catch
+		Exc:Err ->
+			%% signal static storage is ready even though it's not.
+			%% the code that depends on this will crash shortly anyway.
+			gproc:reg({n, l, k_static_storage}),
+			{stop, {Exc, Err}, State}
+	end;
 
 handle_cast(start_dynamic_storage, State = #state{}) ->
 	{ok, StorageMode} = k_storage_events_manager:get_storage_mode(),
