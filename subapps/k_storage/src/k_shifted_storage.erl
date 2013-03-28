@@ -116,6 +116,9 @@ command([ShiftDbName|Shifts], Command, Acc) ->
 		{ok, {result, Docs, ok, 1.0}} ->
 			NewAcc = Docs ++ Acc,
 			command(Shifts, Command, NewAcc);
+		{error, {ok, 0.0, errmsg, <<"ns doesn't exist">>}} ->
+			%% shift db doesn't exist.
+			command(Shifts, Command, Acc);
 		Error ->
 			Error
 	end.
