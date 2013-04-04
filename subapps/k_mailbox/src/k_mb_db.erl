@@ -373,8 +373,7 @@ get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
 	Items = first(AllItems, Limit),
 	{ok, Items, Total}.
 
--spec link_input_id_to_sub_id(	InputID :: input_sms_id(),
-								SubscriptionID :: binary()) -> ok.
+-spec link_input_id_to_sub_id(InputID :: input_sms_id(), SubscriptionID :: binary()) -> ok.
 link_input_id_to_sub_id({CID, k1api, ID} = _InputID, SubscriptionID) -> %% <- add user_name field
 	Modifier = {
 		'customer_id'     , CID,

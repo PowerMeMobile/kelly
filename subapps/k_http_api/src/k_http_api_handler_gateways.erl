@@ -1,4 +1,3 @@
-
 -module(k_http_api_handler_gateways).
 
 -behaviour(gen_http_api).
