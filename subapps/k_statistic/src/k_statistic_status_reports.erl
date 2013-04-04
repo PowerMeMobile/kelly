@@ -191,7 +191,7 @@ doc_to_message(mo_messages, Doc) ->
 	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
 	ISO8601 = list_to_binary(k_datetime:datetime_to_iso8601(Datetime)),
 	[
-		{msg_id, lists:flatten([io_lib:format("~2.16.0b", [X]) || X <- binary_to_list(MsgId)])},
+		{msg_id, MsgId},
 		{customer_id, MsgInfo#msg_info.customer_id},
 		{in_msg_id, MsgInfo#msg_info.in_msg_id},
 		{gateway_id, MsgInfo#msg_info.gateway_id},

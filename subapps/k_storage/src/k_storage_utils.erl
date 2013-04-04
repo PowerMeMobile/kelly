@@ -42,10 +42,11 @@ doc_to_addr({a, Addr, t, Ton, n, Npi, r, RefNum}) ->
 
 -spec doc_to_mt_msg_info(bson:document()) -> #msg_info{}.
 doc_to_mt_msg_info(Doc) ->
+	ObjId = bsondoc:at('_id', Doc),
 	SrcAddrDoc = bsondoc:at(sa, Doc),
 	DstAddrDoc = bsondoc:at(da, Doc),
 	#msg_info{
-		msg_id = bsondoc:at('_id', Doc),
+		msg_id = objectid_to_binary(ObjId),
 		client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
 		customer_id = bsondoc:at(ci, Doc),
 		user_id = bsondoc:at(ui, Doc),
@@ -67,11 +68,11 @@ doc_to_mt_msg_info(Doc) ->
 
 -spec doc_to_mo_msg_info(bson:document()) -> #msg_info{}.
 doc_to_mo_msg_info(Doc) ->
-	{MsgId} = bsondoc:at('_id', Doc),
+	ObjId = bsondoc:at('_id', Doc),
 	SrcAddrDoc = bsondoc:at(sa, Doc),
 	DstAddrDoc = bsondoc:at(da, Doc),
 	#msg_info{
-		msg_id = MsgId,
+		msg_id = objectid_to_binary(ObjId),
 		customer_id = bsondoc:at(ci, Doc),
 		in_msg_id = bsondoc:at(imi, Doc),
 		gateway_id = bsondoc:at(gi, Doc),
@@ -83,3 +84,10 @@ doc_to_mo_msg_info(Doc) ->
 		reg_dlr = bsondoc:at(rd, Doc),
 		req_time = bsondoc:at(rqt, Doc)
 	}.
+
+objectid_to_binary({ObjId}) ->
+	list_to_binary(
+		lists:flatten(
+			[io_lib:format("~2.16.0b", [X]) || X <- binary_to_list(ObjId)]
+		)
+	).
