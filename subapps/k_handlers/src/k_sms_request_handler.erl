@@ -122,7 +122,7 @@ process_k1api_req(_, _) ->
 create_k1api_receipt_subscription(_, _, _, undefined, _) -> undefined;
 create_k1api_receipt_subscription(CustomerId, UserId, DestAddr, NotifyURL, CallbackData) ->
 	QName = <<"pmm.k1api.incoming">>,
-	SubscriptionId = uuid:newid(),
+	SubscriptionId = uuid:unparse(uuid:generate_time()),
 	Subscription = #k_mb_k1api_receipt_sub{
 		id = SubscriptionId,
 		customer_id = CustomerId,

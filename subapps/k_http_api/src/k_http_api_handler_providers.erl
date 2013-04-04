@@ -74,7 +74,7 @@ read(Params) ->
 create(Params) ->
 	case ?gv(id, Params) of
 		undefined ->
-			UUID = uuid:newid(),
+			UUID = uuid:unparse(uuid:generate_time()),
 			create_provider(lists:keyreplace(id, 1, Params, {id, UUID}));
 		_ ->
 			is_exist(Params)

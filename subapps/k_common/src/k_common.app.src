@@ -7,7 +7,8 @@
 		stdlib,
 		lager,
 		rmql,
-		estatsd
+		estatsd,
+		libuuid
 	]},
 	{mod, {k_common_app, []}},
 	{env, []}

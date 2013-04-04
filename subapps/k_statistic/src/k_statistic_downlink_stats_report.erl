@@ -32,7 +32,7 @@ get_report() ->
 	%% send `Connections' request.
 	ConnectionsProps = #'P_basic'{
 		content_type = <<"ConnectionsRequest">>,
-		message_id = uuid:newid(),
+		message_id = uuid:unparse(uuid:generate_time()),
 		reply_to = QueueReplyTo
 	},
 	{ok, ConnectionsRequest} = adto:encode(#funnel_connections_request_dto{}),
@@ -48,7 +48,7 @@ get_report() ->
 	%% %% send `Throughput' request.
 	%% ThroughputProps = #'P_basic'{
 	%% 	content_type = <<"ThroughputRequest">>,
-	%% 	message_id = uuid:newid(),
+	%% 	message_id = uuid:unparse(uuid:generate_time()),
 	%% 	reply_to = QueueReplyTo
 	%% },
 	%% {ok, ThroughputRequest} = 'FunnelAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),

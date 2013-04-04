@@ -36,7 +36,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 }) ->
 
 	%% generate new id.
-	ItemId = uuid:newid(),
+	ItemId = uuid:unparse(uuid:generate_time()),
 
 	%% try to determine customer id and user id,
 	%% this will return either valid customer id or `undefined'.
