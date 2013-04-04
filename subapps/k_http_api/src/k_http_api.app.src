@@ -1,14 +1,13 @@
-{application, k_http_api,
- [
-  {description, ""},
-  {vsn, "1"},
-  {registered, []},
-  {applications, [
-					kernel,
-					stdlib,
-					k_common,
-					gen_http_api
-                 ]},
-  {mod, {k_http_api_app, []}},
-  {env, []}
- ]}.
+{application, k_http_api, [
+	{description, ""},
+	{vsn, "1"},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		k_common,
+		gen_http_api
+	]},
+	{mod, {k_http_api_app, []}},
+	{env, []}
+]}.

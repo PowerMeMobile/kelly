@@ -1,13 +1,12 @@
-{application, k_mailbox,
- [
-  {description, ""},
-  {vsn, "1"},
-  {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib,
-                  k_common
-                 ]},
-  {mod, {k_mailbox_app, []} },
-  {env, []}
- ]}.
+{application, k_mailbox, [
+	{description, ""},
+	{vsn, "1"},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		k_common
+	]},
+	{mod, {k_mailbox_app, []} },
+	{env, []}
+]}.

@@ -1,16 +1,14 @@
-{application, k_common,
- [
-  {description, ""},
-  {vsn, "1"},
-  {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib,
-                  lager,
-				  rmql,
-				  uuid,
-				  estatsd
-                 ]},
-  {mod, {k_common_app, []}},
-  {env, []}
- ]}.
+{application, k_common, [
+	{description, ""},
+	{vsn, "1"},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		lager,
+		rmql,
+		estatsd
+	]},
+	{mod, {k_common_app, []}},
+	{env, []}
+]}.
