@@ -102,16 +102,11 @@ find_one(ServerName, Coll, Selector, Projector) ->
 	).
 
 -spec insert(server_name(), collection(), modifier()) ->
-	ok | {error, reason()}.
+	{ok, key()} | {error, reason()}.
 insert(ServerName, Coll, Modifier) ->
 	mongo_do(ServerName, safe, master,
 		fun() ->
-			case mongo:insert(Coll, Modifier) of
-				{ok, _} ->
-					ok;
-				Error ->
-					Error
-			end
+			mongo:insert(Coll, Modifier)
 		end
 	).
 

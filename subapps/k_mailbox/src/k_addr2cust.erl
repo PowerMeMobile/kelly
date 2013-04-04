@@ -34,7 +34,8 @@ link(Address = #addr{}, CustID, UserID) ->
 	},
 	case resolve(Address) of
 		{error, addr_not_used} ->
-			ok = mongodb_storage:insert(k_static_storage, ?msisdnsColl, Modifier);
+			{ok, _ID} = mongodb_storage:insert(k_static_storage, ?msisdnsColl, Modifier),
+			ok;
 		_ -> {error, addr_in_use}
 	end.
 
