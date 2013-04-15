@@ -44,8 +44,7 @@ handle_call(_Request, _From, State) ->
 
 handle_cast({process, {Module, ContentType, Message, Channel, Pid}}, State = #state{}) ->
 	% ?log_debug("got message: ~p", [Message]),
-	Result = Module:process(ContentType, Message),
-	case Result of
+	case Module:process(ContentType, Message) of
 		{ok, List} when is_list(List) ->
 			send_response(Channel, List),
 			{stop, normal, State};
@@ -75,11 +74,12 @@ code_change(_OldVsn, State, _Extra) ->
 
 send_response(_Channel, []) ->
 	ok;
-send_response(Channel, [#worker_reply{
-	reply_to = QName,
-	payload = Mes,
-	content_type = Type
-} | Tail]) ->
+send_response(Channel, [Head|Tail]) ->
+	#worker_reply{
+		reply_to = QName,
+		payload = Mes,
+		content_type = Type
+	} = Head,
 	{ok, Payload} = convert(Mes),
 	Publish = #'basic.publish'{routing_key = QName},
 	Props = #'P_basic'{content_type = Type},
@@ -91,4 +91,3 @@ convert(Mes) when is_list(Mes) ->
 	{ok, list_to_binary(Mes)};
 convert(Mes) when is_binary(Mes) ->
 	{ok, Mes}.
-

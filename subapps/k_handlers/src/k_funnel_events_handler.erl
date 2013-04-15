@@ -30,7 +30,7 @@ process(<<"ConnectionUpEvent">>, Message) ->
 			type = ConnType	}} ->
 			process_connection_up_event(ConnId, SystemId, ConnType);
 		{error, Error} ->
-			?log_warn("Failed to decode funnel client online event: ~p with error: ~p", [Message, Error]),
+			?log_warn("Failed to decode funnel client online event: ~p with: ~p", [Message, Error]),
 			{ok, []}
 	end;
 
@@ -53,8 +53,8 @@ process_connection_down_event(ConnId, SystemId) ->
 	case resolve_cust_id(SystemId) of
 		{ok, CustId} ->
 			perform_unregister_connection(CustId, ConnId);
-		{error, no_entry} ->
-			?log_error("Could not unregister: failed to resolve [system-id: ~p]", [SystemId]),
+		{error, Reason} ->
+			?log_error("Could not unregister system-id: ~p with: ~p", [SystemId, Reason]),
 			{ok, []}
 	end.
 
@@ -63,15 +63,14 @@ perform_unregister_connection(CustId, ConnId) ->
 	case k_mailbox:unregister_subscription(ConnId, CustId, UserId) of
 		ok ->
 			{ok, []};
-		{error, Error} ->
-			?log_error("Could not unregister ~p due to: ~p", [{CustId, ConnId}, Error]),
+		{error, Reason} ->
+			?log_error("Could not unregister ~p with: ~p", [{CustId, ConnId}, Reason]),
 			{ok, []}
 	end.
 
-process_connection_up_event(ConnId, SystemId, ConnType) when
-									ConnType == transmitter
-									orelse
-									ConnType == transceiver ->
+process_connection_up_event(ConnId, SystemId, ConnType)
+	when ConnType == transmitter orelse ConnType == transceiver
+->
 	case resolve_cust_id(SystemId) of
 		{ok, CustId} ->
 			QName = << <<"pmm.funnel.nodes.">>/binary, ConnId/binary >>,
@@ -86,17 +85,17 @@ process_connection_up_event(ConnId, SystemId, ConnType) when
 			},
 			k_mailbox:register_subscription(Subscription),
 			{ok, []};
-		{error, no_entry} ->
-			?log_error("Could not register: failed to resolve [system-id: ~p]", [SystemId]),
+		{error, Reason} ->
+			?log_error("Could not register system-id: ~p with: ~p", [SystemId, Reason]),
 			{ok, []}
 	end;
 process_connection_up_event(_ConnId, _SystemId, _ConnType) ->
 	{ok, []}.
 
-resolve_cust_id( SystemId ) ->
+resolve_cust_id(SystemId) ->
 	case k_aaa:get_customer_by_system_id(SystemId) of
-			{ok, #customer{
-			uuid = CustId
-		}} -> {ok, CustId};
-		Error -> Error
+		{ok, #customer{uuid = CustId}} ->
+			{ok, CustId};
+		Error ->
+			Error
 	end.

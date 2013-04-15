@@ -38,7 +38,7 @@
 		mod_state
 }).
 
--spec behaviour_info(callbacks) -> [ {atom(), integer()} ].
+-spec behaviour_info(callbacks) -> [{atom(), integer()}].
 behaviour_info(callbacks) ->
 	[{init, 1},
 	{handle_call, 3},
@@ -58,13 +58,13 @@ behaviour_info(_) ->
 %% API functions
 %% ===================================================================
 
--spec start_link( {local, atom()}, atom(), [any()] ) -> {ok, pid()}.
+-spec start_link({local, atom()}, atom(), [any()]) -> {ok, pid()}.
 start_link({local, Name}, Module, Args) ->
 	{ok, Pid} = gen_server:start_link({local, Name}, ?MODULE, {Module, Args}, []),
 	subscribe(Pid),
 	{ok, Pid}.
 
--spec start_link( atom(), [any()] ) -> {ok, pid()}.
+-spec start_link(atom(), [any()]) -> {ok, pid()}.
 start_link(Module, Args) ->
 	{ok, Pid} = gen_server:start_link(?MODULE, {Module, Args}, []),
 	subscribe(Pid),
@@ -215,8 +215,8 @@ handle_info({#'basic.deliver'{delivery_tag = Tag},
 	{noreply, State#state{
 		ref_dict = NewRefDict,
 		pid_dict = NewPidDict,
-		mod_state = 	NewState
-		}};
+		mod_state = NewState
+	}};
 
 handle_info({'DOWN', MonitorRef, _Type, _Object, normal}, State = #state{
 	ref_dict = RefDict,
