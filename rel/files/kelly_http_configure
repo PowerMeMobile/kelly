@@ -61,7 +61,7 @@ echo -n 'id=user5&pswd=password&smpp_types=transmitter;receiver;transceiver' | l
 echo -n 'name=funnel-prepaid&system_id=fun-prepaid&id=6bd667ae-1793-11e2-95fe-00269e42f7a5&originators=375296660002,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660002,1,1&billing_type=prepaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
 
 # Funnel/Kannel's users
-echo -n 'id=user111&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
+echo -n 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
 echo -n 'id=user2&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
 echo -n 'id=user3&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
 echo -n 'id=user4&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
