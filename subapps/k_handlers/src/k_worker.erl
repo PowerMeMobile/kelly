@@ -52,6 +52,10 @@ handle_cast({process, {Module, ContentType, Message, Channel, Pid}}, State = #st
 			?log_debug("Not enough data to process receipt. Requeue.", []),
 			k_gen_consumer:requeue_message(Pid),
 			{stop, normal, State};
+		{error, {database_connection_failure, Reason}} ->
+			?log_debug("Database connection failure: ~p. Requeue.", [Reason]),
+			k_gen_consumer:requeue_message(Pid),
+			{stop, normal, State};
 		{error, Reason} ->
 			{stop, Reason, State}
 	end;

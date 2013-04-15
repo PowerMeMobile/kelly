@@ -209,25 +209,35 @@ connect(Props) ->
 mongo_do(ServerName, WriteMode, ReadMode, ActionFun) ->
 	case gen_server:call(ServerName, get_name_and_pool) of
 		{ok, DbName, DbPool} ->
-			{ok, DbConn} = resource_pool:get(DbPool),
-			case catch mongo:do(WriteMode, ReadMode, DbConn, DbName, ActionFun) of
-				{ok, ok} ->
-					ok;
-				{ok, {error, Reason}} ->
-					{error, Reason};
-				{ok, Entries} ->
-					{ok, Entries};
-				{failure, {connection_failure, _} = Reason} ->
-					?log_error("MongoDB connection failure: ~p", [Reason]),
-					mongo_do(ServerName, WriteMode, ReadMode, ActionFun);
-				{failure, {connection_failure, _,_} = Reason} ->
-					?log_error("MongoDB connection failure: ~p", [Reason]),
-					mongo_do(ServerName, WriteMode, ReadMode, ActionFun);
-				{failure, Reason} ->
-					?log_error("MongoDB failure: ~p", [Reason]),
-					{error, Reason};
-				{'EXIT', {{bad_command, Reason}, Stacktrace}} ->
-					?log_error("MongoDB error: ~p, stacktrace: ~p", [Reason, Stacktrace]),
+			case resource_pool:get(DbPool) of
+				{ok, DbConn} ->
+					case catch mongo:do(WriteMode, ReadMode, DbConn, DbName, ActionFun) of
+						{ok, ok} ->
+							ok;
+						{ok, {error, Reason}} ->
+							{error, Reason};
+						{ok, Entries} ->
+							{ok, Entries};
+						{failure, {connection_failure, _} = Reason} ->
+							?log_error("MongoDB connection failure: ~p", [Reason]),
+							%% slow clients down?
+							{error, {database_connection_failure, Reason}};
+						{failure, {connection_failure, _,_} = Reason} ->
+							?log_error("MongoDB connection failure: ~p", [Reason]),
+							%% slow clients down?
+							{error, {database_connection_failure, Reason}};
+						{failure, Reason} ->
+							?log_error("MongoDB failure: ~p", [Reason]),
+							{error, Reason};
+						{'EXIT', {{bad_command, Reason}, Stacktrace}} ->
+							?log_error("MongoDB error: ~p, stacktrace: ~p", [Reason, Stacktrace]),
+							{error, Reason};
+						{'EXIT', Reason} ->
+							?log_error("MongoDB error: ~p self: ~p", [Reason, self()]),
+							%% mvar timeouted? show clients down?
+							{error, Reason}
+					end;
+				{error, Reason} ->
 					{error, Reason}
 			end;
 		{error, Reason} ->
