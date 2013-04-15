@@ -13,6 +13,18 @@
 
 -type reason() :: any().
 
+-define(UNKNOWN_ADDR,     <<"xxxxxxxxxx">>).
+-define(UNKNOWN_BOOL,     false).
+-define(UNKNOWN_BODY,
+	<<"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">>).
+-define(UNKNOWN_ENCODING, <<"xxxxxxxxxx">>).
+-define(UNKNOWN_ID,       <<"xxxxxxxxxx">>).
+-define(UNKNOWN_STATUS,   <<"xxxxxxxxxx">>).
+-define(UNKNOWN_TIME,     {0,0,0}).
+-define(UNKNOWN_TYPE,     <<"xxxxxxxxxx">>).
+-define(UNKNOWN_UUID,     <<"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">>).
+
 %% ===================================================================
 %% API
 %% ===================================================================
@@ -38,6 +50,13 @@ set_mt_req_info(#req_info{
 		'imi', InMsgId
 	},
 	Modifier = {
+		'$setOnInsert', {
+			'omi', ?UNKNOWN_ID,
+			'rpt', ?UNKNOWN_TIME,
+			'rps', ?UNKNOWN_STATUS,
+			'dt' , ?UNKNOWN_TIME,
+			'ds' , ?UNKNOWN_STATUS
+		},
 		'$set', {
 			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
@@ -58,10 +77,10 @@ set_mt_req_info(#req_info{
 -spec set_mt_resp_info(#resp_info{}) -> ok | {error, reason()}.
 set_mt_resp_info(#resp_info{
 	req_id = ReqId,
-	client_type = _ClientType,
-	customer_id = _CustomerId,
+	client_type = ClientType,
+	customer_id = CustomerId,
 	in_msg_id = InMsgId,
-	gateway_id = _GatewayId,
+	gateway_id = GatewayId,
 	out_msg_id = OutMsgId,
 	resp_time = RespTime,
 	resp_status = RespStatus
@@ -71,6 +90,21 @@ set_mt_resp_info(#resp_info{
 		'imi', InMsgId
 	},
 	Modifier = {
+		'$setOnInsert', {
+			'ct' , bsondoc:atom_to_binary(ClientType),
+			'ci' , CustomerId,
+			'ui' , ?UNKNOWN_UUID,
+			'gi' , GatewayId,
+			't'  , ?UNKNOWN_TYPE,
+			'e'  , ?UNKNOWN_ENCODING,
+			'b'  , ?UNKNOWN_BODY,
+			'sa' , ?UNKNOWN_ADDR,
+			'da' , ?UNKNOWN_ADDR,
+			'rd' , ?UNKNOWN_BOOL,
+			'rqt', ?UNKNOWN_TIME,
+			'dt' , ?UNKNOWN_TIME,
+			'ds' , ?UNKNOWN_STATUS
+		},
 		'$set', {
 			'omi', OutMsgId,
 			'rpt', RespTime,
