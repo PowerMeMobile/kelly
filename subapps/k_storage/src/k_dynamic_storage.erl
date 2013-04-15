@@ -39,11 +39,9 @@ set_mt_req_info(#req_info{
 	},
 	Modifier = {
 		'$set', {
-			'ri' , ReqId,
 			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
 			'ui' , UserId,
-			'imi', InMsgId,
 			'gi' , GatewayId,
 			't'  , bsondoc:atom_to_binary(Type),
 			'e'  , bsondoc:atom_to_binary(Encoding),
