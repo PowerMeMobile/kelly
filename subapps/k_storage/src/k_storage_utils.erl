@@ -58,12 +58,11 @@ doc_to_mt_msg_info(Doc) ->
 		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),
+		status = bsondoc:at(s, Doc),
 		reg_dlr = bsondoc:at(rd, Doc),
 		req_time = bsondoc:at(rqt, Doc),
 		resp_time = bsondoc:at(rpt, Doc),
-		resp_status = bsondoc:binary_to_atom(bsondoc:at(rps, Doc)),
-		dlr_time = bsondoc:at(dt, Doc),
-		dlr_status = bsondoc:binary_to_atom(bsondoc:at(ds, Doc))
+		dlr_time = bsondoc:at(dt, Doc)
 	}.
 
 -spec doc_to_mo_msg_info(bson:document()) -> #msg_info{}.

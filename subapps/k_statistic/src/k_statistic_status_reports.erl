@@ -44,13 +44,7 @@ get_aggregated_statuses_report(From, To) ->
 	MtMapF =
 <<"
 	function() {
-		if (this.ds) {
-			emit(this.ds, 1);
-		} else if (this.rps) {
-			emit(this.rps, 1);
-		} else {
-			emit(\"pending\", 1);
-		}
+		emit(this.s, 1);
 	};
 ">>,
 	MoMapF =
@@ -113,17 +107,6 @@ get_msgs_by_status_report(From, To, received) ->
 	},
 	get_raw_report(mo_messages, Selector);
 
-get_msgs_by_status_report(From, To, pending) ->
-	Selector = {
-		'rqt' , {
-			'$gte' , From,
-			'$lt'  , To
-		},
-		'rps' , { '$exists' , false },
-		'ds'  , { '$exists' , false }
-	},
-	get_raw_report(mt_messages, Selector);
-
 get_msgs_by_status_report(From, To, Status) when
 	Status == sent; Status == failed
 ->
@@ -132,12 +115,12 @@ get_msgs_by_status_report(From, To, Status) when
 			'$gte' , From,
 			'$lt'  , To
 		},
-		'rps' , fix_status(Status),
-		'ds'  , { '$exists' , false }
+		's' , fix_status(Status)
 	},
 	get_raw_report(mt_messages, Selector);
 
 get_msgs_by_status_report(From, To, Status) when
+	Status == pending;
 	Status == enroute; Status == delivered; Status == expired;
 	Status == deleted; Status == undeliverable; Status == accepted;
 	Status == unknown; Status == rejected; Status == unrecognized
@@ -147,7 +130,7 @@ get_msgs_by_status_report(From, To, Status) when
 			'$gte' , From,
 			'$lt' , To
 		},
-		'ds' , bsondoc:atom_to_binary(Status)
+		's' , bsondoc:atom_to_binary(Status)
 	},
 	get_raw_report(mt_messages, Selector).
 
@@ -183,7 +166,8 @@ doc_to_message(mt_messages, Doc) ->
 		{src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
 		{dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
 		{reg_dlr, MsgInfo#msg_info.reg_dlr},
-		{req_time, ISO8601}
+		{req_time, ISO8601},
+		{status, ?MSG_STATUS(MsgInfo)}
 	];
 doc_to_message(mo_messages, Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mo_msg_info(Doc),

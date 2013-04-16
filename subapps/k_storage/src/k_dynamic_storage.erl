@@ -20,7 +20,6 @@
 	"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">>).
 -define(UNKNOWN_ENCODING, <<"xxxxxxxxxx">>).
 -define(UNKNOWN_ID,       <<"xxxxxxxxxx">>).
--define(UNKNOWN_STATUS,   <<"xxxxxxxxxx">>).
 -define(UNKNOWN_TIME,     {0,0,0}).
 -define(UNKNOWN_TYPE,     <<"xxxxxxxxxx">>).
 -define(UNKNOWN_UUID,     <<"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">>).
@@ -51,11 +50,10 @@ set_mt_req_info(#req_info{
 	},
 	Modifier = {
 		'$setOnInsert', {
+			's'  , <<"pending">>,
 			'omi', ?UNKNOWN_ID,
 			'rpt', ?UNKNOWN_TIME,
-			'rps', ?UNKNOWN_STATUS,
-			'dt' , ?UNKNOWN_TIME,
-			'ds' , ?UNKNOWN_STATUS
+			'dt' , ?UNKNOWN_TIME
 		},
 		'$set', {
 			'ct' , bsondoc:atom_to_binary(ClientType),
@@ -93,7 +91,7 @@ set_mt_resp_info(#resp_info{
 		'$setOnInsert', {
 			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
-			'ui' , ?UNKNOWN_UUID,
+			'ui' , ?UNKNOWN_ID,
 			'gi' , GatewayId,
 			't'  , ?UNKNOWN_TYPE,
 			'e'  , ?UNKNOWN_ENCODING,
@@ -102,13 +100,12 @@ set_mt_resp_info(#resp_info{
 			'da' , ?UNKNOWN_ADDR,
 			'rd' , ?UNKNOWN_BOOL,
 			'rqt', ?UNKNOWN_TIME,
-			'dt' , ?UNKNOWN_TIME,
-			'ds' , ?UNKNOWN_STATUS
+			'dt' , ?UNKNOWN_TIME
 		},
 		'$set', {
 			'omi', OutMsgId,
-			'rpt', RespTime,
-			'rps', bsondoc:atom_to_binary(RespStatus)
+			's'  , bsondoc:atom_to_binary(RespStatus),
+			'rpt', RespTime
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
@@ -128,8 +125,8 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
 	},
 	Modifier = {
 		'$set', {
-			'dt', DlrTime,
-			'ds', bsondoc:atom_to_binary(DlrStatus)
+			's' , bsondoc:atom_to_binary(DlrStatus),
+			'dt', DlrTime
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),

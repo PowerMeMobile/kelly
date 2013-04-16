@@ -83,25 +83,17 @@
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
+	status :: status(),
 	req_time :: timestamp(),
 	resp_time :: timestamp(),
-	resp_status :: resp_status(),
-	dlr_time :: timestamp(),
-	dlr_status :: dlr_status()
+	dlr_time :: timestamp()
 }).
 
 -define(MSG_STATUS(MsgInfo),
-	case {MsgInfo#msg_info.resp_status, MsgInfo#msg_info.dlr_status} of
-		{undefined, undefined} ->
-			pending;
-		{success, undefined} ->
-			sent;
-		{failure, undefined} ->
-			failed;
-		{undefined, DlrStatus} ->
-			DlrStatus;
-		{_dont_care, DlrStatus} ->
-			DlrStatus
+	case MsgInfo#msg_info.status of
+		success -> sent;
+		failure -> failed;
+		Status -> Status
 	end
 ).
 
