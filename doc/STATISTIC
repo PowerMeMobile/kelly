@@ -33,7 +33,7 @@ Result:
 
 Problems:
 Once we started to send messages on behalf of several users, now it's possible to have multiple messages with the same MSG_ID.
-If we do need this report as a solution is possible to either a USER_ID parameter or to return multiple messages.
+If we do need this report as a solution is possible to either add a USER_ID parameter or to return multiple messages.
 
 
 #
