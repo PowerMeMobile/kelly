@@ -13,11 +13,11 @@ Default is `json'.
 #
 
 REST call:
-GET /message_status/MsgID/client/ClientType/customer/CustUUID
+GET /message_status/MSG_ID/client/CLIENT_TYPE/customer/CUSTOMER_ID
 Where
-	ClientType - client type
-	MsgID - input message id
-	CustUUID - customer uuid
+	CLIENT_TYPE - client type
+	MSG_ID - input message id
+	CUSTOMER_ID - customer uuid
 
 Example:
 http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73
@@ -32,7 +32,8 @@ Result:
 </message>
 
 Problems:
-Once we started to send messages on behalf of several users, now it's possible to have multiple messages with the same MsgID.
+Once we started to send messages on behalf of several users, now it's possible to have multiple messages with the same MSG_ID.
+If we do need this report as a solution is possible to either a USER_ID parameter or to return multiple messages.
 
 
 #
@@ -148,7 +149,7 @@ Result:
 						<from>2012-07-19T13:00:00</from>
 						<to>2012-07-19T14:00:00</to>
 						<total>100</total>
-						<avg>0.0</avg>
+						<avg>0.3</avg>
 						<peak>28.0</peak>
 					</item>
 				</slices>
@@ -167,7 +168,7 @@ Result:
 						<from>2012-07-19T13:00:00</from>
 						<to>2012-07-19T14:00:00</to>
 						<total>100</total>
-						<avg>0.0</avg>
+						<avg>0.3</avg>
 						<peak>15.0</peak>
 					</item>
 				</slices>
@@ -177,7 +178,7 @@ Result:
 </messages>
 
 Problems:
-Very computationally expensive. Better to pre-aggregate constantly.
+Very computationally expensive. Better to pre-aggregate if we should delivery it in realtime.
 
 
 #
@@ -219,7 +220,7 @@ Result:
 </object>
 
 Problems:
-Looks very much like previous report. Should we combine these two into something generic?
+Looks very much like a subset of the previous report. Shouldn't we combine these two into something more generic?
 
 
 #
@@ -260,6 +261,9 @@ Result:
 		<status>delivered</status>
 	</item>
 </object>
+
+Problems:
+Do we need to have addresses' ton and npi?
 
 
 
