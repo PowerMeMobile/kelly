@@ -161,6 +161,8 @@ build_mt_report_response(Doc) ->
 		{src_addr, MsgInfo#msg_info.src_addr#addr.addr},
 		{dst_addr, MsgInfo#msg_info.dst_addr#addr.addr},
 		{reg_dlr, MsgInfo#msg_info.reg_dlr},
+		{esm_class, MsgInfo#msg_info.esm_class},
+		{validity_period, MsgInfo#msg_info.val_period},
 		{req_time, list_to_binary(ISO8601)},
 		{status, ?MSG_STATUS(MsgInfo)}
 	].

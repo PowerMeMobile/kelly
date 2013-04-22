@@ -62,6 +62,8 @@ build_req_info(#just_sms_request_dto{
 	source_addr = SrcAddr
 }, ReqTime, DstAddr, InMsgId) ->
 	RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
+	EsmClass = get_param_by_name(<<"esm_class">>, Params, 0),
+	ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
 	#req_info{
 		req_id = ReqId,
 		client_type = ClientType,
@@ -75,6 +77,8 @@ build_req_info(#just_sms_request_dto{
 		src_addr = SrcAddr,
 		dst_addr = DstAddr,
 		reg_dlr = RegDlr,
+		esm_class = EsmClass,
+		val_period = ValPeriod,
 		req_time = ReqTime
 	}.
 

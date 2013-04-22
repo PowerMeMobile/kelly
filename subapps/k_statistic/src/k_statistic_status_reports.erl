@@ -166,6 +166,8 @@ doc_to_message(mt_messages, Doc) ->
 		{src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
 		{dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
 		{reg_dlr, MsgInfo#msg_info.reg_dlr},
+		{esm_class, MsgInfo#msg_info.esm_class},
+		{validity_period, MsgInfo#msg_info.val_period},
 		{req_time, ISO8601},
 		{status, ?MSG_STATUS(MsgInfo)}
 	];

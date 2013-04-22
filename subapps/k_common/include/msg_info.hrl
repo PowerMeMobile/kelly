@@ -34,6 +34,8 @@
 -type dst_addr() :: #addr{}.
 -type timestamp() :: erlang:timestamp().
 -type msg_id() :: binary(). %% MongoDB ObjectID
+-type esm_class() :: integer().
+-type val_period() :: binary().
 
 -record(req_info, {
 	req_id :: req_id(),
@@ -48,6 +50,8 @@
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
+	esm_class  :: esm_class(),
+	val_period :: val_period(),
 	req_time :: timestamp()
 }).
 
@@ -83,6 +87,8 @@
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
+	esm_class  :: esm_class(),
+	val_period :: val_period(),
 	status :: status(),
 	req_time :: timestamp(),
 	resp_time :: timestamp(),

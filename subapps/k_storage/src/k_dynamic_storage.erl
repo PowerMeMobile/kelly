@@ -20,7 +20,9 @@
 	"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">>).
 -define(UNKNOWN_ENCODING, <<"xxxxxxxxxx">>).
 -define(UNKNOWN_ID,       <<"xxxxxxxxxx">>).
+-define(UNKNOWN_INT,      0).
 -define(UNKNOWN_TIME,     {0,0,0}).
+-define(UNKNOWN_TIMEFMT,  <<"xxxxxxxxxxxxxxxx">>).
 -define(UNKNOWN_TYPE,     <<"xxxxxxxxxx">>).
 -define(UNKNOWN_UUID,     <<"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">>).
 
@@ -42,6 +44,8 @@ set_mt_req_info(#req_info{
 	src_addr = SrcAddr,
 	dst_addr = DstAddr,
 	reg_dlr = RegDlr,
+	esm_class = EsmClass,
+	val_period = ValPeriod,
 	req_time = ReqTime
 }) ->
 	Selector = {
@@ -66,6 +70,8 @@ set_mt_req_info(#req_info{
 			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
 			'da' , k_storage_utils:addr_to_doc(DstAddr),
 			'rd' , RegDlr,
+			'ec' , EsmClass,
+			'vp' , ValPeriod,
 			'rqt', ReqTime
 		}
 	},
@@ -99,6 +105,8 @@ set_mt_resp_info(#resp_info{
 			'sa' , ?UNKNOWN_ADDR,
 			'da' , ?UNKNOWN_ADDR,
 			'rd' , ?UNKNOWN_BOOL,
+			'ec' , ?UNKNOWN_INT,
+			'vp' , ?UNKNOWN_TIMEFMT,
 			'rqt', ?UNKNOWN_TIME,
 			'dt' , ?UNKNOWN_TIME
 		},
