@@ -33,7 +33,7 @@
 -type src_addr() :: #addr{}.
 -type dst_addr() :: #addr{}.
 -type timestamp() :: erlang:timestamp().
--type msg_id() :: binary(). %% <<req_id()/binary, $#, in_msg_id()>>
+-type msg_id() :: binary(). %% MongoDB ObjectID
 
 -record(req_info, {
 	req_id :: req_id(),
@@ -96,7 +96,5 @@
 		Status -> Status
 	end
 ).
-
--define(MAKE_MSG_ID(ReqId, InMsgId), <<ReqId/binary, $#, InMsgId/binary>>).
 
 -endif. % msg_info_hrl
