@@ -1,5 +1,7 @@
 -module(k_storage_manager).
 
+-behaviour(gen_server).
+
 %% API
 -export([
 	start_link/0,
@@ -125,22 +127,6 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal
 %% ===================================================================
 
-ensure_static_storage_index(ServerName) ->
-	ok = mongodb_storage:ensure_index(ServerName, k1api_sms_request_id_to_msg_ids,
-	{key, {customer_id, 1, user_id, 1, src_addr, 1, req_id, 1}}).
-
-ensure_dynamic_storage_index(ServerName) ->
-	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
-		{key, {ri, 1, imi, 1}}),
-	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
-		{key, {ci, 1, ct, 1, imi, 1}}),
-	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
-		{key, {gi, 1, omi, 1}}),
-	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
-		{key, {rqt, 1}}),
-	ok = mongodb_storage:ensure_index(ServerName, mo_messages,
-		{key, {rqt, 1}}).
-
 start_static_storage() ->
 	{ok, StaticProps} = application:get_env(?APP, static_storage),
 
@@ -187,6 +173,33 @@ start_prev_dynamic_storage() ->
 
 	ok = ensure_dynamic_storage_index(k_prev_dynamic_storage).
 
+ensure_static_storage_index(ServerName) ->
+	ok = mongodb_storage:ensure_index(ServerName, k1api_sms_request_id_to_msg_ids,
+	{key, {customer_id, 1, user_id, 1, src_addr, 1, req_id, 1}}).
+
+ensure_dynamic_storage_index(ServerName) ->
+	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
+		{key, {ri, 1, imi, 1}}),
+	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
+		{key, {ci, 1, ct, 1, imi, 1}}),
+	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
+		{key, {gi, 1, omi, 1}}),
+	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
+		{key, {rqt, 1}}),
+	ok = mongodb_storage:ensure_index(ServerName, mo_messages,
+		{key, {rqt, 1}}).
+
+handle_event('Normal', 'ShiftEvent', 'Response') ->
+	ok = shift_storages();
+handle_event('Response', 'ResponseEndEvent', 'Delivery') ->
+	ok;
+handle_event('Delivery', 'DeliveryEndEvent', 'Normal') ->
+	%% even though it's possible and even logical to close
+	%% the previous storage, it still makes sense not to,
+	%% because there might be processes having links to it
+	%% and we will get `noproc' exceptions'.
+	ok.
+
 shift_storages() ->
 	%% unregister and stop previous storage, if one.
 	case whereis(k_prev_dynamic_storage) of
@@ -201,14 +214,3 @@ shift_storages() ->
 	true = register(k_prev_dynamic_storage, CurrPid),
 	%% start new current storage.
 	ok = start_curr_dynamic_storage().
-
-handle_event('Normal', 'ShiftEvent', 'Response') ->
-	ok = shift_storages();
-handle_event('Response', 'ResponseEndEvent', 'Delivery') ->
-	ok;
-handle_event('Delivery', 'DeliveryEndEvent', 'Normal') ->
-	%% even though it's possible and even logical to close
-	%% the previous storage, it still makes sense not to,
-	%% because there might be processes having links to it
-	%% and we will get `noproc' exceptions'.
-	ok.

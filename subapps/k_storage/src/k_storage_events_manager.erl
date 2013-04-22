@@ -1,5 +1,7 @@
 -module(k_storage_events_manager).
 
+-behaviour(gen_server).
+
 %% API
 -export([
 	start_link/0,
@@ -205,8 +207,7 @@ write_storage_state(#state{
 		next_event      , bsondoc:atom_to_binary(NextEvent),
 		next_event_time , k_datetime:datetime_to_timestamp(NextEventTime)
 	},
-	ok = mongodb_storage:upsert(k_static_storage, 'storage.state', {}, Modifier),
-	ok.
+	ok = mongodb_storage:upsert(k_static_storage, 'storage.state', {}, Modifier).
 
 check_storage_state(_CurrTime, State = #state{
 	shift_frame = _ShiftFrame,

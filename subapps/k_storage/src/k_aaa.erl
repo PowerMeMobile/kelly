@@ -84,5 +84,5 @@ delete_user(Users, UserId) ->
 				UserId -> Acc;
 				_Any -> [CurrentUser | Acc]
 			end
-		end,
-		[], Users).
+		end, [], Users
+	).

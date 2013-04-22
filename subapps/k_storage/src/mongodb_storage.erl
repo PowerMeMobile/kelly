@@ -1,5 +1,7 @@
 -module(mongodb_storage).
 
+-behaviour(gen_server).
+
 %% API
 -export([
 	start_link/1,

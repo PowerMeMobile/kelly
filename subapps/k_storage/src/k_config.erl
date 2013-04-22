@@ -116,5 +116,5 @@ delete_connection(Conns, ConnId) ->
 				ConnId -> Acc;
 				_Any -> [CurrentConn | Acc]
 			end
-		end,
-		[], Conns).
+		end, [], Conns
+	).
