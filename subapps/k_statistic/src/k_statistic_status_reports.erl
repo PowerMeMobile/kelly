@@ -151,7 +151,7 @@ get_raw_report(Collection, Selector) ->
 doc_to_message(mt_messages, Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
 	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-	ISO8601 = list_to_binary(k_datetime:datetime_to_iso8601(Datetime)),
+	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
 	[
 		{msg_id, MsgInfo#msg_info.msg_id},
 		{client_type, MsgInfo#msg_info.client_type},
@@ -175,7 +175,7 @@ doc_to_message(mo_messages, Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mo_msg_info(Doc),
 	MsgId = MsgInfo#msg_info.msg_id,
 	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-	ISO8601 = list_to_binary(k_datetime:datetime_to_iso8601(Datetime)),
+	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
 	[
 		{msg_id, MsgId},
 		{customer_id, MsgInfo#msg_info.customer_id},

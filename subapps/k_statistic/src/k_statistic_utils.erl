@@ -21,8 +21,7 @@
 	get_timestamp_ranges/3,
 	align_time_range/2,
 	align_time_range/3,
-	get_file_list_with/3,
-	timestamp_to_iso8601/1
+	get_file_list_with/3
 ]).
 
 -include("application.hrl").
@@ -158,8 +157,3 @@ align_time_range(From, To, Step) ->
 get_file_list_with(From, To, Fun) when From < To ->
 	Timestamps = get_timestamp_list(From, To),
 	lists:map(Fun, Timestamps).
-
--spec timestamp_to_iso8601(Timestamp::unixepoch()) -> string().
-timestamp_to_iso8601(Timestamp) ->
-	k_datetime:datetime_to_iso8601(
-		k_datetime:unixepoch_to_datetime(Timestamp)).

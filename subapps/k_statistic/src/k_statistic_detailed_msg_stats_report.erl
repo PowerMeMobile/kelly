@@ -97,8 +97,8 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 										true -> lists:max(SliceFreqs) * 1.0
 									end,
 									[
-										{from, list_to_binary(k_statistic_utils:timestamp_to_iso8601(F))},
-										{to, list_to_binary(k_statistic_utils:timestamp_to_iso8601(T))},
+										{from, k_datetime:unixepoch_to_iso8601(F)},
+										{to, k_datetime:unixepoch_to_iso8601(T)},
 										{total, SliceTotal},
 										{avg, SliceAvg},
 										{peak, SlicePeak}
