@@ -5,7 +5,10 @@
 	doc_to_addr/1,
 
 	doc_to_mt_msg_info/1,
-	doc_to_mo_msg_info/1
+	doc_to_mo_msg_info/1,
+
+	encoding_to_binary/1,
+	binary_to_encoding/1
 ]).
 
 -include_lib("alley_dto/include/addr.hrl").
@@ -54,7 +57,7 @@ doc_to_mt_msg_info(Doc) ->
 		gateway_id = bsondoc:at(gi, Doc),
 		out_msg_id = bsondoc:at(omi, Doc),
 		type = bsondoc:binary_to_atom(bsondoc:at(t, Doc)),
-		encoding = bsondoc:binary_to_atom(bsondoc:at(e, Doc)),
+		encoding = binary_to_encoding(bsondoc:at(e, Doc)),
 		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),
@@ -78,7 +81,7 @@ doc_to_mo_msg_info(Doc) ->
 		in_msg_id = bsondoc:at(imi, Doc),
 		gateway_id = bsondoc:at(gi, Doc),
 		type = bsondoc:binary_to_atom(bsondoc:at(t, Doc)),
-		encoding = bsondoc:binary_to_atom(bsondoc:at(e, Doc)),
+		encoding = binary_to_encoding(bsondoc:at(e, Doc)),
 		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),
@@ -92,3 +95,17 @@ objectid_to_binary({ObjId}) ->
 			[io_lib:format("~2.16.0b", [X]) || X <- binary_to_list(ObjId)]
 		)
 	).
+
+-spec encoding_to_binary(atom() | integer()) -> binary().
+encoding_to_binary(Encoding) when is_atom(Encoding) ->
+	bsondoc:atom_to_binary(Encoding);
+encoding_to_binary(Encoding) when is_integer(Encoding) ->
+	list_to_binary(integer_to_list(Encoding)).
+
+-spec binary_to_encoding(binary()) -> atom() | integer().
+binary_to_encoding(Binary) ->
+	try bsondoc:binary_to_atom(Binary)
+	catch
+		_:_ ->
+			list_to_integer(binary_to_list(Binary))
+	end.
