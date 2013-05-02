@@ -45,6 +45,16 @@ echo -n 'id=3b25cd8e-5eca-11e1-bf77-00269e42f7a5&name=Test network 2&country_cod
 #
 
 #
+# NowSMS
+
+# postpaid
+echo -n 'name=nowsms&system_id=nowsms&id=132109c8-ae67-11e2-bc5a-00269e42f7a5&originators=375296660001,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660001,1,1&billing_type=postpaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+
+# NowSMS users
+echo -n 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/132109c8-ae67-11e2-bc5a-00269e42f7a5/users; echo
+
+
+#
 # Funnel/Kannel
 
 # postpaid customer
