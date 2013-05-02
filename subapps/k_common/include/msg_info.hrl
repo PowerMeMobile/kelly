@@ -27,6 +27,7 @@
   | dlr_status().
 
 -type req_id() :: binary().
+-type msg_type() :: regular | part.
 -type in_msg_id() :: binary().
 -type out_msg_id() :: binary().
 -type encoding() :: atom() | integer().
@@ -44,9 +45,12 @@
 	user_id :: user_id(),
 	in_msg_id :: in_msg_id(),
     gateway_id :: gateway_id(),
-    type :: atom(),
+    type :: msg_type(),
     encoding :: encoding(),
     body :: binary(),
+	part_ref_num :: integer(),
+	part_seq_num :: pos_integer(),
+	parts_total :: pos_integer(),
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
@@ -81,9 +85,12 @@
 	in_msg_id :: in_msg_id(),
     gateway_id :: gateway_id(),
 	out_msg_id :: out_msg_id(),
-    type :: atom(),
+    type :: msg_type(),
     encoding :: encoding(),
     body :: binary(),
+	part_ref_num :: integer(),
+	part_seq_num :: pos_integer(),
+	parts_total :: pos_integer(),
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
