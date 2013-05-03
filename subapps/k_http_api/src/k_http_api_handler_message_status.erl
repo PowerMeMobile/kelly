@@ -21,13 +21,19 @@
 
 init() ->
 	Read = #method_spec{
-				path = [<<"message_status">>, message_id, <<"client">>, client_type, <<"customer">>, customer_id],
-				params = [
-					#param{name = message_id, mandatory = true, repeated = false, type = binary},
-					#param{name = client_type, mandatory = true, repeated = false, type = atom},
-					#param{name = customer_id, mandatory = true, repeated = false, type = binary}
-				]},
-
+		path = [
+			<<"message_status">>, message_id,
+			<<"client">>, client_type,
+			<<"customer">>, customer_id,
+			<<"user">>, user_id
+		],
+		params = [
+			#param{name = message_id, mandatory = true, repeated = false, type = binary},
+			#param{name = client_type, mandatory = true, repeated = false, type = atom},
+			#param{name = customer_id, mandatory = true, repeated = false, type = binary},
+			#param{name = user_id, mandatory = true, repeated = false, type = binary}
+		]
+	},
 	{ok, #specs{
 		create = undefined,
 		read = Read,
@@ -37,10 +43,11 @@ init() ->
 
 read(Params) ->
 	?log_debug("Params: ~p", [Params]),
-	ClientType = ?gv(client_type, Params),
 	CustomerId = ?gv(customer_id, Params),
+	UserId = ?gv(user_id, Params),
+	ClientType = ?gv(client_type, Params),
 	InMsgId = ?gv(message_id, Params),
-	case k_statistic:get_mt_msg_status_report(CustomerId, ClientType, InMsgId) of
+	case k_statistic:get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) of
 		{ok, Report} ->
 			{ok, Report};
 		{error, no_entry} ->

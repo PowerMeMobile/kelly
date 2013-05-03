@@ -1,7 +1,7 @@
 -module(k_statistic_status_reports).
 
 -export([
-	get_mt_msg_status_report/3,
+	get_mt_msg_status_report/4,
 	get_aggregated_statuses_report/2,
 	get_msgs_by_status_report/3
 ]).
@@ -15,8 +15,10 @@
 %% API
 %% ===================================================================
 
--spec get_mt_msg_status_report(customer_id(), client_type(), in_msg_id()) -> {ok, report()} | {error, reason()}.
-get_mt_msg_status_report(CustomerId, ClientType, InMsgId) ->
+-spec get_mt_msg_status_report(
+	customer_id(), user_id(), client_type(), in_msg_id()
+) -> {ok, report()} | {error, reason()}.
+get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
 	Selector = {
 		'ci'  , CustomerId,
 		'ct'  , bsondoc:atom_to_binary(ClientType),
@@ -31,6 +33,7 @@ get_mt_msg_status_report(CustomerId, ClientType, InMsgId) ->
 					{msg_id, MsgInfo#msg_info.msg_id},
 					{client_type, ClientType},
 					{customer_id, CustomerId},
+					{user_id, UserId},
 					{in_msg_id, InMsgId},
 					{status, ?MSG_STATUS(MsgInfo)}
 				]
