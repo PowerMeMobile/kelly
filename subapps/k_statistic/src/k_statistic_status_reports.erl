@@ -153,6 +153,7 @@ get_raw_report(Collection, Selector) ->
 
 doc_to_message(mt_messages, Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
+	Type = transform_type(MsgInfo#msg_info.type),
 	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
 	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
 	[
@@ -163,7 +164,7 @@ doc_to_message(mt_messages, Doc) ->
 		{in_msg_id, MsgInfo#msg_info.in_msg_id},
 		{gateway_id, MsgInfo#msg_info.gateway_id},
 		{out_msg_id, MsgInfo#msg_info.out_msg_id},
-		{type, MsgInfo#msg_info.type},
+		{type, Type},
 		{encoding, MsgInfo#msg_info.encoding},
 		{body, MsgInfo#msg_info.body},
 		{src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
@@ -207,3 +208,16 @@ addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
 		{npi, Npi},
 		{ref_num, RefNum}
 	].
+
+transform_type(regular) ->
+	regular;
+transform_type({part, #part_info{
+	ref = PartRef,
+	seq = PartSeq,
+	total = TotalParts
+}}) -> [
+	{name, part},
+	{ref, PartRef},
+	{seq, PartSeq},
+	{total, TotalParts}
+].

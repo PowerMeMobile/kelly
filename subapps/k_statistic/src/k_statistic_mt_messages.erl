@@ -145,6 +145,7 @@ project(monthly) ->
 
 build_mt_report_response(Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
+	Type = transform_type(MsgInfo#msg_info.type),
 	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
 	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
 	[
@@ -155,7 +156,7 @@ build_mt_report_response(Doc) ->
 		{in_msg_id, MsgInfo#msg_info.in_msg_id},
 		{gateway_id, MsgInfo#msg_info.gateway_id},
 		{out_msg_id, MsgInfo#msg_info.out_msg_id},
-		{type, MsgInfo#msg_info.type},
+		{type, Type},
 		{encoding, MsgInfo#msg_info.encoding},
 		{body, MsgInfo#msg_info.body},
 		{src_addr, MsgInfo#msg_info.src_addr#addr.addr},
@@ -163,6 +164,19 @@ build_mt_report_response(Doc) ->
 		{reg_dlr, MsgInfo#msg_info.reg_dlr},
 		{esm_class, MsgInfo#msg_info.esm_class},
 		{validity_period, MsgInfo#msg_info.val_period},
-		{req_time, list_to_binary(ISO8601)},
+		{req_time, ISO8601},
 		{status, ?MSG_STATUS(MsgInfo)}
 	].
+
+transform_type(regular) ->
+	regular;
+transform_type({part, #part_info{
+	ref = PartRef,
+	seq = PartSeq,
+	total = TotalParts
+}}) -> [
+	{name, part},
+	{ref, PartRef},
+	{seq, PartSeq},
+	{total, TotalParts}
+].
