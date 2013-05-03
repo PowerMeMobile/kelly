@@ -11,6 +11,11 @@
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/customer.hrl").
 
+-define(TEST, 1).
+-ifdef(TEST).
+   -include_lib("eunit/include/eunit.hrl").
+-endif.
+
 -type reason() :: any().
 
 -define(UNKNOWN_ADDR,     <<"xxxxxxxxxx">>).
@@ -31,56 +36,13 @@
 %% ===================================================================
 
 -spec set_mt_req_info(#req_info{}) -> ok | {error, reason()}.
-set_mt_req_info(#req_info{
-	req_id = ReqId,
-	client_type = ClientType,
-	customer_id = CustomerId,
-	user_id = UserId,
-	in_msg_id = InMsgId,
-	gateway_id = GatewayId,
-	type = Type,
-	encoding = Encoding,
-	body = Body,
-	part_ref_num = PartRefNum,
-	part_seq_num = PartSeqNum,
-	parts_total = PartsTotal,
-	src_addr = SrcAddr,
-	dst_addr = DstAddr,
-	reg_dlr = RegDlr,
-	esm_class = EsmClass,
-	val_period = ValPeriod,
-	req_time = ReqTime
-}) ->
+set_mt_req_info(#req_info{req_id = ReqId, in_msg_id = InMsgId} = ReqInfo) ->
 	Selector = {
 		'ri' , ReqId,
 		'imi', InMsgId
 	},
-	Modifier = {
-		'$setOnInsert', {
-			's'  , <<"pending">>,
-			'omi', ?UNKNOWN_ID,
-			'rpt', ?UNKNOWN_TIME,
-			'dt' , ?UNKNOWN_TIME
-		},
-		'$set', {
-			'ct' , bsondoc:atom_to_binary(ClientType),
-			'ci' , CustomerId,
-			'ui' , UserId,
-			'gi' , GatewayId,
-			't'  , bsondoc:atom_to_binary(Type),
-			'e'  , k_storage_utils:encoding_to_binary(Encoding),
-			'b'  , Body,
-			'prn', PartRefNum,
-			'psn', PartSeqNum,
-			'pt' , PartsTotal,
-			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
-			'da' , k_storage_utils:addr_to_doc(DstAddr),
-			'rd' , RegDlr,
-			'ec' , EsmClass,
-			'vp' , ValPeriod,
-			'rqt', ReqTime
-		}
-	},
+	Modifier = set_mt_req_info_modifier(ReqInfo),
+
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
 	StorageMode:set_mt_req_info(Selector, Modifier).
 
@@ -184,3 +146,227 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
 	StorageMode:set_mo_msg_info(Selector, Modifier).
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
+
+set_mt_req_info_modifier(#req_info{
+	client_type = ClientType,
+	customer_id = CustomerId,
+	user_id = UserId,
+	gateway_id = GatewayId,
+	type = Type,
+	encoding = Encoding,
+	body = Body,
+	src_addr = SrcAddr,
+	dst_addr = DstAddr,
+	reg_dlr = RegDlr,
+	esm_class = EsmClass,
+	val_period = ValPeriod,
+	req_time = ReqTime
+}) when Type =:= regular ->
+	{
+		'$setOnInsert', {
+			's'  , <<"pending">>,
+			'omi', ?UNKNOWN_ID,
+			'rpt', ?UNKNOWN_TIME,
+			'dt' , ?UNKNOWN_TIME
+		},
+		'$set', {
+			'ct' , bsondoc:atom_to_binary(ClientType),
+			'ci' , CustomerId,
+			'ui' , UserId,
+			'gi' , GatewayId,
+			't'  , bsondoc:atom_to_binary(Type),
+			'e'  , k_storage_utils:encoding_to_binary(Encoding),
+			'b'  , Body,
+			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+			'da' , k_storage_utils:addr_to_doc(DstAddr),
+			'rd' , RegDlr,
+			'ec' , EsmClass,
+			'vp' , ValPeriod,
+			'rqt', ReqTime
+		}
+	};
+set_mt_req_info_modifier(#req_info{
+	client_type = ClientType,
+	customer_id = CustomerId,
+	user_id = UserId,
+	gateway_id = GatewayId,
+	type = Type,
+	encoding = Encoding,
+	body = Body,
+	part_ref_num = PartRefNum,
+	part_seq_num = PartSeqNum,
+	parts_total = PartsTotal,
+	src_addr = SrcAddr,
+	dst_addr = DstAddr,
+	reg_dlr = RegDlr,
+	esm_class = EsmClass,
+	val_period = ValPeriod,
+	req_time = ReqTime
+}) when Type =:= part ->
+	{
+		'$setOnInsert', {
+			's'  , <<"pending">>,
+			'omi', ?UNKNOWN_ID,
+			'rpt', ?UNKNOWN_TIME,
+			'dt' , ?UNKNOWN_TIME
+		},
+		'$set', {
+			'ct' , bsondoc:atom_to_binary(ClientType),
+			'ci' , CustomerId,
+			'ui' , UserId,
+			'gi' , GatewayId,
+			't'  , bsondoc:atom_to_binary(Type),
+			'e'  , k_storage_utils:encoding_to_binary(Encoding),
+			'b'  , Body,
+			'prn', PartRefNum,
+			'psn', PartSeqNum,
+			'pt' , PartsTotal,
+			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+			'da' , k_storage_utils:addr_to_doc(DstAddr),
+			'rd' , RegDlr,
+			'ec' , EsmClass,
+			'vp' , ValPeriod,
+			'rqt', ReqTime
+		}
+	}.
+
+%% ===================================================================
+%% Tests begin
+%% ===================================================================
+
+-ifdef(TEST).
+
+set_mt_req_info_modifier_regular_test() ->
+	RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
+	GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
+	CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
+	UID = <<"user">>,
+	CT = funnel,
+	Body = <<"Hello">>,
+	Type = regular,
+	Encoding = default,
+	SrcAddr = #addr{},
+	DstAddr = #addr{},
+	RegDlr = false,
+	EsmClass = 0,
+	ValPeriod = <<"000003000000000R">>,
+	ReqTime = {0,0,0},
+	ReqInfo = #req_info{
+			req_id = RID,
+			client_type = CT,
+			customer_id = CID,
+			user_id = UID,
+			in_msg_id = <<"3">>,
+			gateway_id = GID,
+			type = Type,
+			encoding = Encoding,
+			body = Body,
+			src_addr = SrcAddr,
+			dst_addr = DstAddr,
+			reg_dlr = RegDlr,
+			esm_class = EsmClass,
+			val_period = ValPeriod,
+			req_time = ReqTime
+	},
+	Modifier = set_mt_req_info_modifier(ReqInfo),
+	Expected = {
+		'$setOnInsert', {
+			's'  , <<"pending">>,
+			'omi', ?UNKNOWN_ID,
+			'rpt', ?UNKNOWN_TIME,
+			'dt' , ?UNKNOWN_TIME
+		},
+		'$set', {
+			'ct' , bsondoc:atom_to_binary(CT),
+			'ci' , CID,
+			'ui' , UID,
+			'gi' , GID,
+			't'  , bsondoc:atom_to_binary(Type),
+			'e'  , k_storage_utils:encoding_to_binary(Encoding),
+			'b'  , Body,
+			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+			'da' , k_storage_utils:addr_to_doc(DstAddr),
+			'rd' , RegDlr,
+			'ec' , EsmClass,
+			'vp' , ValPeriod,
+			'rqt', ReqTime
+		}
+	},
+	?assertEqual(Expected, Modifier).
+
+set_mt_req_info_modifier_part_test() ->
+	RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
+	GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
+	CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
+	UID = <<"user">>,
+	CT = funnel,
+	Body = <<"Hello">>,
+	Type = part,
+	Encoding = default,
+	PartRefNum = 249,
+	PartSeqNum = 3,
+	PartsTotal = 3,
+	SrcAddr = #addr{},
+	DstAddr = #addr{},
+	RegDlr = false,
+	EsmClass = 0,
+	ValPeriod = <<"000003000000000R">>,
+	ReqTime = {0,0,0},
+	ReqInfo = #req_info{
+			req_id = RID,
+			client_type = CT,
+			customer_id = CID,
+			user_id = UID,
+			in_msg_id = <<"3">>,
+			gateway_id = GID,
+			type = Type,
+			encoding = Encoding,
+			body = Body,
+			part_ref_num = PartRefNum,
+			part_seq_num = PartSeqNum,
+			parts_total = PartsTotal,
+			src_addr = SrcAddr,
+			dst_addr = DstAddr,
+			reg_dlr = RegDlr,
+			esm_class = EsmClass,
+			val_period = ValPeriod,
+			req_time = ReqTime
+	},
+	Modifier = set_mt_req_info_modifier(ReqInfo),
+	Expected = {
+		'$setOnInsert', {
+			's'  , <<"pending">>,
+			'omi', ?UNKNOWN_ID,
+			'rpt', ?UNKNOWN_TIME,
+			'dt' , ?UNKNOWN_TIME
+		},
+		'$set', {
+			'ct' , bsondoc:atom_to_binary(CT),
+			'ci' , CID,
+			'ui' , UID,
+			'gi' , GID,
+			't'  , bsondoc:atom_to_binary(Type),
+			'e'  , k_storage_utils:encoding_to_binary(Encoding),
+			'b'  , Body,
+			'prn', PartRefNum,
+			'psn', PartSeqNum,
+			'pt' , PartsTotal,
+			'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+			'da' , k_storage_utils:addr_to_doc(DstAddr),
+			'rd' , RegDlr,
+			'ec' , EsmClass,
+			'vp' , ValPeriod,
+			'rqt', ReqTime
+		}
+	},
+	?assertEqual(Expected, Modifier).
+
+-endif.
+
+%% ===================================================================
+%% Tests end
+%% ===================================================================
