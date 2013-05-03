@@ -40,10 +40,17 @@ process(_ContentType, Message) ->
 %% ===================================================================
 
 -spec process_sms_request(#just_sms_request_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
-process_sms_request(SmsReq = #just_sms_request_dto{client_type = ClientType}) ->
+process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
 	?log_debug("Got ~p sms request: ~p", [ClientType, SmsReq]),
 	ReqTime = k_datetime:utc_timestamp(),
 	ReqInfos = sms_request_to_req_info_list(SmsReq, ReqTime),
+	case ClientType of
+		k1api ->
+			InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
+			process_k1api_req(SmsReq, InMsgIds);
+		_ ->
+			nop
+	end,
 	case k_utils:safe_foreach(
 		fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
 	) of
@@ -54,22 +61,13 @@ process_sms_request(SmsReq = #just_sms_request_dto{client_type = ClientType}) ->
 	end.
 
 -spec sms_request_to_req_info_list(#just_sms_request_dto{}, erlang:timestamp()) -> [#req_info{}].
-sms_request_to_req_info_list(SmsReq, ReqTime) when SmsReq#just_sms_request_dto.client_type =:= funnel ->
+sms_request_to_req_info_list(SmsReq, ReqTime) ->
 	#just_sms_request_dto{
 		type = Type,
 		dest_addrs = {Type, DstAddrs},
 		message_ids = MsgIds
 	} = SmsReq,
 	Pairs = lists:zip(DstAddrs, MsgIds),
-	build_req_infos(SmsReq, ReqTime, Pairs);
-sms_request_to_req_info_list(SmsReq, ReqTime) when SmsReq#just_sms_request_dto.client_type =:= k1api ->
-	#just_sms_request_dto{
-		type = Type,
-		dest_addrs = {Type, DstAddrs},
-		message_ids = MsgIds
-	} = SmsReq,
-	Pairs = zip_addrs_and_ids(DstAddrs, MsgIds),
-	process_k1api_req(SmsReq, Pairs),
 	build_req_infos(SmsReq, ReqTime, Pairs).
 
 build_req_infos(SmsReq, ReqTime, Pairs) ->
@@ -171,7 +169,14 @@ build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds) ->
     {_Encoding, _DC, Bitness} = encoding_dc_bitness(Encoding, Params, default_gateway_settings()),
 	PortAddressing = port_addressing(Params),
 
-	PartRefNum = get_param_by_name(<<"sar_msg_ref_num">>, Params, undefined),
+	%% when a concatenated message comes its reference number is not really needed.
+	%% the reference number comes only from Funnel, but not from SOAP and OneAPI.
+	%% in fact, its absence gives a good idea that it's possible to make up the whole
+	%% message body by querying the current part's request id and destination address.
+	%% this should return all parts. now sort the parts by sequence number and
+	%% concatenate the bodies.
+	PartRefNum = undefined,
+
 	PartsTotal = length(InMsgIds),
 	PartSeqNums = lists:seq(1, PartsTotal),
 	BodyParts = split_msg(Body, Bitness, PortAddressing),
@@ -215,19 +220,6 @@ build_long_part_req_info(#just_sms_request_dto{
 		req_time = ReqTime
 	}.
 
-%% Message ids come in ["ID1", "ID2:ID3", "ID4"], where "ID2:ID3" is multipart message ids.
-%% Destination addrs come in ["ADDR1", "ADDR2", "ADDR3"]. The task is to get {ADDRX, IDY} pairs
-%% like that [{"ADDR1", "ID1"}, {"ADDR2", "ID2"}, {"ADDR2", "ID3"}, {"ADDR3", "ID4"}].
-zip_addrs_and_ids(Addrs, MsgIds) ->
-	zip_addrs_and_ids(Addrs, MsgIds, []).
-
-zip_addrs_and_ids([], [], Acc) ->
-	Acc;
-zip_addrs_and_ids([Addr|Addrs], [MsgId|MsgIds], Acc) ->
-	Ids = binary:split(MsgId, <<":">>, [global, trim]),
-	Pairs = [{Addr, Id} || Id <- Ids],
-	zip_addrs_and_ids(Addrs, MsgIds, Acc ++ Pairs).
-
 -spec get_param_by_name(binary(), [#just_sms_request_param_dto{}], term()) -> term().
 get_param_by_name(Name, Params, Default) ->
 	case lists:keyfind(Name, #just_sms_request_param_dto.name, Params) of
@@ -244,8 +236,8 @@ process_k1api_req(#just_sms_request_dto{
 	user_id = _UserId,
 	params = Params,
 	source_addr = SourceAddr
-}, SmsIds) ->
-	InputMessageIds = lists:map(fun({_Addr, Id}) -> {CustomerId, k1api, Id} end, SmsIds),
+}, InMsgIds) ->
+	InputMessageIds = [{CustomerId, k1api, InMsgId} || InMsgId <- InMsgIds],
 	NotifyURL = get_param_by_name(<<"k1api_notify_url">>, Params, undefined),
 	?log_debug("NotifyURL: ~p", [NotifyURL]),
 	CallbackData = get_param_by_name(<<"k1api_callback_data">>, Params, undefined),
@@ -381,31 +373,6 @@ split_binary(Bin, Len, Acc) ->
 %% ===================================================================
 
 -ifdef(TEST).
-
-zip_addrs_and_ids_1_test() ->
-	DstAddrs = [
-		#addr{addr = <<"1">>},
-		#addr{addr = <<"2">>}
-	],
-	MsgIds = [<<"1">>, <<"2">>],
-	Expected = [
-		{#addr{addr = <<"1">>}, <<"1">>},
-		{#addr{addr = <<"2">>}, <<"2">>}
-	],
-	?assertEqual(Expected, zip_addrs_and_ids(DstAddrs, MsgIds)).
-
-zip_addrs_and_ids_2_test() ->
-	DstAddrs = [
-		#addr{addr = <<"1">>},
-		#addr{addr = <<"2">>}
-	],
-	MsgIds = [<<"1">>, <<"2:3">>],
-	Expected = [
-		{#addr{addr = <<"1">>}, <<"1">>},
-		{#addr{addr = <<"2">>}, <<"2">>},
-		{#addr{addr = <<"2">>}, <<"3">>}
-	],
-	?assertEqual(Expected, zip_addrs_and_ids(DstAddrs, MsgIds)).
 
 sms_request_to_req_info_list_regular_short_batch_test() ->
 	RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
@@ -667,7 +634,7 @@ sms_request_to_req_info_list_multipart_test() ->
 			type = part,
 			encoding = Encoding,
 			body = <<"111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111">>,
-			part_ref_num = 249,
+			part_ref_num = undefined,
 			part_seq_num = 1,
 			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
@@ -687,7 +654,7 @@ sms_request_to_req_info_list_multipart_test() ->
 			type = part,
 			encoding = Encoding,
 			body = <<"222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222">>,
-			part_ref_num = 249,
+			part_ref_num = undefined,
 			part_seq_num = 2,
 			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
@@ -707,7 +674,7 @@ sms_request_to_req_info_list_multipart_test() ->
 			type = part,
 			encoding = Encoding,
 			body = <<"3333333">>,
-			part_ref_num = 249,
+			part_ref_num = undefined,
 			part_seq_num = 3,
 			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
