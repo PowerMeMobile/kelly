@@ -28,7 +28,8 @@ link_sms_request_id_to_msg_ids(CustomerId, UserId, SrcAddr, SmsRequestId, Messag
 			'src_addr'    , k_storage_utils:addr_to_doc(SrcAddr),
 			'req_id'      , SmsRequestId,
 			'msg_ids'     , [
-				{customer_id, CID, client_type, ClientType, msg_id, MID} || {CID, ClientType, MID} <- MessageIds
+				{customer_id, CID, client_type, bsondoc:atom_to_binary(ClientType), msg_id, MID} ||
+				{CID, ClientType, MID} <- MessageIds
 			]
 		}
 	},
