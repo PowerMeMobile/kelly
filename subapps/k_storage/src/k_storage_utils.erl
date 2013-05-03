@@ -46,6 +46,13 @@ doc_to_addr({a, Addr, t, Ton, n, Npi, r, RefNum}) ->
 -spec doc_to_mt_msg_info(bson:document()) -> #msg_info{}.
 doc_to_mt_msg_info(Doc) ->
 	ObjId = bsondoc:at('_id', Doc),
+	Type =
+		case bsondoc:at(t, Doc) of
+			<<"regular">> ->
+				regular;
+			{n, <<"part">>, r, PartRef, s, PartSeq, t, PartsTotal} ->
+				{part, #part_info{ref = PartRef, seq = PartSeq, total = PartsTotal}}
+		end,
 	SrcAddrDoc = bsondoc:at(sa, Doc),
 	DstAddrDoc = bsondoc:at(da, Doc),
 	#msg_info{
@@ -56,7 +63,7 @@ doc_to_mt_msg_info(Doc) ->
 		in_msg_id = bsondoc:at(imi, Doc),
 		gateway_id = bsondoc:at(gi, Doc),
 		out_msg_id = bsondoc:at(omi, Doc),
-		type = bsondoc:binary_to_atom(bsondoc:at(t, Doc)),
+		type = Type,
 		encoding = binary_to_encoding(bsondoc:at(e, Doc)),
 		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),

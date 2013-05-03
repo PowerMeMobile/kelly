@@ -127,7 +127,7 @@ build_part_req_info(#just_sms_request_dto{
 	customer_id = CustomerId,
 	user_id = UserId,
 	gateway_id = GatewayId,
-	type = Type,
+	type = part,
 	message = Body,
 	encoding = Encoding,
 	params = Params,
@@ -148,12 +148,9 @@ build_part_req_info(#just_sms_request_dto{
 		user_id = UserId,
 		in_msg_id = InMsgId,
 		gateway_id = GatewayId,
-		type = Type,
+		type = {part, #part_info{ref = PartRefNum, seq = PartSeqNum, total = PartsTotal}},
 		encoding = Encoding,
 		body = Body,
-		part_ref_num = PartRefNum,
-		part_seq_num = PartSeqNum,
-		parts_total = PartsTotal,
 		src_addr = SrcAddr,
 		dst_addr = DstAddr#addr{ref_num = undefined},
 		reg_dlr = RegDlr,
@@ -169,20 +166,12 @@ build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds) ->
     {_Encoding, _DC, Bitness} = encoding_dc_bitness(Encoding, Params, default_gateway_settings()),
 	PortAddressing = port_addressing(Params),
 
-	%% when a concatenated message comes its reference number is not really needed.
-	%% the reference number comes only from Funnel, but not from SOAP and OneAPI.
-	%% in fact, its absence gives a good idea that it's possible to make up the whole
-	%% message body by querying the current part's request id and destination address.
-	%% this should return all parts. now sort the parts by sequence number and
-	%% concatenate the bodies.
-	PartRefNum = undefined,
-
 	PartsTotal = length(InMsgIds),
 	PartSeqNums = lists:seq(1, PartsTotal),
 	BodyParts = split_msg(Body, Bitness, PortAddressing),
 	[
 		build_long_part_req_info(
-			SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, PartRefNum, PartSeqNum, PartsTotal
+			SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal
 		) || {InMsgId, BodyPart, PartSeqNum} <- lists:zip3(InMsgIds, BodyParts, PartSeqNums)
 	].
 
@@ -195,7 +184,7 @@ build_long_part_req_info(#just_sms_request_dto{
 	encoding = Encoding,
 	params = Params,
 	source_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, BodyPart, PartRefNum, PartSeqNum, PartsTotal) ->
+}, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal) ->
 	RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
 	EsmClass = get_param_by_name(<<"esm_class">>, Params, 0),
 	ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
@@ -206,12 +195,13 @@ build_long_part_req_info(#just_sms_request_dto{
 		user_id = UserId,
 		in_msg_id = InMsgId,
 		gateway_id = GatewayId,
-		type = part,
+		type = {part, #part_info{
+			ref = lists:delete(InMsgId, InMsgIds),
+			seq = PartSeqNum,
+			total = PartsTotal
+		}},
 		encoding = Encoding,
 		body = BodyPart,
-		part_ref_num = PartRefNum,
-		part_seq_num = PartSeqNum,
-		parts_total = PartsTotal,
 		src_addr = SrcAddr,
 		dst_addr = DstAddr,
 		reg_dlr = RegDlr,
@@ -547,12 +537,9 @@ sms_request_to_req_info_list_part_test() ->
 			user_id = UID,
 			in_msg_id = <<"1">>,
 			gateway_id = GID,
-			type = part,
+			type = {part, #part_info{ref = 249, seq = 1, total = 3}},
 			encoding = Encoding,
 			body = Body,
-			part_ref_num = 249,
-			part_seq_num = 1,
-			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
 			dst_addr = #addr{addr = <<"1">>},
 			reg_dlr = false,
@@ -584,10 +571,6 @@ sms_request_to_req_info_list_multipart_test() ->
 		message = Body,
    		encoding = Encoding,
 		params = [
-			#just_sms_request_param_dto{
-				name = <<"sar_msg_ref_num">>,
-				value = {integer,249}
-			},
 			#just_sms_request_param_dto{
 				name = <<"registered_delivery">>,
 				value = {boolean,false}
@@ -631,12 +614,9 @@ sms_request_to_req_info_list_multipart_test() ->
 			user_id = UID,
 			in_msg_id = <<"1">>,
 			gateway_id = GID,
-			type = part,
+			type = {part, #part_info{ref = [<<"2">>, <<"3">>], seq = 1, total = 3}},
 			encoding = Encoding,
 			body = <<"111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111">>,
-			part_ref_num = undefined,
-			part_seq_num = 1,
-			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
 			dst_addr = #addr{addr = <<"1">>},
 			reg_dlr = false,
@@ -651,12 +631,9 @@ sms_request_to_req_info_list_multipart_test() ->
 			user_id = UID,
 			in_msg_id = <<"2">>,
 			gateway_id = GID,
-			type = part,
+			type = {part, #part_info{ref = [<<"1">>, <<"3">>], seq = 2, total = 3}},
 			encoding = Encoding,
 			body = <<"222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222">>,
-			part_ref_num = undefined,
-			part_seq_num = 2,
-			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
 			dst_addr = #addr{addr = <<"1">>},
 			reg_dlr = false,
@@ -671,12 +648,9 @@ sms_request_to_req_info_list_multipart_test() ->
 			user_id = UID,
 			in_msg_id = <<"3">>,
 			gateway_id = GID,
-			type = part,
+			type = {part, #part_info{ref = [<<"1">>, <<"2">>], seq = 3, total = 3}},
 			encoding = Encoding,
 			body = <<"3333333">>,
-			part_ref_num = undefined,
-			part_seq_num = 3,
-			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
 			dst_addr = #addr{addr = <<"1">>},
 			reg_dlr = false,

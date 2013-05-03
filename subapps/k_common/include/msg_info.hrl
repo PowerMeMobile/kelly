@@ -26,8 +26,14 @@
   | resp_status()
   | dlr_status().
 
+-record(part_info, {
+	ref :: integer() | [in_msg_id()],
+	seq :: pos_integer(),
+	total :: pos_integer()
+}).
+
 -type req_id() :: binary().
--type msg_type() :: regular | part.
+-type msg_type() :: regular | {part, #part_info{}}.
 -type in_msg_id() :: binary().
 -type out_msg_id() :: binary().
 -type encoding() :: atom() | integer().
@@ -48,9 +54,6 @@
     type :: msg_type(),
     encoding :: encoding(),
     body :: binary(),
-	part_ref_num :: integer(),
-	part_seq_num :: pos_integer(),
-	parts_total :: pos_integer(),
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
@@ -88,9 +91,6 @@
     type :: msg_type(),
     encoding :: encoding(),
     body :: binary(),
-	part_ref_num :: integer(),
-	part_seq_num :: pos_integer(),
-	parts_total :: pos_integer(),
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
