@@ -9,7 +9,10 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
--include_lib("eunit/include/eunit.hrl").
+-define(TEST, 1).
+-ifdef(TEST).
+   -include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -define(gv(Key, Params), proplists:get_value(Key, Params)).
 -define(gv(Key, Params, Default), proplists:get_value(Key, Params, Default)).
@@ -374,8 +377,10 @@ split_binary(Bin, Len, Acc) ->
 	end.
 
 %% ===================================================================
-%% Tests
+%% Tests begin
 %% ===================================================================
+
+-ifdef(TEST).
 
 zip_addrs_and_ids_1_test() ->
 	DstAddrs = [
@@ -714,6 +719,10 @@ sms_request_to_req_info_list_multipart_test() ->
 		}
 	],
 	Actual = sms_request_to_req_info_list(SmsReq, ReqTime),
-	?debugFmt("~p~n", [Expected]),
-	?debugFmt("~p~n", [Actual]),
 	?assertEqual(Expected, Actual).
+
+-endif.
+
+%% ===================================================================
+%% Tests end
+%% ===================================================================
