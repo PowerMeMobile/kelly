@@ -133,6 +133,7 @@ build_part_req_info(#just_sms_request_dto{
 	source_addr = SrcAddr
 }, ReqTime, DstAddr, InMsgId) ->
 	PartRefNum = DstAddr#addr.ref_num,
+	PartRefNum = get_param_by_name(<<"sar_msg_ref_num">>, Params, undefined),
 	PartSeqNum = get_param_by_name(<<"sar_segment_seqnum">>, Params, undefined),
 	PartsTotal = get_param_by_name(<<"sar_total_segments">>, Params, undefined),
 
@@ -167,12 +168,13 @@ build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds) ->
     {_Encoding, _DC, Bitness} = encoding_dc_bitness(Encoding, Params, default_gateway_settings()),
 	PortAddressing = port_addressing(Params),
 
+	PartRefNum = get_param_by_name(<<"sar_msg_ref_num">>, Params, undefined),
 	PartsTotal = length(InMsgIds),
-	BodyParts = split_msg(Body, Bitness, PortAddressing),
 	PartSeqNums = lists:seq(1, PartsTotal),
+	BodyParts = split_msg(Body, Bitness, PortAddressing),
 	[
 		build_long_part_req_info(
-			SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, PartSeqNum, PartsTotal
+			SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, PartRefNum, PartSeqNum, PartsTotal
 		) || {InMsgId, BodyPart, PartSeqNum} <- lists:zip3(InMsgIds, BodyParts, PartSeqNums)
 	].
 
@@ -185,7 +187,7 @@ build_long_part_req_info(#just_sms_request_dto{
 	encoding = Encoding,
 	params = Params,
 	source_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, BodyPart, PartSeqNum, PartsTotal) ->
+}, ReqTime, DstAddr, InMsgId, BodyPart, PartRefNum, PartSeqNum, PartsTotal) ->
 	RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
 	EsmClass = get_param_by_name(<<"esm_class">>, Params, 0),
 	ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
@@ -199,7 +201,7 @@ build_long_part_req_info(#just_sms_request_dto{
 		type = part,
 		encoding = Encoding,
 		body = BodyPart,
-		part_ref_num = undefined,
+		part_ref_num = PartRefNum,
 		part_seq_num = PartSeqNum,
 		parts_total = PartsTotal,
 		src_addr = SrcAddr,
@@ -519,6 +521,10 @@ sms_request_to_req_info_list_part_test() ->
 				value = {integer,240}
 			},
 			#just_sms_request_param_dto{
+				name = <<"sar_msg_ref_num">>,
+				value = {integer,249}
+			},
+			#just_sms_request_param_dto{
 				name = <<"sar_total_segments">>,
 				value = {integer,3}
 			},
@@ -607,6 +613,10 @@ sms_request_to_req_info_list_multipart_test() ->
    		encoding = Encoding,
 		params = [
 			#just_sms_request_param_dto{
+				name = <<"sar_msg_ref_num">>,
+				value = {integer,249}
+			},
+			#just_sms_request_param_dto{
 				name = <<"registered_delivery">>,
 				value = {boolean,false}
 			},
@@ -652,7 +662,7 @@ sms_request_to_req_info_list_multipart_test() ->
 			type = part,
 			encoding = Encoding,
 			body = <<"111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111">>,
-			part_ref_num = undefined,
+			part_ref_num = 249,
 			part_seq_num = 1,
 			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
@@ -672,7 +682,7 @@ sms_request_to_req_info_list_multipart_test() ->
 			type = part,
 			encoding = Encoding,
 			body = <<"222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222">>,
-			part_ref_num = undefined,
+			part_ref_num = 249,
 			part_seq_num = 2,
 			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
@@ -692,7 +702,7 @@ sms_request_to_req_info_list_multipart_test() ->
 			type = part,
 			encoding = Encoding,
 			body = <<"3333333">>,
-			part_ref_num = undefined,
+			part_ref_num = 249,
 			part_seq_num = 3,
 			parts_total = 3,
 			src_addr = #addr{addr = <<"0">>},
