@@ -20,13 +20,17 @@
 
 init() ->
 	Read = #method_spec{
-				path = [<<"report">>, <<"mt_aggr">>],
-				params = [
-					#param{name = from, mandatory = true, repeated = false, type = {custom, fun convert_datetime/1}},
-					#param{name = to, mandatory = true, repeated = false, type = {custom, fun convert_datetime/1}},
-					#param{name = customer_id, mandatory = false, repeated = false, type = binary},
-					#param{name = group_by , mandatory = true, repeated = false, type = {custom, fun convert_group_by/1}}
-				]},
+		path = [<<"report">>, <<"mt_aggr">>],
+		params = [
+			#param{name = from, mandatory = true, repeated = false, type =
+				{custom, fun k_http_api_utils:convert_datetime/1}},
+			#param{name = to, mandatory = true, repeated = false, type =
+				{custom, fun k_http_api_utils:convert_datetime/1}},
+			#param{name = customer_id, mandatory = false, repeated = false, type = binary},
+			#param{name = group_by , mandatory = true, repeated = false, type =
+				{custom, fun convert_group_by/1}}
+		]
+	},
 
 	{ok, #specs{
 		create = undefined,
@@ -57,12 +61,3 @@ convert_group_by(<<"d">>) ->
 	daily;
 convert_group_by(<<"h">>) ->
 	hourly.
-
-%% convert_datetime(<<"2012-12-11T13:20">>) => {{2012,12,11},{13,20,0}}.
--spec convert_datetime(binary()) -> calendar:datetime().
-convert_datetime(DateTimeBin) ->
-	DateTime = binary_to_list(DateTimeBin),
-	DateTimeList = string:tokens(DateTime, [$-, $T, $:]),
-	Result = [list_to_integer(List) || List <- DateTimeList],
-	[Year, Month, Day, Hour, Minute] = Result,
-	{{Year, Month, Day}, {Hour, Minute, 0}}.

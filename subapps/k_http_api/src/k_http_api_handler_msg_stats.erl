@@ -20,13 +20,16 @@
 
 init() ->
 	Read = #method_spec{
-				path = [<<"report">>, <<"messages">>, type],
-				params = [
-					#param{name = from, mandatory = true, repeated = false, type = {custom, fun convert_datetime/1}},
-					#param{name = to, mandatory = true, repeated = false, type = {custom, fun convert_datetime/1}},
-					#param{name = type, mandatory = true, repeated = false, type = atom},
-					#param{name = slice_length, mandatory = false, repeated = false, type = string}
-				]},
+		path = [<<"report">>, <<"messages">>, type],
+		params = [
+			#param{name = from, mandatory = true, repeated = false, type =
+				{custom, fun k_http_api_utils:convert_datetime/1}},
+			#param{name = to, mandatory = true, repeated = false, type =
+				{custom, fun k_http_api_utils:convert_datetime/1}},
+			#param{name = type, mandatory = true, repeated = false, type = atom},
+			#param{name = slice_length, mandatory = false, repeated = false, type = string}
+		]
+	},
 
 	{ok, #specs{
 		create = undefined,
@@ -70,15 +73,6 @@ build_report(From, To, networks, _Params) ->
 build_report(From, To, details, Params) ->
 	SliceLengthSecs = convert_slice_length(?gv(slice_length, Params)),
 	k_statistic:get_detailed_msg_stats_report(From, To, SliceLengthSecs).
-
-%% convert_datetime(<<"2012-12-11T13:20">>) => {{2012,12,11},{13,20,0}}.
--spec convert_datetime(binary()) -> calendar:datetime().
-convert_datetime(DateTimeBin) ->
-	DateTime = binary_to_list(DateTimeBin),
-	DateTimeList = string:tokens(DateTime, [$-, $T, $:]),
-	Result = [list_to_integer(List) || List <- DateTimeList],
-	[Year, Month, Day, Hour, Minute] = Result,
-	{{Year, Month, Day}, {Hour, Minute, 0}}.
 
 convert_slice_length(undefined) ->
 	60;
