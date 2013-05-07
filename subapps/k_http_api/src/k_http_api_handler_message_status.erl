@@ -34,6 +34,7 @@ init() ->
 			#param{name = user_id, mandatory = true, repeated = false, type = binary}
 		]
 	},
+
 	{ok, #specs{
 		create = undefined,
 		read = Read,

@@ -19,13 +19,15 @@
 %% ===================================================================
 
 init() ->
-
-	Read = [#method_spec{
-				path = [<<"networks">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
-			#method_spec{
-				path = [<<"networks">>],
-				params = []}],
+	Read = [
+		#method_spec{
+			path = [<<"networks">>, id],
+			params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
+		#method_spec{
+			path = [<<"networks">>],
+			params = []
+		}
+	],
 
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary},
@@ -36,15 +38,17 @@ init() ->
 		#param{name = provider_id, mandatory = false, repeated = false, type = binary}
 	],
 	Update = #method_spec{
-				path = [<<"networks">>, id],
-				params = UpdateParams},
+		path = [<<"networks">>, id],
+		params = UpdateParams
+	},
 
 	DeleteParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
-				path = [<<"networks">>, id],
-				params = DeleteParams},
+		path = [<<"networks">>, id],
+		params = DeleteParams
+	},
 
 	CreateParams = [
 		#param{name = id, mandatory = false, repeated = false, type = binary},
@@ -55,15 +59,16 @@ init() ->
 		#param{name = provider_id, mandatory = true, repeated = false, type = binary}
 	],
 	Create = #method_spec{
-				path = [<<"networks">>],
-				params = CreateParams},
+		path = [<<"networks">>],
+		params = CreateParams
+	},
 
-		{ok, #specs{
-			create = Create,
-			read = Read,
-			update = Update,
-			delete = Delete
-		}}.
+	{ok, #specs{
+		create = Create,
+		read = Read,
+		update = Update,
+		delete = Delete
+	}}.
 
 read(Params) ->
 	NetworkUUID = ?gv(id, Params),
