@@ -11,7 +11,6 @@
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"IncomingSm">>, Message) ->
-	?log_debug("Got just incoming sms request", []),
 	case adto:decode(#just_incoming_sms_dto{}, Message) of
 		{ok, IncomingSmsRequest} ->
 			process_incoming_sms_request(IncomingSmsRequest);
@@ -23,7 +22,7 @@ process(CT, Message) ->
 	?log_warn("Got unexpected message of type ~p: ~p", [CT, Message]),
 	{ok, []}.
 
-process_incoming_sms_request(#just_incoming_sms_dto{
+process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
 	gateway_id = GatewayId,
 	source = SourceAddr,
 	dest = DestAddr,
@@ -34,6 +33,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	part_index = _PartIndex,
 	timestamp = UTCString
 }) ->
+	?log_debug("Got just incoming sms request:~p ", [IncSmsRequest]),
 
 	%% generate new id.
 	ItemId = uuid:unparse(uuid:generate_time()),
