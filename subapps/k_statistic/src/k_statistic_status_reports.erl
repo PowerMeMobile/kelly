@@ -42,7 +42,8 @@ get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
 			Error
 	end.
 
--spec get_aggregated_statuses_report(timestamp(), timestamp()) -> {ok, report()} | {error, reason()}.
+-spec get_aggregated_statuses_report(timestamp(), timestamp()) ->
+	{ok, report()} | {error, reason()}.
 get_aggregated_statuses_report(From, To) ->
 	MtMapF =
 <<"
@@ -100,7 +101,8 @@ fix_status(sent)          -> <<"success">>;
 fix_status(failed)        -> <<"failure">>;
 fix_status(Status)        -> Status.
 
--spec get_msgs_by_status_report(timestamp(), timestamp(), status()) -> {ok, report()} | {error, reason()}.
+-spec get_msgs_by_status_report(timestamp(), timestamp(), status()) ->
+	{ok, report()} | {error, reason()}.
 get_msgs_by_status_report(From, To, received) ->
 	Selector = {
 		'rqt' , {
