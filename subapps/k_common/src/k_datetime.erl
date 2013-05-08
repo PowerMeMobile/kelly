@@ -18,7 +18,10 @@
 	milliseconds_to_timestamp/1,
 
 	utc_string_to_datetime/1,
+	utc_string_to_timestamp/1,
+
 	datetime_to_utc_string/1,
+	timestamp_to_utc_string/1,
 
 	datetime_to_iso8601/1,
 	unixepoch_to_iso8601/1
@@ -106,11 +109,19 @@ utc_string_to_datetime(List) when is_list(List) ->
 	end,
 	{{Year,Mon,D},{H,Min,S}}.
 
+-spec utc_string_to_timestamp(binary() | string()) -> timestamp().
+utc_string_to_timestamp(UTCString) ->
+	datetime_to_timestamp(utc_string_to_datetime(UTCString)).
+
 -spec datetime_to_utc_string(datetime()) -> binary().
 datetime_to_utc_string({{Y,Mon,D},{H,Min,S}}) ->
 	list_to_binary(
 		lists:concat([pad(Y rem 100), pad(Mon), pad(D), pad(H), pad(Min), pad(S)])
 	).
+
+-spec timestamp_to_utc_string(timestamp()) -> binary().
+timestamp_to_utc_string(Timestamp) ->
+	datetime_to_utc_string(timestamp_to_datetime(Timestamp)).
 
 -spec unixepoch_to_iso8601(unixepoch()) -> binary().
 unixepoch_to_iso8601(UnixEpoch) ->
@@ -146,7 +157,7 @@ pad(N) ->
 
 -ifdef(TEST).
 
-utc_string_test_() ->
+datetime_to_utc_string_test_() ->
 	DT00 = {{2000,01,02},{03,04,05}},
 	UC00 = <<"000102030405">>,
 	DT37 = {{2037,01,02},{03,04,05}},
@@ -159,14 +170,35 @@ utc_string_test_() ->
 		?_assertEqual(UC00, datetime_to_utc_string(DT00)),
 		?_assertEqual(UC37, datetime_to_utc_string(DT37)),
 		?_assertEqual(UC38, datetime_to_utc_string(DT38)),
-		?_assertEqual(UC99, datetime_to_utc_string(DT99)),
+		?_assertEqual(UC99, datetime_to_utc_string(DT99))
+	].
 
+utc_string_to_datetime_test_() ->
+	DT00 = {{2000,01,02},{03,04,05}},
+	UC00 = <<"000102030405">>,
+	DT37 = {{2037,01,02},{03,04,05}},
+	UC37 = <<"370102030405">>,
+	DT38 = {{1938,01,02},{03,04,05}},
+	UC38 = <<"380102030405">>,
+	DT99 = {{1999,01,02},{03,04,05}},
+	UC99 = <<"990102030405">>,
+	[
 		?_assertEqual(DT00, utc_string_to_datetime(UC00)),
 		?_assertEqual(DT37, utc_string_to_datetime(UC37)),
 		?_assertEqual(DT38, utc_string_to_datetime(UC38)),
 		?_assertEqual(DT99, utc_string_to_datetime(UC99)),
 		?_assertEqual(DT00, utc_string_to_datetime(binary_to_list(UC00)))
 	].
+
+utc_string_to_timestamp_test() ->
+	TS = {1357,95845,0},
+	UC = <<"130102030405">>,
+	?assertEqual(TS, utc_string_to_timestamp(UC)).
+
+timestamp_to_utc_string_test() ->
+	TS = {1357,95845,0},
+	UC = <<"130102030405">>,
+	?assertEqual(UC, timestamp_to_utc_string(TS)).
 
 -endif.
 
