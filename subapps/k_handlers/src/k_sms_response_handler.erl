@@ -7,6 +7,10 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 
+%% ===================================================================
+%% API
+%% ===================================================================
+
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_ContentType, Message) ->
 	case adto:decode(#just_sms_response_dto{}, Message) of
@@ -15,6 +19,10 @@ process(_ContentType, Message) ->
 		Error ->
 			Error
 	end.
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
 
 -spec process_sms_response(#just_sms_response_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
