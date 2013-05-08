@@ -35,7 +35,7 @@ sms_response_to_resp_info_list(#just_sms_response_dto{
 	customer_id = CustomerId,
 	client_type = ClientType,
 	gateway_id = GatewayId,
-	timestamp = _Timestamp,
+	timestamp = UTCString,
 	statuses = Statuses
 }) ->
 	lists:map(fun(#just_sms_status_dto{
@@ -54,6 +54,6 @@ sms_response_to_resp_info_list(#just_sms_response_dto{
 						in_msg_id = OriginalId,
 						gateway_id = GatewayId,
 						out_msg_id = MessageId,
-						resp_time = k_datetime:utc_timestamp(),
+						resp_time = k_datetime:utc_string_to_timestamp(UTCString),
 						resp_status = Status
 					} end, Statuses).

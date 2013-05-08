@@ -32,11 +32,14 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 	parts_ref_num = _PartsRefNum,
 	parts_count = _PartsCount,
 	part_index = _PartIndex,
-	timestamp = _UTCTime
+	timestamp = UTCString
 }) ->
 
 	%% generate new id.
 	ItemId = uuid:unparse(uuid:generate_time()),
+
+	%% determine
+	Timestamp = k_datetime:utc_string_to_timestamp(UTCString),
 
 	%% try to determine customer id and user id,
 	%% this will return either valid customer id or `undefined'.
@@ -54,7 +57,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 					user_id	= UserId,
 					source_addr	= SourceAddr,
 					dest_addr = DestAddr,
-					received  = k_datetime:utc_timestamp(),
+					received  = Timestamp,
 					message_body = MessageBody,
 					encoding = DataCoding
 				},
@@ -81,7 +84,7 @@ process_incoming_sms_request(#just_incoming_sms_dto{
 		src_addr = SourceAddr,
 		dst_addr = DestAddr,
 		reg_dlr = false,
-		req_time = k_datetime:utc_timestamp()
+		req_time = Timestamp
 	},
 	%% store it.
 	ok = k_dynamic_storage:set_mo_msg_info(MsgInfo),
