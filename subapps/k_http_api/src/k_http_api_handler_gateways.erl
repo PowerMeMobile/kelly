@@ -19,13 +19,16 @@
 %% ===================================================================
 
 init() ->
-
-	Read = [#method_spec{
-				path = [<<"gateways">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
-			#method_spec{
-				path = [<<"gateways">>],
-				params = []}],
+	Read = [
+		#method_spec{
+			path = [<<"gateways">>, id],
+			params = [#param{name = id, mandatory = true, repeated = false, type = binary}]
+		},
+		#method_spec{
+			path = [<<"gateways">>],
+			params = []
+		}
+	],
 
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary},
@@ -33,15 +36,17 @@ init() ->
 		#param{name = rps, mandatory = false, repeated = false, type = integer}
 	],
 	Update = #method_spec{
-				path = [<<"gateways">>, id],
-				params = UpdateParams},
+		path = [<<"gateways">>, id],
+		params = UpdateParams
+	},
 
 	DeleteParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
-				path = [<<"gateways">>, id],
-				params = DeleteParams},
+		path = [<<"gateways">>, id],
+		params = DeleteParams
+	},
 
 	CreateParams = [
 		#param{name = id, mandatory = false, repeated = false, type = binary},
@@ -49,15 +54,16 @@ init() ->
 		#param{name = rps, mandatory = true, repeated = false, type = integer}
 	],
 	Create = #method_spec{
-				path = [<<"gateways">>],
-				params = CreateParams},
+		path = [<<"gateways">>],
+		params = CreateParams
+	},
 
-		{ok, #specs{
-			create = Create,
-			read = Read,
-			update = Update,
-			delete = Delete
-		}}.
+	{ok, #specs{
+		create = Create,
+		read = Read,
+		update = Update,
+		delete = Delete
+	}}.
 
 read(Params) ->
 	UUID = ?gv(id, Params),
@@ -176,7 +182,6 @@ prepare_gtws(Gtw = {_UUID, #gateway{}}) ->
 prepare_gtws([], Acc) ->
 	{ok, Acc};
 prepare_gtws([{GtwUUID, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
-
 	%% convert connections records to proplists
 	ConnFun = ?record_to_proplist(connection),
 	ConnPropLists = [ConnFun(ConnRec) || ConnRec <- Conns],

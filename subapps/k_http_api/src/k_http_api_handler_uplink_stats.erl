@@ -20,8 +20,9 @@
 
 init() ->
 	Read = #method_spec{
-				path = [<<"report">>, <<"uplink">>],
-				params = []},
+		path = [<<"report">>, <<"uplink">>],
+		params = []
+	},
 
 	{ok, #specs{
 		create = undefined,

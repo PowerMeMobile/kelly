@@ -15,13 +15,16 @@
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 init() ->
-
-	Read = [#method_spec{
-				path = [<<"customers">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
-			#method_spec{
-				path = [<<"customers">>],
-				params = []}],
+	Read = [
+		#method_spec{
+			path = [<<"customers">>, id],
+			params = [#param{name = id, mandatory = true, repeated = false, type = binary}]
+		},
+		#method_spec{
+			path = [<<"customers">>],
+			params = []
+		}
+	],
 
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary},
@@ -40,15 +43,17 @@ init() ->
 		#param{name = state, mandatory = false, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	Update = #method_spec{
-				path = [<<"customers">>, id],
-				params = UpdateParams},
+		path = [<<"customers">>, id],
+		params = UpdateParams
+	},
 
 	DeleteParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
-				path = [<<"customers">>, id],
-				params = DeleteParams},
+		path = [<<"customers">>, id],
+		params = DeleteParams
+	},
 
 	CreateParams = [
 		#param{name = id, mandatory = false, repeated = false, type = binary},
@@ -67,15 +72,16 @@ init() ->
 		#param{name = state, mandatory = true, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	Create = #method_spec{
-				path = [<<"customers">>],
-				params = CreateParams},
+		path = [<<"customers">>],
+		params = CreateParams
+	},
 
-		{ok, #specs{
-			create = Create,
-			read = Read,
-			update = Update,
-			delete = Delete
-		}}.
+	{ok, #specs{
+		create = Create,
+		read = Read,
+		update = Update,
+		delete = Delete
+	}}.
 
 create(Params) ->
 	case ?gv(id, Params) of

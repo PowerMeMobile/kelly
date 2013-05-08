@@ -9,7 +9,6 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
--define(TEST, 1).
 -ifdef(TEST).
    -include_lib("eunit/include/eunit.hrl").
 -endif.

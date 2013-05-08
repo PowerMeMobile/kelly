@@ -19,14 +19,16 @@
 %% ===================================================================
 
 init() ->
-
-	Read = [#method_spec{
-				path = [<<"providers">>, id],
-				params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
-			#method_spec{
-				path = [<<"providers">>],
-				params = []}
-			],
+	Read = [
+		#method_spec{
+			path = [<<"providers">>, id],
+			params = [#param{name = id, mandatory = true, repeated = false, type = binary}]
+		},
+		#method_spec{
+			path = [<<"providers">>],
+			params = []
+		}
+	],
 
 	UpdateParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary},
@@ -36,15 +38,17 @@ init() ->
 		#param{name = receipts_supported, mandatory = false, repeated = false, type = boolean}
 	],
 	Update = #method_spec{
-				path = [<<"providers">>, id],
-				params = UpdateParams},
+		path = [<<"providers">>, id],
+		params = UpdateParams
+	},
 
 	DeleteParams = [
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
-				path = [<<"providers">>, id],
-				params = DeleteParams},
+		path = [<<"providers">>, id],
+		params = DeleteParams
+	},
 
 	CreateParams = [
 		#param{name = id, mandatory = false, repeated = false, type = binary},
@@ -54,15 +58,16 @@ init() ->
 		#param{name = receipts_supported, mandatory = true, repeated = false, type = boolean}
 	],
 	Create = #method_spec{
-				path = [<<"providers">>],
-				params = CreateParams},
+		path = [<<"providers">>],
+		params = CreateParams
+	},
 
-		{ok, #specs{
-			create = Create,
-			read = Read,
-			update = Update,
-			delete = Delete
-		}}.
+	{ok, #specs{
+		create = Create,
+		read = Read,
+		update = Update,
+		delete = Delete
+	}}.
 
 read(Params) ->
 	UUID = ?gv(id, Params),

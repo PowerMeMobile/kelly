@@ -18,13 +18,20 @@
 	milliseconds_to_timestamp/1,
 
 	utc_string_to_datetime/1,
+	utc_string_to_timestamp/1,
+
 	datetime_to_utc_string/1,
+	timestamp_to_utc_string/1,
 
 	datetime_to_iso8601/1,
 	unixepoch_to_iso8601/1
 ]).
 
 -include("application.hrl").
+
+-ifdef(TEST).
+   -include_lib("eunit/include/eunit.hrl").
+-endif.
 
 %% calendar:datetime_to_gregorian_seconds({{1970,1,1},{0,0,0}}) == 62167219200
 -define(GREGORIAN_SECS_BEFORE_UNIX_EPOCH, 62167219200).
@@ -94,13 +101,27 @@ utc_string_to_datetime(Bin) when is_binary(Bin) ->
 	utc_string_to_datetime(binary_to_list(Bin));
 utc_string_to_datetime(List) when is_list(List) ->
 	[Y, Mon, D, H, Min, S] = split_utc_string(List),
-	{{Y+2000,Mon,D},{H,Min,S}}.
+	Year = if
+		Y >= 38 andalso Y =< 99 ->
+			Y + 1900;
+		Y >= 00 andalso Y =< 37 ->
+			Y + 2000
+	end,
+	{{Year,Mon,D},{H,Min,S}}.
+
+-spec utc_string_to_timestamp(binary() | string()) -> timestamp().
+utc_string_to_timestamp(UTCString) ->
+	datetime_to_timestamp(utc_string_to_datetime(UTCString)).
 
 -spec datetime_to_utc_string(datetime()) -> binary().
 datetime_to_utc_string({{Y,Mon,D},{H,Min,S}}) ->
 	list_to_binary(
 		lists:concat([pad(Y rem 100), pad(Mon), pad(D), pad(H), pad(Min), pad(S)])
 	).
+
+-spec timestamp_to_utc_string(timestamp()) -> binary().
+timestamp_to_utc_string(Timestamp) ->
+	datetime_to_utc_string(timestamp_to_datetime(Timestamp)).
 
 -spec unixepoch_to_iso8601(unixepoch()) -> binary().
 unixepoch_to_iso8601(UnixEpoch) ->
@@ -123,9 +144,64 @@ split_utc_string([], Acc) ->
 	lists:reverse(Acc);
 split_utc_string(List, Acc) ->
 	{Pre, Post} = lists:split(2, List),
-	split_utc_string(Post, [Pre|Acc]).
+	split_utc_string(Post, [list_to_integer(Pre) | Acc]).
 
 pad(N) when N > 9 ->
     N;
 pad(N) ->
     [$0, N + 48].
+
+%% ===================================================================
+%% Tests begin
+%% ===================================================================
+
+-ifdef(TEST).
+
+datetime_to_utc_string_test_() ->
+	DT00 = {{2000,01,02},{03,04,05}},
+	UC00 = <<"000102030405">>,
+	DT37 = {{2037,01,02},{03,04,05}},
+	UC37 = <<"370102030405">>,
+	DT38 = {{1938,01,02},{03,04,05}},
+	UC38 = <<"380102030405">>,
+	DT99 = {{1999,01,02},{03,04,05}},
+	UC99 = <<"990102030405">>,
+	[
+		?_assertEqual(UC00, datetime_to_utc_string(DT00)),
+		?_assertEqual(UC37, datetime_to_utc_string(DT37)),
+		?_assertEqual(UC38, datetime_to_utc_string(DT38)),
+		?_assertEqual(UC99, datetime_to_utc_string(DT99))
+	].
+
+utc_string_to_datetime_test_() ->
+	DT00 = {{2000,01,02},{03,04,05}},
+	UC00 = <<"000102030405">>,
+	DT37 = {{2037,01,02},{03,04,05}},
+	UC37 = <<"370102030405">>,
+	DT38 = {{1938,01,02},{03,04,05}},
+	UC38 = <<"380102030405">>,
+	DT99 = {{1999,01,02},{03,04,05}},
+	UC99 = <<"990102030405">>,
+	[
+		?_assertEqual(DT00, utc_string_to_datetime(UC00)),
+		?_assertEqual(DT37, utc_string_to_datetime(UC37)),
+		?_assertEqual(DT38, utc_string_to_datetime(UC38)),
+		?_assertEqual(DT99, utc_string_to_datetime(UC99)),
+		?_assertEqual(DT00, utc_string_to_datetime(binary_to_list(UC00)))
+	].
+
+utc_string_to_timestamp_test() ->
+	TS = {1357,95845,0},
+	UC = <<"130102030405">>,
+	?assertEqual(TS, utc_string_to_timestamp(UC)).
+
+timestamp_to_utc_string_test() ->
+	TS = {1357,95845,0},
+	UC = <<"130102030405">>,
+	?assertEqual(UC, timestamp_to_utc_string(TS)).
+
+-endif.
+
+%% ===================================================================
+%% Tests end
+%% ===================================================================

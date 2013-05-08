@@ -22,8 +22,9 @@
 
 init() ->
 	Read = #method_spec{
-				path = [<<"just">>, <<"reconfigure">>],
-				params = []},
+		path = [<<"just">>, <<"reconfigure">>],
+		params = []
+	},
 
 	{ok, #specs{
 		create = undefined,

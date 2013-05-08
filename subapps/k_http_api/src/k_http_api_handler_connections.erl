@@ -19,14 +19,19 @@
 %% ===================================================================
 
 init() ->
-
-	Read = [#method_spec{
-				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
-				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
-						  #param{name = id, mandatory = true, repeated = false, type = integer}]},
-			#method_spec{
-				path = [<<"gateways">>, gateway_id, <<"connections">>],
-				params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary}]}],
+	Read = [
+		#method_spec{
+			path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+			params = [
+				#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
+				 #param{name = id, mandatory = true, repeated = false, type = integer}
+			]
+		},
+		#method_spec{
+			path = [<<"gateways">>, gateway_id, <<"connections">>],
+			params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary}]
+		}
+	],
 
 	UpdateParams = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
@@ -42,16 +47,18 @@ init() ->
 		#param{name = addr_range, mandatory = false, repeated = false, type = binary}
 	],
 	Update = #method_spec{
-				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
-				params = UpdateParams},
+		path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+		params = UpdateParams
+	},
 
 	DeleteParams = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = integer}
 	],
 	Delete = #method_spec{
-				path = [<<"gateways">>, gateway_id, <<"connections">>, id],
-				params = DeleteParams},
+		path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+		params = DeleteParams
+	},
 
 	CreateParams = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
@@ -67,15 +74,16 @@ init() ->
 		#param{name = addr_range, mandatory = true, repeated = false, type = binary}
 	],
 	Create = #method_spec{
-				path = [<<"gateways">>, gateway_id, <<"connections">>],
-				params = CreateParams},
+		path = [<<"gateways">>, gateway_id, <<"connections">>],
+		params = CreateParams
+	},
 
-		{ok, #specs{
-			create = Create,
-			read = Read,
-			update = Update,
-			delete = Delete
-		}}.
+	{ok, #specs{
+		create = Create,
+		read = Read,
+		update = Update,
+		delete = Delete
+	}}.
 
 read(Params) ->
 	ConnectionID = ?gv(id, Params),
@@ -155,19 +163,18 @@ update_connection(Gtw, Params) ->
 			NewAddrTon = ?resolve(addr_ton, Params, Conn#connection.addr_ton),
 			NewAddrNpi = ?resolve(addr_npi, Params, Conn#connection.addr_npi),
 			NewAddrRange = ?resolve(addr_range, Params, Conn#connection.addr_range),
-			NewConnection =
-				#connection{
-					id = ConnectionID,
-					type = NewType,
-					addr = NewAddr,
-					port = NewPort,
-					sys_id = NewSysID,
-					pass = NewPass,
-					sys_type = NewSysType,
-					addr_ton = NewAddrTon,
-					addr_npi = NewAddrNpi,
-					addr_range = NewAddrRange
-					},
+			NewConnection = #connection{
+				id = ConnectionID,
+				type = NewType,
+				addr = NewAddr,
+				port = NewPort,
+				sys_id = NewSysID,
+				pass = NewPass,
+				sys_type = NewSysType,
+				addr_ton = NewAddrTon,
+				addr_npi = NewAddrNpi,
+				addr_range = NewAddrRange
+			},
  			{ok, NewConnections} = replace_connection(NewConnection, Connections),
 			ok = k_config:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
 			k_snmp:set_connection(GtwID, NewConnection),
@@ -261,7 +268,6 @@ prepare_connections(Connection = #connection{}) ->
 prepare_connections([], Acc) ->
 	{ok, Acc};
 prepare_connections([Connection = #connection{} | Rest], Acc) ->
-
 	%% convert connections records to proplists
 	ConnFun = ?record_to_proplist(connection),
 	ConnPropList = ConnFun(Connection),

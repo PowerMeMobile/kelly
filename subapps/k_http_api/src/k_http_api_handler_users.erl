@@ -24,14 +24,21 @@
 %% ===================================================================
 
 init() ->
-
-	Read = [#method_spec{
-				path = [<<"customers">>, customer_id, <<"users">>, id],
-				params = [#param{name = customer_id, mandatory = true, repeated = false, type = binary},
-						  #param{name = id, mandatory = true, repeated = false, type = binary}]},
-			#method_spec{
-				path = [<<"customers">>, customer_id, <<"users">>],
-				params = [#param{name = customer_id, mandatory = true, repeated = false, type = binary}]}],
+	Read = [
+		#method_spec{
+			path = [<<"customers">>, customer_id, <<"users">>, id],
+			params = [
+				#param{name = customer_id, mandatory = true, repeated = false, type = binary},
+				#param{name = id, mandatory = true, repeated = false, type = binary}
+			]
+		},
+		#method_spec{
+			path = [<<"customers">>, customer_id, <<"users">>],
+			params = [
+				#param{name = customer_id, mandatory = true, repeated = false, type = binary}
+			]
+		}
+	],
 
 	UpdateParams = [
 		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
@@ -40,16 +47,18 @@ init() ->
 		#param{name = smpp_types, mandatory = false, repeated = true, type = {custom, fun smpp_type/1}}
 	],
 	Update = #method_spec{
-				path = [<<"customers">>, customer_id, <<"users">>, id],
-				params = UpdateParams},
+		path = [<<"customers">>, customer_id, <<"users">>, id],
+		params = UpdateParams
+	},
 
 	DeleteParams = [
 		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
-				path = [<<"customers">>, customer_id, <<"users">>, id],
-				params = DeleteParams},
+		path = [<<"customers">>, customer_id, <<"users">>, id],
+		params = DeleteParams
+	},
 
 	CreateParams = [
 		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
@@ -58,15 +67,16 @@ init() ->
 		#param{name = smpp_types, mandatory = true, repeated = true, type = {custom, fun smpp_type/1}}
 	],
 	Create = #method_spec{
-				path = [<<"customers">>, customer_id, <<"users">>],
-				params = CreateParams},
+		path = [<<"customers">>, customer_id, <<"users">>],
+		params = CreateParams
+	},
 
-		{ok, #specs{
-			create = Create,
-			read = Read,
-			update = Update,
-			delete = Delete
-		}}.
+	{ok, #specs{
+		create = Create,
+		read = Read,
+		update = Update,
+		delete = Delete
+	}}.
 
 create(Params) ->
 	CustID = ?gv(customer_id, Params),

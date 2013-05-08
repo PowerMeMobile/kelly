@@ -13,8 +13,6 @@
 -define(pendingItemsColl, mb_pending_items).
 -define(subscriptionsColl, mb_subscriptions).
 
--type utcunix() :: integer(). %% utc unix epoch seconds
-
 %% ===================================================================
 %% Pending Items
 %% ===================================================================
@@ -57,12 +55,12 @@
 	user_id				 :: binary(),
 	source_addr			 :: addr(),
 	dest_addr			 :: addr(),
-	received 			 :: utcunix(), %% k1api retrieve sms request
+	received 			 :: erlang:timestamp(), %% k1api retrieve sms request
 	message_body     	 :: binary(),
 	encoding 			 :: incoming_sms_encoding(),
 
 	delivery_attempt = 1 :: integer(),
-	created_at			 :: utcunix()
+	created_at			 :: erlang:timestamp()
 }).
 
 -record(k_mb_k1api_receipt, {
@@ -75,7 +73,7 @@
 	message_state		 :: message_state(),
 
 	delivery_attempt = 1 :: integer(),
-	created_at			 :: utcunix()
+	created_at			 :: erlang:timestamp()
 }).
 
 
@@ -86,12 +84,12 @@
 	source_addr			 :: addr(),
 	dest_addr			 :: addr(),
 	input_message_id	 :: binary(),
-	submit_date			 :: utcunix(),
-	done_date			 :: utcunix(),
+	submit_date			 :: erlang:timestamp(),
+	done_date			 :: erlang:timestamp(),
 	message_state		 :: message_state(),
 
 	delivery_attempt = 1 :: integer(),
-	created_at			 :: utcunix()
+	created_at			 :: erlang:timestamp()
 }).
 
 -type k_mb_item() ::
@@ -111,7 +109,7 @@
 	dest_addr 		:: addr(),		%% rename to source_addr
 	notify_url 		:: binary(),
 	callback_data 	:: binary(),
-	created_at		:: utcunix()
+	created_at		:: erlang:timestamp()
 }).
 
 -record(k_mb_k1api_incoming_sms_sub, {
@@ -124,7 +122,7 @@
 	notify_url 		:: binary(),
 	criteria 		:: binary(),
 	callback_data 	:: binary(),
-	created_at 		:: utcunix()
+	created_at 		:: erlang:timestamp()
 }).
 
 -record(k_mb_funnel_sub, {
@@ -133,7 +131,7 @@
 	user_id 		:: binary(),
 	priority 		:: integer(),
 	queue_name 		:: binary(),
-	created_at 		:: utcunix()
+	created_at 		:: erlang:timestamp()
 }).
 
 -type k_mb_subscription() ::

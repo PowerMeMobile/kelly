@@ -206,8 +206,8 @@ build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
 	} = Sub,
 	Receipt = #funnel_delivery_receipt_container_dto{
 		message_id = InputMsgId,
-		submit_date = SubmitDate,
-		done_date = DoneDate,
+		submit_date = k_datetime:timestamp_to_utc_string(SubmitDate),
+		done_date = k_datetime:timestamp_to_utc_string(DoneDate),
 		message_state = MessageState,
 		source = SourceAddr,
 		dest = DestAddr
