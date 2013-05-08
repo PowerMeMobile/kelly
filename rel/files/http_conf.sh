@@ -110,7 +110,7 @@ post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&pswd=passwo
 # Addr2Cust
 #
 
-post "addr2cust" 'msisdn=375296660001,1,1&customer=feda5822-5271-11e1-bd27-001d0947ec73&user=undefined'
+post "addr2cust" 'msisdn=375296660001,1,1&customer=feda5822-5271-11e1-bd27-001d0947ec73&user=user'
 post "addr2cust" 'msisdn=375296660002,1,1&customer=6bd667ae-1793-11e2-95fe-00269e42f7a5&user=undefined'
 # k1api postpaid customer
 post "addr2cust" 'msisdn=375296660003,1,1&customer=a3ddc34a-1793-11e2-9602-00269e42f7a5&user=undefined'

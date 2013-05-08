@@ -14,8 +14,9 @@ process(<<"ConnectionDownEvent">>, Message) ->
 	case adto:decode(#funnel_client_offline_event_dto{}, Message) of
 		{ok, #funnel_client_offline_event_dto{
 			connection_id = ConnId,
-			customer_id = SystemId }} ->
-			process_connection_down_event(ConnId, SystemId);
+			customer_id = SystemId,
+			user_id = UserId }} ->
+			process_connection_down_event(ConnId, SystemId, UserId);
 		{error, Error} ->
 			?log_warn("Failed to decode funnel client offline event: ~p with error: ~p", [Message, Error]),
 			{ok, []}
@@ -27,8 +28,9 @@ process(<<"ConnectionUpEvent">>, Message) ->
 		{ok, #funnel_client_online_event_dto{
 			connection_id = ConnId,
 			customer_id = SystemId,
-			type = ConnType	}} ->
-			process_connection_up_event(ConnId, SystemId, ConnType);
+			type = ConnType,
+			user_id = UserId }} ->
+			process_connection_up_event(ConnId, SystemId, ConnType, UserId);
 		{error, Error} ->
 			?log_warn("Failed to decode funnel client online event: ~p with: ~p", [Message, Error]),
 			{ok, []}
@@ -40,6 +42,7 @@ process(<<"ServerUpEvent">>, _Message) ->
 
 process(<<"ServerDownEvent">>, _Message) ->
 	?log_info("Got funnel ServerDownEvent", []),
+	k_mailbox:process_funnel_down_event(),
 	{ok, []};
 
 process(Type, _Message) ->
@@ -49,17 +52,16 @@ process(Type, _Message) ->
 
 %%% Internal
 
-process_connection_down_event(ConnId, SystemId) ->
+process_connection_down_event(ConnId, SystemId, UserId) ->
 	case resolve_cust_id(SystemId) of
 		{ok, CustId} ->
-			perform_unregister_connection(CustId, ConnId);
+			perform_unregister_connection(CustId, ConnId, UserId);
 		{error, Reason} ->
 			?log_error("Could not unregister system-id: ~p with: ~p", [SystemId, Reason]),
 			{ok, []}
 	end.
 
-perform_unregister_connection(CustId, ConnId) ->
-	UserId = <<"undefined">>,
+perform_unregister_connection(CustId, ConnId, UserId) ->
 	case k_mailbox:unregister_subscription(ConnId, CustId, UserId) of
 		ok ->
 			{ok, []};
@@ -68,8 +70,8 @@ perform_unregister_connection(CustId, ConnId) ->
 			{ok, []}
 	end.
 
-process_connection_up_event(ConnId, SystemId, ConnType)
-	when ConnType == transmitter orelse ConnType == transceiver
+process_connection_up_event(ConnId, SystemId, ConnType, UserId)
+	when ConnType == receiver orelse ConnType == transceiver
 ->
 	case resolve_cust_id(SystemId) of
 		{ok, CustId} ->
@@ -78,7 +80,7 @@ process_connection_up_event(ConnId, SystemId, ConnType)
 			Subscription = #k_mb_funnel_sub{
 					id = ConnId,
 					customer_id = CustId,
-					user_id = <<"undefined">>,
+					user_id = UserId,
 					priority = 0,
 					queue_name = QName,
 					created_at = k_datetime:utc_timestamp()
@@ -89,7 +91,8 @@ process_connection_up_event(ConnId, SystemId, ConnType)
 			?log_error("Could not register system-id: ~p with: ~p", [SystemId, Reason]),
 			{ok, []}
 	end;
-process_connection_up_event(_ConnId, _SystemId, _ConnType) ->
+process_connection_up_event(_ConnId, _SystemId, _ConnType, _UserID) ->
+	%% got transmitter connection up event. nothing to do.
 	{ok, []}.
 
 resolve_cust_id(SystemId) ->

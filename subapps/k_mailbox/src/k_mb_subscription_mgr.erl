@@ -23,7 +23,8 @@
 	start_link/0,
 	register/1,
 	unregister/3,
-	get_suitable_subscription/1
+	get_suitable_subscription/1,
+	process_funnel_down_event/0
 ]).
 
 %% GenServer Callbacks
@@ -69,6 +70,13 @@ get_suitable_subscription(Item = #k_mb_k1api_receipt{}) ->
 get_suitable_subscription(Item) ->
 	process_get_suitable_sub_req(Item).
 
+-spec process_funnel_down_event() -> ok.
+process_funnel_down_event() ->
+	{ok, Subs} = k_mb_db:get_funnel_subscriptions(),
+	[ok = ?MODULE:unregister(	S#k_mb_funnel_sub.id,
+								S#k_mb_funnel_sub.customer_id,
+								S#k_mb_funnel_sub.user_id) || {ok, S} <- Subs],
+	ok.
 %% ===================================================================
 %% GenServer Callbacks
 %% ===================================================================
@@ -118,6 +126,10 @@ code_change(_OldVsn, State, _Extra) ->
 %% Local
 %% ===================================================================
 
+process_pending_items(Sub = #k_mb_funnel_sub{}) ->
+	{ok, {CustomerID, UserID}} = get_customer_user(Sub),
+	{ok, Items} = k_mb_db:get_funnel_receipts(CustomerID, UserID),
+	[k_mb_wpool:process_incoming_item(Item) || Item <- Items];
 process_pending_items(Subscription) ->
 	{ok, {CustomerID, UserID}} = get_customer_user(Subscription),
 	{ok, ItemIDs} = k_mb_db:get_pending(CustomerID, UserID),

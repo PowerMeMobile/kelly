@@ -41,7 +41,7 @@ get_env(Key) ->
 
 default(pool_size)					-> 10;
 
-default(request_timeout) 			-> 10000;
+default(request_timeout) 			-> 60000;
 default(repeat_delay)	 			-> 5000;
 default(max_retry)		   			-> 5;
 

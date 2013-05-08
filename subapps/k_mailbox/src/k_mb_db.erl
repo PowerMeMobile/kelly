@@ -15,12 +15,14 @@
 	save_sub/1,
 
 	get_subscription/1,
+	get_funnel_subscriptions/0,
 	get_subscription_for_k1api_receipt/1,
 	get_subscription_ids/0,
 	delete_subscription/1,
 
 	get_items/0,
 	get_item/2,
+	get_funnel_receipts/2,
 	delete_item/1,
 
 	set_pending/4,
@@ -166,8 +168,7 @@ delete_subscription(SubscriptionID) ->
 -spec delete_item(k_mb_item()) -> ok.
 delete_item(Item = #k_mb_funnel_receipt{}) ->
 	Selector = {'_id', Item#k_mb_funnel_receipt.id},
-	ok = mongodb_storage:delete(k_static_storage, ?funnelReceiptsColl, Selector),
-	ok = mongodb_storage:delete(k_static_storage, ?pendingItemsColl, Selector);
+	ok = mongodb_storage:delete(k_static_storage, ?funnelReceiptsColl, Selector);
 delete_item(Item = #k_mb_k1api_receipt{}) ->
 	Selector = {
 		'_id'         , Item#k_mb_k1api_receipt.id,
@@ -184,6 +185,16 @@ delete_item(Item = #k_mb_incoming_sms{}) ->
 	},
 	ok = mongodb_storage:delete(k_static_storage, ?incomingSmsColl, Selector),
 	ok = mongodb_storage:delete(k_static_storage, ?pendingItemsColl, Selector).
+
+-spec get_funnel_receipts(binary(), binary()) -> {ok, [{k_mb_funnel_receipt, ID :: binary()}]}.
+get_funnel_receipts(CustomerID, UserID) ->
+	Selector = {
+		customer_id, CustomerID,
+		user_id, UserID
+	},
+	{ok, FunnelReceiptDocs} = mongodb_storage:find(k_static_storage, ?funnelReceiptsColl, Selector, {'_id' , 1}),
+	FunnelReceipts = [{k_mb_funnel_receipt, RID} || {RID, _} <- FunnelReceiptDocs],
+	{ok, FunnelReceipts}.
 
 -spec get_items() -> {ok, [binary()]}.
 get_items() ->
@@ -212,20 +223,23 @@ get_item(k_mb_k1api_receipt, ID) ->
 		created_at = bsondoc:at(created_at, Doc)
 	}};
 get_item(k_mb_funnel_receipt, ID) ->
-	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?funnelReceiptsColl, {'_id' , ID}),
-	{ok, #k_mb_funnel_receipt{
-		id = ID,
-		customer_id = bsondoc:at(customer_id, Doc),
-		user_id = bsondoc:at(user_id, Doc),
-		source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
-		dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
-		input_message_id = bsondoc:at(input_message_id, Doc),
-		submit_date = bsondoc:at(submit_date, Doc),
-		done_date = bsondoc:at(done_date, Doc),
-		message_state = bsondoc:binary_to_atom(bsondoc:at(message_state, Doc)),
-		delivery_attempt = bsondoc:at(delivery_attempt, Doc),
-		created_at = bsondoc:at(created_at, Doc)
-	}};
+	case mongodb_storage:find(k_static_storage, ?funnelReceiptsColl, {'_id' , ID}) of
+		{ok, [{_, Doc}]} ->
+			{ok, #k_mb_funnel_receipt{
+				id = ID,
+				customer_id = bsondoc:at(customer_id, Doc),
+				user_id = bsondoc:at(user_id, Doc),
+				source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
+				dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+				input_message_id = bsondoc:at(input_message_id, Doc),
+				submit_date = bsondoc:at(submit_date, Doc),
+				done_date = bsondoc:at(done_date, Doc),
+				message_state = bsondoc:binary_to_atom(bsondoc:at(message_state, Doc)),
+				delivery_attempt = bsondoc:at(delivery_attempt, Doc),
+				created_at = bsondoc:at(created_at, Doc)
+			}};
+		_ -> no_record
+	end;
 get_item(k_mb_incoming_sms, ID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?incomingSmsColl, {'_id' , ID}),
 	{ok, #k_mb_incoming_sms{
@@ -247,12 +261,12 @@ get_item(k_mb_incoming_sms, ID) ->
 get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 	MessageID = Receipt#k_mb_k1api_receipt.input_message_id,
 	CustomerID = Receipt#k_mb_k1api_receipt.customer_id,
-	ClientType = bsondoc:atom_to_binary(k1api),
-	InputID = {CustomerID, ClientType, MessageID},
+	%% ClientType = bsondoc:atom_to_binary(k1api),
+	InputID = {CustomerID, <<"k1api">>, MessageID},
 	?log_debug("InputID: ~p", [InputID]),
 	Selector = {
 		'customer_id' , CustomerID,
-		'client_type' , bsondoc:atom_to_binary(ClientType),
+		'client_type' , <<"k1api">>,
 		'input_id'    , MessageID
 	},
 	case mongodb_storage:find(k_static_storage, ?inputIdToSubIdColl, Selector) of
@@ -317,6 +331,13 @@ get_subscription(k_mb_funnel_sub, ID, Doc) ->
 		queue_name = bsondoc:at(queue_name, Doc),
 		created_at = bsondoc:at(created_at, Doc)
 	}}.
+
+-spec get_funnel_subscriptions() -> {ok, [#k_mb_funnel_sub{}]}.
+get_funnel_subscriptions() ->
+	{ok, Docs} =
+		mongodb_storage:find(k_static_storage, ?subscriptionsColl, {'type' , <<"k_mb_funnel_sub">>}),
+	Subs = [get_subscription(k_mb_funnel_sub, ID, Doc) || {ID, Doc} <- Docs],
+	{ok, Subs}.
 
 -spec get_subscription_ids() -> {ok, [binary()]}.
 get_subscription_ids() ->

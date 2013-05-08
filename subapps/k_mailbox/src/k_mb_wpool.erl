@@ -86,8 +86,10 @@ handle_fork_cast(_Arg, {process_item, {ItemType, ItemID}}, _WP) when
 								  ItemType == k_mb_incoming_sms orelse
 								  ItemType == k_mb_k1api_receipt orelse
 								  ItemType == k_mb_funnel_receipt  ->
-	{ok, Item} = k_mb_db:get_item(ItemType, ItemID),
-	process(Item),
+	case k_mb_db:get_item(ItemType, ItemID) of
+		{ok, Item} -> process(Item);
+		no_record -> ok
+	end,
 	{noreply, normal};
 handle_fork_cast(_Arg, {process_item, Item}, _WP) ->
 	process(Item),
@@ -151,14 +153,7 @@ mark_as_pending(Item = #k_mb_k1api_receipt{}) ->
 	} = Item,
 	k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID);
 mark_as_pending(Item = #k_mb_funnel_receipt{}) ->
-	ItemType = k_mb_funnel_receipt,
-	#k_mb_funnel_receipt{
-		id = ItemID,
-		customer_id = CustomerID,
-		user_id = UserID
-	} = Item,
-	k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID).
-
+	ok.
 
 send_item(Item, Subscription) ->
 	{ok, ItemID, QName, Binary} = build_dto(Item, Subscription),
@@ -172,6 +167,7 @@ send_item(Item, Subscription) ->
 	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
 	case Result of
 		{ok, delivered} ->
+			%% TODO call mt collection to know about delivery receipts successfully delivered
 			?log_debug("Item successfully delivered [~p]", [ItemID]),
 			estatsd:increment(delivered_incoming_item),
 			k_mb_db:delete_item(Item);
@@ -179,6 +175,9 @@ send_item(Item, Subscription) ->
 			postpone_item(Item, timeout)
 	end.
 
+postpone_item(#k_mb_funnel_receipt{}, _Reason) ->
+	%% TODO call mt collection to know about delivery recipt failed
+	ok;
 postpone_item(Item, Error) ->
 	case k_mb_postponed_queue:postpone(Item) of
 		{postponed, Seconds} ->

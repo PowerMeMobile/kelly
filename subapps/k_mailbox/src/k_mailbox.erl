@@ -18,7 +18,8 @@
 	register_sms_req_receipts_subscription/1,
 	unregister_subscription/3,
 	register_incoming_item/1,
-	get_incoming_sms/4
+	get_incoming_sms/4,
+	process_funnel_down_event/0
 ]).
 
 %% ===================================================================
@@ -49,6 +50,10 @@ register_incoming_item(Item) ->
 	{ok, [#k_mb_incoming_sms{}], Total :: integer()}.
 get_incoming_sms(CustomerID, UserID, DestAddr, Limit) ->
 	k_mb_db:get_incoming_sms(CustomerID, UserID, DestAddr, Limit).
+
+-spec process_funnel_down_event() -> ok.
+process_funnel_down_event() ->
+	k_mb_subscription_mgr:process_funnel_down_event().
 
 %% ===================================================================
 %% Internal

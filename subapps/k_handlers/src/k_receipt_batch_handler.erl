@@ -74,7 +74,7 @@ register_delivery_receipt(MsgInfo, DlrTime, MessageState) ->
 build_receipt_item(#msg_info{
 	client_type = k1api,
 	customer_id = CustomerId,
-	user_id = _UserId,
+	user_id = UserId,
 	in_msg_id = InMsgId,
 	src_addr = SrcAddr,
 	dst_addr = DstAddr
@@ -83,7 +83,7 @@ build_receipt_item(#msg_info{
 	Item = #k_mb_k1api_receipt{
 		id = ItemId,
 		customer_id	= CustomerId,
-		user_id	= <<"undefined">>,
+		user_id = UserId,
 		source_addr = SrcAddr,
 		dest_addr = DstAddr,
 		input_message_id = InMsgId,
@@ -93,7 +93,7 @@ build_receipt_item(#msg_info{
 build_receipt_item(#msg_info{
 	client_type = funnel,
 	customer_id = CustomerId,
-	user_id = _UserId,
+	user_id = UserId,
 	in_msg_id = InMsgId,
 	src_addr = SrcAddr,
 	dst_addr = DstAddr
@@ -102,7 +102,7 @@ build_receipt_item(#msg_info{
 	Item = #k_mb_funnel_receipt{
 		id = ItemId,
 		customer_id	= CustomerId,
-		user_id = <<"undefined">>,
+		user_id = UserId,
 		source_addr = SrcAddr,
 		dest_addr = DstAddr,
 		input_message_id = InMsgId,
