@@ -30,30 +30,38 @@ process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
 	end.
 
 -spec sms_response_to_resp_info_list(#just_sms_response_dto{}) -> [#resp_info{}].
-sms_response_to_resp_info_list(#just_sms_response_dto{
-	id = RequestId,
-	customer_id = CustomerId,
-	client_type = ClientType,
-	gateway_id = GatewayId,
-	timestamp = UTCString,
-	statuses = Statuses
-}) ->
-	lists:map(fun(#just_sms_status_dto{
-					original_id = OriginalId,
-					dest_addr = _DestAddr,
-					status = Status,
-					parts_total = _PartsTotal,
-					part_index = _PartIndex,
-					message_id = MessageId,
-					error_code = _ErrorCode
-				 }) ->
-					#resp_info{
-						req_id = RequestId,
-						client_type = ClientType,
-						customer_id = CustomerId,
-						in_msg_id = OriginalId,
-						gateway_id = GatewayId,
-						out_msg_id = MessageId,
-						resp_time = k_datetime:utc_string_to_timestamp(UTCString),
-						resp_status = Status
-					} end, Statuses).
+sms_response_to_resp_info_list(SmsResponse) ->
+	Statuses = SmsResponse#just_sms_response_dto.statuses,
+	Fun = fun(S) -> convert(SmsResponse, S) end,
+	[Fun(S) || S <- Statuses].
+
+-spec convert(#just_sms_response_dto{}, #just_sms_status_dto{}) -> #resp_info{}.
+convert(SmsResponse, SmsStatus) ->
+	#just_sms_response_dto{
+		id = RequestId,
+		customer_id = CustomerId,
+		client_type = ClientType,
+		gateway_id = GatewayId,
+		timestamp = UTCString
+	} = SmsResponse,
+
+	#just_sms_status_dto{
+		original_id = OriginalId,
+		dest_addr = _DestAddr,
+		status = Status,
+		parts_total = _PartsTotal,
+		part_index = _PartIndex,
+		message_id = MessageId,
+		error_code = _ErrorCode
+	} = SmsStatus,
+
+	#resp_info{
+		req_id = RequestId,
+		client_type = ClientType,
+		customer_id = CustomerId,
+		in_msg_id = OriginalId,
+		gateway_id = GatewayId,
+		out_msg_id = MessageId,
+		resp_time = k_datetime:utc_string_to_timestamp(UTCString),
+		resp_status = Status
+	}.
