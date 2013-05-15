@@ -50,7 +50,7 @@ get_statuses(RequestID, InputIDs) ->
 		{ok, MsgInfo} = k_shifted_storage:get_mt_msg_info(CustomerId, ClientType, InMsgId),
 		#k1api_sms_status_dto{
 			address = MsgInfo#msg_info.dst_addr,
-			status = ?MSG_STATUS(MsgInfo)
+			status = MsgInfo#msg_info.status
 		}
 	end, InputIDs),
 

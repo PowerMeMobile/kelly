@@ -36,7 +36,7 @@ get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
 					{customer_id, CustomerId},
 					{user_id, UserId},
 					{in_msg_id, InMsgId},
-					{status, ?MSG_STATUS(MsgInfo)}
+					{status, MsgInfo#msg_info.status}
 				]
 			}};
 		Error ->
@@ -82,7 +82,7 @@ get_aggregated_statuses_report(From, To) ->
 	{ok, MoDocs} = k_shifted_storage:command(MoCommand),
 	Docs = MtDocs ++ MoDocs,
 	Results = merge([
-		{list_to_existing_atom(binary_to_list(fix_status(Status))), round(Hits)}
+		{list_to_existing_atom(binary_to_list(Status)), round(Hits)}
 		|| {'_id', Status, value, Hits} <- Docs
 	 ]),
 	{ok, {statuses, Results}}.
@@ -95,12 +95,6 @@ merge([], Dict) ->
 merge([{Key, Value}|Pairs], Dict) ->
 	NewDict = dict:update_counter(Key, Value, Dict),
 	merge(Pairs, NewDict).
-
-fix_status(<<"success">>) -> <<"sent">>;
-fix_status(<<"failure">>) -> <<"failed">>;
-fix_status(sent)          -> <<"success">>;
-fix_status(failed)        -> <<"failure">>;
-fix_status(Status)        -> Status.
 
 -spec get_msgs_by_status_report(timestamp(), timestamp(), status()) ->
 	{ok, report()} | {error, reason()}.
@@ -121,7 +115,7 @@ get_msgs_by_status_report(From, To, Status) when
 			'$gte' , From,
 			'$lt'  , To
 		},
-		's' , fix_status(Status)
+		's' , Status
 	},
 	get_raw_report(mt_messages, Selector);
 
@@ -180,7 +174,7 @@ doc_to_message(mt_messages, Doc) ->
 		{esm_class, MsgInfo#msg_info.esm_class},
 		{validity_period, MsgInfo#msg_info.val_period},
 		{req_time, ReqISO},
-		{status, ?MSG_STATUS(MsgInfo)},
+		{status, MsgInfo#msg_info.status},
 		{status_update_time, StatusISO}
 	];
 doc_to_message(mo_messages, Doc) ->

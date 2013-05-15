@@ -169,7 +169,7 @@ build_mt_report_response(Doc) ->
 		{esm_class, MsgInfo#msg_info.esm_class},
 		{validity_period, MsgInfo#msg_info.val_period},
 		{req_time, ReqISO},
-		{status, ?MSG_STATUS(MsgInfo)},
+		{status, MsgInfo#msg_info.status},
 		{status_update_time, StatusISO}
 	].
 
