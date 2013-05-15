@@ -175,13 +175,13 @@ start_prev_dynamic_storage() ->
 
 ensure_static_storage_index(ServerName) ->
 	ok = mongodb_storage:ensure_index(ServerName, k1api_sms_request_id_to_msg_ids,
-	{key, {customer_id, 1, user_id, 1, src_addr, 1, req_id, 1}}).
+		{key, {customer_id, 1, user_id, 1, src_addr, 1, req_id, 1}}).
 
 ensure_dynamic_storage_index(ServerName) ->
 	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
 		{key, {ri, 1, imi, 1}}),
 	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
-		{key, {ci, 1, ct, 1, imi, 1}}),
+		{key, {ci, 1, ui, 1, ct, 1, imi, 1}}),
 	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
 		{key, {gi, 1, omi, 1}}),
 	ok = mongodb_storage:ensure_index(ServerName, mt_messages,

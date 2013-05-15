@@ -20,10 +20,11 @@
 ) -> {ok, report()} | {error, reason()}.
 get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
 	Selector = {
-		'ci'  , CustomerId,
-		'ct'  , bsondoc:atom_to_binary(ClientType),
-		'imi' , InMsgId,
-		'rqt' , {'$exists', true}
+		'ci' , CustomerId,
+		'ui' , UserId,
+		'ct' , bsondoc:atom_to_binary(ClientType),
+		'imi', InMsgId,
+		'rqt', {'$exists', true}
 	},
 	case k_shifted_storage:find_one(mt_messages, Selector) of
 		{ok, Doc} ->
