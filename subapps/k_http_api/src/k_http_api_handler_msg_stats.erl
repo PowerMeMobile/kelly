@@ -23,9 +23,9 @@ init() ->
 		path = [<<"report">>, <<"messages">>, type],
 		params = [
 			#param{name = from, mandatory = true, repeated = false, type =
-				{custom, fun k_http_api_utils:convert_datetime/1}},
+				{custom, fun k_datetime:iso8601_to_datetime/1}},
 			#param{name = to, mandatory = true, repeated = false, type =
-				{custom, fun k_http_api_utils:convert_datetime/1}},
+				{custom, fun k_datetime:iso8601_to_datetime/1}},
 			#param{name = type, mandatory = true, repeated = false, type = atom},
 			#param{name = slice_length, mandatory = false, repeated = false, type = string}
 		]
