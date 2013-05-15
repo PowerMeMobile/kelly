@@ -43,13 +43,14 @@ If we do need this report as a solution is possible to either add a USER_ID para
 #
 
 REST call:
-GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds
 
 Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00
@@ -70,7 +71,7 @@ Result:
 #
 
 REST call:
-GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&status=STATUS
+GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&status=STATUS
 Where
 	STATUS - mt: pending (request status)
 		   	 	 sent, failed (response status)
@@ -81,6 +82,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds
 
 Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted
@@ -125,13 +127,14 @@ Result:
 #
 
 REST call:
-GET /report/messages/details?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&slice_length=LEN
+GET /report/messages/details?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&slice_length=LEN
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds
 	LEN - Slice length - seconds, default is 60, possible prefixes: S - seconds, M - minutes, H - hours, D - days
 
 Example:
@@ -188,13 +191,14 @@ Very computationally expensive. Better to pre-aggregate if we should delivery it
 #
 
 REST call:
-GET /report/mt_aggr?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&customer_id=CUSTOMER_IDgroup_by=GROUP_BY
+GET /report/mt_aggr?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&customer_id=CUSTOMER_IDgroup_by=GROUP_BY
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds
 	CUSTOMER_ID
 	GROUP_BY - m - monthly, d - daily, h - hourly
 
@@ -230,13 +234,14 @@ Looks very much like a subset of the previous report. Shouldn't we combine these
 #
 
 REST call:
-GET /report/mt?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&customer_id=CUSTOMER_ID&recipient=RECIPIENT
+GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&customer_id=CUSTOMER_ID&recipient=RECIPIENT
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds
 	CUSTOMER_ID
 	RECIPIENT - destination address
 
@@ -279,7 +284,7 @@ Do we need to have addresses' ton and npi?
 #
 
 REST call:
-GET /report/messages/ReportType?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+GET /report/messages/ReportType?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]
 Where
 	ReportType - report type: customers - customer's networks, networks - network's customers
 	YYYY - year
@@ -287,6 +292,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds
 
 Example:
 http://localhost:8080/report/messages/customers?from=2012-05-20T00:00&to=2012-05-25T00:00
