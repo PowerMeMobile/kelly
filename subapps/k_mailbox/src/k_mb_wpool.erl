@@ -167,12 +167,11 @@ send_item(Item, Subscription) ->
 	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
 	case Result of
 		{ok, delivered} ->
-
-			%% TODO call mt collection to know about delivery receipts successfully delivered
-
-			?log_debug("Item successfully delivered [~p]", [ItemID]),
+			Timestamp = k_datetime:utc_timestamp(),
+			k_mb_db:save_delivery_status(Item, delivered, Timestamp),
 			estatsd:increment(delivered_incoming_item),
-			k_mb_db:delete_item(Item);
+			k_mb_db:delete_item(Item),
+			?log_debug("Item successfully delivered [~p]", [ItemID]);
 		{error, timeout} ->
 			postpone_item(Item, timeout)
 	end.
@@ -184,11 +183,9 @@ postpone_item(Item, Error) ->
 			"after ~p sec. Last error: ~p", [Seconds, Error]);
 		{error, reached_max} ->
 			?log_error("Item reached max number of attempts. "
-			"Discard message. Last error: ~p", [Error]);
-			%% TODO call mt collection to know about delivery receipt failed
-		Error ->
-			?log_error("Got unexpected error: ~p. Terminating.", [Error])
-			%% TODO call mt collection to know about delivery receipt failed
+			"Discard message. Last error: ~p", [Error]),
+			Timestamp = k_datetime:utc_timestamp(),
+			k_mb_db:save_delivery_status(Item, reached_max, Timestamp)
 	end.
 
 build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->

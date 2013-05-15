@@ -13,6 +13,7 @@
 -export([
 	save/1,
 	save_sub/1,
+	save_delivery_status/3,
 
 	get_subscription/1,
 	get_funnel_subscriptions/0,
@@ -161,6 +162,24 @@ save_sub(#k_mb_funnel_sub{} = Sub) ->
 		}
 	},
 	ok = mongodb_storage:upsert(k_static_storage, ?subscriptionsColl, Selector, Modifier).
+
+-spec save_delivery_status(k_mb_item(), atom(), os:timestamp()) -> ok.
+save_delivery_status(#k_mb_funnel_receipt{
+	customer_id = CustomerId,
+	user_id = UserId,
+	input_message_id = InMsgId
+}, Status, Timestamp) ->
+	ok = k_dynamic_storage:set_mt_downlink_dlr_status(CustomerId, UserId, funnel, InMsgId, Status, Timestamp);
+save_delivery_status(#k_mb_k1api_receipt{
+	customer_id = CustomerId,
+	user_id = UserId,
+	input_message_id = InMsgId
+}, Status, Timestamp) ->
+	ok = k_dynamic_storage:set_mt_downlink_dlr_status(CustomerId, UserId, k1api, InMsgId, Status, Timestamp);
+save_delivery_status(#k_mb_incoming_sms{
+	id = Id
+}, Status, Timestamp) ->
+	ok = k_dynamic_storage:set_mo_downlink_dlr_status(Id, Status, Timestamp).
 
 -spec delete_subscription(SubscriptionID :: binary()) -> ok.
 delete_subscription(SubscriptionID) ->
