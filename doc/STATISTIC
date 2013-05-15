@@ -33,9 +33,7 @@ Result:
 	<status>delivered</status>
 </message>
 
-Problems:
-Once we started to send messages on behalf of several users, now it's possible to have multiple messages with the same MSG_ID.
-If we do need this report as a solution is possible to either add a USER_ID parameter or to return multiple messages.
+
 
 
 #
@@ -50,7 +48,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
-	ss - seconds
+	ss - seconds (optional)
 
 Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00
@@ -64,6 +62,7 @@ Result:
 	<sent>500</sent>
 	<undeliverable>11</undeliverable>
 </statuses>
+
 
 
 #
@@ -82,7 +81,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
-	ss - seconds
+	ss - seconds (optional)
 
 Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted
@@ -119,6 +118,7 @@ Result:
 
 
 
+
 ###
 # Statistical interface for Messages
 ###
@@ -135,7 +135,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
-	ss - seconds
+	ss - seconds (optional)
 	LEN - Slice length - seconds, default is 60, possible prefixes: S - seconds, M - minutes, H - hours, D - days
 
 Example:
@@ -183,8 +183,6 @@ Result:
 	</incoming>
 </messages>
 
-Problems:
-Very computationally expensive. Better to pre-aggregate if we should delivery it in realtime.
 
 
 #
@@ -199,7 +197,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
-	ss - seconds
+	ss - seconds (optional)
 	CUSTOMER_ID
 	GROUP_BY - m - monthly, d - daily, h - hourly
 
@@ -230,21 +228,24 @@ Problems:
 Looks very much like a subset of the previous report. Shouldn't we combine these two into something more generic?
 
 
+
 #
 # MT messages by customer id and destination address
 #
 
 REST call:
-GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&customer_id=CUSTOMER_ID&recipient=RECIPIENT
+GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID][&recipient=RECIPIENT][&status=STATUS]
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
-	ss - seconds
-	CUSTOMER_ID
-	RECIPIENT - destination address
+	ss - seconds (optional)
+	CUSTOMER_ID - customer uuid (optional)
+	RECIPIENT - destination address (optional)
+	STATUS - message status (optional)
+
 
 Example:
 http://localhost:8080/report/mt?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_id=feda5822-5271-11e1-bd27-001d0947ec73&recipient=375258298600
@@ -279,8 +280,6 @@ Result:
 	</item>
 </object>
 
-Problems:
-Do we need to have addresses' ton and npi?
 
 
 
@@ -302,7 +301,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
-	ss - seconds
+	ss - seconds (optional)
 
 Example:
 http://localhost:8080/report/messages/customers?from=2012-05-20T00:00&to=2012-05-25T00:00
@@ -344,9 +343,6 @@ Result:
     </item>
 </networks>
 
-Problems:
-Do we really need these two? If yes, in what format/report?
-
 
 
 ##
@@ -374,8 +370,6 @@ Result:
 	</item>
 </gateways>
 
-Problems:
-Actual RPS doesn't seem to implemented in Just.
 
 
 #

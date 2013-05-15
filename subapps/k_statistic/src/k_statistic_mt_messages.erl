@@ -21,29 +21,26 @@ build_report(Params) ->
 	From = k_datetime:datetime_to_timestamp(?gv(from, Params)),
 	To = k_datetime:datetime_to_timestamp(?gv(to, Params)),
 	CustomerSelector =
-	case ?gv(customer_id, Params) of
-		undefined -> {'$exists', 1};
-		CustomerID -> CustomerID
-	end,
+		case ?gv(customer_id, Params) of
+			undefined -> [];
+			CustomerID -> [{'ci', CustomerID}]
+		end,
 	RecipientSelector =
-	case ?gv(recipient, Params) of
-		undefined -> {'$exists', 1};
-		Recipient -> Recipient
-	end,
+		case ?gv(recipient, Params) of
+			undefined -> [];
+			Recipient -> [{'da.a', Recipient}]
+		end,
 	StatusSelector =
-	case ?gv(status, Params) of
-		undefined -> [];
-		pending -> [{'rps', {'$exists', false}}, {'ds', {'$exists', false}}];
-		sent -> [{'rps', 'success'}, {'ds', {'$exists', false}}];
-		failed -> [{'rps', 'failed'}, {'ds', {'$exists', false}}]
-	end,
+		case ?gv(status, Params) of
+			undefined -> [];
+			Status -> [{'s', Status}]
+		end,
 
 	Selector =
-	[{'rqt', bson:document([
-		{'$lt', To},
-		{'$gt', From}])},
-	{'ci', CustomerSelector},
-	{'da.a', RecipientSelector}] ++ StatusSelector,
+		[{'rqt', {'$gte', From, '$lt', To}}] ++
+		CustomerSelector ++
+		RecipientSelector ++
+		StatusSelector,
 	{ok, Docs} = k_shifted_storage:find(mt_messages, bson:document(Selector)),
 	[build_mt_report_response(Doc) || {_, Doc} <- Docs].
 
@@ -58,7 +55,7 @@ build_aggr_report(Params) ->
 	GroupBy = ?gv(group_by, Params),
 	Command = {'aggregate', <<"mt_messages">>, 'pipeline', [
 		{'$match', {
-			'rqt', {'$lt', To, '$gt', From},
+			'rqt', {'$gte', From, '$lt', To},
 			'ci', CustomerSelector
 		}},
 		group(GroupBy),
