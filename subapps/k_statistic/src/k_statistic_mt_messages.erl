@@ -146,8 +146,12 @@ project(monthly) ->
 build_mt_report_response(Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
 	Type = transform_type(MsgInfo#msg_info.type),
-	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
+	ReqTime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+	RespTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
+	DlrTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
+	StatusTime = max(ReqTime, max(RespTime, DlrTime)),
+	ReqISO = k_datetime:datetime_to_iso8601(ReqTime),
+	StatusISO = k_datetime:datetime_to_iso8601(StatusTime),
 	[
 		{msg_id, MsgInfo#msg_info.msg_id},
 		{client_type, MsgInfo#msg_info.client_type},
@@ -159,13 +163,28 @@ build_mt_report_response(Doc) ->
 		{type, Type},
 		{encoding, MsgInfo#msg_info.encoding},
 		{body, MsgInfo#msg_info.body},
-		{src_addr, MsgInfo#msg_info.src_addr#addr.addr},
-		{dst_addr, MsgInfo#msg_info.dst_addr#addr.addr},
+		{src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
+		{dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
 		{reg_dlr, MsgInfo#msg_info.reg_dlr},
 		{esm_class, MsgInfo#msg_info.esm_class},
 		{validity_period, MsgInfo#msg_info.val_period},
-		{req_time, ISO8601},
-		{status, ?MSG_STATUS(MsgInfo)}
+		{req_time, ReqISO},
+		{status, ?MSG_STATUS(MsgInfo)},
+		{status_update_time, StatusISO}
+	].
+
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi}
+	];
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi},
+		{ref_num, RefNum}
 	].
 
 transform_type(regular) ->

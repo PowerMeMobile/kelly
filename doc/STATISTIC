@@ -113,6 +113,7 @@ Result:
 		<reg_dlr>false</reg_dlr>
 		<req_time>2013-01-01T00:14:08</req_time>
 		<status>accepted</status>
+		<status_update_time>2013-01-01T00:14:10</status_update_time>
 	</item>
 </messages>
 
@@ -261,11 +262,20 @@ Result:
 		<type>regular</type>
 		<encoding>default</encoding>
 		<body>Hello</body>
-		<src_addr>375296660001</src_addr>
-		<dst_addr>375258298600</dst_addr>
+		<src_addr>
+			<addr>375296660001</addr>
+			<ton>1</ton>
+			<npi>1</npi>
+		</src_addr>
+		<dst_addr>
+			<addr>375292474326</addr>
+			<ton>1</ton>
+			<npi>1</npi>
+		</dst_addr>
 		<reg_dlr>true</reg_dlr>
 		<req_time>2013-01-01T21:33:11</req_time>
 		<status>delivered</status>
+		<status_update_time>2013-01-01T00:14:10</status_update_time>
 	</item>
 </object>
 
