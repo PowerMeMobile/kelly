@@ -29,16 +29,14 @@ get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
 	case k_shifted_storage:find_one(mt_messages, Selector) of
 		{ok, Doc} ->
 			MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
-			{ok, {
-				message, [
-					{msg_id, MsgInfo#msg_info.msg_id},
-					{client_type, ClientType},
-					{customer_id, CustomerId},
-					{user_id, UserId},
-					{in_msg_id, InMsgId},
-					{status, MsgInfo#msg_info.status}
-				]
-			}};
+			{ok, [
+				{msg_id, MsgInfo#msg_info.msg_id},
+				{client_type, ClientType},
+				{customer_id, CustomerId},
+				{user_id, UserId},
+				{in_msg_id, InMsgId},
+				{status, MsgInfo#msg_info.status}
+			]};
 		Error ->
 			Error
 	end.
@@ -85,7 +83,7 @@ get_aggregated_statuses_report(From, To) ->
 		{list_to_existing_atom(binary_to_list(Status)), round(Hits)}
 		|| {'_id', Status, value, Hits} <- Docs
 	 ]),
-	{ok, {statuses, Results}}.
+	{ok, Results}.
 
 merge(Pairs) ->
 	dict:to_list(merge(Pairs, dict:new())).
@@ -141,9 +139,7 @@ get_msgs_by_status_report(From, To, Status) when
 get_raw_report(Collection, Selector) ->
 	case k_shifted_storage:find(Collection, Selector) of
 		{ok, Docs} ->
-			{ok, {messages,
-				[doc_to_message(Collection, Doc) || {_Id, Doc} <- Docs]
-			}};
+			{ok, [doc_to_message(Collection, Doc) || {_Id, Doc} <- Docs]};
 		Error ->
 			Error
 	end.

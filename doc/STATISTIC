@@ -24,15 +24,14 @@ Example:
 http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73/user/user2
 
 Result:
-<message>
+<object>
 	<msg_id>516d37d31426045fec04d71a</msg_id>
 	<client_type>funnel</client_type>
 	<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
 	<user_id>user2</user_id>
 	<in_msg_id>59</in_msg_id>
 	<status>delivered</status>
-</message>
-
+</object>
 
 
 
@@ -54,14 +53,14 @@ Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
-<statuses>
+<object>
 	<accepted>5</accepted>
 	<delivered>177</delivered>
 	<received>100</received>
 	<rejected>7</rejected>
 	<sent>500</sent>
 	<undeliverable>11</undeliverable>
-</statuses>
+</object>
 
 
 
@@ -87,7 +86,7 @@ Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted
 
 Result:
-<messages>
+<object>
 	<item>
 		<msg_id>516d37d31426045fec04d71a</msg_id>
 		<client_type>funnel</client_type>
@@ -114,8 +113,7 @@ Result:
 		<status>accepted</status>
 		<status_update_time>2013-01-01T00:14:10</status_update_time>
 	</item>
-</messages>
-
+</object>
 
 
 
@@ -142,7 +140,7 @@ Example:
 http://localhost:8080/report/messages/details?from=2012-05-20T00:00&to=2012-05-25T00:00&slice_length=M60
 
 Result:
-<messages>
+<object>
 	<outgoing>
 		<total>100</total>
 		<gateways>
@@ -181,7 +179,7 @@ Result:
 			</item>
 		</gateways>
 	</incoming>
-</messages>
+</object>
 
 
 
