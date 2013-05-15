@@ -157,8 +157,12 @@ get_raw_report(Collection, Selector) ->
 doc_to_message(mt_messages, Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
 	Type = transform_type(MsgInfo#msg_info.type),
-	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
+	ReqTime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+	RespTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
+	DlrTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
+	StatusTime = max(ReqTime, max(RespTime, DlrTime)),
+	ReqISO = k_datetime:datetime_to_iso8601(ReqTime),
+	StatusISO = k_datetime:datetime_to_iso8601(StatusTime),
 	[
 		{msg_id, MsgInfo#msg_info.msg_id},
 		{client_type, MsgInfo#msg_info.client_type},
@@ -175,8 +179,9 @@ doc_to_message(mt_messages, Doc) ->
 		{reg_dlr, MsgInfo#msg_info.reg_dlr},
 		{esm_class, MsgInfo#msg_info.esm_class},
 		{validity_period, MsgInfo#msg_info.val_period},
-		{req_time, ISO8601},
-		{status, ?MSG_STATUS(MsgInfo)}
+		{req_time, ReqISO},
+		{status, ?MSG_STATUS(MsgInfo)},
+		{status_update_time, StatusISO}
 	];
 doc_to_message(mo_messages, Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mo_msg_info(Doc),
