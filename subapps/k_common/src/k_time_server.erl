@@ -3,10 +3,10 @@
 %% API
 -export([
 	start_link/0,
-	get_utc_time/0,
+	get_utc_datetime/0,
 	get_utc_timestamp/0,
 
-	set_utc_time/1
+	set_utc_datetime/1
 ]).
 
 %% gen_server callbacks
@@ -38,9 +38,9 @@
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec get_utc_time() -> calendar:datetime1970().
-get_utc_time() ->
-	{ok, Datetime} = gen_server:call(?MODULE, get_utc_time),
+-spec get_utc_datetime() -> calendar:datetime1970().
+get_utc_datetime() ->
+	{ok, Datetime} = gen_server:call(?MODULE, get_utc_datetime),
 	Datetime.
 
 -spec get_utc_timestamp() -> erlang:timestamp().
@@ -48,9 +48,9 @@ get_utc_timestamp() ->
 	{ok, Ts} = gen_server:call(?MODULE, get_utc_timestamp),
 	Ts.
 
--spec set_utc_time(calendar:datetime1970() | 0) -> ok.
-set_utc_time(Datetime) ->
-	gen_server:cast(?MODULE, {set_utc_time, Datetime}).
+-spec set_utc_datetime(calendar:datetime1970() | 0) -> ok.
+set_utc_datetime(Datetime) ->
+	gen_server:cast(?MODULE, {set_utc_datetime, Datetime}).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -60,7 +60,7 @@ init([]) ->
 	OffsetSecs =
 		case application:get_env(?APP, time_server) of
 			{ok, Props} ->
-				case proplists:get_value(set_utc_time, Props) of
+				case proplists:get_value(set_utc_datetime, Props) of
 					undefined -> 0;
 					Datetime -> calc_offset(Datetime)
 				end;
@@ -70,13 +70,13 @@ init([]) ->
 		offset_secs = OffsetSecs
 	}}.
 
-handle_call(get_utc_time, _From, State = #state{
+handle_call(get_utc_datetime, _From, State = #state{
 	offset_secs = 0
 }) ->
 	Datetime = calendar:universal_time(),
 	{reply, {ok, Datetime}, State};
 
-handle_call(get_utc_time, _From, State = #state{
+handle_call(get_utc_datetime, _From, State = #state{
 	offset_secs = OffsetSecs
 }) ->
 	{NowSecs, _} = now_secs(),
@@ -103,12 +103,12 @@ handle_call(get_utc_timestamp, _From, State = #state{
 handle_call(Request, _From, State = #state{}) ->
 	{stop, {bad_arg, Request}, State}.
 
-handle_cast({set_utc_time, 0}, State = #state{}) ->
+handle_cast({set_utc_datetime, 0}, State = #state{}) ->
 	{noreply, State#state{
 		offset_secs = 0
 	}};
 
-handle_cast({set_utc_time, Datetime}, State = #state{}) ->
+handle_cast({set_utc_datetime, Datetime}, State = #state{}) ->
 	OffsetSecs = calc_offset(Datetime),
 	{noreply, State#state{
 		offset_secs = OffsetSecs
