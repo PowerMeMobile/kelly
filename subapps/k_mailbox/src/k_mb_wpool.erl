@@ -8,15 +8,11 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include("application.hrl").
 
--record(state, {
-}).
-
-
 %% API
 -export([
 	start_link/0,
 	process_incoming_item/1
-	]).
+]).
 
 %% GenWp Callback
 -export([
@@ -31,7 +27,10 @@
 	handle_fork_call/4,
 	handle_child_forked/3,
 	handle_child_terminated/4
-	]).
+]).
+
+-record(state, {
+}).
 
 %% ===================================================================
 %% API
@@ -53,10 +52,14 @@ process_incoming_item(Item) ->
 init([]) ->
 	?log_debug("Started", []),
 	{ok, ItemSets} = k_mb_db:get_items(),
-	Process = fun({ItemType, ItemIDs}) ->
-			lists:foreach(fun(ItemID) ->
-				process_incoming_item({ItemType, ItemID})
-			end, ItemIDs)
+	Process =
+		fun({ItemType, ItemIDs}) ->
+			lists:foreach(
+				fun(ItemID) ->
+					process_incoming_item({ItemType, ItemID})
+				end,
+				ItemIDs
+			)
 		end,
 	lists:foreach(Process, ItemSets),
 	{ok, #state{}}.
@@ -83,9 +86,10 @@ handle_fork_call( _Arg, _CallMess, _ReplyTo, _WP ) ->
 	{noreply, bad_request}.
 
 handle_fork_cast(_Arg, {process_item, {ItemType, ItemID}}, _WP) when
-								  ItemType == k_mb_incoming_sms orelse
-								  ItemType == k_mb_k1api_receipt orelse
-								  ItemType == k_mb_funnel_receipt  ->
+	ItemType == k_mb_incoming_sms orelse
+	ItemType == k_mb_k1api_receipt orelse
+	ItemType == k_mb_funnel_receipt ->
+
 	case k_mb_db:get_item(ItemType, ItemID) of
 		{ok, Item} -> process(Item);
 		no_record -> ok
@@ -152,7 +156,7 @@ mark_as_pending(Item = #k_mb_k1api_receipt{}) ->
 		user_id = UserID
 	} = Item,
 	k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID);
-mark_as_pending(Item = #k_mb_funnel_receipt{}) ->
+mark_as_pending(_Item = #k_mb_funnel_receipt{}) ->
 	ok.
 
 send_item(Item, Subscription) ->
