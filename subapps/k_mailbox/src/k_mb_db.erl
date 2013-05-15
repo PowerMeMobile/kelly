@@ -109,6 +109,7 @@ save(#k_mb_funnel_receipt{} = R) ->
 	},
 	ok = mongodb_storage:upsert(k_static_storage, ?funnelReceiptsColl, Selector, Modifier).
 
+-spec save_sub(tuple()) -> ok.
 save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
 	Selector = {
 		'_id' , Sub#k_mb_k1api_receipt_sub.id
@@ -296,10 +297,10 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 	{ok, k_mb_subscription()}.
 get_subscription(SubscriptionID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}),
-	get_subscription(bsondoc:binary_to_atom(bsondoc:at(type, Doc)), SubscriptionID, Doc).
+	{ok, get_subscription(bsondoc:binary_to_atom(bsondoc:at(type, Doc)), SubscriptionID, Doc)}.
 
 get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
-	{ok, #k_mb_k1api_receipt_sub{
+	#k_mb_k1api_receipt_sub{
 		id = ID,
 		customer_id = bsondoc:at(customer_id, Doc),
 		user_id = bsondoc:at(user_id, Doc),
@@ -308,9 +309,9 @@ get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
 		notify_url = bsondoc:at(notify_url, Doc),
 		callback_data = bsondoc:at(callback_data, Doc),
 		created_at = bsondoc:at(created_at, Doc)
-	}};
+	};
 get_subscription(k_mb_k1api_incoming_sms_sub, ID, Doc) ->
-	{ok, #k_mb_k1api_incoming_sms_sub{
+	#k_mb_k1api_incoming_sms_sub{
 		id = ID,
 		customer_id = bsondoc:at(customer_id, Doc),
 		user_id = bsondoc:at(user_id, Doc),
@@ -321,16 +322,16 @@ get_subscription(k_mb_k1api_incoming_sms_sub, ID, Doc) ->
 		criteria = bsondoc:at(criteria, Doc),
 		callback_data = bsondoc:at(callback_data, Doc),
 		created_at = bsondoc:at(created_at, Doc)
-	}};
+	};
 get_subscription(k_mb_funnel_sub, ID, Doc) ->
-	{ok, #k_mb_funnel_sub{
+	#k_mb_funnel_sub{
 		id = ID,
 		customer_id = bsondoc:at(customer_id, Doc),
 		user_id = bsondoc:at(user_id, Doc),
 		priority = bsondoc:at(priority, Doc),
 		queue_name = bsondoc:at(queue_name, Doc),
 		created_at = bsondoc:at(created_at, Doc)
-	}}.
+	}.
 
 -spec get_funnel_subscriptions() -> {ok, [#k_mb_funnel_sub{}]}.
 get_funnel_subscriptions() ->

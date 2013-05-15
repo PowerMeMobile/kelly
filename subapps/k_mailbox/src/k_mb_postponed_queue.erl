@@ -37,9 +37,7 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec postpone(term()) ->
-	{postponed, Seconds :: integer()} |
-	{error, reached_max}.
+-spec postpone(term()) -> {postponed, Seconds::integer()} | {error, reached_max}.
 postpone(Item) ->
 	{ok, CurrentAttempt} = get_current_attempt(Item),
     MaxRetry = k_mb_config:get_env(max_retry),
