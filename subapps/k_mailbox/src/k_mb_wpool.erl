@@ -109,20 +109,16 @@ handle_child_terminated(normal, _Task, _Child, State = #state{}) ->
 	{noreply, State#state{}};
 
 handle_child_terminated(Reason, _Task = {process, Item}, _Child, State = #state{}) ->
-	%% ?log_error("Child terminated abnormal: ~p", [Reason]),
-	%% {noreply, State}.
 	case k_mb_postponed_queue:postpone(Item) of
 		{postponed, Seconds} ->
 			?log_error("Item processing terminated. It will be resend "
 			"after ~p sec. Reason: ~p", [Seconds, Reason]),
 			{noreply, State#state{}};
-		{error, rich_max} ->
-			?log_error("Item rich max number of attempts. Discard message. Reason: ~p",
-			[Reason]),
+		{error, reached_max} ->
+			?log_error("Item reached max number of attempts. Discard message. Reason: ~p", [Reason]),
 			{noreply, State#state{}};
 		Error ->
-			?log_error("Got unexpected error: ~p. Terminating.",
-			[Error]),
+			?log_error("Got unexpected error: ~p. Terminating.", [Error]),
 			{stop, {unexpected_case_clause, Error}}
 	end.
 
@@ -163,15 +159,17 @@ send_item(Item, Subscription) ->
 	{ok, ItemID, QName, Binary} = build_dto(Item, Subscription),
 	?log_debug("Send item [~p] to queue [~p]", [ItemID, QName]),
 	ContentType =
-	case Item of
-		#k_mb_incoming_sms{} -> <<"OutgoingBatch">>;
-		#k_mb_k1api_receipt{} -> <<"ReceiptBatch">>;
-		#k_mb_funnel_receipt{} -> <<"ReceiptBatch">>
-	end,
+		case Item of
+			#k_mb_incoming_sms{} -> <<"OutgoingBatch">>;
+			#k_mb_k1api_receipt{} -> <<"ReceiptBatch">>;
+			#k_mb_funnel_receipt{} -> <<"ReceiptBatch">>
+		end,
 	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
 	case Result of
 		{ok, delivered} ->
+
 			%% TODO call mt collection to know about delivery receipts successfully delivered
+
 			?log_debug("Item successfully delivered [~p]", [ItemID]),
 			estatsd:increment(delivered_incoming_item),
 			k_mb_db:delete_item(Item);
@@ -179,20 +177,18 @@ send_item(Item, Subscription) ->
 			postpone_item(Item, timeout)
 	end.
 
-postpone_item(#k_mb_funnel_receipt{}, _Reason) ->
-	%% TODO call mt collection to know about delivery recipt failed
-	ok;
 postpone_item(Item, Error) ->
 	case k_mb_postponed_queue:postpone(Item) of
 		{postponed, Seconds} ->
 			?log_error("Item processing terminated. It will be resend "
 			"after ~p sec. Last error: ~p", [Seconds, Error]);
-		{error, rich_max} ->
-			?log_error("Item rich max number of attempts. "
+		{error, reached_max} ->
+			?log_error("Item reached max number of attempts. "
 			"Discard message. Last error: ~p", [Error]);
+			%% TODO call mt collection to know about delivery receipt failed
 		Error ->
-			?log_error("Got unexpected error: ~p. Terminating.",
-			[Error])
+			?log_error("Got unexpected error: ~p. Terminating.", [Error])
+			%% TODO call mt collection to know about delivery receipt failed
 	end.
 
 build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->

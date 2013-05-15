@@ -11,7 +11,6 @@
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/customer.hrl").
 
--define(TEST, 1).
 -ifdef(TEST).
    -include_lib("eunit/include/eunit.hrl").
 -endif.
