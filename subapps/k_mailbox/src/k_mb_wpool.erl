@@ -169,7 +169,6 @@ send_item(Item, Subscription) ->
 		{ok, delivered} ->
 			%% TODO call mt collection to know about delivery receipts successfully delivered
 			?log_debug("Item successfully delivered [~p]", [ItemID]),
-			estatsd:increment(delivered_incoming_item),
 			k_mb_db:delete_item(Item);
 		{error, timeout} ->
 			postpone_item(Item, timeout)
