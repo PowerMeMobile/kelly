@@ -13,27 +13,26 @@ Default is `json'.
 #
 
 REST call:
-GET /message_status/MSG_ID/client/CLIENT_TYPE/customer/CUSTOMER_ID
+GET /message_status/MSG_ID/client/CLIENT_TYPE/customer/CUSTOMER_ID/user/USER_ID
 Where
 	CLIENT_TYPE - client type
 	MSG_ID - input message id
 	CUSTOMER_ID - customer uuid
+	USER_ID - user id
 
 Example:
-http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73
+http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73/user/user2
 
 Result:
-<message>
+<object>
 	<msg_id>516d37d31426045fec04d71a</msg_id>
 	<client_type>funnel</client_type>
 	<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
-	<message_id>59</message_id>
+	<user_id>user2</user_id>
+	<in_msg_id>59</in_msg_id>
 	<status>delivered</status>
-</message>
+</object>
 
-Problems:
-Once we started to send messages on behalf of several users, now it's possible to have multiple messages with the same MSG_ID.
-If we do need this report as a solution is possible to either add a USER_ID parameter or to return multiple messages.
 
 
 #
@@ -41,26 +40,28 @@ If we do need this report as a solution is possible to either add a USER_ID para
 #
 
 REST call:
-GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds (optional)
 
 Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00
 
 Result:
-<statuses>
+<object>
 	<accepted>5</accepted>
 	<delivered>177</delivered>
 	<received>100</received>
 	<rejected>7</rejected>
 	<sent>500</sent>
 	<undeliverable>11</undeliverable>
-</statuses>
+</object>
+
 
 
 #
@@ -68,7 +69,7 @@ Result:
 #
 
 REST call:
-GET /report/statuses?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&status=STATUS
+GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&status=STATUS
 Where
 	STATUS - mt: pending (request status)
 		   	 	 sent, failed (response status)
@@ -79,12 +80,13 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds (optional)
 
 Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted
 
 Result:
-<messages>
+<object>
 	<item>
 		<msg_id>516d37d31426045fec04d71a</msg_id>
 		<client_type>funnel</client_type>
@@ -109,8 +111,9 @@ Result:
 		<reg_dlr>false</reg_dlr>
 		<req_time>2013-01-01T00:14:08</req_time>
 		<status>accepted</status>
+		<status_update_time>2013-01-01T00:14:10</status_update_time>
 	</item>
-</messages>
+</object>
 
 
 
@@ -123,20 +126,21 @@ Result:
 #
 
 REST call:
-GET /report/messages/details?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&slice_length=LEN
+GET /report/messages/details?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&slice_length=LEN
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds (optional)
 	LEN - Slice length - seconds, default is 60, possible prefixes: S - seconds, M - minutes, H - hours, D - days
 
 Example:
 http://localhost:8080/report/messages/details?from=2012-05-20T00:00&to=2012-05-25T00:00&slice_length=M60
 
 Result:
-<messages>
+<object>
 	<outgoing>
 		<total>100</total>
 		<gateways>
@@ -175,10 +179,8 @@ Result:
 			</item>
 		</gateways>
 	</incoming>
-</messages>
+</object>
 
-Problems:
-Very computationally expensive. Better to pre-aggregate if we should delivery it in realtime.
 
 
 #
@@ -186,13 +188,14 @@ Very computationally expensive. Better to pre-aggregate if we should delivery it
 #
 
 REST call:
-GET /report/mt_aggr?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&customer_id=CUSTOMER_IDgroup_by=GROUP_BY
+GET /report/mt_aggr?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&customer_id=CUSTOMER_IDgroup_by=GROUP_BY
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds (optional)
 	CUSTOMER_ID
 	GROUP_BY - m - monthly, d - daily, h - hourly
 
@@ -223,20 +226,24 @@ Problems:
 Looks very much like a subset of the previous report. Shouldn't we combine these two into something more generic?
 
 
+
 #
 # MT messages by customer id and destination address
 #
 
 REST call:
-GET /report/mt?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm&customer_id=CUSTOMER_ID&recipient=RECIPIENT
+GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID][&recipient=RECIPIENT][&status=STATUS]
 Where
 	YYYY - year
 	MM - month
 	DD - day
 	hh - hours
 	mm - minutes
-	CUSTOMER_ID
-	RECIPIENT - destination address
+	ss - seconds (optional)
+	CUSTOMER_ID - customer uuid (optional)
+	RECIPIENT - destination address (optional)
+	STATUS - message status (optional)
+
 
 Example:
 http://localhost:8080/report/mt?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_id=feda5822-5271-11e1-bd27-001d0947ec73&recipient=375258298600
@@ -254,16 +261,23 @@ Result:
 		<type>regular</type>
 		<encoding>default</encoding>
 		<body>Hello</body>
-		<src_addr>375296660001</src_addr>
-		<dst_addr>375258298600</dst_addr>
+		<src_addr>
+			<addr>375296660001</addr>
+			<ton>1</ton>
+			<npi>1</npi>
+		</src_addr>
+		<dst_addr>
+			<addr>375292474326</addr>
+			<ton>1</ton>
+			<npi>1</npi>
+		</dst_addr>
 		<reg_dlr>true</reg_dlr>
 		<req_time>2013-01-01T21:33:11</req_time>
 		<status>delivered</status>
+		<status_update_time>2013-01-01T00:14:10</status_update_time>
 	</item>
 </object>
 
-Problems:
-Do we need to have addresses' ton and npi?
 
 
 
@@ -277,7 +291,7 @@ Do we need to have addresses' ton and npi?
 #
 
 REST call:
-GET /report/messages/ReportType?from=YYYY-MM-DDThh:mm&to=YYYY-MM-DDThh:mm
+GET /report/messages/ReportType?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]
 Where
 	ReportType - report type: customers - customer's networks, networks - network's customers
 	YYYY - year
@@ -285,6 +299,7 @@ Where
 	DD - day
 	hh - hours
 	mm - minutes
+	ss - seconds (optional)
 
 Example:
 http://localhost:8080/report/messages/customers?from=2012-05-20T00:00&to=2012-05-25T00:00
@@ -326,9 +341,6 @@ Result:
     </item>
 </networks>
 
-Problems:
-Do we really need these two? If yes, in what format/report?
-
 
 
 ##
@@ -356,8 +368,6 @@ Result:
 	</item>
 </gateways>
 
-Problems:
-Actual RPS doesn't seem to implemented in Just.
 
 
 #

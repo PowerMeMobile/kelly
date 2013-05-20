@@ -50,7 +50,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
 				?log_debug("Got incoming message for [cust:~p; user: ~p] (~p)",
 					[CustId, UserId, DestAddr] ),
 
-				%% register it to futher sending.
+				%% register it to further sending.
 				Item = #k_mb_incoming_sms{
 					id = ItemId,
 					customer_id	= CustId,
@@ -62,7 +62,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
 					encoding = DataCoding
 				},
 				k_mailbox:register_incoming_item(Item),
-				?log_debug("Incomming message registered [item:~p]", [ItemId]),
+				?log_debug("Incoming message registered [item:~p]", [ItemId]),
 				%% return valid customer.
 				CustId;
 	    Error ->
@@ -75,7 +75,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
 	OutputId = {GatewayId, ItemId},
 	%% build msg_info out of available data.
 	MsgInfo = #msg_info{
-		in_msg_id = ItemId,
+		msg_id = ItemId,
 		gateway_id = GatewayId,
 		customer_id = CustomerId,
 		type = regular,

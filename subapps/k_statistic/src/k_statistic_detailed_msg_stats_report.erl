@@ -28,10 +28,7 @@ get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
 	{ok, MoRecords} = get_records(mo_messages, From, To),
 	MoReport = detailed_msg_stats_report(MoRecords, SliceRanges),
 
-	{ok, {messages, [
-		{outgoing, MtReport},
-		{incoming, MoReport}
-	]}}.
+	{ok, [{outgoing, MtReport},{incoming, MoReport}]}.
 
 %% ===================================================================
 %% Internal

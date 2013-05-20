@@ -37,20 +37,11 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec postpone(term()) ->
-	{postponed, Seconds :: integer()} |
-	{error, rich_max}.
+-spec postpone(term()) -> {postponed, Seconds::integer()} | {error, reached_max}.
 postpone(Item) ->
 	{ok, CurrentAttempt} = get_current_attempt(Item),
     MaxRetry = k_mb_config:get_env(max_retry),
     postpone(Item, CurrentAttempt, MaxRetry).
-
-get_current_attempt(Item = #k_mb_funnel_receipt{}) ->
-	{ok, Item#k_mb_funnel_receipt.delivery_attempt};
-get_current_attempt(Item = #k_mb_k1api_receipt{}) ->
-	{ok, Item#k_mb_k1api_receipt.delivery_attempt};
-get_current_attempt(Item = #k_mb_incoming_sms{}) ->
-	{ok, Item#k_mb_incoming_sms.delivery_attempt}.
 
 %% ===================================================================
 %% GenServer Functions Definitions
@@ -97,17 +88,22 @@ code_change(_OldVsn, State, _Extra) ->
 %% ===================================================================
 
 process(ItemList) ->
-    lists:foreach(fun(Item) ->
-        k_mb_wpool:process_incoming_item(Item)
-        end, ItemList).
+    lists:foreach(fun k_mb_wpool:process_incoming_item/1, ItemList).
 
 position(N) ->
     trunc(math:pow(2, N - 2)) + 1.
 
 postpone(_Item, CurrentAttempt, MaxRetry) when CurrentAttempt >= MaxRetry ->
-	{error, rich_max};
+	{error, reached_max};
 postpone(Item, Attempt, _MaxRetry) ->
     gen_server:call(?MODULE, {postpone, increment_attempt(Item, Attempt)}).
+
+get_current_attempt(Item = #k_mb_funnel_receipt{}) ->
+	{ok, Item#k_mb_funnel_receipt.delivery_attempt};
+get_current_attempt(Item = #k_mb_k1api_receipt{}) ->
+	{ok, Item#k_mb_k1api_receipt.delivery_attempt};
+get_current_attempt(Item = #k_mb_incoming_sms{}) ->
+	{ok, Item#k_mb_incoming_sms.delivery_attempt}.
 
 increment_attempt(Item = #k_mb_funnel_receipt{}, Attempt) ->
 	Item#k_mb_funnel_receipt{delivery_attempt = Attempt + 1};

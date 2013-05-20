@@ -71,5 +71,9 @@ convert(SmsResponse, SmsStatus) ->
 		gateway_id = GatewayId,
 		out_msg_id = MessageId,
 		resp_time = k_datetime:utc_string_to_timestamp(UTCString),
-		resp_status = Status
+		resp_status = fix_status(Status)
 	}.
+
+fix_status(success) -> sent;
+fix_status(failure) -> failed;
+fix_status(Status)  -> Status.

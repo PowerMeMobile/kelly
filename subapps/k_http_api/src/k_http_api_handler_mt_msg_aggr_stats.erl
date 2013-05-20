@@ -23,9 +23,9 @@ init() ->
 		path = [<<"report">>, <<"mt_aggr">>],
 		params = [
 			#param{name = from, mandatory = true, repeated = false, type =
-				{custom, fun k_http_api_utils:convert_datetime/1}},
+				{custom, fun k_datetime:iso8601_to_datetime/1}},
 			#param{name = to, mandatory = true, repeated = false, type =
-				{custom, fun k_http_api_utils:convert_datetime/1}},
+				{custom, fun k_datetime:iso8601_to_datetime/1}},
 			#param{name = customer_id, mandatory = false, repeated = false, type = binary},
 			#param{name = group_by , mandatory = true, repeated = false, type =
 				{custom, fun convert_group_by/1}}

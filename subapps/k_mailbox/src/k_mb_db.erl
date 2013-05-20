@@ -13,6 +13,7 @@
 -export([
 	save/1,
 	save_sub/1,
+	save_delivery_status/3,
 
 	get_subscription/1,
 	get_funnel_subscriptions/0,
@@ -109,6 +110,7 @@ save(#k_mb_funnel_receipt{} = R) ->
 	},
 	ok = mongodb_storage:upsert(k_static_storage, ?funnelReceiptsColl, Selector, Modifier).
 
+-spec save_sub(tuple()) -> ok.
 save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
 	Selector = {
 		'_id' , Sub#k_mb_k1api_receipt_sub.id
@@ -160,6 +162,24 @@ save_sub(#k_mb_funnel_sub{} = Sub) ->
 		}
 	},
 	ok = mongodb_storage:upsert(k_static_storage, ?subscriptionsColl, Selector, Modifier).
+
+-spec save_delivery_status(k_mb_item(), atom(), os:timestamp()) -> ok.
+save_delivery_status(#k_mb_funnel_receipt{
+	customer_id = CustomerId,
+	user_id = UserId,
+	input_message_id = InMsgId
+}, Status, Timestamp) ->
+	ok = k_dynamic_storage:set_mt_downlink_dlr_status(CustomerId, UserId, funnel, InMsgId, Status, Timestamp);
+save_delivery_status(#k_mb_k1api_receipt{
+	customer_id = CustomerId,
+	user_id = UserId,
+	input_message_id = InMsgId
+}, Status, Timestamp) ->
+	ok = k_dynamic_storage:set_mt_downlink_dlr_status(CustomerId, UserId, k1api, InMsgId, Status, Timestamp);
+save_delivery_status(#k_mb_incoming_sms{
+	id = Id
+}, Status, Timestamp) ->
+	ok = k_dynamic_storage:set_mo_downlink_dlr_status(Id, Status, Timestamp).
 
 -spec delete_subscription(SubscriptionID :: binary()) -> ok.
 delete_subscription(SubscriptionID) ->
@@ -296,10 +316,10 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 	{ok, k_mb_subscription()}.
 get_subscription(SubscriptionID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(k_static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}),
-	get_subscription(bsondoc:binary_to_atom(bsondoc:at(type, Doc)), SubscriptionID, Doc).
+	{ok, get_subscription(bsondoc:binary_to_atom(bsondoc:at(type, Doc)), SubscriptionID, Doc)}.
 
 get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
-	{ok, #k_mb_k1api_receipt_sub{
+	#k_mb_k1api_receipt_sub{
 		id = ID,
 		customer_id = bsondoc:at(customer_id, Doc),
 		user_id = bsondoc:at(user_id, Doc),
@@ -308,9 +328,9 @@ get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
 		notify_url = bsondoc:at(notify_url, Doc),
 		callback_data = bsondoc:at(callback_data, Doc),
 		created_at = bsondoc:at(created_at, Doc)
-	}};
+	};
 get_subscription(k_mb_k1api_incoming_sms_sub, ID, Doc) ->
-	{ok, #k_mb_k1api_incoming_sms_sub{
+	#k_mb_k1api_incoming_sms_sub{
 		id = ID,
 		customer_id = bsondoc:at(customer_id, Doc),
 		user_id = bsondoc:at(user_id, Doc),
@@ -321,16 +341,16 @@ get_subscription(k_mb_k1api_incoming_sms_sub, ID, Doc) ->
 		criteria = bsondoc:at(criteria, Doc),
 		callback_data = bsondoc:at(callback_data, Doc),
 		created_at = bsondoc:at(created_at, Doc)
-	}};
+	};
 get_subscription(k_mb_funnel_sub, ID, Doc) ->
-	{ok, #k_mb_funnel_sub{
+	#k_mb_funnel_sub{
 		id = ID,
 		customer_id = bsondoc:at(customer_id, Doc),
 		user_id = bsondoc:at(user_id, Doc),
 		priority = bsondoc:at(priority, Doc),
 		queue_name = bsondoc:at(queue_name, Doc),
 		created_at = bsondoc:at(created_at, Doc)
-	}}.
+	}.
 
 -spec get_funnel_subscriptions() -> {ok, [#k_mb_funnel_sub{}]}.
 get_funnel_subscriptions() ->

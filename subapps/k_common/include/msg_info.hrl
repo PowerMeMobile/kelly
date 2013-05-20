@@ -102,12 +102,4 @@
 	dlr_time :: timestamp()
 }).
 
--define(MSG_STATUS(MsgInfo),
-	case MsgInfo#msg_info.status of
-		success -> sent;
-		failure -> failed;
-		Status -> Status
-	end
-).
-
 -endif. % msg_info_hrl

@@ -23,12 +23,12 @@ init() ->
 		path = [<<"report">>, <<"mt">>],
 		params = [
 			#param{name = from, mandatory = true, repeated = false, type =
-				{custom, fun k_http_api_utils:convert_datetime/1}},
+				{custom, fun k_datetime:iso8601_to_datetime/1}},
 			#param{name = to, mandatory = true, repeated = false, type =
-				{custom, fun k_http_api_utils:convert_datetime/1}},
+				{custom, fun k_datetime:iso8601_to_datetime/1}},
 			#param{name = customer_id, mandatory = false, repeated = false, type = binary},
 			#param{name = recipient, mandatory = false, repeated = false, type = binary},
-			#param{name = status, mandatory = false, repeated = false, type = {custom, fun convert_status/1}}
+			#param{name = status, mandatory = false, repeated = false, type = binary}
 		]
 	},
 
@@ -50,14 +50,3 @@ update(_Params) ->
 
 delete(_Params) ->
 	ok.
-
-%% ===================================================================
-%% Internal
-%% ===================================================================
-
-convert_status(<<"pending">>) ->
-	pending;
-convert_status(<<"sent">>) ->
-	sent;
-convert_status(<<"failed">>) ->
-	failed.

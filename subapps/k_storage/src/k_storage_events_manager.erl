@@ -79,7 +79,7 @@ init([]) ->
 	%% waiting for static storage to be ready...
 	k_storage_manager:wait_for_static_storage(),
 
-	CurrTime = k_datetime:utc_time(),
+	CurrTime = k_datetime:utc_datetime(),
 
 	{ok, NewState} =
 		 case read_storage_state() of
@@ -126,7 +126,7 @@ handle_info({timeout, TimerRef, {heartbeat}}, State = #state{
 }) ->
    	%?log_debug("~p", [State]),
 
-	CurrTime = k_datetime:utc_time(),
+	CurrTime = k_datetime:utc_datetime(),
 
 	{ok, NewState} =
 		case CurrTime >= CurrEventTime of
@@ -313,7 +313,7 @@ make_shift_db_name(GetShiftTimeFun) ->
 	ShiftFrame = proplists:get_value(shift_frame, DynamicProps),
 	DbNameFmt = proplists:get_value(mongodb_dbname_fmt, DynamicProps),
 
-	CurrTime = k_datetime:utc_time(),
+	CurrTime = k_datetime:utc_datetime(),
 	{{ShiftYear, ShiftMonth, ShiftDay}, _} = GetShiftTimeFun(CurrTime, ShiftFrame),
 
 	%% build db name in format YYYY-MM-DD.

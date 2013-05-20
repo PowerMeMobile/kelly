@@ -21,29 +21,26 @@ build_report(Params) ->
 	From = k_datetime:datetime_to_timestamp(?gv(from, Params)),
 	To = k_datetime:datetime_to_timestamp(?gv(to, Params)),
 	CustomerSelector =
-	case ?gv(customer_id, Params) of
-		undefined -> {'$exists', 1};
-		CustomerID -> CustomerID
-	end,
+		case ?gv(customer_id, Params) of
+			undefined -> [];
+			CustomerID -> [{'ci', CustomerID}]
+		end,
 	RecipientSelector =
-	case ?gv(recipient, Params) of
-		undefined -> {'$exists', 1};
-		Recipient -> Recipient
-	end,
+		case ?gv(recipient, Params) of
+			undefined -> [];
+			Recipient -> [{'da.a', Recipient}]
+		end,
 	StatusSelector =
-	case ?gv(status, Params) of
-		undefined -> [];
-		pending -> [{'rps', {'$exists', false}}, {'ds', {'$exists', false}}];
-		sent -> [{'rps', 'success'}, {'ds', {'$exists', false}}];
-		failed -> [{'rps', 'failed'}, {'ds', {'$exists', false}}]
-	end,
+		case ?gv(status, Params) of
+			undefined -> [];
+			Status -> [{'s', Status}]
+		end,
 
 	Selector =
-	[{'rqt', bson:document([
-		{'$lt', To},
-		{'$gt', From}])},
-	{'ci', CustomerSelector},
-	{'da.a', RecipientSelector}] ++ StatusSelector,
+		[{'rqt', {'$gte', From, '$lt', To}}] ++
+		CustomerSelector ++
+		RecipientSelector ++
+		StatusSelector,
 	{ok, Docs} = k_shifted_storage:find(mt_messages, bson:document(Selector)),
 	[build_mt_report_response(Doc) || {_, Doc} <- Docs].
 
@@ -58,7 +55,7 @@ build_aggr_report(Params) ->
 	GroupBy = ?gv(group_by, Params),
 	Command = {'aggregate', <<"mt_messages">>, 'pipeline', [
 		{'$match', {
-			'rqt', {'$lt', To, '$gt', From},
+			'rqt', {'$gte', From, '$lt', To},
 			'ci', CustomerSelector
 		}},
 		group(GroupBy),
@@ -146,8 +143,12 @@ project(monthly) ->
 build_mt_report_response(Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
 	Type = transform_type(MsgInfo#msg_info.type),
-	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
+	ReqTime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+	RespTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
+	DlrTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
+	StatusTime = max(ReqTime, max(RespTime, DlrTime)),
+	ReqISO = k_datetime:datetime_to_iso8601(ReqTime),
+	StatusISO = k_datetime:datetime_to_iso8601(StatusTime),
 	[
 		{msg_id, MsgInfo#msg_info.msg_id},
 		{client_type, MsgInfo#msg_info.client_type},
@@ -159,13 +160,28 @@ build_mt_report_response(Doc) ->
 		{type, Type},
 		{encoding, MsgInfo#msg_info.encoding},
 		{body, MsgInfo#msg_info.body},
-		{src_addr, MsgInfo#msg_info.src_addr#addr.addr},
-		{dst_addr, MsgInfo#msg_info.dst_addr#addr.addr},
+		{src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
+		{dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
 		{reg_dlr, MsgInfo#msg_info.reg_dlr},
 		{esm_class, MsgInfo#msg_info.esm_class},
 		{validity_period, MsgInfo#msg_info.val_period},
-		{req_time, ISO8601},
-		{status, ?MSG_STATUS(MsgInfo)}
+		{req_time, ReqISO},
+		{status, MsgInfo#msg_info.status},
+		{status_update_time, StatusISO}
+	].
+
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi}
+	];
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
+	[
+		{addr, Addr},
+		{ton, Ton},
+		{npi, Npi},
+		{ref_num, RefNum}
 	].
 
 transform_type(regular) ->
