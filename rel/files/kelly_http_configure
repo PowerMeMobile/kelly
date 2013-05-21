@@ -20,7 +20,7 @@ OUTPUT_SMPP_PORT=8001
 #
 # Gateways
 #
-echo -n 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=test_gtw&rps=10000' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways; echo
+echo -n 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=smppsim&rps=10000' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways; echo
 
 #
 # Connections (SMPPSim)
