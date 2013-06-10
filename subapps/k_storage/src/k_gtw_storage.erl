@@ -25,7 +25,7 @@ set_gateway(GatewayId, Gateway)->
 			'port'       , Conn#connection.port,
 			'sys_id'     , Conn#connection.sys_id,
 			'pass'       , Conn#connection.pass,
-			'sys_type'   , Conn#connection.pass,
+			'sys_type'   , Conn#connection.sys_type,
 			'addr_ton'   , Conn#connection.addr_ton,
 			'addr_npi'   , Conn#connection.addr_npi,
 			'addr_range' , Conn#connection.addr_range
