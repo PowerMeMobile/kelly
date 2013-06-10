@@ -84,7 +84,7 @@ save(#k_mb_k1api_receipt{} = R) ->
 			'source_addr'      , k_storage_utils:addr_to_doc(R#k_mb_k1api_receipt.source_addr),
 			'dest_addr'        , k_storage_utils:addr_to_doc(R#k_mb_k1api_receipt.dest_addr),
 			'input_message_id' , R#k_mb_k1api_receipt.input_message_id,
-			'message_state'    , R#k_mb_k1api_receipt.message_state,
+			'message_state'    , bsondoc:atom_to_binary(R#k_mb_k1api_receipt.message_state),
 			'delivery_attempt' , R#k_mb_k1api_receipt.delivery_attempt,
 			'created_at'       , R#k_mb_k1api_receipt.created_at
 		}
