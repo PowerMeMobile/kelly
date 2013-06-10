@@ -24,7 +24,7 @@ init() ->
 			path = [<<"gateways">>, gateway_id, <<"connections">>, id],
 			params = [
 				#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
-				 #param{name = id, mandatory = true, repeated = false, type = integer}
+				#param{name = id, mandatory = true, repeated = false, type = integer}
 			]
 		},
 		#method_spec{
