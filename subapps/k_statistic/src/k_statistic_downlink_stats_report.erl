@@ -81,7 +81,7 @@ get_response(Channel, QueueReplyTo) ->
 			timer:sleep(100),
 			get_response(Channel, QueueReplyTo);
 		{#'basic.get_ok'{}, #amqp_msg{payload = RespPayload}} ->
-			{ok, binary_to_list(RespPayload)}
+			{ok, RespPayload}
 	end.
 
 prepare_conns(ConnList) when is_list(ConnList) ->

@@ -33,7 +33,7 @@ get_gtws_throughput() ->
 	Response.
 
 process_response(Payload, #'P_basic'{content_type = <<"ThroughputResponse">>}) ->
-	'JustAsn':decode('ThroughputResponse', binary_to_list(Payload)).
+	'JustAsn':decode('ThroughputResponse', Payload).
 
 queue_declare(Chan) ->
     Method = #'queue.declare'{durable = false,
