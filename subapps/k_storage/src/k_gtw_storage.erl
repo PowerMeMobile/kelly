@@ -20,12 +20,12 @@ set_gateway(GatewayId, Gateway)->
 	ConnectionsDocs = [
 		{
 			'id'         , Conn#connection.id,
-			'type'       , Conn#connection.type,
-			'addr'       , Conn#connection.addr,
+			'host'       , Conn#connection.host,
 			'port'       , Conn#connection.port,
-			'sys_id'     , Conn#connection.sys_id,
-			'pass'       , Conn#connection.pass,
-			'sys_type'   , Conn#connection.sys_type,
+			'bind_type'  , bsondoc:atom_to_binary(Conn#connection.bind_type),
+			'system_id'  , Conn#connection.system_id,
+			'password'   , Conn#connection.password,
+			'system_type', Conn#connection.system_type,
 			'addr_ton'   , Conn#connection.addr_ton,
 			'addr_npi'   , Conn#connection.addr_npi,
 			'addr_range' , Conn#connection.addr_range
@@ -75,17 +75,17 @@ doc_to_record(Doc) ->
 	Connections = [
 		#connection{
 			id = bsondoc:at(id, ConnDoc),
-			type = bsondoc:at(type, ConnDoc),
-			addr = bsondoc:at(addr, ConnDoc),
+			host = bsondoc:at(host, ConnDoc),
 			port = bsondoc:at(port, ConnDoc),
-			sys_id = bsondoc:at(sys_id, ConnDoc),
-			pass = bsondoc:at(pass, ConnDoc),
-			sys_type = bsondoc:at(sys_type, ConnDoc),
+			bind_type = bsondoc:binary_to_atom(bsondoc:at(bind_type, ConnDoc)),
+			system_id = bsondoc:at(system_id, ConnDoc),
+			password = bsondoc:at(password, ConnDoc),
+			system_type = bsondoc:at(system_type, ConnDoc),
 			addr_ton = bsondoc:at(addr_ton, ConnDoc),
 			addr_npi = bsondoc:at(addr_npi, ConnDoc),
 			addr_range = bsondoc:at(addr_range, ConnDoc)
-		}
-		|| ConnDoc <- ConnectionsDoc],
+		} || ConnDoc <- ConnectionsDoc
+	],
  	#gateway{
 		name = Name,
 		rps = RPS,

@@ -98,7 +98,10 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
 	Selector = {
 		'gi' , GatewayId,
 		'omi', OutMsgId,
-		'rqt', {'$exists', true}
+		'rd' , true
+	},
+	Sort = {
+		'rqt', -1
 	},
 	Modifier = {
 		'$set', {
@@ -107,7 +110,7 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
 		}
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
-	case StorageMode:set_mt_dlr_info_and_get_msg_info(Selector, Modifier) of
+	case StorageMode:set_mt_dlr_info_and_get_msg_info(Selector, Sort, Modifier) of
 		{ok, Doc} ->
 			{ok, k_storage_utils:doc_to_mt_msg_info(Doc)};
 		Error ->

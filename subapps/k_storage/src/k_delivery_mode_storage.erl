@@ -3,7 +3,7 @@
 -export([
 	set_mt_req_info/2,
 	set_mt_resp_info/2,
-	set_mt_dlr_info_and_get_msg_info/2,
+	set_mt_dlr_info_and_get_msg_info/3,
 	set_mt_downlink_dlr_status/2,
 
 	set_mo_msg_info/2,
@@ -11,6 +11,7 @@
 ]).
 
 -type selector() :: bson:document().
+-type sort() :: bson:document().
 -type modifier() :: bson:document().
 -type reason() :: no_entry | term().
 
@@ -26,23 +27,31 @@ set_mt_req_info(Selector, Modifier) ->
 set_mt_resp_info(Selector, Modifier) ->
 	mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Modifier).
 
--spec set_mt_dlr_info_and_get_msg_info(selector(), modifier()) -> {ok, bson:document()} | {error, reason()}.
-set_mt_dlr_info_and_get_msg_info(Selector, Modifier) ->
+-spec set_mt_dlr_info_and_get_msg_info(selector(), sort(), modifier()) ->
+	{ok, bson:document()} | {error, reason()}.
+set_mt_dlr_info_and_get_msg_info(Selector, Sort, Modifier) ->
 	Command = {
 		'findandmodify', <<"mt_messages">>,
-		'query', Selector,
+		'query' , Selector,
+		'sort'  , Sort,
 		'update', Modifier,
-		'new', true
+		'new'   , true
 	},
 	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
-		{ok, {value, Doc, {updatedExisting, true, n, 1}, ok, _}} ->
-			{ok, Doc};
-		{ok, {value, undefined, ok, _}} ->
-			case mongodb_storage:command(k_curr_dynamic_storage, Command) of
-				{ok, {value, Doc, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
-					{ok, Doc};
-				{ok, {value, undefined, ok, _}} ->
-					{error, no_entry};
+		{ok, PrevResult} ->
+			case bsondoc:at(value, PrevResult) of
+				undefined ->
+					case mongodb_storage:command(k_curr_dynamic_storage, Command) of
+						{ok, CurrResult} ->
+							case bsondoc:at(value, CurrResult) of
+								undefined ->
+									{error, no_entry};
+								Doc ->
+									{ok, Doc}
+							end;
+						Error ->
+							Error
+					end;
 				Error ->
 					Error
 			end;
@@ -58,10 +67,13 @@ set_mt_downlink_dlr_status(Selector, Modifier) ->
 		'update', Modifier
 	},
 	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
-		{ok, {value, _, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
-			ok;
-		{ok, {value, undefined, ok, _}} ->
-			mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Modifier);
+		{ok, Result} ->
+			case bsondoc:at(value, Result) of
+				undefined ->
+					mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Modifier);
+				_ ->
+					ok
+			end;
 		Error ->
 			Error
 	end.
