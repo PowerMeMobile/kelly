@@ -21,10 +21,10 @@
 init() ->
 	Read = [
 		#method_spec{
-			path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+			path = [<<"gateways">>, gateway_id, <<"connections">>, connection_id],
 			params = [
 				#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
-				#param{name = id, mandatory = true, repeated = false, type = integer}
+				#param{name = connection_id, mandatory = true, repeated = false, type = integer}
 			]
 		},
 		#method_spec{
@@ -36,39 +36,39 @@ init() ->
 	UpdateParams = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = integer},
-		#param{name = type, mandatory = false, repeated = false, type = integer},
-		#param{name = addr,	mandatory = false, repeated = false, type = binary},
+		#param{name = host,	mandatory = false, repeated = false, type = binary},
 		#param{name = port, mandatory = false, repeated = false, type = integer},
-		#param{name = sys_id, mandatory = false, repeated = false, type = binary},
-		#param{name = pass, mandatory = false, repeated = false, type = binary},
-		#param{name = sys_type, mandatory = false, repeated = false, type = binary},
+		#param{name = bind_type, mandatory = false, repeated = false, type = {custom, fun bind_type/1}},
+		#param{name = system_id, mandatory = false, repeated = false, type = binary},
+		#param{name = password, mandatory = false, repeated = false, type = binary},
+		#param{name = system_type, mandatory = false, repeated = false, type = binary},
 		#param{name = addr_ton, mandatory = false, repeated = false, type = integer},
 		#param{name = addr_npi, mandatory = false, repeated = false, type = integer},
 		#param{name = addr_range, mandatory = false, repeated = false, type = binary}
 	],
 	Update = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+		path = [<<"gateways">>, gateway_id, <<"connections">>, connection_id],
 		params = UpdateParams
 	},
 
 	DeleteParams = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
-		#param{name = id, mandatory = true, repeated = false, type = integer}
+		#param{name = connection_id, mandatory = true, repeated = false, type = integer}
 	],
 	Delete = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"connections">>, id],
+		path = [<<"gateways">>, gateway_id, <<"connections">>, connection_id],
 		params = DeleteParams
 	},
 
 	CreateParams = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = false, repeated = false, type = integer},
-		#param{name = type, mandatory = true, repeated = false, type = integer},
-		#param{name = addr,	mandatory = true, repeated = false,	type = binary},
+		#param{name = host,	mandatory = true, repeated = false,	type = binary},
 		#param{name = port, mandatory = true, repeated = false, type = integer},
-		#param{name = sys_id, mandatory = true, repeated = false, type = binary},
-		#param{name = pass, mandatory = true, repeated = false, type = binary},
-		#param{name = sys_type, mandatory = true, repeated = false, type = binary},
+		#param{name = bind_type, mandatory = true, repeated = false, type = {custom, fun bind_type/1}},
+		#param{name = system_id, mandatory = true, repeated = false, type = binary},
+		#param{name = password, mandatory = true, repeated = false, type = binary},
+		#param{name = system_type, mandatory = true, repeated = false, type = binary},
 		#param{name = addr_ton, mandatory = true, repeated = false, type = integer},
 		#param{name = addr_npi, mandatory = true, repeated = false, type = integer},
 		#param{name = addr_range, mandatory = true, repeated = false, type = binary}
@@ -86,7 +86,7 @@ init() ->
 	}}.
 
 read(Params) ->
-	ConnectionID = ?gv(id, Params),
+	ConnectionID = ?gv(connection_id, Params),
 	case ConnectionID of
 		undefined -> read_all(?gv(gateway_id, Params));
 		_ -> read_id(?gv(gateway_id, Params), ConnectionID)
@@ -112,7 +112,7 @@ update(Params) ->
 
 delete(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
-	ConnectionID = ?gv(id, Params),
+	ConnectionID = ?gv(connection_id, Params),
 	ok = k_config:del_gateway_connection(GtwUUID, ConnectionID),
 	k_snmp:delete_connection(GtwUUID, ConnectionID),
 	{http_code, 204}.
@@ -148,29 +148,29 @@ read_id(GatewayID, ConnectionID) ->
    	end.
 
 update_connection(Gtw, Params) ->
-	ConnectionID = ?gv(id, Params),
 	GtwID = ?gv(gateway_id, Params),
+	ConnectionID = ?gv(connection_id, Params),
 	#gateway{connections = Connections} = Gtw,
 	case get_connection(ConnectionID, Connections) of
 		undefined -> {exception, 'svc0003'};
 		Conn = #connection{} ->
-			NewType = ?resolve(type, Params, Conn#connection.type),
-			NewAddr = ?resolve(addr, Params, Conn#connection.addr),
+			NewHost = ?resolve(host, Params, Conn#connection.host),
 			NewPort = ?resolve(port, Params, Conn#connection.port),
-			NewSysID = ?resolve(sys_id, Params, Conn#connection.sys_id),
-			NewPass = ?resolve(pass, Params, Conn#connection.pass),
-			NewSysType = ?resolve(sys_type, Params, Conn#connection.sys_type),
+			NewBindType = ?resolve(bind_type, Params, Conn#connection.bind_type),
+			NewSystemID = ?resolve(system_id, Params, Conn#connection.system_id),
+			NewPassword = ?resolve(password, Params, Conn#connection.password),
+			NewSystemType = ?resolve(system_type, Params, Conn#connection.system_type),
 			NewAddrTon = ?resolve(addr_ton, Params, Conn#connection.addr_ton),
 			NewAddrNpi = ?resolve(addr_npi, Params, Conn#connection.addr_npi),
 			NewAddrRange = ?resolve(addr_range, Params, Conn#connection.addr_range),
 			NewConnection = #connection{
 				id = ConnectionID,
-				type = NewType,
-				addr = NewAddr,
+				host = NewHost,
 				port = NewPort,
-				sys_id = NewSysID,
-				pass = NewPass,
-				sys_type = NewSysType,
+				bind_type = NewBindType,
+				system_id = NewSystemID,
+				password = NewPassword,
+				system_type = NewSystemType,
 				addr_ton = NewAddrTon,
 				addr_npi = NewAddrNpi,
 				addr_range = NewAddrRange
@@ -232,23 +232,23 @@ get_connection(ID, [_Conn | Tail]) ->
 
 create_connection(Params) ->
 	ConnectionID = ?gv(id, Params),
-	Type = ?gv(type, Params),
-	Addr = ?gv(addr, Params),
+	Host = ?gv(host, Params),
 	Port = ?gv(port, Params),
-	SysID = ?gv(sys_id, Params),
-	Pass = ?gv(pass, Params),
-	SysType = ?gv(sys_type, Params),
+	BindType = ?gv(bind_type, Params),
+	SystemID = ?gv(system_id, Params),
+	Password = ?gv(password, Params),
+	SystemType = ?gv(system_type, Params),
 	AddrTON = ?gv(addr_ton, Params),
 	AddrNPI= ?gv(addr_npi, Params),
 	AddrRange = ?gv(addr_range, Params),
 	Connection = #connection{
 		id 			= ConnectionID,
-		type 		= Type,
-		addr 		= Addr,
+		host 		= Host,
 		port 		= Port,
-		sys_id 		= SysID,
-		pass 		= Pass,
-		sys_type 	= SysType,
+		bind_type	= BindType,
+		system_id	= SystemID,
+		password	= Password,
+		system_type	= SystemType,
 		addr_ton 	= AddrTON,
 		addr_npi 	= AddrNPI,
 		addr_range	= AddrRange
@@ -272,3 +272,10 @@ prepare_connections([Connection = #connection{} | Rest], Acc) ->
 	ConnFun = ?record_to_proplist(connection),
 	ConnPropList = ConnFun(Connection),
 	prepare_connections(Rest, [ConnPropList | Acc]).
+
+bind_type(TypeBin) ->
+	case TypeBin of
+		<<"transmitter">> -> transmitter;
+		<<"receiver">> -> receiver;
+		<<"transceiver">> -> transceiver
+	end.

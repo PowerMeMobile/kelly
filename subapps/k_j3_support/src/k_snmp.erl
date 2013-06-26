@@ -114,17 +114,17 @@ delete_gateway(ID) when is_binary(ID) ->
 
 -spec set_connection(binary(), #connection{}) -> ok.
 set_connection(GtwID, Conn = #connection{}) when is_binary(GtwID) ->
-	set_row(cnn, binary_to_list(GtwID) ++ [Conn#connection.id],
-				[{cnnType, Conn#connection.type},
-				{cnnAddr, convert_to_snmp_ip(Conn#connection.addr)},
-				{cnnPort, Conn#connection.port},
-				{cnnSystemId, binary_to_list(Conn#connection.sys_id)},
-				{cnnPassword, binary_to_list(Conn#connection.pass)},
-				{cnnSystemType, binary_to_list(Conn#connection.sys_type)},
-				{cnnAddrTon, Conn#connection.addr_ton},
-				{cnnAddrNpi, Conn#connection.addr_npi},
-				{cnnAddrRange, binary_to_list(Conn#connection.addr_range)}
-			    ]).
+	set_row(cnn, binary_to_list(GtwID) ++ [Conn#connection.id], [
+		{cnnAddr, convert_to_snmp_ip(Conn#connection.host)},
+		{cnnPort, Conn#connection.port},
+		{cnnType, bind_type_to_integer(Conn#connection.bind_type)},
+		{cnnSystemId, binary_to_list(Conn#connection.system_id)},
+		{cnnPassword, binary_to_list(Conn#connection.password)},
+		{cnnSystemType, binary_to_list(Conn#connection.system_type)},
+		{cnnAddrTon, Conn#connection.addr_ton},
+		{cnnAddrNpi, Conn#connection.addr_npi},
+		{cnnAddrRange, binary_to_list(Conn#connection.addr_range)}
+	]).
 
 -spec delete_connection(binary(), integer()) -> ok.
 delete_connection(GtwID, ConnID) when
@@ -309,3 +309,7 @@ parse_snmp_result(Result) ->
 convert_to_snmp_ip(Addr) when is_binary(Addr) ->
 	Tokens = string:tokens(binary_to_list(Addr), "."),
 	[list_to_integer(Token) || Token <- Tokens].
+
+bind_type_to_integer(transmitter) -> 1;
+bind_type_to_integer(receiver)    -> 2;
+bind_type_to_integer(transceiver) -> 3.

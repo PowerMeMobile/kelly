@@ -32,15 +32,15 @@ post(){
 # Gateways
 #
 
-post gateways "id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=test_gtw&rps=10000"
+post gateways "id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=smppsim&rps=10000"
 
 
 #
 # Connections (SMPPSim)
 #
-post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=0&type=1&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient1&pass=password&sys_type=smppclient1&addr_ton=1&addr_npi=0&addr_range="
+post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=0&host=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&bind_type=transmitter&&system_id=smppclient1&password=password&system_type=&addr_ton=1&addr_npi=0&addr_range="
 
-post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=1&type=2&addr=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&sys_id=smppclient2&pass=password&sys_type=smppclient2&addr_ton=1&addr_npi=0&addr_range="
+post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=1&host=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&bind_type=receiver&system_id=smppclient2&password=password&system_type=&addr_ton=1&addr_npi=0&addr_range="
 
 
 #
