@@ -32,15 +32,15 @@ post(){
 # Gateways
 #
 
-post gateways "id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=smppsim&rps=10000"
+post gateways "id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=SMPPSim&rps=10000"
 
 
 #
 # Connections (SMPPSim)
 #
-post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=0&host=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&bind_type=transmitter&&system_id=smppclient1&password=password&system_type=&addr_ton=1&addr_npi=0&addr_range="
+post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=0&host=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&bind_type=transmitter&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="
 
-post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=1&host=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&bind_type=receiver&system_id=smppclient2&password=password&system_type=&addr_ton=1&addr_npi=0&addr_range="
+post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=1&host=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&bind_type=receiver&system_id=smppclient2&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="
 
 
 #
@@ -62,49 +62,49 @@ post "networks" 'id=3b25cd8e-5eca-11e1-bf77-00269e42f7a5&name=Test%20network%202
 # Funnel/Kannel
 
 # postpaid customer
-post "customers" 'name=funnel-postpaid&system_id=fun-postpaid&id=feda5822-5271-11e1-bd27-001d0947ec73&originators=375296660001,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660001,1,1&billing_type=postpaid&state=1'
+post "customers" 'customer_uuid=feda5822-5271-11e1-bd27-001d0947ec73&customer_id=fun-postpaid&name=funnel-postpaid&&originators=375296660001,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660001,1,1&billing_type=postpaid&state=1'
 
 # Funnel/Kannel users
 FKTARGET="customers/feda5822-5271-11e1-bd27-001d0947ec73/users"
-post $FKTARGET 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver'
-post $FKTARGET 'id=user2&pswd=password&smpp_types=transmitter;receiver;transceiver'
-post $FKTARGET 'id=user3&pswd=password&smpp_types=transmitter;receiver;transceiver'
-post $FKTARGET 'id=user4&pswd=password&smpp_types=transmitter;receiver;transceiver'
-post $FKTARGET 'id=user5&pswd=password&smpp_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user&password=password&bind_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user2&password=password&bind_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user3&password=password&bind_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user4&password=password&bind_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user5&password=password&bind_types=transmitter;receiver;transceiver'
 
 # prepaid customer
-post "customers" 'name=funnel-prepaid&system_id=fun-prepaid&id=6bd667ae-1793-11e2-95fe-00269e42f7a5&originators=375296660002,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660002,1,1&billing_type=prepaid&state=1'
+post "customers" 'customer_uuid=6bd667ae-1793-11e2-95fe-00269e42f7a5&customer_id=fun-prepaid&name=funnel-prepaid&originators=375296660002,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660002,1,1&billing_type=prepaid&state=1'
 
 # Funnel/Kannel's users
 FKTARGET="customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users"
-post $FKTARGET 'id=user111&pswd=password&smpp_types=transmitter;receiver;transceiver'
-post $FKTARGET 'id=user2&pswd=password&smpp_types=transmitter;receiver;transceiver'
-post $FKTARGET 'id=user3&pswd=password&smpp_types=transmitter;receiver;transceiver'
-post $FKTARGET 'id=user4&pswd=password&smpp_types=transmitter;receiver;transceiver'
-post $FKTARGET 'id=user5&pswd=password&smpp_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user&password=password&bind_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user2&password=password&bind_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user3&password=password&bind_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user4&password=password&bind_types=transmitter;receiver;transceiver'
+post $FKTARGET 'id=user5&password=password&bind_types=transmitter;receiver;transceiver'
 
 #
 # OneAPI
 #
 
 # postpaid customer
-post "customers" 'name=oneapi-postpaid&system_id=oneapi-postpaid&id=a3ddc34a-1793-11e2-9602-00269e42f7a5&originators=375296660003,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660003,1,1&billing_type=postpaid&state=1'
+post "customers" 'customer_uuid=a3ddc34a-1793-11e2-9602-00269e42f7a5&customer_id=oneapi-postpaid&name=oneapi-postpaid&originators=375296660003,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660003,1,1&billing_type=postpaid&state=1'
 
-post "customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users" 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi'
+post "customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users" 'id=user&password=password&bind_types=transmitter;receiver;transceiver;oneapi'
 
 # prepaid customer
-post "customers" 'name=oneapi-prepaid&system_id=oneapi-prepaid&id=16f87550-1794-11e2-ade6-00269e42f7a5&originators=375296660004,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660004,1,1&billing_type=prepaid&state=1'
+post "customers" 'customer_uuid=16f87550-1794-11e2-ade6-00269e42f7a5&customer_id=oneapi-prepaid&name=oneapi-prepaid&originators=375296660004,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660004,1,1&billing_type=prepaid&state=1'
 
-post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/users" 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi'
+post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/users" 'id=user&password=password&bind_types=transmitter;receiver;transceiver;oneapi'
 
 #
 # Soap
 #
 
 # postpaid customer
-post "customers" 'name=soap-postpaid&system_id=soap-postpaid&id=c173786e-63ce-11e2-8740-001d0947ec73&originators=999,6,0&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=999,6,0&billing_type=postpaid&state=1'
+post "customers" 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=soap-postpaid&name=soap-postpaid&originators=999,6,0&networks=920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=999,6,0&billing_type=postpaid&state=1'
 
-post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&pswd=password&smpp_types=transmitter;receiver;transceiver;oneapi'
+post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&password=password&bind_types=transmitter;receiver;transceiver;oneapi'
 
 #
 # Addr2Cust

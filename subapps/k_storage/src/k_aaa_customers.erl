@@ -3,8 +3,8 @@
 %% API
 -export([
 	get_customers/0,
-	get_customer/1,
-	get_customer_by_system_id/1,
+	get_customer_by_uuid/1,
+	get_customer_by_id/1,
 	set_customer/2,
 	del_customer/1
 ]).
@@ -16,8 +16,8 @@
 %% API
 %% ===================================================================
 
--spec set_customer(customer_id(), #customer{}) -> ok | {error, term()}.
-set_customer(CustomerId, Customer) ->
+-spec set_customer(customer_uuid(), #customer{}) -> ok | {error, term()}.
+set_customer(CustomerUUID, Customer) ->
 	AllowedSourcesDocList = [
 		{'addr' , Addr#addr.addr , 'ton' , Addr#addr.ton , 'npi' , Addr#addr.npi}
 		|| Addr <- Customer#customer.allowed_sources
@@ -33,16 +33,15 @@ set_customer(CustomerId, Customer) ->
 	UsersDocList = [
 		{
 			'id' , User#user.id,
-			'pswd_hash' , User#user.pswd_hash,
-			'permitted_smpp_types' , lists:map(fun bsondoc:atom_to_binary/1, User#user.permitted_smpp_types)
+			'password'  , User#user.password,
+			'bind_types', lists:map(fun bsondoc:atom_to_binary/1, User#user.bind_types)
 		}
 		|| User <- Customer#customer.users
 	],
 
 	Modifier = {
 		'$set' , {
-			'id'                  , Customer#customer.id,
-			'uuid'                , Customer#customer.uuid,
+			'customer_id'         , Customer#customer.customer_id,
 			'name'                , Customer#customer.name,
 			'priority'            , Customer#customer.priority,
 			'rps'                 , Customer#customer.rps,
@@ -59,9 +58,9 @@ set_customer(CustomerId, Customer) ->
 			'state'               , Customer#customer.state
 		}
 	},
-	mongodb_storage:upsert(k_static_storage, customers, {'_id', CustomerId}, Modifier).
+	mongodb_storage:upsert(k_static_storage, customers, {'_id', CustomerUUID}, Modifier).
 
--spec get_customers() -> {ok, [{customer_id(), #customer{}}]} | {error, term()}.
+-spec get_customers() -> {ok, [{customer_uuid(), #customer{}}]} | {error, term()}.
 get_customers() ->
 	case mongodb_storage:find(k_static_storage, customers, {}) of
 		{ok, List} ->
@@ -72,27 +71,27 @@ get_customers() ->
 			Error
 	end.
 
--spec get_customer(customer_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
-get_customer(CustomerId) ->
-	case mongodb_storage:find_one(k_static_storage, customers, {'_id', CustomerId}) of
+-spec get_customer_by_uuid(customer_uuid()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
+get_customer_by_uuid(CustomerUUID) ->
+	case mongodb_storage:find_one(k_static_storage, customers, {'_id', CustomerUUID}) of
 		{ok, Doc} ->
 			{ok, doc_to_record(Doc)};
 		Error ->
 			Error
 	end.
 
--spec get_customer_by_system_id(binary()) -> {ok, #customer{}} | any().
-get_customer_by_system_id(SystemId) ->
-	case mongodb_storage:find_one(k_static_storage, customers, {'id', SystemId}) of
+-spec get_customer_by_id(customer_id()) -> {ok, #customer{}} | any().
+get_customer_by_id(CustomerId) ->
+	case mongodb_storage:find_one(k_static_storage, customers, {'customer_id', CustomerId}) of
 		{ok, Doc} ->
 			{ok, doc_to_record(Doc)};
 		Error ->
 			Error
 	end.
 
--spec del_customer(customer_id()) -> ok | {error, no_entry} | {error, term()}.
-del_customer(CustomerId) ->
-	mongodb_storage:delete(k_static_storage, customers, {'_id', CustomerId}).
+-spec del_customer(customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
+del_customer(CustomerUUID) ->
+	mongodb_storage:delete(k_static_storage, customers, {'_id', CustomerUUID}).
 
 %% ===================================================================
 %% Internals
@@ -102,11 +101,11 @@ doc_to_record(Doc) ->
 	UsersDocs = bsondoc:at(users, Doc),
 	Users = [
 		#user{
-			id = bsondoc:at(id, User),
-			pswd_hash = bsondoc:at(pswd_hash, User),
-			permitted_smpp_types = lists:map(fun bsondoc:binary_to_atom/1, bsondoc:at(permitted_smpp_types, User))
-		}
-		|| User <- UsersDocs],
+			id = bsondoc:at(id, UserDoc),
+			password = bsondoc:at(password, UserDoc),
+			bind_types = lists:map(fun bsondoc:binary_to_atom/1, bsondoc:at(bind_types, UserDoc))
+		} || UserDoc <- UsersDocs
+	],
 
 	AllowedSourcesDocs = bsondoc:at(allowed_sources, Doc),
 	AllowedSources = [
@@ -128,8 +127,8 @@ doc_to_record(Doc) ->
 				}
 		end,
 
-	Id = bsondoc:at(id, Doc),
-	UUID = bsondoc:at(uuid, Doc),
+	CustomerUUID = bsondoc:at('_id', Doc),
+	CustomerId = bsondoc:at(customer_id, Doc),
 	Name = bsondoc:at(name, Doc),
 	Priority = bsondoc:at(priority, Doc),
 	RPS = bsondoc:at(rps, Doc),
@@ -143,8 +142,8 @@ doc_to_record(Doc) ->
 	State = bsondoc:at(state, Doc),
 
  	#customer{
-		id = Id,
-		uuid = UUID,
+		customer_uuid = CustomerUUID,
+		customer_id = CustomerId,
 		name = Name,
 		priority = Priority,
 		rps = RPS,

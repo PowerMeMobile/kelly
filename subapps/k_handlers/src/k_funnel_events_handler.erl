@@ -8,15 +8,20 @@
 -include_lib("k_common/include/storages.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
+%% ===================================================================
+%% API
+%% ===================================================================
+
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"ConnectionDownEvent">>, Message) ->
 	?log_debug("Got funnel ConnectionDownEvent", []),
 	case adto:decode(#funnel_client_offline_event_dto{}, Message) of
 		{ok, #funnel_client_offline_event_dto{
-			connection_id = ConnId,
-			customer_id = SystemId,
-			user_id = UserId }} ->
-			process_connection_down_event(ConnId, SystemId, UserId);
+			connection_id = ConnectionId,
+			customer_id = CustomerId,
+			user_id = UserId
+		}} ->
+			process_connection_down_event(ConnectionId, CustomerId, UserId);
 		{error, Error} ->
 			?log_warn("Failed to decode funnel client offline event: ~p with error: ~p", [Message, Error]),
 			{ok, []}
@@ -26,11 +31,12 @@ process(<<"ConnectionUpEvent">>, Message) ->
 	?log_debug("Got funnel ConnectionUpEvent", []),
 	case adto:decode(#funnel_client_online_event_dto{}, Message) of
 		{ok, #funnel_client_online_event_dto{
-			connection_id = ConnId,
-			customer_id = SystemId,
-			type = ConnType,
-			user_id = UserId }} ->
-			process_connection_up_event(ConnId, SystemId, ConnType, UserId);
+			connection_id = ConnectionId,
+			customer_id = CustomerId,
+			user_id = UserId,
+			type = ConnType
+		}} ->
+			process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType);
 		{error, Error} ->
 			?log_warn("Failed to decode funnel client online event: ~p with: ~p", [Message, Error]),
 			{ok, []}
@@ -52,34 +58,34 @@ process(Type, _Message) ->
 
 %%% Internal
 
-process_connection_down_event(ConnId, SystemId, UserId) ->
-	case resolve_cust_id(SystemId) of
-		{ok, CustId} ->
-			perform_unregister_connection(CustId, ConnId, UserId);
+process_connection_down_event(ConnectionId, CustomerId, UserId) ->
+	case get_customer_uuid_by_id(CustomerId) of
+		{ok, CustomerUUID} ->
+			perform_unregister_connection(CustomerUUID, ConnectionId, UserId);
 		{error, Reason} ->
-			?log_error("Could not unregister system-id: ~p with: ~p", [SystemId, Reason]),
+			?log_error("Could not unregister customer_id: ~p with: ~p", [CustomerId, Reason]),
 			{ok, []}
 	end.
 
-perform_unregister_connection(CustId, ConnId, UserId) ->
-	case k_mailbox:unregister_subscription(ConnId, CustId, UserId) of
+perform_unregister_connection(CustomerUUID, ConnectionId, UserId) ->
+	case k_mailbox:unregister_subscription(ConnectionId, CustomerUUID, UserId) of
 		ok ->
 			{ok, []};
 		{error, Reason} ->
-			?log_error("Could not unregister ~p with: ~p", [{CustId, ConnId}, Reason]),
+			?log_error("Could not unregister ~p with: ~p", [{CustomerUUID, ConnectionId}, Reason]),
 			{ok, []}
 	end.
 
-process_connection_up_event(ConnId, SystemId, ConnType, UserId)
+process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType)
 	when ConnType == receiver orelse ConnType == transceiver
 ->
-	case resolve_cust_id(SystemId) of
-		{ok, CustId} ->
-			QName = << <<"pmm.funnel.nodes.">>/binary, ConnId/binary >>,
+	case get_customer_uuid_by_id(CustomerId) of
+		{ok, CustomerUUID} ->
+			QName = << <<"pmm.funnel.nodes.">>/binary, ConnectionId/binary >>,
 			?log_debug("RMQ queue of new funnel connection: ~p", [QName]),
 			Subscription = #k_mb_funnel_sub{
-					id = ConnId,
-					customer_id = CustId,
+					id = ConnectionId,
+					customer_id = CustomerUUID,
 					user_id = UserId,
 					priority = 0,
 					queue_name = QName,
@@ -88,17 +94,17 @@ process_connection_up_event(ConnId, SystemId, ConnType, UserId)
 			k_mailbox:register_subscription(Subscription),
 			{ok, []};
 		{error, Reason} ->
-			?log_error("Could not register system-id: ~p with: ~p", [SystemId, Reason]),
+			?log_error("Could not register customer_id: ~p with: ~p", [CustomerId, Reason]),
 			{ok, []}
 	end;
-process_connection_up_event(_ConnId, _SystemId, _ConnType, _UserID) ->
+process_connection_up_event(_ConnectionId, _CustomerId, _UserId, _ConnType) ->
 	%% got transmitter connection up event. nothing to do.
 	{ok, []}.
 
-resolve_cust_id(SystemId) ->
-	case k_aaa:get_customer_by_system_id(SystemId) of
-		{ok, #customer{uuid = CustId}} ->
-			{ok, CustId};
+get_customer_uuid_by_id(CustomerId) ->
+	case k_aaa:get_customer_by_id(CustomerId) of
+		{ok, #customer{customer_uuid = CustomerUUID}} ->
+			{ok, CustomerUUID};
 		Error ->
 			Error
 	end.

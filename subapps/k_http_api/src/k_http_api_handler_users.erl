@@ -26,48 +26,48 @@
 init() ->
 	Read = [
 		#method_spec{
-			path = [<<"customers">>, customer_id, <<"users">>, id],
+			path = [<<"customers">>, customer_uuid, <<"users">>, id],
 			params = [
-				#param{name = customer_id, mandatory = true, repeated = false, type = binary},
+				#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 				#param{name = id, mandatory = true, repeated = false, type = binary}
 			]
 		},
 		#method_spec{
-			path = [<<"customers">>, customer_id, <<"users">>],
+			path = [<<"customers">>, customer_uuid, <<"users">>],
 			params = [
-				#param{name = customer_id, mandatory = true, repeated = false, type = binary}
+				#param{name = customer_uuid, mandatory = true, repeated = false, type = binary}
 			]
 		}
 	],
 
 	UpdateParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
+		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
-		#param{name = pswd, mandatory = false, repeated = false, type = binary},
-		#param{name = smpp_types, mandatory = false, repeated = true, type = {custom, fun smpp_type/1}}
+		#param{name = password, mandatory = false, repeated = false, type = binary},
+		#param{name = bind_types, mandatory = false, repeated = true, type = {custom, fun bind_type/1}}
 	],
 	Update = #method_spec{
-		path = [<<"customers">>, customer_id, <<"users">>, id],
+		path = [<<"customers">>, customer_uuid, <<"users">>, id],
 		params = UpdateParams
 	},
 
 	DeleteParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
+		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
-		path = [<<"customers">>, customer_id, <<"users">>, id],
+		path = [<<"customers">>, customer_uuid, <<"users">>, id],
 		params = DeleteParams
 	},
 
 	CreateParams = [
-		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
+		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
-		#param{name = pswd, mandatory = true, repeated = false, type = binary},
-		#param{name = smpp_types, mandatory = true, repeated = true, type = {custom, fun smpp_type/1}}
+		#param{name = password, mandatory = true, repeated = false, type = binary},
+		#param{name = bind_types, mandatory = true, repeated = true, type = {custom, fun bind_type/1}}
 	],
 	Create = #method_spec{
-		path = [<<"customers">>, customer_id, <<"users">>],
+		path = [<<"customers">>, customer_uuid, <<"users">>],
 		params = CreateParams
 	},
 
@@ -79,8 +79,8 @@ init() ->
 	}}.
 
 create(Params) ->
-	CustID = ?gv(customer_id, Params),
-	case k_aaa:get_customer_by_id(CustID) of
+	CustomerUUID = ?gv(customer_uuid, Params),
+	case k_aaa:get_customer_by_uuid(CustomerUUID) of
 		{ok, Customer = #customer{}} ->
 	   		create_user(Customer, Params);
 		{error, no_entry} ->
@@ -91,8 +91,8 @@ create(Params) ->
 	end.
 
 read(Params) ->
-	CustID = ?gv(customer_id, Params),
-	case k_aaa:get_customer_by_id(CustID) of
+	CustomerUUID = ?gv(customer_uuid, Params),
+	case k_aaa:get_customer_by_uuid(CustomerUUID) of
 		{ok, Customer = #customer{}} ->
 	   		get_customer_user(Customer, ?gv(id, Params));
 		{error, no_entry} ->
@@ -103,8 +103,8 @@ read(Params) ->
 	end.
 
 update(Params) ->
-	CustID = ?gv(customer_id, Params),
-	case k_aaa:get_customer_by_id(CustID) of
+	CustomerUUID = ?gv(customer_uuid, Params),
+	case k_aaa:get_customer_by_uuid(CustomerUUID) of
 		{ok, Customer = #customer{}} ->
 	   		update_user(Customer, Params);
 		{error, no_entry} ->
@@ -115,11 +115,11 @@ update(Params) ->
 	end.
 
 delete(Params) ->
-	CustID = ?gv(customer_id, Params),
+	CustomerUUID = ?gv(customer_uuid, Params),
 	UserID = ?gv(id, Params),
-	case k_aaa:del_customer_user(CustID, UserID) of
+	case k_aaa:del_customer_user(CustomerUUID, UserID) of
 		{error, no_entry} ->
-			?log_warn("Customer [~p] not found", [CustID]),
+			?log_warn("Customer [~p] not found", [CustomerUUID]),
 			{exception, 'svc0003'};
 		ok ->
 			{http_code, 204};
@@ -128,28 +128,18 @@ delete(Params) ->
 			{http_code, 500}
 	end.
 
+-spec prepare_users(#user{}) -> {ok, [{atom(), term()}]}.
+prepare_users(User = #user{}) ->
+	UserFun = ?record_to_proplist(user),
+	UserPropList = UserFun(User),
+	proplists:delete(password, UserPropList);
+prepare_users(Users) when is_list(Users) ->
+	{ok, [prepare_users(User) || User <- Users]}.
+
 %% ===================================================================
 %% Local Functions
 %% ===================================================================
 
-translate(Proplist) ->
-	translate(Proplist, []).
-translate([], Acc) ->
-	lists:reverse(Acc);
-translate([{Name, Value} | Tail], Acc) ->
-	translate(Tail, [{translate_name(Name), Value} | Acc]).
-
-translate_name(permitted_smpp_types) ->
-	smpp_types;
-translate_name(Name) ->
-	Name.
-
-prepare_users(User = #user{}) ->
-	UserFun = ?record_to_proplist(user),
-	UserPropList = UserFun(User),
-	translate(proplists:delete(pswd_hash, UserPropList));
-prepare_users(Users) when is_list(Users) ->
-	{ok, [prepare_users(User) || User <- Users]}.
 
 create_user(Customer, Params) ->
 	UserID = ?gv(id, Params),
@@ -157,14 +147,14 @@ create_user(Customer, Params) ->
 		{ok, #user{}} ->
 			{exception, 'svc0004'};
 		{error, no_entry} ->
-			Pass = ?gv(pswd, Params),
-			SMPPTypes = ?gv(smpp_types, Params),
+			Password = ?gv(password, Params),
+			BindTypes = ?gv(bind_types, Params),
 			User = #user{
-				id 						= UserID,
-				pswd_hash 				= base64:encode(crypto:sha(Pass)),
-				permitted_smpp_types 	= SMPPTypes
-				},
-			ok = k_aaa:set_customer_user(User, Customer#customer.uuid),
+				id = UserID,
+				password = base64:encode(crypto:sha(Password)),
+				bind_types = BindTypes
+			},
+			ok = k_aaa:set_customer_user(User, Customer#customer.customer_uuid),
 			{ok, [UserPropList]} = prepare_users([User]),
 			?log_debug("UserPropList: ~p", [UserPropList]),
 			{http_code, 201, UserPropList};
@@ -179,10 +169,10 @@ update_user(Customer, Params) ->
 		{ok, User} ->
 			Updated = #user{
 				id = UserID,
-				pswd_hash = resolve_pass(?gv(pswd, Params), User#user.pswd_hash),
-				permitted_smpp_types = ?resolve(smpp_types, Params, User#user.permitted_smpp_types)
+				password = resolve_pass(?gv(password, Params), User#user.password),
+				bind_types = ?resolve(bind_types, Params, User#user.bind_types)
 			},
-			ok = k_aaa:set_customer_user(Updated, Customer#customer.uuid),
+			ok = k_aaa:set_customer_user(Updated, Customer#customer.customer_uuid),
 			{ok, [UserPropList]} = prepare_users([Updated]),
 			?log_debug("UserPropList: ~p", [UserPropList]),
 			{ok, UserPropList};
@@ -216,7 +206,7 @@ resolve_pass(undefined, Pass) ->
 resolve_pass(NewPass, _Pass) ->
 	base64:encode(crypto:sha(NewPass)).
 
-smpp_type(Type) ->
+bind_type(Type) ->
 	case Type of
 		<<"oneapi">> -> oneapi;
 		<<"transmitter">> -> transmitter;

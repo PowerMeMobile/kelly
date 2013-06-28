@@ -5,20 +5,22 @@
 -include("network.hrl").
 -include("provider.hrl").
 
--type smpp_connection_type() :: transmitter | receiver | tranceiver | oneapi.
--type billing_type() 	:: prepaid | postpaid.
--type user_id() 		:: binary().
+-type customer_uuid() :: uuid().
+-type customer_id() :: binary(). %% http customer_id | smpp system-type
+-type user_id() :: binary(). %% http user_id | smpp system-id
+-type bind_type() :: transmitter | receiver | tranceiver | oneapi | soap | mm.
+-type billing_type() :: prepaid | postpaid.
 
 -record(user, {
-	id 					:: user_id(),
-	pswd_hash 			:: binary(),
-	permitted_smpp_types :: [smpp_connection_type()]
+	id			:: user_id(),
+	password	:: binary(),
+	bind_types	:: [bind_type()]
 }).
 -type user() :: #user{}.
 
 -record(customer, {
-	id 					:: system_id(),
-	uuid 				:: customer_id(),
+	customer_uuid		:: customer_uuid(),
+	customer_id			:: customer_id(),
 	name 				:: binary(),
 	priority 			:: integer(),
 	rps 				:: integer() | undefined,
@@ -34,8 +36,6 @@
 	billing_type		:: billing_type(),
 	state = 0			:: non_neg_integer() %% 0 blocked, 1 active
 }).
--type customer_id() 	:: binary().
--type system_id() 		:: binary().
 -type customer() 		:: #customer{}.
 
 -endif.

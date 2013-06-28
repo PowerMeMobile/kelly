@@ -17,8 +17,8 @@
 init() ->
 	Read = [
 		#method_spec{
-			path = [<<"customers">>, id],
-			params = [#param{name = id, mandatory = true, repeated = false, type = binary}]
+			path = [<<"customers">>, customer_uuid],
+			params = [#param{name = customer_uuid, mandatory = true, repeated = false, type = binary}]
 		},
 		#method_spec{
 			path = [<<"customers">>],
@@ -27,8 +27,8 @@ init() ->
 	],
 
 	UpdateParams = [
-		#param{name = id, mandatory = true, repeated = false, type = binary},
-		#param{name = system_id, mandatory = false, repeated = false, type = binary},
+		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+		#param{name = customer_id, mandatory = false, repeated = false, type = binary},
 		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
@@ -43,21 +43,21 @@ init() ->
 		#param{name = state, mandatory = false, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	Update = #method_spec{
-		path = [<<"customers">>, id],
+		path = [<<"customers">>, customer_uuid],
 		params = UpdateParams
 	},
 
 	DeleteParams = [
-		#param{name = id, mandatory = true, repeated = false, type = binary}
+		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary}
 	],
 	Delete = #method_spec{
-		path = [<<"customers">>, id],
+		path = [<<"customers">>, customer_uuid],
 		params = DeleteParams
 	},
 
 	CreateParams = [
-		#param{name = id, mandatory = false, repeated = false, type = binary},
-		#param{name = system_id, mandatory = true, repeated = false, type = binary},
+		#param{name = customer_uuid, mandatory = false, repeated = false, type = binary},
+		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
 		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = priority, mandatory = false, repeated = false, type = disabled},
 		#param{name = rps, mandatory = false, repeated = false, type = disabled},
@@ -84,17 +84,17 @@ init() ->
 	}}.
 
 create(Params) ->
-	case ?gv(id, Params) of
+	case ?gv(customer_uuid, Params) of
 		undefined ->
-			UUID = uuid:unparse(uuid:generate_time()),
-			create_customer(lists:keyreplace(id, 1, Params, {id, UUID}));
+			CustomerUUID = uuid:unparse(uuid:generate_time()),
+			create_customer(lists:keyreplace(customer_uuid, 1, Params, {customer_uuid, CustomerUUID}));
 		_ ->
 			is_exist(Params)
 	end.
 
 is_exist(Params) ->
-	UUID = ?gv(id, Params),
-	case k_aaa:get_customer_by_id(UUID) of
+	CustomerUUID = ?gv(customer_uuid, Params),
+	case k_aaa:get_customer_by_uuid(CustomerUUID) of
 		{ok, #customer{}} ->
 			{exception, 'svc0004'};
 		{error, no_entry} ->
@@ -105,12 +105,12 @@ is_exist(Params) ->
 	end.
 
 read(Params) ->
-	UUID = ?gv(id, Params),
-	case UUID of
+	CustomerUUID = ?gv(customer_uuid, Params),
+	case CustomerUUID of
 		undefined ->
 			read_all();
 		_ ->
-			read_id(UUID)
+			read_customer_uuid(CustomerUUID)
 	end.
 
 read_all() ->
@@ -124,10 +124,10 @@ read_all() ->
 			{http_code, 500}
 	end.
 
-read_id(UUID) ->
-	case k_aaa:get_customer_by_id(UUID) of
+read_customer_uuid(CustomerUUID) ->
+	case k_aaa:get_customer_by_uuid(CustomerUUID) of
 		{ok, Customer = #customer{}} ->
-			{ok, [CustPropList]} = prepare({UUID, Customer}),
+			{ok, [CustPropList]} = prepare({CustomerUUID, Customer}),
 			?log_debug("CustPropList: ~p", [CustPropList]),
 			{ok, CustPropList};
 		{error, no_entry} ->
@@ -138,8 +138,8 @@ read_id(UUID) ->
 	end.
 
 update(Params) ->
-	UUID = ?gv(id, Params),
-	case k_aaa:get_customer_by_id(UUID) of
+	CustomerUUID = ?gv(customer_uuid, Params),
+	case k_aaa:get_customer_by_uuid(CustomerUUID) of
 		{ok, Customer = #customer{}} ->
 			update_customer(Customer, Params);
 		{error, no_entry} ->
@@ -151,9 +151,9 @@ update(Params) ->
 
 
 delete(Params) ->
-	UUID = ?gv(id, Params),
-	k_snmp:delete_customer(UUID),
-	ok = k_aaa:del_customer(UUID),
+	CustomerUUID = ?gv(customer_uuid, Params),
+	k_snmp:delete_customer(CustomerUUID),
+	ok = k_aaa:del_customer(CustomerUUID),
 	{http_code, 204}.
 
 %% ===================================================================
@@ -161,6 +161,7 @@ delete(Params) ->
 %% ===================================================================
 
 update_customer(Customer, Params) ->
+	NewCustomerId = ?resolve(customer_id, Params, Customer#customer.customer_id),
 	NewName = ?resolve(name, Params, Customer#customer.name),
 	NewOriginators = ?resolve(originators, Params, Customer#customer.allowed_sources),
 	NewDefaultOriginator = ?resolve(default_originator, Params, Customer#customer.default_source),
@@ -172,8 +173,8 @@ update_customer(Customer, Params) ->
 	NewBillingType = ?resolve(billing_type, Params, Customer#customer.billing_type),
 	NewState = ?resolve(state, Params, Customer#customer.state),
 	NewCustomer = #customer{
-		id = Customer#customer.id,
-		uuid = Customer#customer.uuid,
+		customer_uuid = Customer#customer.customer_uuid,
+		customer_id = NewCustomerId,
 		name = NewName,
 		priority = 1,
 		rps = 10000,
@@ -189,19 +190,19 @@ update_customer(Customer, Params) ->
 		billing_type = NewBillingType,
 		state = NewState
 	},
-	ok = k_aaa:set_customer(Customer#customer.id, NewCustomer),
-	{ok, [CustPropList]} = prepare({Customer#customer.uuid, NewCustomer}),
+	ok = k_aaa:set_customer(NewCustomer),
+	{ok, [CustPropList]} = prepare({Customer#customer.customer_uuid, NewCustomer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
 	{http_code, 200, CustPropList}.
 
 create_customer(Params) ->
-	UUID = ?gv(id, Params),
+	CustomerUUID = ?gv(customer_uuid, Params),
 	Priority = 1,
 	RPS = 10000,
-	System_id = ?gv(system_id, Params),
+	CustomerID = ?gv(customer_id, Params),
 	Customer = #customer{
-		id = System_id,
-		uuid = UUID,
+		customer_uuid = CustomerUUID,
+		customer_id = CustomerID,
 		name = ?gv(name, Params),
 		priority = Priority,
 		rps = RPS,
@@ -217,9 +218,9 @@ create_customer(Params) ->
 		billing_type = ?gv(billing_type, Params),
 		state = ?gv(state, Params)
 	},
-	k_snmp:set_customer(UUID, RPS, Priority),
-	ok = k_aaa:set_customer(System_id, Customer),
-	{ok, [CustPropList]} = prepare({UUID, Customer}),
+	k_snmp:set_customer(CustomerUUID, RPS, Priority),
+	ok = k_aaa:set_customer(Customer),
+	{ok, [CustPropList]} = prepare({CustomerUUID, Customer}),
 	?log_debug("CustPropList: ~p", [CustPropList]),
 	{http_code, 201, CustPropList}.
 
@@ -230,7 +231,7 @@ prepare(Item) ->
 
 prepare([], Acc) ->
 	{ok, Acc};
-prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
+prepare([{CustomerUUID, Customer = #customer{}} | Rest], Acc) ->
 	 #customer{
 		allowed_sources = OriginatorsList,
 		default_source = DefaultSource,
@@ -258,16 +259,18 @@ prepare([{UUID, Customer = #customer{}} | Rest], Acc) ->
 
 	%% preparation customer's record
 	CustomerFun = ?record_to_proplist(customer),
-	CustomerPropList = CustomerFun(Customer#customer{
-								users = UsersPropList,
-								allowed_sources = OriginatorsPropList,
-								default_source = DefSourcePropList
-											}),
-	UUIDBinStr = UUID,
+	CustomerPropList = CustomerFun(
+		Customer#customer{
+			users = UsersPropList,
+			allowed_sources = OriginatorsPropList,
+			default_source = DefSourcePropList
+		}
+	),
+	UUIDBinStr = CustomerUUID,
 	DefaultProviderIDBinStr = ?gv(default_provider_id, CustomerPropList),
 	NetworksBinStr = ?gv(networks, CustomerPropList),
 	Renamed = translate(CustomerPropList),
-	ConvertedID = lists:keyreplace(id, 1, Renamed, {id, UUIDBinStr}),
+	ConvertedID = lists:keyreplace(customer_uuid, 1, Renamed, {customer_uuid, UUIDBinStr}),
 	ConvertedDefaultProviderID = lists:keyreplace(default_provider_id, 1, ConvertedID, {default_provider_id, DefaultProviderIDBinStr}),
 	ConvertedNetworks = lists:keyreplace(networks, 1, ConvertedDefaultProviderID, {networks, NetworksBinStr}),
 
@@ -282,10 +285,6 @@ translate([], Acc) ->
 translate([{Name, Value} | Tail], Acc) ->
 	translate(Tail, [{translate_name(Name), Value} | Acc]).
 
-translate_name(id) ->
-	system_id;
-translate_name(uuid) ->
-	id;
 translate_name(allowed_sources) ->
 	originators;
 translate_name(default_source) ->

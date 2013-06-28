@@ -38,7 +38,8 @@ create_gtw() ->
 	Queries = [
 		{id, GtwID},
 		{name, GtwName},
-		{rps, GtwRPS}],
+		{rps, GtwRPS}
+	],
     Response = ?perform_post(Url, [], <<>>, Queries),
     ?assert_status(201, Response),
 	?assert_json_values(Queries, Response).
@@ -87,16 +88,18 @@ conn_path(GtwID) ->
 create_connection() ->
 	Url = conn_path(gtw_id()),
 	ConnID = conn_id(),
-	Queries = [{id, ConnID},
-				{type, 1},
-				{addr, <<"127.0.0.1">>},
-				{port, 8001},
-				{sys_id, <<"smppclient1">>},
-				{pass, <<"password">>},
-				{sys_type, <<"smppclient1">>},
-				{addr_ton, 1},
-				{addr_npi, 0},
-				{addr_range, <<"">>}],
+	Queries = [
+		{id, ConnID},
+		{host, <<"127.0.0.1">>},
+		{port, 8001},
+		{bind_type, <<"transmitter">>},
+		{system_id, <<"smppclient1">>},
+		{password, <<"password">>},
+		{system_type, <<"smppclient1">>},
+		{addr_ton, 1},
+		{addr_npi, 0},
+		{addr_range, <<"">>}
+	],
 	Resp = ?perform_post(Url, [], <<>>, Queries),
 	?assert_status(201, Resp),
 	?assert_json_values(Queries, Resp).
@@ -104,15 +107,17 @@ create_connection() ->
 update_connection() ->
 	ConnID = conn_id(),
 	Url = conn_path(gtw_id(), ConnID),
-	Queries = [{type, 2},
-				{addr, <<"127.0.0.2">>},
-				{port, 8002},
-				{sys_id, <<"smppclient2">>},
-				{pass, <<"password2">>},
-				{sys_type, <<"smppclient2">>},
-				{addr_ton, 2},
-				{addr_npi, 2},
-				{addr_range, <<"">>}],
+	Queries = [
+		{host, <<"127.0.0.2">>},
+		{port, 8002},
+		{bind_type, <<"receiver">>},
+		{system_id, <<"smppclient2">>},
+		{password, <<"password2">>},
+		{system_type, <<"smppclient2">>},
+		{addr_ton, 2},
+		{addr_npi, 2},
+		{addr_range, <<"">>}
+	],
 	Resp = ?perform_put(Url, [], <<>>, Queries),
 	?assert_status(200, Resp),
 	?assert_json_values(Queries, Resp).

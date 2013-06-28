@@ -37,20 +37,20 @@ process(_ContentType, Message) ->
 	{deny, password} |
 	{deny, connection_type}.
 authenticate(BindReq = #funnel_auth_request_dto{
-	customer_id = SystemID,
+	customer_id = CustomerId,
 	user_id = UserId
 }) ->
 	?log_debug("Got funnel auth request: ~p", [BindReq]),
 
-	case k_aaa:get_customer_by_system_id(SystemID) of
+case k_aaa:get_customer_by_id(CustomerId) of
 		{ok, Customer} ->
 			?log_debug("Customer found: ~p", [Customer]),
 			case k_aaa:get_customer_user(Customer, UserId) of
 				{ok, User = #user{}} ->
 					?log_debug("User found: ~p", [User]),
 					Checks = [
-						fun check_stage_password/2,
-						fun check_stage_conntype/2
+						fun check_password/2,
+						fun check_bind_type/2
 					],
 					perform_checks(BindReq, User, Checks, Customer);
 				{error, no_entry} ->
@@ -65,7 +65,9 @@ authenticate(BindReq = #funnel_auth_request_dto{
 			Any
 	end.
 
-check_stage_password(#funnel_auth_request_dto{password = Pw}, #user{pswd_hash = PwHash}) ->
+check_password(
+	#funnel_auth_request_dto{password = Pw}, #user{password = PwHash}
+) ->
 	case base64:encode(crypto:sha(Pw)) =:= PwHash of
 		true ->
 			allow;
@@ -73,8 +75,8 @@ check_stage_password(#funnel_auth_request_dto{password = Pw}, #user{pswd_hash = 
 			{deny, password}
 	end.
 
-check_stage_conntype(#funnel_auth_request_dto{type = TypeRequested}, #user{permitted_smpp_types = Types}) ->
-	case lists:any(fun(T) -> T =:= TypeRequested end, Types) of
+check_bind_type(#funnel_auth_request_dto{type = ReqBindType}, #user{bind_types = BindTypes}) ->
+	case lists:any(fun(T) -> T =:= ReqBindType end, BindTypes) of
 		true ->
 			allow;
 		_ ->
@@ -93,10 +95,10 @@ perform_checks(BindReq, User = #user{}, [Check | SoFar], Customer) ->
 	end.
 
 build_customer_response(#funnel_auth_request_dto{
-	connection_id = ConnectionId,
-	customer_id = CustomerId
-	}, #customer{
-			uuid = UUID,
+	connection_id = ConnectionId
+}, #customer{
+			customer_uuid = CustomerUUID,
+			customer_id = CustomerId,
 			priority = Prior,
 			rps = RPS,
 			allowed_sources = AllowedSources,
@@ -151,7 +153,7 @@ build_customer_response(#funnel_auth_request_dto{
 
 	Customer = #funnel_auth_response_customer_dto{
 		id = CustomerId,
-		uuid = UUID,
+		uuid = CustomerUUID,
 		priority = Prior,
 		rps = RPS,
 		allowed_sources = AllowedSources,

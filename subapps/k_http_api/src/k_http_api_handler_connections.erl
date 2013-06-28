@@ -21,10 +21,10 @@
 init() ->
 	Read = [
 		#method_spec{
-			path = [<<"gateways">>, gateway_id, <<"connections">>, connection_id],
+			path = [<<"gateways">>, gateway_id, <<"connections">>, id],
 			params = [
 				#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
-				#param{name = connection_id, mandatory = true, repeated = false, type = integer}
+				#param{name = id, mandatory = true, repeated = false, type = integer}
 			]
 		},
 		#method_spec{
@@ -47,16 +47,16 @@ init() ->
 		#param{name = addr_range, mandatory = false, repeated = false, type = binary}
 	],
 	Update = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"connections">>, connection_id],
+		path = [<<"gateways">>, gateway_id, <<"connections">>, id],
 		params = UpdateParams
 	},
 
 	DeleteParams = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
-		#param{name = connection_id, mandatory = true, repeated = false, type = integer}
+		#param{name = id, mandatory = true, repeated = false, type = integer}
 	],
 	Delete = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"connections">>, connection_id],
+		path = [<<"gateways">>, gateway_id, <<"connections">>, id],
 		params = DeleteParams
 	},
 
@@ -86,7 +86,7 @@ init() ->
 	}}.
 
 read(Params) ->
-	ConnectionID = ?gv(connection_id, Params),
+	ConnectionID = ?gv(id, Params),
 	case ConnectionID of
 		undefined -> read_all(?gv(gateway_id, Params));
 		_ -> read_id(?gv(gateway_id, Params), ConnectionID)
@@ -112,7 +112,7 @@ update(Params) ->
 
 delete(Params) ->
 	GtwUUID = ?gv(gateway_id, Params),
-	ConnectionID = ?gv(connection_id, Params),
+	ConnectionID = ?gv(id, Params),
 	ok = k_config:del_gateway_connection(GtwUUID, ConnectionID),
 	k_snmp:delete_connection(GtwUUID, ConnectionID),
 	{http_code, 204}.
@@ -149,7 +149,7 @@ read_id(GatewayID, ConnectionID) ->
 
 update_connection(Gtw, Params) ->
 	GtwID = ?gv(gateway_id, Params),
-	ConnectionID = ?gv(connection_id, Params),
+	ConnectionID = ?gv(id, Params),
 	#gateway{connections = Connections} = Gtw,
 	case get_connection(ConnectionID, Connections) of
 		undefined -> {exception, 'svc0003'};

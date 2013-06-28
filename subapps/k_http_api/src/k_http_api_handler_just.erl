@@ -35,8 +35,9 @@ init() ->
 
 read(_Params) ->
 	{ok, Customers} = k_aaa:get_customers(),
-	[k_snmp:set_customer(C#customer.uuid, C#customer.rps, C#customer.priority)
-		 || {_,C} <-Customers],
+	[k_snmp:set_customer(
+		C#customer.customer_uuid, C#customer.rps, C#customer.priority
+	) || {_,C} <-Customers],
 	{ok, Gtws} = k_config:get_gateways(),
 	[set_gtw(GtwID, Gtw) || {GtwID, Gtw} <- Gtws],
 	{ok, {result, ok}}.
