@@ -4,18 +4,11 @@ PRJ_PLT=$(NAME).plt
 
 all: generate
 
-generate: compile
-	@rm -rf ./rel/$(NAME)
-	@./rebar generate
-
-generate-fast: compile-fast
+generate: compile xref
 	@rm -rf ./rel/$(NAME)
 	@./rebar generate
 
 compile: get-deps
-	@./rebar compile
-
-compile-fast:
 	@./rebar compile
 
 get-deps:
@@ -23,6 +16,9 @@ get-deps:
 
 update-deps:
 	@./rebar update-deps
+
+xref: compile
+	@./rebar xref skip_deps=true
 
 clean:
 	@./rebar clean
