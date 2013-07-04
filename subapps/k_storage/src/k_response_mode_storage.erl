@@ -83,8 +83,8 @@ set_mt_dlr_info_and_get_msg_info(Selector, Sort, Modifier) ->
 						Error ->
 							Error
 					end;
-				Error ->
-					Error
+				Doc ->
+					{ok, Doc}
 			end;
 		Error ->
 			Error
