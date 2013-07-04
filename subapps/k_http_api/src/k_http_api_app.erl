@@ -36,6 +36,7 @@ stop(_State) ->
 %% API
 %% ===================================================================
 
+-spec update_dispatch_rules() -> ok.
 update_dispatch_rules() ->
 	cowboy:set_protocol_options(?MODULE, [{dispatch, dispatch_rules()}]).
 

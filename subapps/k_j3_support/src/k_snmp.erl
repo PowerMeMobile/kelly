@@ -139,6 +139,9 @@ delete_connection(GtwID, ConnID) when
 init(_Args) ->
 	{ok, ready, #state{}}.
 
+-spec sleep(process_queue, #state{}) -> {next_state, sleep, #state{}};
+			(wake_up, #state{}) -> {next_state, ready, #state{}};
+			(term(), #state{}) -> {stop, {bad_event, term()}, #state{}}.
 sleep(process_queue, State = #state{}) ->
 	{next_state, sleep, State};
 sleep(wake_up, State = #state{}) ->
@@ -147,6 +150,11 @@ sleep(wake_up, State = #state{}) ->
 sleep(Event, State = #state{}) ->
 	{stop, {bad_event, Event}, State}.
 
+-spec ready(process_queue, #state{}) ->
+	{next_state, ready, #state{}} |
+	{next_state, sleep, #state{}};
+			(term(), #state{}) ->
+	{stop, {bad_event, term()}, #state{}}.
 ready(process_queue, State = #state{time = Time}) ->
 	case next() of
 	{ok, #task{id = Id, function = Fun, args = Args}} ->
@@ -165,9 +173,13 @@ ready(process_queue, State = #state{time = Time}) ->
 ready(Event, State = #state{}) ->
 	{stop, {bad_event, Event}, State}.
 
+-spec sleep(term(), term(), term()) ->
+	{stop, {bad_sync_event, term()}, term()}.
 sleep(Event, _From, State) ->
 	{stop, {bad_sync_event, Event}, State}.
 
+-spec ready(term(), term(), term()) ->
+	{stop, {bad_sync_event, term()}, term()}.
 ready(Event, _From, State) ->
 	{stop, {bad_sync_event, Event}, State}.
 

@@ -17,6 +17,8 @@
 %% API
 %% ===================================================================
 
+-spec build_report([{atom(), term()}]) ->
+	[ [{atom(), term()}] ].
 build_report(Params) ->
 	From = k_datetime:datetime_to_timestamp(?gv(from, Params)),
 	To = k_datetime:datetime_to_timestamp(?gv(to, Params)),
@@ -44,6 +46,7 @@ build_report(Params) ->
 	{ok, Docs} = k_shifted_storage:find(mt_messages, bson:document(Selector)),
 	[build_mt_report_response(Doc) || {_, Doc} <- Docs].
 
+-spec build_aggr_report([{atom(), term()}]) -> [ [{bson:label(), bson:value()}] ].
 build_aggr_report(Params) ->
 	From = k_datetime:datetime_to_timestamp(?gv(from, Params)),
 	To = k_datetime:datetime_to_timestamp(?gv(to, Params)),
@@ -65,6 +68,8 @@ build_aggr_report(Params) ->
 	SortedDocs = lists:sort(Docs),
 	[bson:fields(Doc) || Doc <- SortedDocs].
 
+-spec build_aggr_recipient_report() ->
+	{ok, [tuple()]}.
 build_aggr_recipient_report() ->
 	Command = {'aggregate', <<"mt_messages">>, 'pipeline', [
 		{'$project', {

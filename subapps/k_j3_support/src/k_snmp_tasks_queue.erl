@@ -34,6 +34,7 @@
 %%% API
 %%%
 
+-spec start_link() -> {ok, pid()}.
 start_link() ->
 	gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -76,12 +77,13 @@ init(_Args) ->
 	case IdList of
 		[] ->
 			NextTask = undefined,
-			NextId = 1;
+			NextId = 1,
+			{ok, #state{table = Name, next_id = NextId, next_task = NextTask}};
 		_Any ->
 			NextTask = lists:min(IdList),
-			NextId = lists:max(IdList) + 1
-	end,
-	{ok, #state{table = Name, next_id = NextId, next_task = NextTask}}.
+			NextId = lists:max(IdList) + 1,
+			{ok, #state{table = Name, next_id = NextId, next_task = NextTask}}
+	end.
 
 %% in case of empty storage
 handle_call({save_task, Task}, _From, State = #state{

@@ -18,6 +18,7 @@
 %% API functions
 %% ===================================================================
 
+-spec start_link() -> {ok, pid()}.
 start_link() ->
 	supervisor:start_link(?MODULE, []).
 
@@ -25,6 +26,7 @@ start_link() ->
 %% Supervisor callbacks
 %% ===================================================================
 
+-spec init([]) -> ignore.
 init([]) ->
 	{ok, { {one_for_one, 5, 10}, [
 
