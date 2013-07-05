@@ -1,5 +1,5 @@
 language: erlang
-script: "make all"
+script: "make simple-test"
 otp_release:
   - R15B03
 branches:
@@ -12,3 +12,6 @@ notifications:
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq uuid-dev
+services:
+  - mongodb
+  - rabbitmq

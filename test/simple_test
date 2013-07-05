@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# This scrip is simple test for kelly
+# It tests following functionality:
+# 1. Start kelly node
+# 2. Configure kelly via http rest api
+# 3. Test http api with `make api-test`
+# 4. Stop kelly node
+
+echo PWD: $(pwd)
+
+KELLY_BIN='./rel/kelly/bin/kelly'
+
+echo Start kelly node
+$KELLY_BIN start
+
+echo Wait 5 sec for kelly node start
+sleep 5
+
+echo Ping node
+KELLY_PING_RESULT=$($KELLY_BIN ping | grep pong)
+if [[ "" == "$KELLY_PING_RESULT" ]]; then
+	exit 1
+fi
+
+echo Configure kelly node
+./rel/files/http_conf.sh
+
+if [[ "0" == "$?" ]]; then
+	echo Configure success
+else
+	exit 1
+fi
+
+echo Start api tests
+make api-test
+
+echo Stop node
+$KELLY_BIN stop
+
+echo -n Wait 5 sec for kelly node stop...
+sleep 5
+echo OK
+
+echo Success
+
+exit 0
