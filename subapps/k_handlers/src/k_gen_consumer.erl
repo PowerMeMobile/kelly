@@ -20,8 +20,6 @@
 	code_change/3
 ]).
 
--export([behaviour_info/1]).
-
 -include_lib("k_common/include/logging.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("k_common/include/gen_server_spec.hrl").
@@ -38,21 +36,58 @@
 		mod_state
 }).
 
--spec behaviour_info(callbacks) -> [{atom(), integer()}].
-behaviour_info(callbacks) ->
-	[{init, 1},
-	{handle_call, 3},
-	{handle_cast, 2},
-	{handle_info, 2},
-	{terminate, 2},
-	{code_change, 3},
-%% gen_consumer behaviour callbacks
-	{handle_message, 4},
-	{handle_subscribe, 1},
-	{handle_consume_ok, 1},
-	{handle_cancel_ok, 1}];
-behaviour_info(_) ->
-	undefined.
+%% ===================================================================
+%% Callbacks
+%% ===================================================================
+
+-callback init(Args :: term()) ->
+	{ok, ModState :: term()} |
+	{stop, StopReason :: term()} |
+	ignore.
+
+-callback handle_call(Request :: term(), From :: {pid(), Tag :: term()},
+                      State :: term()) ->
+    {reply, Reply :: term(), NewState :: term()} |
+    {reply, Reply :: term(), NewState :: term(), timeout() | hibernate} |
+    {noreply, NewState :: term()} |
+    {noreply, NewState :: term(), hibernate} |
+    {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
+    {stop, Reason :: term(), NewState :: term()}.
+
+-callback handle_cast(Request :: term(), State :: term()) ->
+    {noreply, NewState :: term()} |
+    {noreply, NewState :: term(), timeout() | hibernate} |
+    {stop, Reason :: term(), NewState :: term()}.
+
+-callback handle_info(Info :: timeout() | term(), State :: term()) ->
+    {noreply, NewState :: term()} |
+    {noreply, NewState :: term(), timeout() | hibernate} |
+    {stop, Reason :: term(), NewState :: term()}.
+
+-callback terminate(Reason :: (normal | shutdown | {shutdown, term()} |
+                               term()),
+                    State :: term()) ->
+    term().
+
+-callback code_change(OldVsn :: (term() | {down, term()}), State :: term(),
+                      Extra :: term()) ->
+    {ok, NewState :: term()} | {error, Reason :: term()}.
+
+-callback handle_message(ContentType :: binary(), Content :: binary(),
+			Channel :: pid(), State :: term()) ->
+	{noreply, {Pid :: pid(), MonRef :: reference()}, NewState :: term()} |
+	{noreply, NewState :: term()}.
+
+-callback handle_subscribe(State :: term()) ->
+	{ok, QoS :: pos_integer(), QueueName :: binary(), DeclareQueueFlag :: boolean(),
+		XChangeName :: binary(), NewState :: term()} |
+	{ok, QoS :: pos_integer(), QueueName :: binary(), DeclareQueueFlag :: boolean(),
+		NewState :: term()}.
+
+-callback handle_consume_ok(State :: term()) -> {noreply, NewState :: term()}.
+
+-callback handle_cancel_ok(State :: term()) ->
+	{noreply, Reason :: term(), NewState :: term()}.
 
 %% ===================================================================
 %% API functions
@@ -262,7 +297,7 @@ terminate(Reason, #state{
 	mod_state = MState,
 	module = Mod
 }) ->
-	ok = Mod:terminate(Reason, MState).
+	Mod:terminate(Reason, MState).
 
 code_change(OldVsn, State = #state{
 	mod_state = MState,
