@@ -32,8 +32,8 @@ else
 	exit 1
 fi
 
-echo Start api tests
-make api-test
+echo Start tests
+./rebar eunit skip_deps=true
 
 echo Stop node
 $KELLY_BIN stop
