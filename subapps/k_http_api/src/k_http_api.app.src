@@ -6,7 +6,8 @@
 		kernel,
 		stdlib,
 		k_common,
-		gen_http_api
+		gen_http_api,
+		mimetypes
 	]},
 	{mod, {k_http_api_app, []}},
 	{env, []}
