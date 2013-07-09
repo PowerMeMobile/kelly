@@ -12,6 +12,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/provider.hrl").
+-include_lib("k_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
@@ -141,10 +142,10 @@ read_id(PrvUUID) ->
 
 update_provider(Provider, Params) ->
 	ID = ?gv(id, Params),
-	Name = ?resolve(name, Params, Provider#provider.name),
-	Gateway = ?resolve(gateway, Params, Provider#provider.gateway),
-	BulkGateway = ?resolve(bulk_gateway, Params, Provider#provider.bulk_gateway),
-	ReceiptsSupported = ?resolve(receipts_supported, Params, Provider#provider.receipts_supported),
+	Name = ?gv(name, Params, Provider#provider.name),
+	Gateway = ?gv(gateway, Params, Provider#provider.gateway),
+	BulkGateway = ?gv(bulk_gateway, Params, Provider#provider.bulk_gateway),
+	ReceiptsSupported = ?gv(receipts_supported, Params, Provider#provider.receipts_supported),
 	Updated = #provider{
 		name = Name,
 		gateway = Gateway,

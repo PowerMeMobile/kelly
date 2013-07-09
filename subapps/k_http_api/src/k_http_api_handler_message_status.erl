@@ -14,6 +14,7 @@
 -include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/msg_info.hrl").
+-include_lib("k_common/include/utils.hrl").
 
 %% ===================================================================
 %% gen_cowboy_crud callbacks

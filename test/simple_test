@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# This scrip is simple test for kelly
-# It tests following functionality:
+# This script is a simple test for kelly
+# It tests the following functionality:
 # 1. Start kelly node
 # 2. Configure kelly via http rest api
 # 3. Test http api with `make api-test`
@@ -34,6 +34,7 @@ fi
 
 echo Start tests
 ./rebar eunit skip_deps=true
+TESTS_RESULT=$?
 
 echo Stop node
 $KELLY_BIN stop
@@ -42,6 +43,9 @@ echo -n Wait 5 sec for kelly node stop...
 sleep 5
 echo OK
 
-echo Success
+if [[ "0" == "$TESTS_RESULT" ]]; then
+	echo Success
+else
+	echo Failure
 
-exit 0
+exit $TESTS_RESULTS

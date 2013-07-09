@@ -17,6 +17,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/customer.hrl").
+-include_lib("k_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
@@ -170,7 +171,7 @@ update_user(Customer, Params) ->
 			Updated = #user{
 				id = UserID,
 				password = resolve_pass(?gv(password, Params), User#user.password),
-				bind_types = ?resolve(bind_types, Params, User#user.bind_types)
+				bind_types = ?gv(bind_types, Params, User#user.bind_types)
 			},
 			ok = k_aaa:set_customer_user(Updated, Customer#customer.customer_uuid),
 			{ok, [UserPropList]} = prepare_users([Updated]),

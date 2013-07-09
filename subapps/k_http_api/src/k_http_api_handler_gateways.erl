@@ -12,6 +12,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/gateway.hrl").
+-include_lib("k_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
@@ -133,9 +134,9 @@ is_exist(Params) ->
 update_gtw(Gtw, Params) ->
 	UUID = ?gv(id, Params),
 	#gateway{rps = RPS, name = Name, connections = Conns} = Gtw,
-	NewRPS = ?resolve(rps, Params, RPS),
+	NewRPS = ?gv(rps, Params, RPS),
 	?log_debug("NewRPS: ~p", [NewRPS]),
-	NewName = ?resolve(name, Params, Name),
+	NewName = ?gv(name, Params, Name),
 	NewGtw = #gateway{rps = NewRPS, name = NewName, connections = Conns},
 	?log_debug("New gtw: ~p", [NewGtw]),
 	k_snmp:set_gateway(UUID, NewName, NewRPS),

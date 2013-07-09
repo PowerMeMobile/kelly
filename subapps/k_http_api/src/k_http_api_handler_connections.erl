@@ -12,6 +12,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/gateway.hrl").
+-include_lib("k_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
@@ -154,15 +155,15 @@ update_connection(Gtw, Params) ->
 	case get_connection(ConnectionID, Connections) of
 		undefined -> {exception, 'svc0003'};
 		Conn = #connection{} ->
-			NewHost = ?resolve(host, Params, Conn#connection.host),
-			NewPort = ?resolve(port, Params, Conn#connection.port),
-			NewBindType = ?resolve(bind_type, Params, Conn#connection.bind_type),
-			NewSystemID = ?resolve(system_id, Params, Conn#connection.system_id),
-			NewPassword = ?resolve(password, Params, Conn#connection.password),
-			NewSystemType = ?resolve(system_type, Params, Conn#connection.system_type),
-			NewAddrTon = ?resolve(addr_ton, Params, Conn#connection.addr_ton),
-			NewAddrNpi = ?resolve(addr_npi, Params, Conn#connection.addr_npi),
-			NewAddrRange = ?resolve(addr_range, Params, Conn#connection.addr_range),
+			NewHost = ?gv(host, Params, Conn#connection.host),
+			NewPort = ?gv(port, Params, Conn#connection.port),
+			NewBindType = ?gv(bind_type, Params, Conn#connection.bind_type),
+			NewSystemID = ?gv(system_id, Params, Conn#connection.system_id),
+			NewPassword = ?gv(password, Params, Conn#connection.password),
+			NewSystemType = ?gv(system_type, Params, Conn#connection.system_type),
+			NewAddrTon = ?gv(addr_ton, Params, Conn#connection.addr_ton),
+			NewAddrNpi = ?gv(addr_npi, Params, Conn#connection.addr_npi),
+			NewAddrRange = ?gv(addr_range, Params, Conn#connection.addr_range),
 			NewConnection = #connection{
 				id = ConnectionID,
 				host = NewHost,

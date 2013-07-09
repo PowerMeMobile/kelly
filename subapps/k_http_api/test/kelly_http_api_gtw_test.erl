@@ -66,6 +66,7 @@ update_gtw() ->
 	?assert_status(200, UpdateRPSResp),
 	?assert_json_value(rps, NewRPS, UpdateRPSResp).
 
+
 delete_gtw() ->
 	delete_gtw(gtw_id()).
 

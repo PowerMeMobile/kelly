@@ -6,15 +6,13 @@
 -include("amqp_worker_reply.hrl").
 -include_lib("k_common/include/msg_info.hrl").
 -include_lib("k_common/include/logging.hrl").
+-include_lib("k_common/include/utils.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
 -ifdef(TEST).
    -include_lib("eunit/include/eunit.hrl").
 -endif.
-
--define(gv(Key, Params), proplists:get_value(Key, Params)).
--define(gv(Key, Params, Default), proplists:get_value(Key, Params, Default)).
 
 -record(port_addressing, {
 	dst_port :: non_neg_integer(),

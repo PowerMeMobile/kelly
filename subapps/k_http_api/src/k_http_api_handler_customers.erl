@@ -12,6 +12,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/customer.hrl").
+-include_lib("k_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 init() ->
@@ -161,17 +162,17 @@ delete(Params) ->
 %% ===================================================================
 
 update_customer(Customer, Params) ->
-	NewCustomerId = ?resolve(customer_id, Params, Customer#customer.customer_id),
-	NewName = ?resolve(name, Params, Customer#customer.name),
-	NewOriginators = ?resolve(originators, Params, Customer#customer.allowed_sources),
-	NewDefaultOriginator = ?resolve(default_originator, Params, Customer#customer.default_source),
-	NewNetworks = ?resolve(networks, Params, Customer#customer.networks),
-	NewDefaultProviderId = ?resolve(default_provider_id, Params, Customer#customer.default_provider_id),
-	NewReceiptsAllowed = ?resolve(receipts_allowed, Params, Customer#customer.receipts_allowed),
-	NewDefaultValidity = ?resolve(default_validity, Params, Customer#customer.default_validity),
-	NewMaxValidity = ?resolve(max_validity, Params, Customer#customer.max_validity),
-	NewBillingType = ?resolve(billing_type, Params, Customer#customer.billing_type),
-	NewState = ?resolve(state, Params, Customer#customer.state),
+	NewCustomerId = ?gv(customer_id, Params, Customer#customer.customer_id),
+	NewName = ?gv(name, Params, Customer#customer.name),
+	NewOriginators = ?gv(originators, Params, Customer#customer.allowed_sources),
+	NewDefaultOriginator = ?gv(default_originator, Params, Customer#customer.default_source),
+	NewNetworks = ?gv(networks, Params, Customer#customer.networks),
+	NewDefaultProviderId = ?gv(default_provider_id, Params, Customer#customer.default_provider_id),
+	NewReceiptsAllowed = ?gv(receipts_allowed, Params, Customer#customer.receipts_allowed),
+	NewDefaultValidity = ?gv(default_validity, Params, Customer#customer.default_validity),
+	NewMaxValidity = ?gv(max_validity, Params, Customer#customer.max_validity),
+	NewBillingType = ?gv(billing_type, Params, Customer#customer.billing_type),
+	NewState = ?gv(state, Params, Customer#customer.state),
 	NewCustomer = #customer{
 		customer_uuid = Customer#customer.customer_uuid,
 		customer_id = NewCustomerId,

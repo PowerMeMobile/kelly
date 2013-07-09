@@ -12,6 +12,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/network.hrl").
+-include_lib("k_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 
 %% ===================================================================
@@ -140,11 +141,11 @@ is_exist(Params) ->
 
 update_network(Network, Params) ->
 	ID = ?gv(id, Params),
-	NewName = ?resolve(name, Params, Network#network.name),
- 	NewCountryCode = ?resolve(country_code, Params, Network#network.country_code),
-	NewNumbersLen = ?resolve(numbers_len, Params, Network#network.numbers_len),
-	NewPrefixes = ?resolve(prefixes, Params, Network#network.prefixes),
-	NewProviderId = ?resolve(provider_id, Params, Network#network.provider_id),
+	NewName = ?gv(name, Params, Network#network.name),
+ 	NewCountryCode = ?gv(country_code, Params, Network#network.country_code),
+	NewNumbersLen = ?gv(numbers_len, Params, Network#network.numbers_len),
+	NewPrefixes = ?gv(prefixes, Params, Network#network.prefixes),
+	NewProviderId = ?gv(provider_id, Params, Network#network.provider_id),
 	Updated = #network{
 		name = NewName,
 		country_code = NewCountryCode,
