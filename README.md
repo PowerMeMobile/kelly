@@ -1,10 +1,14 @@
+[![Build Status](https://travis-ci.org/PowerMeMobile/kelly.png?branch=master)](https://travis-ci.org/PowerMeMobile/kelly)
+
 OpenKelly Installation & Launching
+==================================
 
 NB:
 The variable `$WORK' refers to a working directory, such as ~/Work.
 Every point described below assumes that the current working directory is `$WORK'.
 
 1. Erlang installation
+----------------------
 
 1.1 Install Erlang dependencies
 Ubuntu
@@ -26,6 +30,7 @@ $ sudo make install
 
 
 2. RabbitMQ installation
+------------------------
 
 2.1 Install RabbitMQ dependencies
 Ubuntu
@@ -42,6 +47,7 @@ $ sudo make install TARGET_DIR=/usr/local/lib/rabbitmq-server SBIN_DIR=/usr/loca
 
 
 3. MongoDB installation
+-----------------------
 
 3.1 Download MongoDB binary package
 $ wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.2.2.tgz
@@ -65,6 +71,7 @@ $ mongo $WORK/kelly/rel/files/indexes.js
 
 
 4. Kelly & Funnel & Just installation
+-------------------------------------
 
 4.1 Install dependencies
 Ubuntu
@@ -100,6 +107,7 @@ $ make
 
 
 5. Startup
+----------
 
 NB:
 You might need to open different tabs for each step or use the `screen' command.
