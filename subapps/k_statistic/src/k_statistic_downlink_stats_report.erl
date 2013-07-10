@@ -102,12 +102,14 @@ prepare_conns([#funnel_connection_dto{
 	msgs_sent = MsgsSent,
 	errors = Errors
 } | Rest], Acc) ->
+	ConnectedAtDT = k_datetime:utc_string_to_datetime(ConnectedAt),
+	ConnectedAtISO = k_datetime:datetime_to_iso8601(ConnectedAtDT),
 	ConnPropList = [
 		{id, ConnectionId},
 		{remote_ip, RemoteIp},
 		{customer_id, CustomerId},
 		{user_id, UserId},
-		{connected_at, ConnectedAt},
+		{connected_at, ConnectedAtISO},
 		{type, Type},
 		{msgs_received, MsgsReceived},
 		{msgs_sent, MsgsSent},
