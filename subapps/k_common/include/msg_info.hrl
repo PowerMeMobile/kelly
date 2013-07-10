@@ -71,7 +71,8 @@
     gateway_id :: gateway_id(),
 	out_msg_id :: out_msg_id(),
 	resp_time :: timestamp(),
-	resp_status :: resp_status()
+	resp_status :: resp_status(),
+	resp_error_code :: undefined | pos_integer()
 }).
 
 -record(dlr_info, {

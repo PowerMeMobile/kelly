@@ -106,19 +106,8 @@ get_msgs_by_status_report(From, To, received) ->
 	get_raw_report(mo_messages, Selector);
 
 get_msgs_by_status_report(From, To, Status) when
-	Status == sent; Status == failed
-->
-	Selector = {
-		'rqt' , {
-			'$gte' , From,
-			'$lt'  , To
-		},
-		's' , Status
-	},
-	get_raw_report(mt_messages, Selector);
-
-get_msgs_by_status_report(From, To, Status) when
 	Status == pending;
+	Status == sent; Status == failed;
 	Status == enroute; Status == delivered; Status == expired;
 	Status == deleted; Status == undeliverable; Status == accepted;
 	Status == unknown; Status == rejected; Status == unrecognized

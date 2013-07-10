@@ -56,7 +56,8 @@ set_mt_resp_info(#resp_info{
 	gateway_id = GatewayId,
 	out_msg_id = OutMsgId,
 	resp_time = RespTime,
-	resp_status = RespStatus
+	resp_status = RespStatus,
+	resp_error_code = RespErrorCode
 }) ->
 	Selector = {
 		'ri' , ReqId,
@@ -79,11 +80,20 @@ set_mt_resp_info(#resp_info{
 			'rqt', ?UNKNOWN_TIME,
 			'dt' , ?UNKNOWN_TIME
 		},
-		'$set', {
-			'omi', OutMsgId,
-			's'  , bsondoc:atom_to_binary(RespStatus),
-			'rpt', RespTime
-		}
+		'$set',
+			case RespErrorCode of
+				undefined -> {
+					'omi', OutMsgId,
+					's'  , bsondoc:atom_to_binary(RespStatus),
+					'rpt', RespTime
+				};
+				_ -> {
+					'omi', OutMsgId,
+					's'  , bsondoc:atom_to_binary(RespStatus),
+					'rpt', RespTime,
+					'rpe', RespErrorCode
+				}
+			end
 	},
 	{ok, StorageMode} = k_storage_manager:get_storage_mode(),
 	StorageMode:set_mt_resp_info(Selector, Modifier).
