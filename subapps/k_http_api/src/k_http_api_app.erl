@@ -45,8 +45,7 @@ update_dispatch_rules() ->
 %% ===================================================================
 
 dispatch_rules() ->
-	DispatchRaw =
-	[
+	DispatchRaw = [
     %% {Host, list({Path, Handler, Opts})}
     	{'_', [
 			%% REST API
