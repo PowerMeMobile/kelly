@@ -62,3 +62,6 @@ api-test:
 
 simple-test: generate
 	@./test/simple_test
+
+tags:
+	find . -name "*.[e,h]rl" -print | etags -
