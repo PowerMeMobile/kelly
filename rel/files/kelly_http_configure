@@ -110,6 +110,16 @@ echo -n 'id=user3&password=password&bind_types=transmitter;receiver;transceiver'
 echo -n 'id=user4&password=password&bind_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users; echo
 echo -n 'id=user5&password=password&bind_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users; echo
 
+# prepaid customer
+echo -n 'customer_uuid=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&customer_id=prepaid&name=smppload-prepaid&originators=375296660002,1,1&networks=920a009a-5270-11e1-b961-001d0947ec73;10000000-0000-0000-0000-000000000000;20000000-0000-0000-0000-000000000000;30000000-0000-0000-0000-000000000000;40000000-0000-0000-0000-000000000000;50000000-0000-0000-0000-000000000000;60000000-0000-0000-0000-000000000000&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=375296660002,1,1&billing_type=prepaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+
+# users
+echo -n 'id=user&password=password&bind_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
+echo -n 'id=user2&password=password&bind_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
+echo -n 'id=user3&password=password&bind_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
+echo -n 'id=user4&password=password&bind_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
+echo -n 'id=user5&password=password&bind_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
+
 
 #
 # Addr2Cust
