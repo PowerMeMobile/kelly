@@ -49,6 +49,7 @@ dispatch_rules() ->
     %% {Host, list({Path, Handler, Opts})}
     	{'_', [
 			%% REST API
+            {"/gateways/:gateway_id/settings/[:setting_id]", gen_http_api, [k_http_api_handler_settings]},
 			{"/gateways/:gateway_id/connections/[:connection_id]", gen_http_api, [k_http_api_handler_connections]},
 			{"/gateways/[:gateway_id]", gen_http_api, [k_http_api_handler_gateways]},
 			{"/customers/:customer_uuid/users/[:user_id]", gen_http_api, [k_http_api_handler_users]},

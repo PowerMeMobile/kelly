@@ -31,7 +31,10 @@
 	delete_gateway/1,
 
 	set_connection/2,
-	delete_connection/2
+	delete_connection/2,
+
+	set_setting/2,
+	delete_setting/2
 ]).
 
 %% Callbacks
@@ -131,6 +134,19 @@ delete_connection(GtwID, ConnID) when
 					is_binary(GtwID) andalso
 					is_integer(ConnID) ->
 	del_row(cnn, binary_to_list(GtwID) ++ [ConnID]).
+
+-spec set_setting(binary(), #setting{}) -> ok.
+set_setting(GtwID, Setting = #setting{}) when is_binary(GtwID) ->
+	Index = binary_to_list(GtwID) ++ [size(Setting#setting.name)] ++ binary_to_list(Setting#setting.name),
+	set_row(sts, Index,
+				[{stsValue, binary_to_list(Setting#setting.value)}]).
+
+-spec delete_setting(binary(), integer()) -> ok.
+delete_setting(GtwID, SettingID) when
+					is_binary(GtwID) andalso
+					is_binary(SettingID) ->
+	Index = binary_to_list(GtwID) ++ [size(SettingID)] ++ binary_to_list(SettingID),
+	del_row(sts, Index).
 
 %% ===================================================================
 %% Behaviour callbacks

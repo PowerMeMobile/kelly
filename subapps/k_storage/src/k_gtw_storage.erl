@@ -31,11 +31,18 @@ set_gateway(GatewayId, Gateway)->
 			'addr_range' , Conn#connection.addr_range
 		} || Conn <- Gateway#gateway.connections
 	],
+	StsDoc = [
+		{
+			'name'        , Sts#setting.name,
+			'value'       , Sts#setting.value
+		} || Sts <- Gateway#gateway.settings
+	],
 	Modifier = {
 		'$set', {
 			'name'        , Gateway#gateway.name,
 			'rps'         , Gateway#gateway.rps,
-			'connections' , ConnectionsDocs
+			'connections' , ConnectionsDocs,
+			'settings'	  , StsDoc
 		}
 	},
 	mongodb_storage:upsert(k_static_storage, gateways, {'_id', GatewayId}, Modifier).
@@ -84,10 +91,23 @@ doc_to_record(Doc) ->
 			addr_ton = bsondoc:at(addr_ton, ConnDoc),
 			addr_npi = bsondoc:at(addr_npi, ConnDoc),
 			addr_range = bsondoc:at(addr_range, ConnDoc)
-		} || ConnDoc <- ConnectionsDoc
+		}
+		|| ConnDoc <- ConnectionsDoc
 	],
+	StsDoc =
+	case bsondoc:at(settings, Doc) of
+		undefined -> [];
+		Val -> Val
+	end,
+	Settings = [
+		#setting{
+			name = bsondoc:at(name, StDoc),
+			value = bsondoc:at(value, StDoc)
+		}
+		|| StDoc <- StsDoc],
  	#gateway{
 		name = Name,
 		rps = RPS,
-		connections = Connections
+		connections = Connections,
+		settings = Settings
 	}.

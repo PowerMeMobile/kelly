@@ -21,10 +21,18 @@
 
 -type connection() 		:: #connection{}.
 
+-record(setting, {
+	name				:: binary(),
+	value				:: binary()
+}).
+-type setting() 		:: #setting{}.
+
 -record(gateway, {
 	name 			 	:: binary(),
 	rps 			 	:: integer(),
-	connections = [] 	:: [connection()] | []
+	connections = [] 	:: [connection()],
+	settings = []		:: [setting()]
+
 }).
 
 -type gateway() 		:: #gateway{}.

@@ -57,4 +57,5 @@ delete(_Params) ->
 
 set_gtw(GtwID, Gtw) ->
 	k_snmp:set_gateway(GtwID, Gtw#gateway.name, Gtw#gateway.rps),
-	[k_snmp:set_connection(GtwID, Conn) || Conn <- Gtw#gateway.connections].
+	[k_snmp:set_connection(GtwID, Conn) || Conn <- Gtw#gateway.connections],
+	[k_snmp:set_setting(GtwID, Setting) || Setting <- Gtw#gateway.settings].
