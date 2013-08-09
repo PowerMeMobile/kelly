@@ -26,57 +26,31 @@
 
 init() ->
 	Read = [
-		#method_spec{
-			path = [<<"customers">>, customer_uuid, <<"users">>, id],
-			params = [
-				#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
-				#param{name = id, mandatory = true, repeated = false, type = binary}
-			]
-		},
-		#method_spec{
-			path = [<<"customers">>, customer_uuid, <<"users">>],
-			params = [
-				#param{name = customer_uuid, mandatory = true, repeated = false, type = binary}
-			]
-		}
+		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+		#param{name = id, mandatory = false, repeated = false, type = binary}
 	],
-
-	UpdateParams = [
+	Update = [
 		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = password, mandatory = false, repeated = false, type = binary},
 		#param{name = bind_types, mandatory = false, repeated = true, type = {custom, fun bind_type/1}}
 	],
-	Update = #method_spec{
-		path = [<<"customers">>, customer_uuid, <<"users">>, id],
-		params = UpdateParams
-	},
-
-	DeleteParams = [
+	Delete = [
 		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
-	Delete = #method_spec{
-		path = [<<"customers">>, customer_uuid, <<"users">>, id],
-		params = DeleteParams
-	},
-
-	CreateParams = [
+	Create = [
 		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = password, mandatory = true, repeated = false, type = binary},
 		#param{name = bind_types, mandatory = true, repeated = true, type = {custom, fun bind_type/1}}
 	],
-	Create = #method_spec{
-		path = [<<"customers">>, customer_uuid, <<"users">>],
-		params = CreateParams
-	},
-
 	{ok, #specs{
 		create = Create,
 		read = Read,
 		update = Update,
-		delete = Delete
+		delete = Delete,
+		route = "/customers/:customer_uuid/users/[:id]"
 	}}.
 
 create(Params) ->

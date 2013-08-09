@@ -17,17 +17,9 @@
 
 init() ->
 	Read = [
-		#method_spec{
-			path = [<<"customers">>, customer_uuid],
-			params = [#param{name = customer_uuid, mandatory = true, repeated = false, type = binary}]
-		},
-		#method_spec{
-			path = [<<"customers">>],
-			params = []
-		}
+		#param{name = customer_uuid, mandatory = false, repeated = false, type = binary}
 	],
-
-	UpdateParams = [
+	Update = [
 		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = customer_id, mandatory = false, repeated = false, type = binary},
 		#param{name = name, mandatory = false, repeated = false, type = binary},
@@ -43,20 +35,10 @@ init() ->
 		#param{name = billing_type, mandatory = false, repeated = false, type = {custom, fun billing_type/1}},
 		#param{name = state, mandatory = false, repeated = false, type = {custom, fun customer_state/1}}
 	],
-	Update = #method_spec{
-		path = [<<"customers">>, customer_uuid],
-		params = UpdateParams
-	},
-
-	DeleteParams = [
+	Delete = [
 		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary}
 	],
-	Delete = #method_spec{
-		path = [<<"customers">>, customer_uuid],
-		params = DeleteParams
-	},
-
-	CreateParams = [
+	Create = [
 		#param{name = customer_uuid, mandatory = false, repeated = false, type = binary},
 		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
 		#param{name = name, mandatory = true, repeated = false, type = binary},
@@ -72,16 +54,12 @@ init() ->
 		#param{name = billing_type, mandatory = true, repeated = false, type = {custom, fun billing_type/1}},
 		#param{name = state, mandatory = true, repeated = false, type = {custom, fun customer_state/1}}
 	],
-	Create = #method_spec{
-		path = [<<"customers">>],
-		params = CreateParams
-	},
-
 	{ok, #specs{
 		create = Create,
 		read = Read,
 		update = Update,
-		delete = Delete
+		delete = Delete,
+		route = "/customers/[:customer_uuid]"
 	}}.
 
 create(Params) ->

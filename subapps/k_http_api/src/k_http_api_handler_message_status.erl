@@ -21,26 +21,18 @@
 %% ===================================================================
 
 init() ->
-	Read = #method_spec{
-		path = [
-			<<"message_status">>, message_id,
-			<<"client">>, client_type,
-			<<"customer">>, customer_id,
-			<<"user">>, user_id
-		],
-		params = [
-			#param{name = message_id, mandatory = true, repeated = false, type = binary},
-			#param{name = client_type, mandatory = true, repeated = false, type = atom},
-			#param{name = customer_id, mandatory = true, repeated = false, type = binary},
-			#param{name = user_id, mandatory = true, repeated = false, type = binary}
-		]
-	},
-
+	Read = [
+		#param{name = message_id, mandatory = true, repeated = false, type = binary},
+		#param{name = client_type, mandatory = true, repeated = false, type = atom},
+		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
+		#param{name = user_id, mandatory = true, repeated = false, type = binary}
+	],
 	{ok, #specs{
 		create = undefined,
 		read = Read,
 		update = undefined,
-		delete = undefined
+		delete = undefined,
+		route = "/message_status"
 	}}.
 
 read(Params) ->

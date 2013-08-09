@@ -19,16 +19,9 @@
 %% ===================================================================
 
 init() ->
-	Read = #method_spec{
-		path = [<<"report">>, <<"uplink">>],
-		params = []
-	},
-
 	{ok, #specs{
-		create = undefined,
-		read = Read,
-		update = undefined,
-		delete = undefined
+		read = [],
+		route = "/report/uplink"
 	}}.
 
 read(Params) ->

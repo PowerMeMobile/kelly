@@ -22,13 +22,26 @@
 		repeated = false,
 		type = binary
 	}).
--define(SETTING_ID_PARAM,
-	#param{
-		name = id,
-		mandatory = true,
-		repeated = false,
-		type = binary
-	}).
+-define(SETTING_ID_PARAM(Mandatory),
+	(fun() ->
+		case Mandatory of
+			true ->
+				#param{
+					name = id,
+					mandatory = true,
+					repeated = false,
+					type = binary
+				};
+			false ->
+				#param{
+					name = id,
+					mandatory = false,
+					repeated = false,
+					type = binary
+				}
+		end
+	end)()).
+
 -define(SETTING_VALUE_PARAM,
 	#param{
 		name = value,
@@ -43,47 +56,29 @@
 
 init() ->
 	Read = [
-		#method_spec{
-			path = [<<"gateways">>, gateway_id, <<"settings">>, id],
-			params = [
-				?GTW_ID_PARAM,
-				?SETTING_ID_PARAM
-			]
-		},
-		#method_spec{
-			path = [<<"gateways">>, gateway_id, <<"settings">>],
-			params = [?GTW_ID_PARAM]
-		}
+		?GTW_ID_PARAM,
+		?SETTING_ID_PARAM(false)
 	],
-	Update = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"settings">>, id],
-		params = [
-			?GTW_ID_PARAM,
-			?SETTING_ID_PARAM,
-			?SETTING_VALUE_PARAM
-		]
-	},
-	Delete = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"settings">>, id],
-		params = [
-			?GTW_ID_PARAM,
-			?SETTING_ID_PARAM
-		]
-	},
-	Create = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"settings">>],
-		params = [
-			?GTW_ID_PARAM,
-			?SETTING_ID_PARAM,
-			?SETTING_VALUE_PARAM
-		]
-	},
-
+	Update = [
+		?GTW_ID_PARAM,
+		?SETTING_ID_PARAM(true),
+		?SETTING_VALUE_PARAM
+	],
+	Delete = [
+		?GTW_ID_PARAM,
+		?SETTING_ID_PARAM(true)
+	],
+	Create = [
+		?GTW_ID_PARAM,
+		?SETTING_ID_PARAM(true),
+		?SETTING_VALUE_PARAM
+	],
 	{ok, #specs{
 		create = Create,
 		read = Read,
 		update = Update,
-		delete = Delete
+		delete = Delete,
+		route = "/gateways/:gateway_id/settings/[:setting_id]"
 	}}.
 
 read(Params) ->

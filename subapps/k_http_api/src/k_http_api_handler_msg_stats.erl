@@ -20,23 +20,17 @@
 %% ===================================================================
 
 init() ->
-	Read = #method_spec{
-		path = [<<"report">>, <<"messages">>, type],
-		params = [
-			#param{name = from, mandatory = true, repeated = false, type =
-				{custom, fun k_datetime:iso8601_to_datetime/1}},
-			#param{name = to, mandatory = true, repeated = false, type =
-				{custom, fun k_datetime:iso8601_to_datetime/1}},
-			#param{name = type, mandatory = true, repeated = false, type = atom},
-			#param{name = slice_length, mandatory = false, repeated = false, type = string}
-		]
-	},
-
+	Read = [
+		#param{name = from, mandatory = true, repeated = false, type =
+			{custom, fun k_datetime:iso8601_to_datetime/1}},
+		#param{name = to, mandatory = true, repeated = false, type =
+			{custom, fun k_datetime:iso8601_to_datetime/1}},
+		#param{name = type, mandatory = true, repeated = false, type = atom},
+		#param{name = slice_length, mandatory = false, repeated = false, type = string}
+	],
 	{ok, #specs{
-		create = undefined,
 		read = Read,
-		update = undefined,
-		delete = undefined
+		route = "/report/messages/:type"
 	}}.
 
 read(Params) ->

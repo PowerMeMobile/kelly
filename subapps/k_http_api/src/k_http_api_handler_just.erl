@@ -21,16 +21,12 @@
 %% ===================================================================
 
 init() ->
-	Read = #method_spec{
-		path = [<<"just">>, <<"reconfigure">>],
-		params = []
-	},
-
 	{ok, #specs{
 		create = undefined,
-		read = Read,
+		read = [],
 		update = undefined,
-		delete = undefined
+		delete = undefined,
+		route = "/just/reconfigure"
 	}}.
 
 read(_Params) ->

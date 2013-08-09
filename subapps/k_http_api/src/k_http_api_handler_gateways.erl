@@ -21,49 +21,28 @@
 
 init() ->
 	Read = [
-		#method_spec{
-			path = [<<"gateways">>, id],
-			params = [#param{name = id, mandatory = true, repeated = false, type = binary}]
-		},
-		#method_spec{
-			path = [<<"gateways">>],
-			params = []
-		}
+		#param{name = id, mandatory = false, repeated = false, type = binary}
 	],
 
-	UpdateParams = [
+	Update = [
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = name,	mandatory = false, repeated = false, type = binary},
 		#param{name = rps, mandatory = false, repeated = false, type = integer}
 	],
-	Update = #method_spec{
-		path = [<<"gateways">>, id],
-		params = UpdateParams
-	},
-
-	DeleteParams = [
+	Delete = [
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
-	Delete = #method_spec{
-		path = [<<"gateways">>, id],
-		params = DeleteParams
-	},
-
-	CreateParams = [
+	Create = [
 		#param{name = id, mandatory = false, repeated = false, type = binary},
 		#param{name = name,	mandatory = true, repeated = false,	type = binary},
 		#param{name = rps, mandatory = true, repeated = false, type = integer}
 	],
-	Create = #method_spec{
-		path = [<<"gateways">>],
-		params = CreateParams
-	},
-
 	{ok, #specs{
 		create = Create,
 		read = Read,
 		update = Update,
-		delete = Delete
+		delete = Delete,
+		route = "/gateways/[:id]"
 	}}.
 
 read(Params) ->

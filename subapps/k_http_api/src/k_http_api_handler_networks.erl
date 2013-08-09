@@ -21,16 +21,9 @@
 
 init() ->
 	Read = [
-		#method_spec{
-			path = [<<"networks">>, id],
-			params = [#param{name = id, mandatory = true, repeated = false, type = binary}]},
-		#method_spec{
-			path = [<<"networks">>],
-			params = []
-		}
+		#param{name = id, mandatory = false, repeated = false, type = binary}
 	],
-
-	UpdateParams = [
+	Update = [
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = name, mandatory = false, repeated = false, type = binary},
 		#param{name = country_code, mandatory = false, repeated = false, type = binary},
@@ -38,20 +31,10 @@ init() ->
 		#param{name = prefixes, mandatory = false, repeated = true, type = binary},
 		#param{name = provider_id, mandatory = false, repeated = false, type = binary}
 	],
-	Update = #method_spec{
-		path = [<<"networks">>, id],
-		params = UpdateParams
-	},
-
-	DeleteParams = [
+	Delete = [
 		#param{name = id, mandatory = true, repeated = false, type = binary}
 	],
-	Delete = #method_spec{
-		path = [<<"networks">>, id],
-		params = DeleteParams
-	},
-
-	CreateParams = [
+	Create = [
 		#param{name = id, mandatory = false, repeated = false, type = binary},
 		#param{name = name, mandatory = true, repeated = false, type = binary},
 		#param{name = country_code, mandatory = true, repeated = false, type = binary},
@@ -59,16 +42,12 @@ init() ->
 		#param{name = prefixes, mandatory = true, repeated = true, type = binary},
 		#param{name = provider_id, mandatory = true, repeated = false, type = binary}
 	],
-	Create = #method_spec{
-		path = [<<"networks">>],
-		params = CreateParams
-	},
-
 	{ok, #specs{
 		create = Create,
 		read = Read,
 		update = Update,
-		delete = Delete
+		delete = Delete,
+		route = "/networks/[:id]"
 	}}.
 
 read(Params) ->

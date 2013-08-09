@@ -19,24 +19,18 @@
 %% ===================================================================
 
 init() ->
-	Read = #method_spec{
-		path = [<<"report">>, <<"mt_aggr">>],
-		params = [
-			#param{name = from, mandatory = true, repeated = false, type =
-				{custom, fun k_datetime:iso8601_to_datetime/1}},
-			#param{name = to, mandatory = true, repeated = false, type =
-				{custom, fun k_datetime:iso8601_to_datetime/1}},
-			#param{name = customer_id, mandatory = false, repeated = false, type = binary},
-			#param{name = group_by , mandatory = true, repeated = false, type =
-				{custom, fun convert_group_by/1}}
-		]
-	},
-
+	Read = [
+		#param{name = from, mandatory = true, repeated = false, type =
+			{custom, fun k_datetime:iso8601_to_datetime/1}},
+		#param{name = to, mandatory = true, repeated = false, type =
+			{custom, fun k_datetime:iso8601_to_datetime/1}},
+		#param{name = customer_id, mandatory = false, repeated = false, type = binary},
+		#param{name = group_by , mandatory = true, repeated = false, type =
+			{custom, fun convert_group_by/1}}
+	],
 	{ok, #specs{
-		create = undefined,
 		read = Read,
-		update = undefined,
-		delete = undefined
+		route = "/report/mt_aggr"
 	}}.
 
 read(Params) ->

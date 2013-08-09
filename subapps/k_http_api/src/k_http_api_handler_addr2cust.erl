@@ -21,41 +21,24 @@
 
 init() ->
 	Read = [
-		#method_spec{
-			path = [<<"addr2cust">>, msisdn],
-			params = [#param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}}]
-		},
-		#method_spec{
-			path = [<<"addr2cust">>],
-			params = [
-				#param{name = customer, mandatory = true, repeated = false, type = binary},
-				#param{name = user, mandatory = true, repeated = false, type = binary}
-			]
-		}
+		#param{name = msisdn, mandatory = false, repeated = false, type = {custom, fun decode_addr/1}},
+		#param{name = customer, mandatory = false, repeated = false, type = binary},
+		#param{name = user, mandatory = true, repeated = false, type = binary}
 	],
-	DeleteParams = [
+	Delete = [
 		#param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}}
 	],
-	Delete = #method_spec{
-		path = [<<"addr2cust">>, msisdn],
-		params = DeleteParams
-	},
-
-	CreateParams = [
+	Create = [
 		#param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}},
 		#param{name = customer,	mandatory = true, repeated = false,	type = binary},
 		#param{name = user, mandatory = true, repeated = false, type = binary}
 	],
-	Create = #method_spec{
-		path = [<<"addr2cust">>],
-		params = CreateParams
-	},
-
 	{ok, #specs{
 		create = Create,
 		read = Read,
 		update = undefined,
-		delete = Delete
+		delete = Delete,
+		route = "/addr2cust/[:msisdn]"
 	}}.
 
 read(Params) ->

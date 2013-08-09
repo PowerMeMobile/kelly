@@ -2,6 +2,8 @@
 
 -behaviour(application).
 
+-on_load(try_update_dispatch_rules/0).
+
 %% Application callbacks
 -export([start/2, stop/1]).
 
@@ -38,7 +40,23 @@ stop(_State) ->
 
 -spec update_dispatch_rules() -> ok.
 update_dispatch_rules() ->
-	cowboy:set_env(?MODULE, dispatch, dispatch_rules()).
+	try
+		cowboy:set_env(?MODULE, dispatch, dispatch_rules()),
+		?log_info("Dispatch rules updated successfully", [])
+	catch
+		Class:Error ->
+			?log_warn("Failed to update dispatch rules (~p:~p)",
+				[Class,Error])
+	end.
+
+%% on load try to update dispatch rules automatically
+try_update_dispatch_rules() ->
+	WhichApps = application:which_applications(1000),
+	case lists:keymember(?APP, 1, WhichApps) of
+		true ->
+			update_dispatch_rules(),ok;
+		false -> ok
+	end.
 
 %% ===================================================================
 %% Internals
@@ -47,26 +65,7 @@ update_dispatch_rules() ->
 dispatch_rules() ->
 	DispatchRaw = [
     %% {Host, list({Path, Handler, Opts})}
-    	{'_', [
-			%% REST API
-            {"/gateways/:gateway_id/settings/[:setting_id]", gen_http_api, [k_http_api_handler_settings]},
-			{"/gateways/:gateway_id/connections/[:connection_id]", gen_http_api, [k_http_api_handler_connections]},
-			{"/gateways/[:gateway_id]", gen_http_api, [k_http_api_handler_gateways]},
-			{"/customers/:customer_uuid/users/[:user_id]", gen_http_api, [k_http_api_handler_users]},
-			{"/customers/[:customer_uuid]", gen_http_api, [k_http_api_handler_customers]},
-			{"/networks/[:network_id]", gen_http_api, [k_http_api_handler_networks]},
-			{"/providers/[:provider_id]", gen_http_api, [k_http_api_handler_providers]},
-			{"/addr2cust/[:msisdn]", gen_http_api, [k_http_api_handler_addr2cust]},
-			{"/just/reconfigure", gen_http_api, [k_http_api_handler_just]},
-			%% STATISTIC API
-			{"/message_status/:msg_id/client/:client_id/customer/:customer_id/user/:user_id",
-				gen_http_api, [k_http_api_handler_message_status]},
-			{"/report/uplink", gen_http_api, [k_http_api_handler_uplink_stats]},
-			{"/report/downlink", gen_http_api, [k_http_api_handler_downlink_stats]},
-			{"/report/statuses", gen_http_api, [k_http_api_handler_statuses_stats]},
-			{"/report/messages/:type", gen_http_api, [k_http_api_handler_msg_stats]},
-			{"/report/mt_aggr", gen_http_api, [k_http_api_handler_mt_msg_aggr_stats]},
-			{"/report/mt", gen_http_api, [k_http_api_handler_mt_msg_stats]},
+    	{'_', gen_http_api_handlers_dispatch_rules() ++ [
 			%% GUI
 			{"/gui", k_http_api_gui_index_router, []}, %% redirect to Index.html
 			{"/gui/[...]", cowboy_static, [
@@ -78,3 +77,26 @@ dispatch_rules() ->
     	]}
 	],
 	cowboy_router:compile(DispatchRaw).
+
+gen_http_api_handlers_dispatch_rules() ->
+	gen_http_api:compile_routes([
+		%% REST API
+		k_http_api_handler_gateways,
+		k_http_api_handler_connections,
+		k_http_api_handler_settings,
+		k_http_api_handler_providers,
+		k_http_api_handler_networks,
+		k_http_api_handler_users,
+		k_http_api_handler_customers,
+		k_http_api_handler_addr2cust,
+		k_http_api_handler_just,
+
+		%% Statistic API
+		k_http_api_handler_message_status,
+		k_http_api_handler_uplink_stats,
+		k_http_api_handler_downlink_stats,
+		k_http_api_handler_statuses_stats,
+		k_http_api_handler_msg_stats,
+		k_http_api_handler_mt_msg_aggr_stats,
+		k_http_api_handler_mt_msg_stats
+	]).

@@ -21,20 +21,10 @@
 
 init() ->
 	Read = [
-		#method_spec{
-			path = [<<"gateways">>, gateway_id, <<"connections">>, id],
-			params = [
-				#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
-				#param{name = id, mandatory = true, repeated = false, type = integer}
-			]
-		},
-		#method_spec{
-			path = [<<"gateways">>, gateway_id, <<"connections">>],
-			params = [#param{name = gateway_id, mandatory = true, repeated = false, type = binary}]
-		}
+		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
+		#param{name = id, mandatory = false, repeated = false, type = integer}
 	],
-
-	UpdateParams = [
+	Update = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = integer},
 		#param{name = host,	mandatory = false, repeated = false, type = binary},
@@ -47,21 +37,11 @@ init() ->
 		#param{name = addr_npi, mandatory = false, repeated = false, type = integer},
 		#param{name = addr_range, mandatory = false, repeated = false, type = binary}
 	],
-	Update = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"connections">>, id],
-		params = UpdateParams
-	},
-
-	DeleteParams = [
+	Delete = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = integer}
 	],
-	Delete = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"connections">>, id],
-		params = DeleteParams
-	},
-
-	CreateParams = [
+	Create = [
 		#param{name = gateway_id, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = false, repeated = false, type = integer},
 		#param{name = host,	mandatory = true, repeated = false,	type = binary},
@@ -74,16 +54,12 @@ init() ->
 		#param{name = addr_npi, mandatory = true, repeated = false, type = integer},
 		#param{name = addr_range, mandatory = true, repeated = false, type = binary}
 	],
-	Create = #method_spec{
-		path = [<<"gateways">>, gateway_id, <<"connections">>],
-		params = CreateParams
-	},
-
 	{ok, #specs{
 		create = Create,
 		read = Read,
 		update = Update,
-		delete = Delete
+		delete = Delete,
+		route = "/gateways/:gateway_id/connections/[:id]"
 	}}.
 
 read(Params) ->
