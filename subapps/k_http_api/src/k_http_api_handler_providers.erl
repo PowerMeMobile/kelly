@@ -165,21 +165,11 @@ prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
 	BulkGateway = ?gv(bulk_gateway, PrvPropList),
 	Gateway = ?gv(gateway, PrvPropList),
 	ReceiptsSupported = ?gv(receipts_supported, PrvPropList),
-	Result = translate([{id, PrvUUID}] ++ [{name, Name}] ++ [{gateway, Gateway}] ++ [{bulk_gateway, BulkGateway}] ++ [{receipts_supported, ReceiptsSupported}]),
+	Result = [
+		{id, PrvUUID},
+		{name, Name},
+		{gateway, Gateway},
+		{bulk_gateway, BulkGateway},
+		{receipts_supported, ReceiptsSupported}
+	],
 	prepare(Rest, [Result | Acc]).
-
-
-
-translate(Proplist) ->
-	translate(Proplist, []).
-translate([], Acc) ->
-	lists:reverse(Acc);
-translate([{Name, Value} | Tail], Acc) ->
-	translate(Tail, [{translate_name(Name), Value} | Acc]).
-
-translate_name(bulk_gateway) ->
-	bulk_gateway;
-translate_name(receipts_supported) ->
-	receipts_supported;
-translate_name(Name) ->
-	Name.
