@@ -34,6 +34,9 @@ post(){
 
 post gateways "id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=SMPPSim&rps=10000"
 
+# set gateway's settings
+#curl -s -D - -X "POST" http://localhost:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings -d 'id=log_smpp_pdus&value=true'
+
 
 #
 # Connections (SMPPSim)
