@@ -25,8 +25,8 @@
 -include_lib("k_common/include/gen_server_spec.hrl").
 -include_lib("k_common/include/logging.hrl").
 
--type storage_mode() :: 'Response' | 'Delivery' | 'Normal'.
 -type event_name() :: 'ResponseEndEvent' | 'DeliveryEndEvent' | 'ShiftEvent'.
+-type storage_mode() :: 'Response' | 'Delivery' | 'Normal'.
 
 -record(state, {
 	heartbeat_timer_ref :: reference(),
