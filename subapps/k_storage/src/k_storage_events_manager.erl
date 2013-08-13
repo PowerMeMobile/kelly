@@ -265,7 +265,7 @@ process_event(CurrEvent = 'ShiftEvent', CurrTime, State = #state{
 
 	NewNextShiftTime = k_storage_events_utils:get_next_shift_time(CurrTime, ShiftFrame),
 	NextEvent = get_next_event(
-			NextMode, NextShiftTime, ResponseFrame, DeliveryFrame, NewNextShiftTime
+		NextMode, NextShiftTime, ResponseFrame, DeliveryFrame, NewNextShiftTime
 	),
 	?log_info("~p -> ~p -> ~p ~p", [CurrMode, CurrEvent, NextMode, NextEvent]),
 	ok = k_storage_manager:notify_event({CurrMode, CurrEvent, NextMode}),

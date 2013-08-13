@@ -8,24 +8,25 @@
 	start_child/1
 ]).
 
-%% supervisor callbacks.
+%% supervisor callbacks
 -export([init/1]).
 
 -include("application.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_common/include/supervisor_spec.hrl").
 
+-type reason() :: term().
 -type plist() :: [{atom(), term()}].
 
 %% ===================================================================
 %% API
 %% ===================================================================
 
--spec start_link() -> {ok, pid()}.
+-spec start_link() -> {ok, pid()} | {error, reason()}.
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
--spec start_child(plist()) -> {ok, pid()}.
+-spec start_child(plist()) -> {ok, pid()} | {error, reason()}.
 start_child(Props) ->
 	{SupPid, _Value} = gproc:await({n, l, ?MODULE}),
 	supervisor:start_child(SupPid, [Props]).

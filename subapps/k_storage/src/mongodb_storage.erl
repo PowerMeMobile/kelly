@@ -73,12 +73,7 @@ find(ServerName, Coll, Selector, Projector) ->
 		fun() ->
 			Cursor = mongo:find(Coll, Selector, Projector),
 			Documents = mongo_cursor:rest(Cursor),
-			Results = lists:map(
-				fun(BsonDoc) ->
-					BsonKey = bsondoc:at('_id', BsonDoc),
-					{BsonKey, BsonDoc}
-				end,
-				Documents),
+			Results = [{bsondoc:at('_id', Doc), Doc} || Doc <- Documents],
 			mongo_cursor:close(Cursor),
 			Results
 		end
