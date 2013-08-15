@@ -39,7 +39,7 @@ get_storage_mode() ->
 				case StorageMode of
 					'ResponseMode' -> k_response_mode_storage;
 					'DeliveryMode' -> k_delivery_mode_storage;
-					'RegularMode'   -> k_normal_mode_storage
+					'RegularMode'  -> k_normal_mode_storage
 				end,
 			{ok, Mode};
 		Error ->
