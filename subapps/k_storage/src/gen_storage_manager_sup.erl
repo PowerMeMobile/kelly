@@ -1,4 +1,4 @@
--module(k_storage_manager_sup).
+-module(gen_storage_manager_sup).
 
 -behaviour(supervisor).
 

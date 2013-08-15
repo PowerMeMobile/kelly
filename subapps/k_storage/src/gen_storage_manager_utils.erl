@@ -1,11 +1,11 @@
--module(k_storage_events_utils).
+-module(gen_storage_manager_utils).
 
 -export([
 	get_prev_shift_time/2,
 	get_curr_shift_time/2,
 	get_next_shift_time/2,
-	get_response_end_time/2,
-	get_delivery_end_time/2,
+%%	get_response_end_time/2,
+%%	get_delivery_end_time/2,
 	add_frame/2,
 	to_seconds/1
 ]).
@@ -33,13 +33,13 @@ get_next_shift_time(CurrTime, {months, N}) ->
 	{NextYear, NextMonth, NextDay} = edate:shift({Year, Month, 1}, N, month),
 	{{NextYear, NextMonth, NextDay}, {0, 0, 0}}.
 
--spec get_response_end_time(calendar:datetime(), frame()) -> calendar:datetime().
-get_response_end_time(ShiftTime, Frame) ->
-	add_frame(ShiftTime, Frame).
+%% -spec get_response_end_time(calendar:datetime(), frame()) -> calendar:datetime().
+%% get_response_end_time(ShiftTime, Frame) ->
+%% 	add_frame(ShiftTime, Frame).
 
--spec get_delivery_end_time(calendar:datetime(), frame()) -> calendar:datetime().
-get_delivery_end_time(ShiftTime, Frame) ->
-	add_frame(ShiftTime, Frame).
+%% -spec get_delivery_end_time(calendar:datetime(), frame()) -> calendar:datetime().
+%% get_delivery_end_time(ShiftTime, Frame) ->
+%% 	add_frame(ShiftTime, Frame).
 
 -spec add_frame(calendar:datetime(), frame()) -> calendar:datetime().
 add_frame(Datetime, Frame) ->

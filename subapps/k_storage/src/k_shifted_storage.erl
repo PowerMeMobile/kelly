@@ -32,7 +32,7 @@ find_one(Coll, Selector) ->
 -spec find_one(collection(), selector(), projector()) ->
 	{ok, document()} | {error, reason()}.
 find_one(Coll, Selector, Projector) ->
-	{ok, Shifts} = k_storage_events_manager:get_shifts(),
+	{ok, Shifts} = gen_storage_manager:get_shifts(),
 	find_one(Shifts, Coll, Selector, Projector).
 
 -spec find(collection(), selector()) ->
@@ -43,13 +43,13 @@ find(Coll, Selector) ->
 -spec find(collection(), selector(), projector()) ->
 	{ok, [{key(), document()}]} | {error, reason()}.
 find(Coll, Selector, Projector) ->
-	{ok, Shifts} = k_storage_events_manager:get_shifts(),
+	{ok, Shifts} = gen_storage_manager:get_shifts(),
 	find(Shifts, Coll, Selector, Projector, []).
 
 -spec command(command()) ->
 	{ok, document()} | {error, reason()}.
 command(Command) ->
-	{ok, Shifts} = k_storage_events_manager:get_shifts(),
+	{ok, Shifts} = gen_storage_manager:get_shifts(),
 	command(Shifts, Command, []).
 
 %% ===================================================================
