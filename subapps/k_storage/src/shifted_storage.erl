@@ -1,4 +1,4 @@
--module(k_shifted_storage).
+-module(shifted_storage).
 
 -export([
 	find_one/2,

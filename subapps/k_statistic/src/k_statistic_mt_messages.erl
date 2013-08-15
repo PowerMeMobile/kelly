@@ -41,7 +41,7 @@ build_report(Params) ->
 		CustomerSelector ++
 		RecipientSelector ++
 		StatusSelector,
-	{ok, Docs} = k_shifted_storage:find(mt_messages, bson:document(Selector)),
+	{ok, Docs} = shifted_storage:find(mt_messages, bson:document(Selector)),
 	[build_mt_report_response(Doc) || {_, Doc} <- Docs].
 
 -spec build_aggr_report([{atom(), term()}]) -> [ [{bson:label(), bson:value()}] ].
@@ -62,7 +62,7 @@ build_aggr_report(Params) ->
 		group(GroupBy),
 		project(GroupBy)
 	]},
-	{ok, Docs} = k_shifted_storage:command(Command),
+	{ok, Docs} = shifted_storage:command(Command),
 	SortedDocs = lists:sort(Docs),
 	[bson:fields(Doc) || Doc <- SortedDocs].
 
@@ -85,7 +85,7 @@ build_aggr_recipient_report() ->
 			'count', 1
 		}}
 	]},
-	{ok, _Docs} = k_shifted_storage:command(Command).
+	{ok, _Docs} = shifted_storage:command(Command).
 
 %% ===================================================================
 %% Internals

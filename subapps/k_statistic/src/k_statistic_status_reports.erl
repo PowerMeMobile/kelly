@@ -26,7 +26,7 @@ get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
 		'imi', InMsgId,
 		'rqt', {'$exists', true}
 	},
-	case k_shifted_storage:find_one(mt_messages, Selector) of
+	case shifted_storage:find_one(mt_messages, Selector) of
 		{ok, Doc} ->
 			MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
 			{ok, [
@@ -76,8 +76,8 @@ get_aggregated_statuses_report(From, To) ->
 		'reduce' , ReduceF,
 		'out' , { 'inline' , 1 }
 	},
-	{ok, MtDocs} = k_shifted_storage:command(MtCommand),
-	{ok, MoDocs} = k_shifted_storage:command(MoCommand),
+	{ok, MtDocs} = shifted_storage:command(MtCommand),
+	{ok, MoDocs} = shifted_storage:command(MoCommand),
 	Docs = MtDocs ++ MoDocs,
 	Results = merge([
 		{list_to_existing_atom(binary_to_list(Status)), round(Hits)}
@@ -126,7 +126,7 @@ get_msgs_by_status_report(From, To, Status) when
 %% ===================================================================
 
 get_raw_report(Collection, Selector) ->
-	case k_shifted_storage:find(Collection, Selector) of
+	case shifted_storage:find(Collection, Selector) of
 		{ok, Docs} ->
 			{ok, [doc_to_message(Collection, Doc) || {_Id, Doc} <- Docs]};
 		Error ->

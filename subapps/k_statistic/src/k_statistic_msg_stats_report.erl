@@ -48,7 +48,7 @@ get_records(Collection, From, To) ->
 		'ci'   , 1,
 		'da.a' , 1
 	},
-	case k_shifted_storage:find(Collection, Selector, Projector) of
+	case shifted_storage:find(Collection, Selector, Projector) of
 		{ok, Docs} ->
 			{ok, [strip_doc(Doc) || {_Id, Doc} <- Docs]};
 		Error ->

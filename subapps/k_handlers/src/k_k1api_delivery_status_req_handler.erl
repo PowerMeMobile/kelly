@@ -31,7 +31,7 @@ process_delivery_status_request(Request) ->
 		id = RequestID,
 		sms_request_id = SmsRequestID
 	} = Request,
-	{ok, Msgs} = k_shifted_storage:find(mt_messages, {ri, SmsRequestID}),
+	{ok, Msgs} = shifted_storage:find(mt_messages, {ri, SmsRequestID}),
 	DTO = #k1api_sms_delivery_status_response_dto{
 		id = RequestID,
 		statuses = [status(Msg) || Msg <- Msgs]
