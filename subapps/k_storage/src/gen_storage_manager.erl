@@ -26,7 +26,24 @@
 
 -type event_name() :: 'ShiftEvent' | atom().
 -type storage_mode() :: 'RegularMode' | atom().
+-type server_name() :: mondodb_storage:server_name().
+-type plist() :: [{atom(), term()}].
+-type spec_state() :: term().
 -type reason() :: term().
+
+%% ===================================================================
+%% gen_storage_manager callbacks
+%% ===================================================================
+
+-callback ensure_static_storage_indexes(server_name()) -> ok.
+-callback ensure_dynamic_storage_indexes(server_name()) -> ok.
+-callback new_spec_state(plist()) -> spec_state().
+-callback decode_spec_state(bson:document()) -> spec_state().
+-callback encode_spec_state(spec_state()) -> bson:document().
+-callback next_mode_event(
+	storage_mode(), event_name(), calendar:datetime(), calendar:datetime(), spec_state()
+) ->
+	{storage_mode(), event_name(), calendar:datetime(), spec_state()}.
 
 -record(state, {
 	timer_ref :: reference(),
@@ -41,7 +58,7 @@
 	next_event :: event_name(),
 	next_event_time :: calendar:datetime(),
 
-	spec_state :: term()
+	spec_state :: spec_state()
 }).
 
 %% ===================================================================
@@ -201,7 +218,7 @@ read_storage_state() ->
 			CurrMode = bsondoc:binary_to_atom(bsondoc:at(curr_mode, Doc)),
 			NextEvent = bsondoc:binary_to_atom(bsondoc:at(next_event, Doc)),
 			NextEventTime = bsondoc:at(next_event_time, Doc),
-			SpecState = k_storage_manager:decode_state(bsondoc:at(spec_state, Doc)),
+			SpecState = k_storage_manager:decode_spec_state(bsondoc:at(spec_state, Doc)),
 
 			State = #state{
 				shift_frame = ShiftFrame,
@@ -236,7 +253,7 @@ write_storage_state(#state{
 		curr_mode       , bsondoc:atom_to_binary(CurrMode),
 		next_event      , bsondoc:atom_to_binary(NextEvent),
 		next_event_time , k_datetime:datetime_to_timestamp(NextEventTime),
-		spec_state      , k_storage_manager:encode_state(SpecState)
+		spec_state      , k_storage_manager:encode_spec_state(SpecState)
 	},
 	ok = mongodb_storage:upsert(static_storage, 'storage.state', {}, Modifier).
 
@@ -248,7 +265,7 @@ make_storage_state(CurrTime) ->
 	CurrShiftTime = gen_storage_manager_utils:get_curr_shift_time(CurrTime, ShiftFrame),
 	NextShiftTime = gen_storage_manager_utils:get_next_shift_time(CurrTime, ShiftFrame),
 
-	SpecState = k_storage_manager:new_state(DynamicProps),
+	SpecState = k_storage_manager:new_spec_state(DynamicProps),
 
 	NewShiftDbName = curr_shift_db_name(),
 

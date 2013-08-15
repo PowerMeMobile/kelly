@@ -1,5 +1,7 @@
 -module(k_storage_manager).
 
+-behaviour(gen_storage_manager).
+
 %% API
 -export([
 	get_storage_mode/0
@@ -10,9 +12,9 @@
 	ensure_static_storage_indexes/1,
 	ensure_dynamic_storage_indexes/1,
 	next_mode_event/5,
-	new_state/1,
-	decode_state/1,
-	encode_state/1
+	new_spec_state/1,
+	decode_spec_state/1,
+	encode_spec_state/1
 ]).
 
 -include("application.hrl").
@@ -20,12 +22,15 @@
 
 -type event_name() :: gen_storage_manager:event_name() | 'ResponseEndEvent' | 'DeliveryEndEvent'.
 -type storage_mode() :: gen_storage_manager:storage_mode() | 'ResponseMode' | 'DeliveryMode'.
+-type server_name() :: mondodb_storage:server_name().
+-type plist() :: [{atom(), term()}].
 -type reason() :: term().
 
 -record(state, {
 	response_frame,
 	delivery_frame
 }).
+-type spec_state() :: #state{}.
 
 %% ===================================================================
 %% API
@@ -50,10 +55,12 @@ get_storage_mode() ->
 %% gen_storage_manager callbacks
 %% ===================================================================
 
+-spec ensure_static_storage_indexes(server_name()) -> ok.
 ensure_static_storage_indexes(ServerName) ->
 	ok = mongodb_storage:ensure_index(ServerName, k1api_sms_request_id_to_msg_ids,
 		{key, {customer_id, 1, user_id, 1, src_addr, 1, req_id, 1}}).
 
+-spec ensure_dynamic_storage_indexes(server_name()) -> ok.
 ensure_dynamic_storage_indexes(ServerName) ->
 	ok = mongodb_storage:ensure_index(ServerName, mt_messages,
 		{key, {ri, 1, imi, 1}}),
@@ -66,7 +73,8 @@ ensure_dynamic_storage_indexes(ServerName) ->
 	ok = mongodb_storage:ensure_index(ServerName, mo_messages,
 		{key, {rqt, 1}}).
 
-new_state(Props) ->
+-spec new_spec_state(plist()) -> spec_state().
+new_spec_state(Props) ->
 	ResponseFrame = proplists:get_value(response_frame, Props),
 	DeliveryFrame = proplists:get_value(delivery_frame, Props),
 	#state{
@@ -74,7 +82,8 @@ new_state(Props) ->
 		delivery_frame = DeliveryFrame
 	}.
 
-decode_state(Doc) ->
+-spec decode_spec_state(bson:document()) -> spec_state().
+decode_spec_state(Doc) ->
 	ResponseFrame = bsondoc:at(response_frame, Doc),
 	DeliveryFrame = bsondoc:at(delivery_frame, Doc),
 	#state{
@@ -82,7 +91,8 @@ decode_state(Doc) ->
 		delivery_frame = DeliveryFrame
 	}.
 
-encode_state(#state{
+-spec encode_spec_state(spec_state()) -> bson:document().
+encode_spec_state(#state{
 	response_frame = ResponseFrame,
 	delivery_frame = DeliveryFrame
 }) ->
@@ -91,6 +101,10 @@ encode_state(#state{
 		delivery_frame , DeliveryFrame
 	}.
 
+-spec next_mode_event(
+	storage_mode(), event_name(), calendar:datetime(), calendar:datetime(), spec_state()
+) ->
+	 {storage_mode(), event_name(), calendar:datetime(), spec_state()}.
 next_mode_event(Mode, Event, CurrShiftTime, NextShiftTime, State) ->
 	NextMode = get_next_mode(Mode, Event),
 	{NextEvent, NextEventTime, NextState} = get_next_event(
