@@ -32,6 +32,6 @@ init([]) ->
 			{gen_storage_manager_sup,
 				{gen_storage_manager_sup, start_link, []}, permanent, 100000, supervisor, [gen_storage_manager_sup]},
 			{gen_storage_manager,
-				{gen_storage_manager, start_link, []}, permanent, 10000, worker, [gen_storage_manager]}
+				{gen_storage_manager, start_link, [k_storage_manager]}, permanent, 10000, worker, [gen_storage_manager]}
 		]}
 	}.
