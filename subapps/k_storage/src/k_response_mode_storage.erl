@@ -27,11 +27,11 @@ set_mt_req_info(Selector, Modifier) ->
 		'query', Selector,
 		'update', Modifier
 	},
-	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
+	case mongodb_storage:command(prev_dynamic_storage, Command) of
 		{ok, Result} ->
 			case bsondoc:at(value, Result) of
 				undefined ->
-					mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Modifier);
+					mongodb_storage:upsert(curr_dynamic_storage, mt_messages, Selector, Modifier);
 				_ ->
 					ok
 			end;
@@ -46,11 +46,11 @@ set_mt_resp_info(Selector, Modifier) ->
 		'query', Selector,
 		'update', Modifier
 	},
-	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
+	case mongodb_storage:command(prev_dynamic_storage, Command) of
 		{ok, Result} ->
 			case bsondoc:at(value, Result) of
 				undefined ->
-					mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Modifier);
+					mongodb_storage:upsert(curr_dynamic_storage, mt_messages, Selector, Modifier);
 				_ ->
 					ok
 			end;
@@ -68,11 +68,11 @@ set_mt_dlr_info_and_get_msg_info(Selector, Sort, Modifier) ->
 		'update', Modifier,
 		'new'   , true
 	},
-	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
+	case mongodb_storage:command(prev_dynamic_storage, Command) of
 		{ok, PrevResult} ->
 			case bsondoc:at(value, PrevResult) of
 				undefined ->
-					case mongodb_storage:command(k_curr_dynamic_storage, Command) of
+					case mongodb_storage:command(curr_dynamic_storage, Command) of
 						{ok, CurrResult} ->
 							case bsondoc:at(value, CurrResult) of
 								undefined ->
@@ -97,11 +97,11 @@ set_mt_downlink_dlr_status(Selector, Modifier) ->
 		'query', Selector,
 		'update', Modifier
 	},
-	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
+	case mongodb_storage:command(prev_dynamic_storage, Command) of
 		{ok, Result} ->
 			case bsondoc:at(value, Result) of
 				undefined ->
-					mongodb_storage:upsert(k_curr_dynamic_storage, mt_messages, Selector, Modifier);
+					mongodb_storage:upsert(curr_dynamic_storage, mt_messages, Selector, Modifier);
 				_ ->
 					ok
 			end;
@@ -111,8 +111,8 @@ set_mt_downlink_dlr_status(Selector, Modifier) ->
 
 -spec set_mo_msg_info(selector(), modifier()) -> ok | {error, reason()}.
 set_mo_msg_info(Selector, Modifier) ->
-	mongodb_storage:upsert(k_curr_dynamic_storage, mo_messages, Selector, Modifier).
+	mongodb_storage:upsert(curr_dynamic_storage, mo_messages, Selector, Modifier).
 
 -spec set_mo_downlink_dlr_status(selector(), modifier()) -> ok | {error, reason()}.
 set_mo_downlink_dlr_status(Selector, Modifier) ->
-	mongodb_storage:upsert(k_curr_dynamic_storage, mo_messages, Selector, Modifier).
+	mongodb_storage:upsert(curr_dynamic_storage, mo_messages, Selector, Modifier).

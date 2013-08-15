@@ -58,11 +58,11 @@ set_customer(CustomerUUID, Customer) ->
 			'state'               , Customer#customer.state
 		}
 	},
-	mongodb_storage:upsert(k_static_storage, customers, {'_id', CustomerUUID}, Modifier).
+	mongodb_storage:upsert(static_storage, customers, {'_id', CustomerUUID}, Modifier).
 
 -spec get_customers() -> {ok, [{customer_uuid(), #customer{}}]} | {error, term()}.
 get_customers() ->
-	case mongodb_storage:find(k_static_storage, customers, {}) of
+	case mongodb_storage:find(static_storage, customers, {}) of
 		{ok, List} ->
 			{ok, [
 				{Id, doc_to_record(Doc)} || {Id, Doc} <- List
@@ -73,7 +73,7 @@ get_customers() ->
 
 -spec get_customer_by_uuid(customer_uuid()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_uuid(CustomerUUID) ->
-	case mongodb_storage:find_one(k_static_storage, customers, {'_id', CustomerUUID}) of
+	case mongodb_storage:find_one(static_storage, customers, {'_id', CustomerUUID}) of
 		{ok, Doc} ->
 			{ok, doc_to_record(Doc)};
 		Error ->
@@ -82,7 +82,7 @@ get_customer_by_uuid(CustomerUUID) ->
 
 -spec get_customer_by_id(customer_id()) -> {ok, #customer{}} | any().
 get_customer_by_id(CustomerId) ->
-	case mongodb_storage:find_one(k_static_storage, customers, {'customer_id', CustomerId}) of
+	case mongodb_storage:find_one(static_storage, customers, {'customer_id', CustomerId}) of
 		{ok, Doc} ->
 			{ok, doc_to_record(Doc)};
 		Error ->
@@ -91,7 +91,7 @@ get_customer_by_id(CustomerId) ->
 
 -spec del_customer(customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
 del_customer(CustomerUUID) ->
-	mongodb_storage:delete(k_static_storage, customers, {'_id', CustomerUUID}).
+	mongodb_storage:delete(static_storage, customers, {'_id', CustomerUUID}).
 
 %% ===================================================================
 %% Internals

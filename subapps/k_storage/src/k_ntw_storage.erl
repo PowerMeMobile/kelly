@@ -26,11 +26,11 @@ set_network(NetworkId, Network)->
 			'provider_id'  , Network#network.provider_id
 		}
 	},
-	mongodb_storage:upsert(k_static_storage, networks, {'_id', NetworkId}, Modifier).
+	mongodb_storage:upsert(static_storage, networks, {'_id', NetworkId}, Modifier).
 
 -spec get_network(network_id()) -> {ok, #network{}} | {error, no_entry} | {error, term()}.
 get_network(NetworkId) ->
-	case mongodb_storage:find_one(k_static_storage, networks, {'_id', NetworkId}) of
+	case mongodb_storage:find_one(static_storage, networks, {'_id', NetworkId}) of
 		{ok, Doc} ->
 			{ok, doc_to_record(Doc)};
 		Error ->
@@ -39,7 +39,7 @@ get_network(NetworkId) ->
 
 -spec get_networks() -> {ok, [{network_id(), #network{}}]} | {error, term()}.
 get_networks() ->
-	case mongodb_storage:find(k_static_storage, networks, {}) of
+	case mongodb_storage:find(static_storage, networks, {}) of
 		{ok, List} ->
 			{ok, [
 				{Id, doc_to_record(Doc)} || {Id, Doc} <- List
@@ -50,7 +50,7 @@ get_networks() ->
 
 -spec del_network(network_id()) -> ok | {error, no_entry} | {error, term()}.
 del_network(NetworkId) ->
-	mongodb_storage:delete(k_static_storage, networks, {'_id', NetworkId}).
+	mongodb_storage:delete(static_storage, networks, {'_id', NetworkId}).
 
 %% ===================================================================
 %% Internals

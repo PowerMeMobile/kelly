@@ -45,11 +45,11 @@ set_gateway(GatewayId, Gateway)->
 			'settings'	  , StsDoc
 		}
 	},
-	mongodb_storage:upsert(k_static_storage, gateways, {'_id', GatewayId}, Modifier).
+	mongodb_storage:upsert(static_storage, gateways, {'_id', GatewayId}, Modifier).
 
 -spec get_gateway(gateway_id()) -> {ok, #gateway{}} | {error, no_entry} | {error, term()}.
 get_gateway(GatewayId) ->
-	case mongodb_storage:find_one(k_static_storage, gateways, {'_id', GatewayId}) of
+	case mongodb_storage:find_one(static_storage, gateways, {'_id', GatewayId}) of
 		{ok, Doc} ->
 			{ok, doc_to_record(Doc)};
 		Error ->
@@ -58,7 +58,7 @@ get_gateway(GatewayId) ->
 
 -spec get_gateways() -> {ok, [{gateway_id(), #gateway{}}]} | {error, term()}.
 get_gateways() ->
-	case mongodb_storage:find(k_static_storage, gateways, {}) of
+	case mongodb_storage:find(static_storage, gateways, {}) of
 		{ok, List} ->
 			{ok, [
 				{Id, doc_to_record(Doc)} || {Id, Doc} <- List
@@ -69,7 +69,7 @@ get_gateways() ->
 
 -spec del_gateway(gateway_id()) -> ok | {error, no_entry} | {error, term()}.
 del_gateway(GatewayId) ->
-	mongodb_storage:delete(k_static_storage, gateways, {'_id', GatewayId}).
+	mongodb_storage:delete(static_storage, gateways, {'_id', GatewayId}).
 
 %% ===================================================================
 %% Internals

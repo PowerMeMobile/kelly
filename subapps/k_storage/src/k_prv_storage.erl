@@ -25,11 +25,11 @@ set_provider(ProviderId, Provider)->
 			'receipts_supported' , Provider#provider.receipts_supported
 		}
 	},
-	mongodb_storage:upsert(k_static_storage, providers, {'_id', ProviderId}, Modifier).
+	mongodb_storage:upsert(static_storage, providers, {'_id', ProviderId}, Modifier).
 
 -spec get_provider(provider_id()) -> {ok, #provider{}} | {error, no_entry} | {error, term()}.
 get_provider(ProviderId) ->
-	case mongodb_storage:find_one(k_static_storage, providers, {'_id', ProviderId}) of
+	case mongodb_storage:find_one(static_storage, providers, {'_id', ProviderId}) of
 		{ok, Doc} ->
 			{ok, doc_to_record(Doc)};
 		Error ->
@@ -38,7 +38,7 @@ get_provider(ProviderId) ->
 
 -spec get_providers() -> {ok, [{provider_id(), #provider{}}]} | {error, term()}.
 get_providers() ->
-	case mongodb_storage:find(k_static_storage, providers, {}) of
+	case mongodb_storage:find(static_storage, providers, {}) of
 		{ok, List} ->
 			{ok, [
 				{Id, doc_to_record(Doc)} || {Id, Doc} <- List
@@ -49,7 +49,7 @@ get_providers() ->
 
 -spec del_provider(provider_id()) -> ok | {error, no_entry} | {error, term()}.
 del_provider(ProviderId) ->
-	mongodb_storage:delete(k_static_storage, providers, {'_id', ProviderId}).
+	mongodb_storage:delete(static_storage, providers, {'_id', ProviderId}).
 
 %% ===================================================================
 %% Internals
