@@ -6,7 +6,7 @@
 	get_msgs_by_status_report/3
 ]).
 
--include_lib("k_common/include/msg_info.hrl").
+-include_lib("k_storage/include/msg_info.hrl").
 
 -type report() :: term().
 -type reason() :: term().
@@ -136,12 +136,12 @@ get_raw_report(Collection, Selector) ->
 doc_to_message(mt_messages, Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
 	Type = transform_type(MsgInfo#msg_info.type),
-	ReqTime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-	RespTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
-	DlrTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
+	ReqTime  = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+	RespTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
+	DlrTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
 	StatusTime = max(ReqTime, max(RespTime, DlrTime)),
-	ReqISO = k_datetime:datetime_to_iso8601(ReqTime),
-	StatusISO = k_datetime:datetime_to_iso8601(StatusTime),
+	ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
+	StatusISO = ac_datetime:datetime_to_iso8601(StatusTime),
 	[
 		{msg_id, MsgInfo#msg_info.msg_id},
 		{client_type, MsgInfo#msg_info.client_type},
@@ -165,8 +165,8 @@ doc_to_message(mt_messages, Doc) ->
 doc_to_message(mo_messages, Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mo_msg_info(Doc),
 	MsgId = MsgInfo#msg_info.msg_id,
-	Datetime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-	ISO8601 = k_datetime:datetime_to_iso8601(Datetime),
+	Datetime  = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+	ISO8601 = ac_datetime:datetime_to_iso8601(Datetime),
 	[
 		{msg_id, MsgId},
 		{customer_id, MsgInfo#msg_info.customer_id},

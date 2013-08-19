@@ -3,7 +3,7 @@
 -export([process/2]).
 
 -include("amqp_worker_reply.hrl").
--include_lib("k_common/include/msg_info.hrl").
+-include_lib("k_storage/include/msg_info.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/application.hrl").
@@ -36,7 +36,7 @@ process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
 	timestamp = UTCString
 }) ->
 	?log_debug("Got just delivery receipt: ~p", [ReceiptBatch]),
-	DlrTime = k_datetime:utc_string_to_timestamp(UTCString),
+	DlrTime = ac_datetime:utc_string_to_timestamp(UTCString),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
 		ok ->
 			{ok, []};

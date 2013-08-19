@@ -16,7 +16,7 @@
 		permanent, 10000, worker, [k_amqp_gen_consumer]}).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/supervisor_spec.hrl").
+-include_lib("alley_common/include/supervisor_spec.hrl").
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->

@@ -10,7 +10,7 @@
 -export([init/1]).
 
 -include("logging.hrl").
--include("supervisor_spec.hrl").
+-include_lib("alley_common/include/supervisor_spec.hrl").
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
@@ -22,9 +22,4 @@ start_link() ->
 
 init([]) ->
 	?log_debug("init", []),
-    {ok, {
-		{one_for_one, 5, 10}, [
-			{k_time_server,
-				{k_time_server, start_link, []}, permanent, 1000, worker, [k_time_server]}
-		]}
-	}.
+    {ok, {{one_for_one, 5, 10}, []}}.

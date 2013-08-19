@@ -3,7 +3,7 @@
 -export([process/2]).
 
 -include("amqp_worker_reply.hrl").
--include_lib("k_common/include/msg_info.hrl").
+-include_lib("k_storage/include/msg_info.hrl").
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 
@@ -28,7 +28,7 @@ process(_ContentType, Message) ->
 process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
 	?log_debug("Got just sms response: ~p", [SmsResponse]),
 	RespInfos = sms_response_to_resp_info_list(SmsResponse),
-	case k_utils:safe_foreach(
+	case ac_utils:safe_foreach(
 		fun k_dynamic_storage:set_mt_resp_info/1, RespInfos, ok, {error, '_'}
 	) of
 		ok ->
@@ -70,7 +70,7 @@ convert(SmsResponse, SmsStatus) ->
 		in_msg_id = OriginalId,
 		gateway_id = GatewayId,
 		out_msg_id = MessageId,
-		resp_time = k_datetime:utc_string_to_timestamp(UTCString),
+		resp_time = ac_datetime:utc_string_to_timestamp(UTCString),
 		resp_status = fix_status(Status),
 		resp_error_code = ErrorCode
 	}.

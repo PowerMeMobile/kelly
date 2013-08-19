@@ -1,11 +1,9 @@
-%% @hidden
-
 -module(k_mailbox_sup).
 
 -behaviour(supervisor).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/supervisor_spec.hrl").
+-include_lib("alley_common/include/supervisor_spec.hrl").
 
 -define(WORKER(Name),
 	{Name, {Name, start_link, []}, permanent, 5000, worker, [Name]}).
@@ -15,12 +13,12 @@
 %% API
 -export([
 	start_link/0
-	]).
+]).
 
 %% supervisor callbacks
 -export([
 	init/1
-	]).
+]).
 
 %% ===================================================================
 %% API
@@ -36,9 +34,7 @@ start_link() ->
 
 init([]) ->
 	{ok, {
-
 		{rest_for_one, 5, 10}, [
-
 			?SUPERVISOR(k_mb_amqp_sup),
 			?WORKER(k_mb_subscription_mgr),
 			?WORKER(k_mb_postponed_queue),

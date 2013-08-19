@@ -131,7 +131,7 @@ get_timestamp_list(From, To, Step) when From < To ->
 -spec get_timestamp_ranges(From::unixepoch(), To::unixepoch(), Step::pos_integer()) -> [{unixepoch(), unixepoch()}].
 get_timestamp_ranges(From, To, Step) when From < To ->
 	Timestamps = get_timestamp_list(From, To, Step),
-	k_lists:make_ranges(Timestamps).
+	ac_lists:make_ranges(Timestamps).
 
 -spec align_time_range(From::unixepoch(), To::unixepoch()) ->
 	{FromFloor::unixepoch(), ToCeiling::unixepoch()}.

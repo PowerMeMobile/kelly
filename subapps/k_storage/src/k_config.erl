@@ -19,11 +19,9 @@
 	del_gateway_connection/2
 ]).
 
--include("application.hrl").
--include_lib("k_common/include/gateway.hrl").
--include_lib("k_common/include/provider.hrl").
--include_lib("k_common/include/network.hrl").
--include_lib("k_common/include/logging.hrl").
+-include("gateway.hrl").
+-include("provider.hrl").
+-include("network.hrl").
 
 %% ===================================================================
 %% Networks API

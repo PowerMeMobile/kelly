@@ -21,7 +21,7 @@
 ]).
 
 -include("application.hrl").
--include_lib("k_common/include/gen_server_spec.hrl").
+-include_lib("alley_common/include/gen_server_spec.hrl").
 -include_lib("k_common/include/logging.hrl").
 
 -type event_name() :: 'ShiftEvent' | atom().
@@ -89,7 +89,7 @@ init([SpecModule]) ->
 	%% initialize static storage.
 	ok = start_static_storage(SpecModule),
 
-	CurrTime = k_datetime:utc_datetime(),
+	CurrTime = ac_datetime:utc_datetime(),
 
 	{ok, NewState} =
 		 case read_storage_state(SpecModule) of
@@ -134,7 +134,7 @@ handle_info({timeout, TimerRef, heartbeat}, State = #state{
 }) ->
    	%?log_debug("~p", [State]),
 
-	CurrTime = k_datetime:utc_datetime(),
+	CurrTime = ac_datetime:utc_datetime(),
 
 	{ok, NewState} =
 		case CurrTime >= CurrEventTime of
@@ -224,12 +224,12 @@ read_storage_state(SpecModule) ->
 
 			State = #state{
 				shift_frame = ShiftFrame,
-				curr_shift_time = k_datetime:timestamp_to_datetime(CurrShiftTime),
-				next_shift_time = k_datetime:timestamp_to_datetime(NextShiftTime),
+				curr_shift_time = ac_datetime:timestamp_to_datetime(CurrShiftTime),
+				next_shift_time = ac_datetime:timestamp_to_datetime(NextShiftTime),
 				shifts = Shifts,
 				curr_mode = CurrMode,
 				next_event = NextEvent,
-				next_event_time = k_datetime:timestamp_to_datetime(NextEventTime),
+				next_event_time = ac_datetime:timestamp_to_datetime(NextEventTime),
 				spec_module = SpecModule,
 				spec_state = SpecState
 			},
@@ -250,12 +250,12 @@ write_storage_state(SpecModule, #state{
 }) ->
 	Modifier = {
 		shift_frame     , ShiftFrame,
-		curr_shift_time , k_datetime:datetime_to_timestamp(CurrShiftTime),
-		next_shift_time , k_datetime:datetime_to_timestamp(NextShiftTime),
+		curr_shift_time , ac_datetime:datetime_to_timestamp(CurrShiftTime),
+		next_shift_time , ac_datetime:datetime_to_timestamp(NextShiftTime),
 		shifts          , Shifts,
 		curr_mode       , bsondoc:atom_to_binary(CurrMode),
 		next_event      , bsondoc:atom_to_binary(NextEvent),
-		next_event_time , k_datetime:datetime_to_timestamp(NextEventTime),
+		next_event_time , ac_datetime:datetime_to_timestamp(NextEventTime),
 		spec_state      , SpecModule:encode_spec_state(SpecState)
 	},
 	ok = mongodb_storage:upsert(static_storage, 'storage.state', {}, Modifier).
@@ -365,7 +365,7 @@ make_shift_db_name(GetShiftTimeFun) ->
 	ShiftFrame = proplists:get_value(shift_frame, DynamicProps),
 	DbNameFmt = proplists:get_value(mongodb_dbname_fmt, DynamicProps),
 
-	CurrTime = k_datetime:utc_datetime(),
+	CurrTime = ac_datetime:utc_datetime(),
 	{{ShiftYear, ShiftMonth, ShiftDay}, _} = GetShiftTimeFun(CurrTime, ShiftFrame),
 
 	%% build db name in format YYYY-MM-DD.

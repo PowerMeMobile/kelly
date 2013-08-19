@@ -11,7 +11,7 @@
 -export([init/1]).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/supervisor_spec.hrl").
+-include_lib("alley_common/include/supervisor_spec.hrl").
 
 %% ===================================================================
 %% API

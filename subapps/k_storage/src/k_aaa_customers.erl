@@ -9,8 +9,8 @@
 	del_customer/1
 ]).
 
--include_lib("k_common/include/storages.hrl").
--include_lib("k_common/include/customer.hrl").
+-include("storages.hrl").
+-include("customer.hrl").
 
 %% ===================================================================
 %% API

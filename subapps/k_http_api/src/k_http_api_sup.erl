@@ -12,7 +12,7 @@
 -define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/supervisor_spec.hrl").
+-include_lib("alley_common/include/supervisor_spec.hrl").
 
 %% ===================================================================
 %% API functions
@@ -27,5 +27,5 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
+    {ok, {{one_for_one, 5, 10}, []}}.
 

@@ -6,10 +6,10 @@
 	build_aggr_recipient_report/0
 ]).
 
+-include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/utils.hrl").
+-include_lib("k_storage/include/msg_info.hrl").
 
 %% ===================================================================
 %% API
@@ -18,8 +18,8 @@
 -spec build_report([{atom(), term()}]) ->
 	[ [{atom(), term()}] ].
 build_report(Params) ->
-	From = k_datetime:datetime_to_timestamp(?gv(from, Params)),
-	To = k_datetime:datetime_to_timestamp(?gv(to, Params)),
+	From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
+	To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
 	CustomerSelector =
 		case ?gv(customer_id, Params) of
 			undefined -> [];
@@ -46,8 +46,8 @@ build_report(Params) ->
 
 -spec build_aggr_report([{atom(), term()}]) -> [ [{bson:label(), bson:value()}] ].
 build_aggr_report(Params) ->
-	From = k_datetime:datetime_to_timestamp(?gv(from, Params)),
-	To = k_datetime:datetime_to_timestamp(?gv(to, Params)),
+	From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
+	To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
 	CustomerSelector =
 	case ?gv(customer_id, Params) of
 		undefined -> {'$exists', 1};
@@ -146,12 +146,12 @@ project(monthly) ->
 build_mt_report_response(Doc) ->
 	MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
 	Type = transform_type(MsgInfo#msg_info.type),
-	ReqTime  = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-	RespTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
-	DlrTime = k_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
+	ReqTime  = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+	RespTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
+	DlrTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
 	StatusTime = max(ReqTime, max(RespTime, DlrTime)),
-	ReqISO = k_datetime:datetime_to_iso8601(ReqTime),
-	StatusISO = k_datetime:datetime_to_iso8601(StatusTime),
+	ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
+	StatusISO = ac_datetime:datetime_to_iso8601(StatusTime),
 	[
 		{msg_id, MsgInfo#msg_info.msg_id},
 		{client_type, MsgInfo#msg_info.client_type},

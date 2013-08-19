@@ -11,10 +11,10 @@
 	delete/1
 ]).
 
+-include_lib("alley_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/utils.hrl").
+-include_lib("k_storage/include/msg_info.hrl").
 
 %% ===================================================================
 %% gen_cowboy_crud callbacks

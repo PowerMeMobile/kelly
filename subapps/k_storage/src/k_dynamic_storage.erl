@@ -10,8 +10,8 @@
 	set_mo_downlink_dlr_status/3
 ]).
 
--include_lib("k_common/include/msg_info.hrl").
--include_lib("k_common/include/customer.hrl").
+-include("msg_info.hrl").
+-include("customer.hrl").
 
 -ifdef(TEST).
    -include_lib("eunit/include/eunit.hrl").

@@ -4,7 +4,7 @@
 	get_report/3
 ]).
 
--include_lib("k_common/include/network.hrl").
+-include_lib("k_storage/include/network.hrl").
 -include_lib("k_common/include/logging.hrl").
 
 -type report_type() :: customers | networks.
@@ -117,7 +117,7 @@ annotate_msg_stats_report(networks, Records) ->
 
 -spec msg_stats_report(KeyN::integer(), [tuple()]) -> [tuple()].
 msg_stats_report(KeyN, Records) ->
-	Pairs = [k_lists:make_pair(KeyN, R) || R <- Records],
+	Pairs = [ac_lists:make_pair(KeyN, R) || R <- Records],
 	Dict = lists:foldl(
 		fun({K, V}, Dict) ->
 			orddict:append(K, V, Dict)
@@ -129,7 +129,7 @@ msg_stats_report(KeyN, Records) ->
 -spec lookup_network_id(address(), [{network_id(), prefix()}]) ->
 	{value, {network_id(), prefix()}} | false.
 lookup_network_id(Address, Map) ->
-	k_lists:findwith(
+	ac_lists:findwith(
 		fun({_, Prefix}) ->
 			binary:longest_common_prefix([Prefix, Address]) =:= size(Prefix)
 		end,

@@ -22,7 +22,7 @@
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
--include_lib("k_common/include/gen_server_spec.hrl").
+-include_lib("alley_common/include/gen_server_spec.hrl").
 
 -record(state, {
 		amqp_conn,

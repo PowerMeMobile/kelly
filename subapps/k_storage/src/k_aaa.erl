@@ -12,9 +12,7 @@
 	del_customer_user/2
 ]).
 
--include("application.hrl").
--include_lib("k_common/include/customer.hrl").
--include_lib("k_common/include/logging.hrl").
+-include("customer.hrl").
 
 %% ===================================================================
 %% API

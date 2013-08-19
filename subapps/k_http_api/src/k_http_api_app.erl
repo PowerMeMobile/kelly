@@ -10,9 +10,8 @@
 %% API
 -export([update_dispatch_rules/0]).
 
-
 -include("application.hrl").
--include_lib("k_common/include/application_spec.hrl").
+-include_lib("alley_common/include/application_spec.hrl").
 -include_lib("k_common/include/logging.hrl").
 
 %% ==============================================================

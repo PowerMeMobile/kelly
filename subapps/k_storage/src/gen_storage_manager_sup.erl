@@ -13,7 +13,7 @@
 
 -include("application.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/supervisor_spec.hrl").
+-include_lib("alley_common/include/supervisor_spec.hrl").
 
 -type reason() :: term().
 -type plist() :: [{atom(), term()}].

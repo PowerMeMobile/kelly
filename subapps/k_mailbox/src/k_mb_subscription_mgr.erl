@@ -7,7 +7,7 @@
 -behaviour(gen_server).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/gen_server_spec.hrl").
+-include_lib("alley_common/include/gen_server_spec.hrl").
 -include("application.hrl").
 
 %% API
@@ -164,7 +164,7 @@ get_suitable_subscription(Item = #k_mb_k1api_receipt{}, Subscriptions) ->
 		(_) ->
 			false
 	end,
-	case k_lists:findwith(Fun, Subscriptions) of
+	case ac_lists:findwith(Fun, Subscriptions) of
 		false -> undefined;
 		{value, Subscription} -> {ok, Subscription}
 	end;

@@ -11,7 +11,7 @@
 	binary_to_encoding/1
 ]).
 
--include_lib("k_common/include/msg_info.hrl").
+-include("msg_info.hrl").
 
 %% ===================================================================
 %% API

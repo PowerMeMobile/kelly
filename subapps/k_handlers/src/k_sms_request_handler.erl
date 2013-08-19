@@ -4,9 +4,9 @@
 -compile({no_auto_import, [split_binary/2]}).
 
 -include("amqp_worker_reply.hrl").
--include_lib("k_common/include/msg_info.hrl").
+-include_lib("k_storage/include/msg_info.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/utils.hrl").
+-include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
@@ -39,7 +39,7 @@ process(_ContentType, Message) ->
 -spec process_sms_request(#just_sms_request_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
 	?log_debug("Got ~p sms request: ~p", [ClientType, SmsReq]),
-	ReqTime = k_datetime:utc_timestamp(),
+	ReqTime = ac_datetime:utc_timestamp(),
 	ReqInfos = sms_request_to_req_info_list(SmsReq, ReqTime),
 	case ClientType of
 		k1api ->
@@ -48,7 +48,7 @@ process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
 		_ ->
 			nop
 	end,
-	case k_utils:safe_foreach(
+	case ac_utils:safe_foreach(
 		fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
 	) of
 		ok ->
@@ -246,7 +246,7 @@ create_k1api_receipt_subscription(CustomerId, UserId, DestAddr, NotifyURL, Callb
 		dest_addr = DestAddr,
 		notify_url = NotifyURL,
 		callback_data = CallbackData,
-		created_at = k_datetime:utc_timestamp()
+		created_at = ac_datetime:utc_timestamp()
 	},
 	ok = k_mailbox:register_sms_req_receipts_subscription(Subscription),
 	SubscriptionId.

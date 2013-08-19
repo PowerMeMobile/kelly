@@ -6,7 +6,7 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/address.hrl").
 -include_lib("k_mailbox/include/application.hrl").
--include_lib("k_common/include/msg_info.hrl").
+-include_lib("k_storage/include/msg_info.hrl").
 -include("amqp_worker_reply.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
@@ -39,7 +39,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
 	ItemId = uuid:unparse(uuid:generate_time()),
 
 	%% determine
-	Timestamp = k_datetime:utc_string_to_timestamp(UTCString),
+	Timestamp = ac_datetime:utc_string_to_timestamp(UTCString),
 
 	%% try to determine customer id and user id,
 	%% this will return either valid customer id or `undefined'.

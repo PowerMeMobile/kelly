@@ -166,7 +166,7 @@ send_item(Item, Subscription) ->
 	Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
 	case Result of
 		{ok, delivered} ->
-			Timestamp = k_datetime:utc_timestamp(),
+			Timestamp = ac_datetime:utc_timestamp(),
 			k_mb_db:save_delivery_status(Item, delivered, Timestamp),
 			k_mb_db:delete_item(Item),
 			?log_debug("Item successfully delivered [~p]", [ItemID]);
@@ -182,7 +182,7 @@ postpone_item(Item, Error) ->
 		{error, reached_max} ->
 			?log_error("Item reached max number of attempts. "
 			"Discard message. Last error: ~p", [Error]),
-			Timestamp = k_datetime:utc_timestamp(),
+			Timestamp = ac_datetime:utc_timestamp(),
 			k_mb_db:save_delivery_status(Item, reached_max, Timestamp)
 	end.
 
@@ -201,8 +201,8 @@ build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
 	} = Sub,
 	Receipt = #funnel_delivery_receipt_container_dto{
 		message_id = InputMsgId,
-		submit_date = k_datetime:timestamp_to_utc_string(SubmitDate),
-		done_date = k_datetime:timestamp_to_utc_string(DoneDate),
+		submit_date = ac_datetime:timestamp_to_utc_string(SubmitDate),
+		done_date = ac_datetime:timestamp_to_utc_string(DoneDate),
 		message_state = MessageState,
 		source = SourceAddr,
 		dest = DestAddr

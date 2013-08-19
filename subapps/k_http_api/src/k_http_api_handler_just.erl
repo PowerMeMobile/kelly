@@ -11,10 +11,10 @@
 	delete/1
 ]).
 
--include_lib("k_common/include/customer.hrl").
--include_lib("k_common/include/gateway.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
+-include_lib("k_storage/include/customer.hrl").
+-include_lib("k_storage/include/gateway.hrl").
 
 %% ===================================================================
 %% gen_cowboy_crud callbacks

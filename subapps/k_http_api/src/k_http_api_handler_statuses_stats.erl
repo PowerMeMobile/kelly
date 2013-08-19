@@ -11,9 +11,9 @@
 	delete/1
 ]).
 
+-include_lib("alley_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/utils.hrl").
 
 %% ===================================================================
 %% gen_cowboy_crud callbacks
@@ -22,9 +22,9 @@
 init() ->
 	Read = [
 		#param{name = from, mandatory = true, repeated = false, type =
-			{custom, fun k_datetime:iso8601_to_datetime/1}},
+			{custom, fun ac_datetime:iso8601_to_datetime/1}},
 		#param{name = to, mandatory = true, repeated = false, type =
-			{custom, fun k_datetime:iso8601_to_datetime/1}},
+			{custom, fun ac_datetime:iso8601_to_datetime/1}},
 		#param{name = status, mandatory = false, repeated = false, type = atom}
 	],
 	{ok, #specs{

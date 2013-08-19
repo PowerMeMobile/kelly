@@ -4,7 +4,7 @@
 	get_report/3
 ]).
 
--include_lib("k_common/include/gateway.hrl").
+-include_lib("k_storage/include/gateway.hrl").
 
 -type unixepoch() :: pos_integer().
 -type report() :: term().
@@ -19,8 +19,8 @@
 get_report(FromUnix, ToUnix, SliceLength) when FromUnix < ToUnix ->
 	SliceRanges = k_statistic_utils:get_timestamp_ranges(FromUnix, ToUnix, SliceLength),
 
-  	From = k_datetime:unixepoch_to_timestamp(FromUnix),
-	To = k_datetime:unixepoch_to_timestamp(ToUnix),
+  	From = ac_datetime:unixepoch_to_timestamp(FromUnix),
+	To = ac_datetime:unixepoch_to_timestamp(ToUnix),
 
 	{ok, MtRecords} = get_records(mt_messages, From, To),
 	MtReport = detailed_msg_stats_report(MtRecords, SliceRanges),
@@ -60,7 +60,7 @@ get_records(Collection, From, To) ->
 strip_doc(Doc) ->
 	GatewayId = bsondoc:at(gi, Doc),
 	ReqTime = bsondoc:at(rqt, Doc),
-	ReqTimeUnix = k_datetime:timestamp_to_unixepoch(ReqTime),
+	ReqTimeUnix = ac_datetime:timestamp_to_unixepoch(ReqTime),
 	{GatewayId, ReqTimeUnix}.
 
 -spec detailed_msg_stats_report(
@@ -77,7 +77,7 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 			lists:map(
 				fun(GatewayId) ->
 					Timestamps = dict:fetch(GatewayId, Dict),
-					Frequencies = k_lists:make_frequencies(Timestamps),
+					Frequencies = ac_lists:make_frequencies(Timestamps),
 					GatewayTotal = length(Timestamps),
 					[
 						{gateway_id, GatewayId},
@@ -94,8 +94,8 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 										true -> lists:max(SliceFreqs) * 1.0
 									end,
 									[
-										{from, k_datetime:unixepoch_to_iso8601(F)},
-										{to, k_datetime:unixepoch_to_iso8601(T)},
+										{from, ac_datetime:unixepoch_to_iso8601(F)},
+										{to, ac_datetime:unixepoch_to_iso8601(T)},
 										{total, SliceTotal},
 										{avg, SliceAvg},
 										{peak, SlicePeak}

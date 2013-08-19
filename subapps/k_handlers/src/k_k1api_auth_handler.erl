@@ -7,7 +7,7 @@
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/customer.hrl").
+-include_lib("k_storage/include/customer.hrl").
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_ContentType, Message) ->

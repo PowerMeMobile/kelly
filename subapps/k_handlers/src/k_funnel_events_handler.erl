@@ -5,7 +5,6 @@
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
--include_lib("k_common/include/storages.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
 %% ===================================================================
@@ -89,7 +88,7 @@ process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType)
 					user_id = UserId,
 					priority = 0,
 					queue_name = QName,
-					created_at = k_datetime:utc_timestamp()
+					created_at = ac_datetime:utc_timestamp()
 			},
 			k_mailbox:register_subscription(Subscription),
 			{ok, []};
