@@ -1,4 +1,4 @@
--module(k_response_mode_storage).
+-module(k_storage_response_mode).
 
 -export([
 	set_mt_req_info/2,

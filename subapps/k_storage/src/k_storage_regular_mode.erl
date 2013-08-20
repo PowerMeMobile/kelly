@@ -1,4 +1,4 @@
--module(k_regular_mode_storage).
+-module(k_storage_regular_mode).
 
 -export([
 	set_mt_req_info/2,
