@@ -1,6 +1,8 @@
 -module(k_k1api_retrieve_sms_req_handler).
 
--export([process/2]).
+%TODO: remove user_id = undefined
+
+-export([process/1]).
 
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
@@ -11,11 +13,12 @@
 %% API
 %% ===================================================================
 
--spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(_ContentType, Message) ->
-	case adto:decode(#k1api_retrieve_sms_request_dto{}, Message) of
-		{ok, Request} ->
-			process_retrive_sms_request(Request);
+-spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
+	{ok, Payload} = k_amqp_req:payload(Req),
+	case adto:decode(#k1api_retrieve_sms_request_dto{}, Payload) of
+		{ok, RetrieveRequest} ->
+			process_retrive_sms_request(Req, RetrieveRequest);
 		Error ->
 			?log_error("k1api dto decode error: ~p", [Error]),
 			{ok, []}
@@ -25,20 +28,20 @@ process(_ContentType, Message) ->
 %% Interal
 %% ===================================================================
 
-process_retrive_sms_request(Request) ->
-	?log_debug("Got k1api retrieve sms request: ~p", [Request]),
+process_retrive_sms_request(Req, RetrieveRequest) ->
+	?log_debug("Got k1api retrieve sms request: ~p", [RetrieveRequest]),
 	#k1api_retrieve_sms_request_dto{
 		id = RequestID,
 		customer_id = CustomerID,
 		user_id = _UserID,
 		dest_addr = DestAddr,
 		batch_size = BatchSize
-	} = Request,
+	} = RetrieveRequest,
 	UserID = <<"undefined">>,
 	{ok, IncomingSms, Total} = k_mailbox:get_incoming_sms(CustomerID, UserID, DestAddr, BatchSize),
-	build_response(RequestID, IncomingSms, Total).
+	build_response(Req, RequestID, IncomingSms, Total).
 
-build_response(RequestID, IncomingSms, Total) ->
+build_response(Req, RequestID, IncomingSms, Total) ->
 	?log_debug("RequestID: ~p, IncomingSms: ~p, Total: ~p",
 		[RequestID, IncomingSms, Total]),
 	MessagesDTO = lists:map(fun(PendingItem) ->
@@ -61,15 +64,28 @@ build_response(RequestID, IncomingSms, Total) ->
 		total = Total
 	},
 	?log_debug("DTO: ~p", [DTO]),
-	reply(DTO).
+	step(is_reply_to_defined, Req, DTO).
 
-reply(DTO) ->
+step(is_reply_to_defined, Req, DTO) ->
+	case k_amqp_req:reply_to(Req) of
+		{ok, undefined} ->
+			% reply_to is undefined, sekip req
+			?log_warn("reply_to is undefined. skip request", []),
+			{ok, []};
+		{ok, _ReplyTo} ->
+			% reply_to is defined, reply
+			step(reply, Req, DTO)
+	end;
+
+step(reply, Req, DTO) ->
 	case adto:encode(DTO) of
 		{ok, Binary} ->
+			{ok, ReplyTo} = k_amqp_req:reply_to(Req),
 			Reply = #worker_reply{
-				reply_to = <<"pmm.k1api.retrieve_sms_response">>,
+				reply_to = ReplyTo,
 				content_type = <<"OneAPIRetrievedSmsResponse">>,
-				payload = Binary},
+				payload = Binary
+            },
 			{ok, [Reply]};
 		Error ->
 			?log_warn("Unexpected k1api dto encode error: ~p", [Error]),

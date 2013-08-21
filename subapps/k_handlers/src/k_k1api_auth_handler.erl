@@ -1,6 +1,6 @@
 -module(k_k1api_auth_handler).
 
--export([process/2]).
+-export([process/1]).
 
 -define(authentication_failed, {ok, []}).
 
@@ -9,30 +9,44 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
 
--spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(_ContentType, Message) ->
+%% -record('basic.deliver', {consumer_tag, delivery_tag, redelivered = false, exchange, routing_key}).
+			 %% #amqp_msg{props = #'P_basic'{}, payload = Content}},
+%% -record(amqp_msg, {props = #'P_basic'{}, payload = <<>>}).
+%% -record('P_basic', {content_type, content_encoding, headers, delivery_mode, priority, correlation_id, reply_to, expiration, message_id, timestamp, type, user_id, app_id, cluster_id}).
+
+%% ===================================================================
+%% API
+%% ===================================================================
+
+-spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
 	?log_debug("Got k1api auth request", []),
-	case adto:decode(#k1api_auth_request_dto{}, Message) of
-		{ok, Request} ->
-			process_auth_req(Request);
+	{ok, Payload} = k_amqp_req:payload(Req),
+	case adto:decode(#k1api_auth_request_dto{}, Payload) of
+		{ok, AuthRequest} ->
+			process_auth_req(Req, AuthRequest);
 		{error, Error} ->
 			?log_error("k1api auth request decode error: ~p", [Error]),
 			?authentication_failed
 	end.
 
-process_auth_req(Request) ->
-	case authenticate(Request) of
+%% ===================================================================
+%% Internals
+%% ===================================================================
+
+process_auth_req(Req, AuthRequest) ->
+	case authenticate(AuthRequest) of
 		{allow, Customer = #customer{}} ->
-			{ok, Response} = build_customer_response(Request, Customer),
-			reply(Response);
+			{ok, Response} = build_customer_response(AuthRequest, Customer),
+			step(is_reply_to_defined, Req, Response);
 		{deny, Reason} ->
-            {ok, Response} = build_error_response(Request, {deny, Reason}),
+            {ok, Response} = build_error_response(AuthRequest, {deny, Reason}),
 			?log_notice("k1api authentication denied: ~p", [Reason]),
-			reply(Response);
+			step(is_reply_to_defined, Req, Response);
 		{error, Reason} ->
-            {ok, Response} = build_error_response(Request, {error, Reason}),
+            {ok, Response} = build_error_response(AuthRequest, {error, Reason}),
 			?log_error("authentication error: ~p", [Reason]),
-			reply(Response)
+			step(is_reply_to_defined, Req, Response)
 	end.
 
 -spec authenticate(#k1api_auth_request_dto{}) ->
@@ -203,11 +217,24 @@ build_error_response(Request, {error, Reason}) ->
     ?log_debug("Built response: ~p", [Response]),
 	{ok, Response}.
 
-reply(Response) ->
+
+step(is_reply_to_defined, Req, DTO) ->
+	case k_amqp_req:reply_to(Req) of
+		{ok, undefined} ->
+			% reply_to is undefined, sekip req
+			?log_warn("reply_to is undefined. skip request", []),
+			{ok, []};
+		{ok, _ReplyTo} ->
+			% reply_to is defined, reply
+			step(reply, Req, DTO)
+	end;
+
+step(reply, Req, Response) ->
 	case adto:encode(Response) of
 		{ok, Binary} ->
+			{ok, ReplyTo} = k_amqp_req:reply_to(Req),
 			Reply = #worker_reply{
-				reply_to = <<"pmm.k1api.auth_response">>,
+				reply_to = ReplyTo,
 				content_type = <<"OneAPIAuthResponse">>,
 				payload = Binary
             },

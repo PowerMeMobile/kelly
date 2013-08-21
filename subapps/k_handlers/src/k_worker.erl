@@ -42,19 +42,19 @@ init(_Args) ->
 handle_call(_Request, _From, State) ->
 	{stop, bad_call_request, State}.
 
-handle_cast({process, {Module, ContentType, Message, Channel, Pid}}, State = #state{}) ->
+handle_cast({process, {Module, Req, ConsumerPid}}, State = #state{}) ->
 	% ?log_debug("got message: ~p", [Message]),
-	case Module:process(ContentType, Message) of
+	case Module:process(Req) of
 		{ok, List} when is_list(List) ->
-			send_response(Channel, List),
+			send_response(Req, List),
 			{stop, normal, State};
 		{error, not_enough_data_to_proceed} ->
 			?log_debug("Not enough data to process receipt. Requeue.", []),
-			k_gen_consumer:requeue_message(Pid),
+			k_gen_consumer:requeue_message(ConsumerPid),
 			{stop, normal, State};
 		{error, {database_connection_failure, Reason}} ->
 			?log_debug("Database connection failure: ~p. Requeue.", [Reason]),
-			k_gen_consumer:requeue_message(Pid),
+			k_gen_consumer:requeue_message(ConsumerPid),
 			{stop, normal, State};
 		{error, Reason} ->
 			{stop, Reason, State}
@@ -76,9 +76,10 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal
 %% ===================================================================
 
-send_response(_Channel, []) ->
+send_response(_Req, []) ->
 	ok;
-send_response(Channel, [Head|Tail]) ->
+send_response(Req, [Head|Tail]) ->
+	{ok, Channel} = k_amqp_req:channel(Req),
 	#worker_reply{
 		reply_to = QName,
 		payload = Mes,

@@ -279,7 +279,6 @@ get_item(k_mb_incoming_sms, ID) ->
 get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 	MessageID = Receipt#k_mb_k1api_receipt.input_message_id,
 	CustomerID = Receipt#k_mb_k1api_receipt.customer_id,
-	%% ClientType = bsondoc:atom_to_binary(k1api),
 	InputID = {CustomerID, <<"k1api">>, MessageID},
 	?log_debug("InputID: ~p", [InputID]),
 	Selector = {
@@ -291,7 +290,7 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 		{ok, []} ->
 			?log_warn("k1api InputID undefined", []),
 			undefined;
-		{ok, [{_, Doc}]} ->
+		{ok, [{_, Doc} | _]} ->
 			?log_debug("Doc: ~p", [Doc]),
 			SubID = bsondoc:at(subscription_id, Doc),
 			?log_debug("SubID: ~p", [SubID]),

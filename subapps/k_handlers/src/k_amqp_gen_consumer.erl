@@ -17,7 +17,7 @@
 	code_change/3,
 
 	handle_subscribe/1,
-	handle_message/4,
+	handle_message/2,
 	handle_consume_ok/1,
 	handle_cancel_ok/1
 ]).
@@ -56,12 +56,12 @@ handle_subscribe(State = #state{handler_spec_name = HandlerSpecName}) ->
 	?log_debug("Handler [~p] will declare queue [~p]: ~p", [Handler, Queue, DeclareQueue]),
 	{ok, QoS, Queue, DeclareQueue, State#state{handler = Handler}}.
 
-handle_message(ContentType, Message, Channel, State = #state{
+handle_message(Req, State = #state{
 	handler = Handler
 }) ->
 	%?log_debug("got message: ~p", [Message]),
-    {ok, {Pid, MonRef}} = k_worker_sup:process(Handler, ContentType, Message, Channel, self()),
-    {noreply, {Pid, MonRef}, State}.
+	{ok, {Pid, MonRef}} = k_worker_sup:process(Handler, Req),
+	{noreply, {Pid, MonRef}, State}.
 
 handle_consume_ok(State = #state{}) ->
 	?log_debug("got basic.consume_ok", []),

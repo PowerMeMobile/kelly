@@ -1,6 +1,6 @@
 -module(k_sms_response_handler).
 
--export([process/2]).
+-export([process/1]).
 
 -include("amqp_worker_reply.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
@@ -11,9 +11,10 @@
 %% API
 %% ===================================================================
 
--spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(_ContentType, Message) ->
-	case adto:decode(#just_sms_response_dto{}, Message) of
+-spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
+	{ok, Payload} = k_amqp_req:payload(Req),
+	case adto:decode(#just_sms_response_dto{}, Payload) of
 		{ok, SmsResponse} ->
 			process_sms_response(SmsResponse);
 		Error ->

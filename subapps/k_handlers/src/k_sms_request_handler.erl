@@ -1,6 +1,6 @@
 -module(k_sms_request_handler).
 
--export([process/2]).
+-export([process/1]).
 -compile({no_auto_import, [split_binary/2]}).
 
 -include("amqp_worker_reply.hrl").
@@ -23,9 +23,10 @@
 %% API
 %% ===================================================================
 
--spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(_ContentType, Message) ->
-	case adto:decode(#just_sms_request_dto{}, Message) of
+-spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
+	{ok, Payload} = k_amqp_req:payload(Req),
+	case adto:decode(#just_sms_request_dto{}, Payload) of
 		{ok, SmsReq} ->
 			process_sms_request(SmsReq);
 		Error ->

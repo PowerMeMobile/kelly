@@ -1,6 +1,6 @@
 -module(k_incoming_sms_handler).
 
--export([process/2]).
+-export([process/1]).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_dto/include/adto.hrl").
@@ -8,6 +8,20 @@
 -include_lib("k_mailbox/include/application.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
 -include("amqp_worker_reply.hrl").
+
+%% ===================================================================
+%% API
+%% ===================================================================
+
+-spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
+	{ok, ContentType} = k_amqp_req:content_type(Req),
+	{ok, Payload} = k_amqp_req:payload(Req),
+	process(ContentType, Payload).
+
+%% ===================================================================
+%% Internals
+%% ===================================================================
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"IncomingSm">>, Message) ->

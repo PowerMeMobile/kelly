@@ -1,6 +1,6 @@
 -module(k_funnel_events_handler).
 
--export([process/2]).
+-export([process/1]).
 
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
@@ -9,6 +9,17 @@
 
 %% ===================================================================
 %% API
+%% ===================================================================
+
+
+-spec process(Req :: k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
+	{ok, ContentType} = k_amqp_req:content_type(Req),
+	{ok, Payload} = k_amqp_req:payload(Req),
+	process(ContentType, Payload).
+
+%% ===================================================================
+%% Internals
 %% ===================================================================
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
@@ -53,9 +64,6 @@ process(<<"ServerDownEvent">>, _Message) ->
 process(Type, _Message) ->
 	?log_warn("Got unexpected funnel event message type: ~p", [Type]),
 	{ok, []}.
-
-
-%%% Internal
 
 process_connection_down_event(ConnectionId, CustomerId, UserId) ->
 	case get_customer_uuid_by_id(CustomerId) of

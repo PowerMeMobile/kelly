@@ -1,4 +1,7 @@
 -ifndef(gen_consumer_spec).
+
+-include("amqp_req.hrl").
+
 -define(gen_consumer_spec, included).
 
 -type gen_srv_start_args() :: term().
@@ -11,8 +14,8 @@
 -type gen_srv_vsn() :: term() | {down, term()}.
 -type gen_srv_extra() :: term().
 
--type gen_srv_init_result() :: 
-		{ok,gen_srv_state()} 
+-type gen_srv_init_result() ::
+		{ok,gen_srv_state()}
 	|	{ok,gen_srv_state(),gen_srv_timeout()}
 	|	{ok,gen_srv_state(),hibernate}
 	|	{stop,gen_srv_stop_reason()}
@@ -21,8 +24,8 @@
 -spec init(gen_srv_start_args()) -> gen_srv_init_result().
 
 
--type gen_srv_handle_call_result() :: 
-		{reply,gen_srv_reply(),gen_srv_state()} 
+-type gen_srv_handle_call_result() ::
+		{reply,gen_srv_reply(),gen_srv_state()}
 	|	{reply,gen_srv_reply(),gen_srv_state(),gen_srv_timeout()}
  	|	{reply,gen_srv_reply(),gen_srv_state(),hibernate}
 	|	{noreply,gen_srv_state()}
@@ -44,7 +47,7 @@
 
 -type gen_srv_handle_info_result() ::
 		{noreply,gen_srv_state()}
-	|	{noreply,gen_srv_state(),gen_srv_timeout()} 
+	|	{noreply,gen_srv_state(),gen_srv_timeout()}
 	|	{noreply,gen_srv_state(),hibernate}
 	|	{stop,gen_srv_stop_reason(),gen_srv_state()}.
 
@@ -61,7 +64,7 @@
 -type queue_name() :: binary().
 -type exchange_name() :: binary().
 
--spec handle_message(content_type(), payload(), channel(), gen_srv_state()) -> {noreply, pid(), gen_srv_state()} | {noreply, gen_srv_state()}.
+-spec handle_message(k_amqp_req:req(), gen_srv_state()) -> {noreply, pid(), gen_srv_state()} | {noreply, gen_srv_state()}.
 -spec handle_subscribe(gen_srv_state()) -> {ok, amqp_opts(), queue_name(), exchange_name(), gen_srv_state()} | {ok, amqp_opts(), queue_name(), gen_srv_state()}.
 -spec handle_consume_ok(gen_srv_state()) -> {noreply, gen_srv_state()}.
 -spec handle_cancel_ok(gen_srv_state()) -> {noreply, gen_srv_stop_reason(), gen_srv_state()}.

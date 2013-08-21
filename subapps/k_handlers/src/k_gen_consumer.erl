@@ -23,6 +23,7 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("alley_common/include/gen_server_spec.hrl").
+-include("amqp_req.hrl").
 
 -record(state, {
 		amqp_conn,
@@ -73,8 +74,7 @@
                       Extra :: term()) ->
     {ok, NewState :: term()} | {error, Reason :: term()}.
 
--callback handle_message(ContentType :: binary(), Content :: binary(),
-			Channel :: pid(), State :: term()) ->
+-callback handle_message(k_amqp_req:req(), State :: term()) ->
 	{noreply, {Pid :: pid(), MonRef :: reference()}, NewState :: term()} |
 	{noreply, NewState :: term()}.
 
@@ -230,21 +230,28 @@ handle_info(#'basic.cancel_ok'{}, State = #state{
 
 handle_info({#'basic.deliver'{delivery_tag = Tag},
 			#amqp_msg{ props = #'P_basic'{
-				content_type = ContentType
-			}, payload = Content}},
+				content_type = ContentType,
+				reply_to = ReplyTo
+			}, payload = Payload}},
 			State = #state{
 				amqp_chan = Channel,
 				ref_dict = RefDict,
 				pid_dict = PidDict,
 				mod_state = ModState,
 				module = Mod}) ->
+	Req = #amqp_req{
+		'req.payload' = Payload,
+		'req.p_basic.content_type' = ContentType,
+		'req.p_basic.reply_to' = ReplyTo,
+		'amqp.channel' = Channel
+	},
 	{{ProcPid, ProcMonRef}, NewState} =
-    	case Mod:handle_message(ContentType, Content, Channel, ModState) of
-	    	{noreply, {Pid, MonRef}, NewMState} ->
-		    	{{Pid, MonRef}, NewMState};
-    		{noreply, NewMState} ->
-	    		{undefined, NewMState}
-    	end,
+		case Mod:handle_message(Req, ModState) of
+			{noreply, {Pid, MonRef}, NewMState} ->
+				{{Pid, MonRef}, NewMState};
+			{noreply, NewMState} ->
+				{undefined, NewMState}
+		end,
 	{ok, NewRefDict, NewPidDict} = register(RefDict, PidDict, {ProcPid, ProcMonRef}, Tag),
 
 	{noreply, State#state{

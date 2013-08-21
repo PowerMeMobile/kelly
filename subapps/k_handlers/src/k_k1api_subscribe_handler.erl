@@ -1,6 +1,6 @@
 -module(k_k1api_subscribe_handler).
 
--export([process/2]).
+-export([process/1]).
 
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
@@ -11,45 +11,55 @@
 %% API
 %% ===================================================================
 
--spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(CT = <<"SubscribeIncomingSms">>, Message) ->
+-spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
+	{ok, ContentType} = k_amqp_req:content_type(Req),
+	{ok, Payload} = k_amqp_req:payload(Req),
+	process(Req, ContentType, Payload).
+
+%% ===================================================================
+%% API
+%% ===================================================================
+
+-spec process(term(), binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req, <<"SubscribeIncomingSms">>, Message) ->
 	case adto:decode(#k1api_subscribe_incoming_sms_request_dto{}, Message) of
-		{ok, Request} ->
-			?log_debug("Got subscribe incoming sms request: ~p", [Request]),
-			process_subscription(Request, CT);
+		{ok, SubRequest} ->
+			?log_debug("Got subscribe incoming sms request: ~p", [SubRequest]),
+			process_subscription(Req, SubRequest);
 		Error ->
 			?log_error("k1api dto decode error: ~p", [Error]),
 			{ok, []}
 	end;
-process(CT = <<"UnsubscribeIncomingSms">>, Message) ->
+process(Req, <<"UnsubscribeIncomingSms">>, Message) ->
 	case adto:decode(#k1api_unsubscribe_incoming_sms_request_dto{}, Message) of
-		{ok, Request} ->
-			?log_debug("Got unsubscribe incoming sms request: ~p", [Request]),
-			process_subscription(Request, CT);
+		{ok, UnsubRequest} ->
+			?log_debug("Got unsubscribe incoming sms request: ~p", [UnsubRequest]),
+			process_subscription(Req, UnsubRequest);
 		Error ->
 			?log_error("k1api dto decode error: ~p", [Error]),
 			{ok, []}
 	end;
-process(CT = <<"SubscribeReceipts">>, Message) ->
+process(Req, <<"SubscribeReceipts">>, Message) ->
 	case adto:decode(#k1api_subscribe_sms_receipts_request_dto{}, Message) of
-		{ok, Request} ->
-			?log_debug("Got subscribe sms receipts request: ~p", [Request]),
-			process_subscription(Request, CT);
+		{ok, SubRequest} ->
+			?log_debug("Got subscribe sms receipts request: ~p", [SubRequest]),
+			process_subscription(Req, SubRequest);
 		Error ->
 			?log_error("k1api dto decode error: ~p", [Error]),
 			{ok, []}
 	end;
-process(CT = <<"UnsubscribeReceipts">>, Message) ->
+process(Req, <<"UnsubscribeReceipts">>, Message) ->
 	case adto:decode(#k1api_unsubscribe_sms_receipts_request_dto{}, Message) of
-		{ok, Request} ->
-			?log_debug("Got unsubscribe sms receipts request: ~p", [Request]),
-			process_subscription(Request, CT);
+		{ok, UnsubRequest} ->
+			?log_debug("Got unsubscribe sms receipts request: ~p", [UnsubRequest]),
+			process_subscription(Req, UnsubRequest);
 		Error ->
 			?log_error("k1api dto decode error: ~p", [Error]),
 			{ok, []}
 	end;
 
-process(ContentType, _Bin) ->
+process(_Req, ContentType, _Payload) ->
 	?log_warn("Got unexpected message type: ~p", [ContentType]),
 	{ok, []}.
 
@@ -57,7 +67,7 @@ process(ContentType, _Bin) ->
 %% Interal
 %% ===================================================================
 
-process_subscription(Request = #k1api_subscribe_incoming_sms_request_dto{}, CT) ->
+process_subscription(Req, SubRequest = #k1api_subscribe_incoming_sms_request_dto{}) ->
 	#k1api_subscribe_incoming_sms_request_dto{
 		id = ID,
 		customer_id = CustomerID,
@@ -67,8 +77,8 @@ process_subscription(Request = #k1api_subscribe_incoming_sms_request_dto{}, CT) 
 		criteria = Criteria,
 		correlator = _Correlator,
 		callback_data = Callback
-	} = Request,
-	QName = <<"pmm.k1api.incoming">>,
+	} = SubRequest,
+	QName = <<"pmm.k1api.incoming.sms">>,
 	Subscription = #k_mb_k1api_incoming_sms_sub{
 		id = ID,
 		customer_id = CustomerID,
@@ -86,21 +96,21 @@ process_subscription(Request = #k1api_subscribe_incoming_sms_request_dto{}, CT) 
 		id = ID,
 		subscription_id = ID
 	},
-	reply(ResponseDTO, CT);
-process_subscription(Request = #k1api_unsubscribe_incoming_sms_request_dto{}, CT) ->
+	step(is_reply_to_defined, Req, ResponseDTO);
+process_subscription(Req, UnsubRequest = #k1api_unsubscribe_incoming_sms_request_dto{}) ->
 	#k1api_unsubscribe_incoming_sms_request_dto{
 		id = RequestID,
 		customer_id = CustomerID,
 		user_id = _UserID,
 		subscription_id = SubscriptionID
-	} = Request,
+	} = UnsubRequest,
 	UserID = <<"undefined">>,
 	ok = k_mailbox:unregister_subscription(SubscriptionID, CustomerID, UserID),
 	ResponseDTO = #k1api_unsubscribe_incoming_sms_response_dto{
 		id = RequestID
 	},
-	reply(ResponseDTO, CT);
-process_subscription(Request = #k1api_subscribe_sms_receipts_request_dto{}, CT) ->
+	step(is_reply_to_defined, Req, ResponseDTO);
+process_subscription(Req, SubRequest = #k1api_subscribe_sms_receipts_request_dto{}) ->
 	#k1api_subscribe_sms_receipts_request_dto{
 		id = ID,
 		customer_id = CustomerID,
@@ -108,8 +118,8 @@ process_subscription(Request = #k1api_subscribe_sms_receipts_request_dto{}, CT) 
 		url = URL,
 		dest_addr = DestAddr,
 		callback_data = Callback
-	} = Request,
-	QName = <<"pmm.k1api.incoming">>,
+	} = SubRequest,
+	QName = <<"pmm.k1api.incoming.sms">>,
 	Subscription = #k_mb_k1api_receipt_sub{
 		id = ID,
 		customer_id = CustomerID,
@@ -124,27 +134,40 @@ process_subscription(Request = #k1api_subscribe_sms_receipts_request_dto{}, CT) 
 	ResponseDTO = #k1api_subscribe_sms_receipts_response_dto{
 		id = ID
 	},
-	reply(ResponseDTO, CT);
-process_subscription(Request = #k1api_unsubscribe_sms_receipts_request_dto{}, CT) ->
+	step(is_reply_to_defined, Req, ResponseDTO);
+process_subscription(Req, UnsubRequest = #k1api_unsubscribe_sms_receipts_request_dto{}) ->
 	#k1api_unsubscribe_sms_receipts_request_dto{
 		id = ReqID,
 		customer_id = CustomerID,
 		user_id = _UserID,
 		subscription_id = SubscriptionID
-	} = Request,
+	} = UnsubRequest,
 	UserID = <<"undefined">>,
 	ok = k_mailbox:unregister_subscription(SubscriptionID, CustomerID, UserID),
 	ResponseDTO = #k1api_unsubscribe_sms_receipts_response_dto{
 		id = ReqID
 	},
-	reply(ResponseDTO, CT).
+	step(is_reply_to_defined, Req, ResponseDTO).
 
-reply(DTO, ContentType) ->
+step(is_reply_to_defined, Req, DTO) ->
+	case k_amqp_req:reply_to(Req) of
+		{ok, undefined} ->
+			% reply_to is undefined, sekip req
+			?log_warn("reply_to is undefined. skip request", []),
+			{ok, []};
+		{ok, _ReplyTo} ->
+			% reply_to is defined, reply
+			step(reply, Req, DTO)
+	end;
+
+step(reply, Req, DTO) ->
+	{ok, ContentType} = k_amqp_req:content_type(Req),
 	?log_debug("Send response {~p : ~p}", [DTO, ContentType]),
 	case adto:encode(DTO) of
 		{ok, Binary} ->
+			{ok, ReplyTo} = k_amqp_req:reply_to(Req),
 			Reply = #worker_reply{
-				reply_to = <<"pmm.k1api.subscription_response">>,
+				reply_to = ReplyTo,
 				content_type = ContentType,
 				payload = Binary},
 			{ok, [Reply]};

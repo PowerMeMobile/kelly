@@ -1,6 +1,6 @@
 -module(k_receipt_batch_handler).
 
--export([process/2]).
+-export([process/1]).
 
 -include("amqp_worker_reply.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
@@ -10,6 +10,16 @@
 
 %% ===================================================================
 %% API
+%% ===================================================================
+
+-spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
+	{ok, ContentType} = k_amqp_req:content_type(Req),
+	{ok, Payload} = k_amqp_req:payload(Req),
+	process(ContentType, Payload).
+
+%% ===================================================================
+%% Internals
 %% ===================================================================
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
@@ -24,10 +34,6 @@ process(<<"ReceiptBatch">>, Message) ->
 process(ContentType, Message) ->
 	?log_warn("Got unexpected message of type ~p: ~p", [ContentType, Message]),
 	{ok, []}.
-
-%% ===================================================================
-%% Internal
-%% ===================================================================
 
 -spec process_receipt_batch(#just_delivery_receipt_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{

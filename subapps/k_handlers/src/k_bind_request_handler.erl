@@ -1,6 +1,6 @@
 -module(k_bind_request_handler).
 
--export([process/2]).
+-export([process/1]).
 
 -define(authentication_failed, {ok, []}).
 
@@ -9,9 +9,10 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
 
--spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(_ContentType, Message) ->
-	case adto:decode(#funnel_auth_request_dto{}, Message) of
+-spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+process(Req) ->
+	{ok, Payload} = k_amqp_req:payload(Req),
+	case adto:decode(#funnel_auth_request_dto{}, Payload) of
 		{ok, Request} ->
 			Response =
 				case authenticate(Request) of
