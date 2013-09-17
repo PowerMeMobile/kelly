@@ -5,7 +5,7 @@
 -export([
 	start_link/0,
 	send/4
-	]).
+]).
 
 -export([
 	init/1,
@@ -19,7 +19,7 @@
 	handle_fork_call/4,
 	handle_child_forked/3,
 	handle_child_terminated/4
-	]).
+]).
 
 
 -include_lib("k_common/include/logging.hrl").
@@ -67,17 +67,20 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-handle_fork_call(_Arg, {{send, ID, Payload, QName, ContentType}, S = #state{}}, _ReplyTo, _WP) ->
-	#state{
-		chan = Chan,
-		reply_to = ReplyTo
-		} = S,
-	BasicPropsPropListn =
-		[{message_id, ID},
+handle_fork_call(_Arg, {_Task, #state{chan = undefined}}, _ReplyTo, _WP) ->
+	Response = k_mb_amqp_consumer_srv:get_response(undefined),
+	{reply, Response, normal};
+
+handle_fork_call(_Arg, {{send, ID, Payload, QName, ContentType},
+				 #state{chan = Chan, reply_to = ReplyTo}}, _ReplyTo, _WP) ->
+	Props = [
+		{message_id, ID},
 		{correlation_id, ID},
 		{reply_to, ReplyTo},
-		{content_type, ContentType}],
-	ok = rmql:basic_publish(Chan, QName, Payload, BasicPropsPropListn),
+		{content_type, ContentType},
+		{delivery_mode, 2} %% persistent
+	],
+	ok = rmql:basic_publish(Chan, QName, Payload, Props),
 	Response = k_mb_amqp_consumer_srv:get_response(ID),
 	{reply, Response, normal};
 
