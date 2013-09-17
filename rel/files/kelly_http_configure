@@ -102,6 +102,16 @@ echo -n 'customer_uuid=16f87550-1794-11e2-ade6-00269e42f7a5&customer_id=oneapi-p
 echo -n 'id=user&password=password&bind_types=transmitter;receiver;transceiver;oneapi' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users; echo
 
 #
+# Soap
+#
+
+# postpaid customer
+echo -n 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=soap-postpaid&name=soap-postpaid&originators=999,6,0&networks=920a009a-5270-11e1-b961-001d0947ec73&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_originator=999,6,0&billing_type=postpaid&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+
+echo -n 'id=user&password=password&bind_types=transmitter;receiver;transceiver;oneapi' |
+lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/c173786e-63ce-11e2-8740-001d0947ec73/users; echo
+
+#
 # smppload
 
 # postpaid customer
