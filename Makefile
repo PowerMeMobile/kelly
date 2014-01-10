@@ -62,4 +62,4 @@ api-test:
 	@./rebar skip_deps=true eunit suites=kelly_http_api_prv_test
 
 tags:
-        @find . -name "*.[e,h]rl" -print | etags -
+	@find . -name "*.[e,h]rl" -print | etags -
