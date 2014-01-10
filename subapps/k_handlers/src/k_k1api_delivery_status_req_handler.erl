@@ -29,36 +29,20 @@ process_delivery_status_request(Request) ->
 	?log_debug("Got k1api sms delivery status request: ~p", [Request]),
 	#k1api_sms_delivery_status_request_dto{
 		id = RequestID,
-		customer_id = CustomerID,
-		user_id = _UserID,
-		sms_request_id = SmsRequestID,
-		address = SourceAddr
+		sms_request_id = SmsRequestID
 	} = Request,
-	UserID = undefined,
-	case k_k1api:get_msg_ids_by_sms_request_id(CustomerID, UserID, SourceAddr, SmsRequestID) of
-		{ok, IDs} ->
-			get_statuses(RequestID, IDs);
-		{error, Error} ->
-			?log_error("k_storage unexpected error: ~p", [Error]),
-			{ok, []}
-	end.
-
-get_statuses(RequestID, InputIDs) ->
-	%% get status & destination address for each Input message id
-	%% and put it into dto record #k1api_sms_status_dto
-	StatusesDTO = lists:map(fun({CustomerId, ClientType, InMsgId}) ->
-		{ok, MsgInfo} = k_shifted_storage:get_mt_msg_info(CustomerId, ClientType, InMsgId),
-		#k1api_sms_status_dto{
-			address = MsgInfo#msg_info.dst_addr,
-			status = MsgInfo#msg_info.status
-		}
-	end, InputIDs),
-
+	{ok, Msgs} = k_shifted_storage:find(mt_messages, {ri, SmsRequestID}),
 	DTO = #k1api_sms_delivery_status_response_dto{
 		id = RequestID,
-		statuses = StatusesDTO
+		statuses = [status(Msg) || Msg <- Msgs]
 	},
 	reply(DTO).
+
+status({_ID, MsgDoc}) ->
+	#k1api_sms_status_dto{
+		address = k_storage_utils:doc_to_addr(bson:at(da, MsgDoc)),
+		status = bson:at(s, MsgDoc)
+	}.
 
 reply(DTO) ->
 	case adto:encode(DTO) of

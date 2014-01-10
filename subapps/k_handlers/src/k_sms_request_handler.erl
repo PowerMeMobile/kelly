@@ -220,7 +220,7 @@ get_param_by_name(Name, Params, Default) ->
 
 process_k1api_req(#just_sms_request_dto{
 	client_type = k1api,
-	id = RequestId,
+	id = _RequestId,
 	customer_id = CustomerId,
 	user_id = _UserId,
 	params = Params,
@@ -232,8 +232,7 @@ process_k1api_req(#just_sms_request_dto{
 	CallbackData = get_param_by_name(<<"k1api_callback_data">>, Params, undefined),
 	?log_debug("CallbackData: ~p", [CallbackData]),
 	SubId = create_k1api_receipt_subscription(CustomerId, <<"undefined">>, SourceAddr, NotifyURL, CallbackData),
-	ok = link_input_id_to_sub_id(InputMessageIds, SubId),
-	ok = link_sms_request_id_to_message_ids(CustomerId, undefined, SourceAddr, RequestId, InputMessageIds);
+	ok = link_input_id_to_sub_id(InputMessageIds, SubId);
 process_k1api_req(_, _) ->
 	ok.
 
@@ -259,15 +258,6 @@ link_input_id_to_sub_id([], _SubId) -> ok;
 link_input_id_to_sub_id([InputId | RestIds], SubId) ->
 	ok = k_mb_db:link_input_id_to_sub_id(InputId, SubId),
 	link_input_id_to_sub_id(RestIds, SubId).
-
-link_sms_request_id_to_message_ids(
-	CustomerId, UserId, SenderAddress, SmsRequestId, InputMessageIds
-) ->
-	%% Include CustomerId & UserId to Key to avoid access to another's
-	%% sms statuses
-	%% Include SenderAddress into Key to make SmsRequestId unique
-	%% within specific SenderAddress
-	ok = k_k1api:link_sms_request_id_to_msg_ids(CustomerId, UserId, SenderAddress, SmsRequestId, InputMessageIds).
 
 %% ===================================================================
 %% Message splitting logic from Just
