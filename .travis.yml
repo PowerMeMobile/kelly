@@ -1,13 +1,14 @@
 language: erlang
 script: "make all"
 otp_release:
-  - R15B01
-# whitelist
+  - R15B03
 branches:
   only:
     - master
     - develop
 notifications:
   email:
-    - a.sizov@dev1team.net
     - d.klionsky@dev.powermemobile.com
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq uuid-dev
