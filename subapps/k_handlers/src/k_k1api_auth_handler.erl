@@ -23,14 +23,16 @@ process(_ContentType, Message) ->
 process_auth_req(Request) ->
 	case authenticate(Request) of
 		{allow, Customer = #customer{}} ->
-			{ok, ResponseDTO} = build_customer_response(Request, Customer),
-			reply(ResponseDTO);
+			{ok, Response} = build_customer_response(Request, Customer),
+			reply(Response);
 		{deny, Reason} ->
+            {ok, Response} = build_error_response(Request, {deny, Reason}),
 			?log_notice("k1api authentication denied: ~p", [Reason]),
-			{ok, []};
+			reply(Response);
 		{error, Reason} ->
+            {ok, Response} = build_error_response(Request, {error, Reason}),
 			?log_error("authentication error: ~p", [Reason]),
-			{ok, []}
+			reply(Response)
 	end.
 
 -spec authenticate(#k1api_auth_request_dto{}) ->
@@ -95,20 +97,24 @@ perform_checks(BindReq, User = #user{}, [Check | SoFar], Customer) ->
 			{deny, DenyReason}
 	end.
 
-build_customer_response(#k1api_auth_request_dto{
-	id = ConnectionId,
-	customer_id = CustomerId
-	}, #customer{
-			uuid = UUID,
-			billing_type = BillingType,
-			allowed_sources = AllowedSources,
-			default_source = DefaultSource,
-			networks = NtwIdList,
-			default_provider_id = DP,
-			receipts_allowed = RA,
-			no_retry = NR,
-			default_validity = _DV,
-			max_validity = MV }) ->
+build_customer_response(Request, Customer) ->
+    #k1api_auth_request_dto{
+	    id = ReqId,
+    	customer_id = CustomerId
+    } = Request,
+
+    #customer{
+	    uuid = UUID,
+		billing_type = BillingType,
+		allowed_sources = AllowedSources,
+		default_source = DefaultSource,
+		networks = NtwIdList,
+		default_provider_id = DP,
+		receipts_allowed = RA,
+		no_retry = NR,
+		default_validity = _DV,
+		max_validity = MV
+    } = Customer,
 
 	{Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
 		%%%NETWORK SECTION%%%
@@ -149,9 +155,8 @@ build_customer_response(#k1api_auth_request_dto{
 		end
 	end, {[], []}, NtwIdList),
 
-	CustomerDTO = #k1api_auth_response_dto{
-		id = ConnectionId,
-		system_id = CustomerId,
+    CustomerDTO = #k1api_auth_response_customer_dto{
+		id = CustomerId,
 		uuid = UUID,
 		billing_type = BillingType,
 		allowed_sources = AllowedSources,
@@ -163,9 +168,39 @@ build_customer_response(#k1api_auth_request_dto{
 		no_retry = NR,
 		default_validity = MV, %% fake
 		max_validity = MV
+    },
+
+	Response = #k1api_auth_response_dto{
+		id = ReqId,
+        result = {customer, CustomerDTO}
 	},
-	?log_debug("Built customer: ~p", [CustomerDTO]),
-	{ok, CustomerDTO}.
+	?log_debug("Built response: ~p", [Response]),
+	{ok, Response}.
+
+build_error_response(Request, {deny, Reason}) ->
+    #k1api_auth_request_dto{
+	    id = ReqId
+    } = Request,
+
+	Response = #k1api_auth_response_dto{
+		id = ReqId,
+        result = {error, "Request denied: " ++ atom_to_list(Reason)}
+	},
+
+    ?log_debug("Built response: ~p", [Response]),
+	{ok, Response};
+build_error_response(Request, {error, Reason}) ->
+    #k1api_auth_request_dto{
+	    id = ReqId
+    } = Request,
+
+	Response = #k1api_auth_response_dto{
+		id = ReqId,
+        result = {error, "Request error: " ++ atom_to_list(Reason)}
+	},
+
+    ?log_debug("Built response: ~p", [Response]),
+	{ok, Response}.
 
 reply(Response) ->
 	case adto:encode(Response) of
@@ -173,7 +208,8 @@ reply(Response) ->
 			Reply = #worker_reply{
 				reply_to = <<"pmm.k1api.auth_response">>,
 				content_type = <<"OneAPIAuthResponse">>,
-				payload = Binary},
+				payload = Binary
+            },
 			{ok, [Reply]};
 		Error ->
 			?log_warn("Unexpected k1api auth response encode error: ~p", [Error]),
