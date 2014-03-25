@@ -7,7 +7,6 @@
 	available_addresses/2
 ]).
 
--include_lib("stdlib/include/qlc.hrl").
 -include("application.hrl").
 -include("address.hrl").
 

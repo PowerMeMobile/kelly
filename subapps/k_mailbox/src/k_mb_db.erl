@@ -1,7 +1,6 @@
 -module(k_mb_db).
 
 -include_lib("k_common/include/logging.hrl").
--include_lib("stdlib/include/qlc.hrl").
 -include("application.hrl").
 -include("address.hrl").
 
