@@ -19,12 +19,13 @@
 start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
--spec process(atom(), binary(), binary(), pid(), pid()) -> {ok, pid()}.
+-spec process(atom(), binary(), binary(), pid(), pid()) -> {ok, {pid(), reference()}}.
 process(Module, ContentType, Message, Channel, ConsumerPid) ->
 	{SupPid, _Value} = gproc:await({n, l, ?MODULE}),
 	{ok, WPid} = supervisor:start_child(SupPid, []),
+    MonRef = erlang:monitor(process, WPid),
 	gen_server:cast(WPid, {process, {Module, ContentType, Message, Channel, ConsumerPid}}),
-	{ok, WPid}.
+	{ok, {WPid, MonRef}}.
 
 init(_Args) ->
 	gproc:add_local_name(?MODULE),

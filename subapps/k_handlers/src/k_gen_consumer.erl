@@ -203,14 +203,14 @@ handle_info({#'basic.deliver'{delivery_tag = Tag},
 				pid_dict = PidDict,
 				mod_state = ModState,
 				module = Mod}) ->
-	{ProcPid, NewState} =
-	case Mod:handle_message(ContentType, Content, Channel, ModState) of
-		{noreply, Pid, NewMState} ->
-			{Pid, NewMState};
-		{noreply, NewMState} ->
-			{undefined, NewMState}
-	end,
-	{ok, NewRefDict, NewPidDict} = register(RefDict, PidDict, ProcPid, Tag),
+	{{ProcPid, ProcMonRef}, NewState} =
+    	case Mod:handle_message(ContentType, Content, Channel, ModState) of
+	    	{noreply, {Pid, MonRef}, NewMState} ->
+		    	{{Pid, MonRef}, NewMState};
+    		{noreply, NewMState} ->
+	    		{undefined, NewMState}
+    	end,
+	{ok, NewRefDict, NewPidDict} = register(RefDict, PidDict, {ProcPid, ProcMonRef}, Tag),
 
 	{noreply, State#state{
 		ref_dict = NewRefDict,
@@ -303,8 +303,7 @@ queue_bind(Channel, QName, Xchg) ->
 	ok = rmql:queue_bind(Channel, QName, Xchg),
 	?log_info("queue[~p] binding OK", [QName]).
 
-register(RefDict, PidDict, Pid, Tag) ->
-	MonRef = erlang:monitor(process, Pid),
+register(RefDict, PidDict, {Pid, MonRef}, Tag) ->
 	NewRefDict = dict:store(MonRef, {Tag, Pid}, RefDict),
 	NewPidDict = dict:store(Pid, MonRef, PidDict),
 	{ok, NewRefDict, NewPidDict}.
