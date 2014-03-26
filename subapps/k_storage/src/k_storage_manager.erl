@@ -56,9 +56,8 @@ get_storage_mode() ->
 %% ===================================================================
 
 -spec ensure_static_storage_indexes(server_name()) -> ok.
-ensure_static_storage_indexes(ServerName) ->
-	ok = mongodb_storage:ensure_index(ServerName, k1api_sms_request_id_to_msg_ids,
-		{key, {customer_id, 1, user_id, 1, src_addr, 1, req_id, 1}}).
+ensure_static_storage_indexes(_ServerName) ->
+    ok.
 
 -spec ensure_dynamic_storage_indexes(server_name()) -> ok.
 ensure_dynamic_storage_indexes(ServerName) ->
