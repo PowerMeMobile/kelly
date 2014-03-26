@@ -50,9 +50,6 @@ release: generate
 configure:
 	@./rel/files/http_conf.sh
 
-tags:
-	@find . -name "*.[e,h]rl" -print | etags -
-
 api-test:
 	@./rebar skip_deps=true eunit suites=kelly_http_api_addr2cust_test
 	@./rebar skip_deps=true eunit suites=kelly_http_api_cst_test
@@ -64,4 +61,4 @@ simple-test: generate
 	@./test/simple_test
 
 tags:
-	find . -name "*.[e,h]rl" -print | etags -
+	@find . -name "*.[e,h]rl" -print | etags -
