@@ -24,7 +24,7 @@ init() ->
 		route = "/report/downlink"
 	}}.
 
-read(Params) ->
+read(_Params) ->
 	case k_statistic:downlink_report() of
 		{ok, Report} ->
 			{ok, Report};
