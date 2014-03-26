@@ -43,6 +43,5 @@ init([]) ->
 			?WORKER(k_mb_subscription_mgr),
 			?WORKER(k_mb_postponed_queue),
 			?WORKER(k_mb_wpool)
-			%% ?WORKER(k_mb_gcollector)
 		]}
 	}.

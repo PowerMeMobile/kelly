@@ -4,11 +4,6 @@
 
 -include("application.hrl").
 
--type input_sms_id() :: {	CustomerID :: binary(),
-							ClientType :: atom(),
-							MessageID :: bitstring()
-						}.
-
 %% ===================================================================
 %% API Functions Exports
 %% ===================================================================
@@ -42,7 +37,6 @@ unregister_subscription(SubscriptionID, CustomerID, UserID) ->
 
 -spec register_incoming_item(Item :: k_mb_item()) -> ok.
 register_incoming_item(Item) ->
-	%% Expire = k_mb_gcollector:new_expire(),
 	k_mb_db:save(Item),
 	k_mb_wpool:process_incoming_item(Item).
 
