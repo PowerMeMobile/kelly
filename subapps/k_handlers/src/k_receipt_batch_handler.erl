@@ -68,6 +68,10 @@ traverse_delivery_receipts(GatewayId, DlrTime,
 			Error
 	end.
 
+register_delivery_receipt(#msg_info{client_type = ClientType}, _, _)
+    when ClientType =:= mm orelse ClientType =:= soap ->
+    %% no need to register receipts.
+    ok;
 register_delivery_receipt(MsgInfo, DlrTime, MessageState) ->
 	{ok, Item} = build_receipt_item(MsgInfo, DlrTime, MessageState),
 	ok = k_mailbox:register_incoming_item(Item).
