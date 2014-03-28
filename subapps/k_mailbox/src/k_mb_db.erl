@@ -416,8 +416,9 @@ get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
 link_input_id_to_sub_id({CID, UID, k1api, InMsgID}, SubscriptionID) ->
 	Modifier = {
 		'customer_id'     , CID,
+        'user_id'         , UID,
 		'client_type'     , bsondoc:atom_to_binary(k1api),
-		'input_id'        , ID,
+		'input_id'        , InMsgID,
 		'subscription_id' , SubscriptionID
 	},
 	{ok, _ID} = mongodb_storage:insert(static_storage, ?inputIdToSubIdColl, Modifier),

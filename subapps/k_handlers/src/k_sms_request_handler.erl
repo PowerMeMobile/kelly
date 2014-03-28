@@ -220,16 +220,16 @@ process_k1api_req(#just_sms_request_dto{
 	client_type = k1api,
 	id = _RequestId,
 	customer_id = CustomerId,
-	user_id = _UserId,
+	user_id = UserId,
 	params = Params,
 	source_addr = SourceAddr
 }, InMsgIds) ->
-	InputMessageIds = [{CustomerId, k1api, InMsgId} || InMsgId <- InMsgIds],
+	InputMessageIds = [{CustomerId, UserId, k1api, InMsgId} || InMsgId <- InMsgIds],
 	NotifyURL = get_param_by_name(<<"k1api_notify_url">>, Params, undefined),
 	?log_debug("NotifyURL: ~p", [NotifyURL]),
 	CallbackData = get_param_by_name(<<"k1api_callback_data">>, Params, undefined),
 	?log_debug("CallbackData: ~p", [CallbackData]),
-	SubId = create_k1api_receipt_subscription(CustomerId, <<"undefined">>, SourceAddr, NotifyURL, CallbackData),
+	SubId = create_k1api_receipt_subscription(CustomerId, UserId, SourceAddr, NotifyURL, CallbackData),
 	ok = link_input_id_to_sub_id(InputMessageIds, SubId);
 process_k1api_req(_, _) ->
 	ok.
