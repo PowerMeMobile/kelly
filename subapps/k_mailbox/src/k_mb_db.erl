@@ -4,10 +4,6 @@
 -include("application.hrl").
 -include("address.hrl").
 
--type input_sms_id() :: {	CustomerID :: binary(),
-							ClientType :: atom(),
-							MessageID :: bitstring()
-						}.
 %% API
 -export([
 	save/1,
@@ -32,6 +28,9 @@
 
 	link_input_id_to_sub_id/2
 ]).
+
+-type input_sms_id() ::
+    {CustomerID::binary(), UserID::binary(), ClientType::atom(), InMsgID::binary()}.
 
 %% ===================================================================
 %% API
@@ -180,7 +179,7 @@ save_delivery_status(#k_mb_incoming_sms{
 }, Status, Timestamp) ->
 	ok = k_dynamic_storage:set_mo_downlink_dlr_status(Id, Status, Timestamp).
 
--spec delete_subscription(SubscriptionID :: binary()) -> ok.
+-spec delete_subscription(SubscriptionID::binary()) -> ok.
 delete_subscription(SubscriptionID) ->
 	ok = mongodb_storage:delete(static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}).
 
@@ -205,7 +204,7 @@ delete_item(Item = #k_mb_incoming_sms{}) ->
 	ok = mongodb_storage:delete(static_storage, ?incomingSmsColl, Selector),
 	ok = mongodb_storage:delete(static_storage, ?pendingItemsColl, Selector).
 
--spec get_funnel_receipts(binary(), binary()) -> {ok, [{k_mb_funnel_receipt, ID :: binary()}]}.
+-spec get_funnel_receipts(binary(), binary()) -> {ok, [{k_mb_funnel_receipt, ID::binary()}]}.
 get_funnel_receipts(CustomerID, UserID) ->
 	Selector = {
 		customer_id, CustomerID,
@@ -227,7 +226,7 @@ get_items() ->
 			{k_mb_k1api_receipt, K1APIReceiptIds},
 			{k_mb_incoming_sms, IncomingSmsIds}	]}.
 
--spec get_item(ItemType :: atom(), ItemID :: binary()) -> Item :: tuple().
+-spec get_item(ItemType::atom(), ItemID::binary()) -> Item::tuple().
 get_item(k_mb_k1api_receipt, ID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(static_storage, ?k1apiReceiptsColl, {'_id' , ID}),
 	{ok, #k_mb_k1api_receipt{
@@ -274,7 +273,7 @@ get_item(k_mb_incoming_sms, ID) ->
 		created_at = bsondoc:at(created_at, Doc)
 	}}.
 
--spec get_subscription_for_k1api_receipt(Receipt :: #k_mb_k1api_receipt{}) ->
+-spec get_subscription_for_k1api_receipt(Receipt::#k_mb_k1api_receipt{}) ->
 	undefined |
 	{ok, k_mb_subscription()}.
 get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
@@ -311,7 +310,7 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 			{ok, Sub}
 	end.
 
--spec get_subscription(SubscriptionID :: binary()) ->
+-spec get_subscription(SubscriptionID::binary()) ->
 	{ok, k_mb_subscription()}.
 get_subscription(SubscriptionID) ->
 	{ok, [{_, Doc}]} = mongodb_storage:find(static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}),
@@ -364,7 +363,7 @@ get_subscription_ids() ->
 	IDs = [ID || {ID, _} <- Docs],
 	{ok, IDs}.
 
--spec set_pending(atom(), binary(), binary(), bitstring()) -> ok.
+-spec set_pending(atom(), binary(), binary(), binary()) -> ok.
 set_pending(ItemType, ItemID, CustomerID, UserID) ->
 	Selector = {'_id' , ItemID},
 	Modifier = {
@@ -376,8 +375,8 @@ set_pending(ItemType, ItemID, CustomerID, UserID) ->
 	},
 	ok = mongodb_storage:upsert(static_storage, ?pendingItemsColl, Selector, Modifier).
 
--spec get_pending(CustomerID :: binary(), UserID :: bitstring()) ->
-	{ok, []} | {ok, [{ItemType :: atom(), ItemID :: binary()}]}.
+-spec get_pending(CustomerID::binary(), UserID::binary()) ->
+	{ok, []} | {ok, [{ItemType::atom(), ItemID::binary()}]}.
 get_pending(CustomerID, UserID) ->
 	Selector = {
 		'customer_id' , CustomerID,
@@ -387,8 +386,8 @@ get_pending(CustomerID, UserID) ->
 	Items = [{bsondoc:binary_to_atom(bsondoc:at(type, Doc)), ID} || {ID, Doc} <- Docs],
 	{ok, Items}.
 
--spec get_incoming_sms(binary(), bitstring(), addr(), integer() | undefined) ->
-	{ok, [#k_mb_incoming_sms{}], Total :: integer()}.
+-spec get_incoming_sms(binary(), binary(), addr(), integer() | undefined) ->
+	{ok, [#k_mb_incoming_sms{}], Total::integer()}.
 get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
 	Selector = {
 		'customer_id' , CustomerID,
@@ -413,8 +412,8 @@ get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
 	Items = first(AllItems, Limit),
 	{ok, Items, Total}.
 
--spec link_input_id_to_sub_id(InputID :: input_sms_id(), SubscriptionID :: binary()) -> ok.
-link_input_id_to_sub_id({CID, k1api, ID} = _InputID, SubscriptionID) -> %% <- add user_name field
+-spec link_input_id_to_sub_id(input_sms_id(), binary()) -> ok.
+link_input_id_to_sub_id({CID, UID, k1api, InMsgID}, SubscriptionID) ->
 	Modifier = {
 		'customer_id'     , CID,
 		'client_type'     , bsondoc:atom_to_binary(k1api),

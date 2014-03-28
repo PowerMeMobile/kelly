@@ -45,13 +45,15 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec register(Subscription :: k_mb_subscription()) -> ok.
+-spec register(Subscription::k_mb_subscription()) -> ok.
 register(Subscription) ->
 	ok = k_mb_db:save_sub(Subscription),
 	gen_server:cast(?MODULE, {reg_sub, Subscription}).
 
 -spec unregister(
-	SubscriptionID :: binary(), CustomerID :: customer_id(), UserID :: user_id()
+	SubscriptionID::binary(),
+    CustomerID::customer_id(),
+    UserID::user_id()
 ) -> ok.
 unregister(SubscriptionID, CustomerID, UserID) ->
 	ok = k_mb_db:delete_subscription(SubscriptionID),
@@ -96,7 +98,7 @@ init([]) ->
 	{ok, #state{}}.
 
 handle_call({get_subscriptions, Key}, _From, State = #state{}) ->
-	{ok, Subscriptions} = ets_lookup_subs(Key), %% Key :: {customer_id(), user_id()}
+	{ok, Subscriptions} = ets_lookup_subs(Key), %% Key::{customer_id(), user_id()}
 	{reply, {ok, Subscriptions}, State};
 
 handle_call(_Request, _From, State) ->
@@ -140,11 +142,11 @@ process_pending_items(Subscription) ->
 	lists:foreach(fun k_mb_wpool:process_incoming_item/1, ItemIDs).
 
 process_get_suitable_sub_req(Item) ->
-	Key = get_customer_user(Item), %% Key :: {customer_id(), user_id()}
+	Key = get_customer_user(Item), %% Key::{customer_id(), user_id()}
 	{ok, Subscriptions} = gen_server:call(?MODULE, {get_subscriptions, Key}),
 	get_suitable_subscription(Item, Subscriptions).
 
-get_suitable_subscription(_Item = #k_mb_funnel_receipt{}, Subscriptions) ->
+get_suitable_subscription(#k_mb_funnel_receipt{}, Subscriptions) ->
 	case lists:keysearch(k_mb_funnel_sub, 1, Subscriptions) of
 		{value, Subscription} -> {ok, Subscription};
 		false -> undefined
@@ -152,18 +154,15 @@ get_suitable_subscription(_Item = #k_mb_funnel_receipt{}, Subscriptions) ->
 get_suitable_subscription(Item = #k_mb_incoming_sms{}, Subscriptions) ->
 	SuitableSubs = [Sub || Sub <- Subscriptions, is_suitable_for_incoming_sms(Item, Sub)],
 	resolve_subscription_priority(SuitableSubs);
-get_suitable_subscription(Item = #k_mb_k1api_receipt{}, Subscriptions) ->
-	#k_mb_k1api_receipt{
-		source_addr = SourceAddr
-	} = Item,
+get_suitable_subscription(#k_mb_k1api_receipt{source_addr = SourceAddr}, Subscriptions) ->
 	?log_debug("Subscriptions: ~p", [Subscriptions]),
 	?log_debug("SourceAddr: ~p", [SourceAddr]),
 	Fun =
-	fun(#k_mb_k1api_receipt_sub{dest_addr = Addr}) when Addr =:= SourceAddr ->
-			true;
-		(_) ->
-			false
-	end,
+    	fun(#k_mb_k1api_receipt_sub{dest_addr = Addr}) when Addr =:= SourceAddr ->
+	    		true;
+		    (_) ->
+			    false
+    	end,
 	case ac_lists:findwith(Fun, Subscriptions) of
 		false -> undefined;
 		{value, Subscription} -> {ok, Subscription}
@@ -209,7 +208,7 @@ priority(Sub = #k_mb_funnel_sub{}) ->
 
 
 ets_insert_sub(Subscription) ->
-	Key = get_customer_user(Subscription), %% Key :: {customer_id(), user_id()}
+	Key = get_customer_user(Subscription), %% Key::{customer_id(), user_id()}
 	{ok, CurrentUserSubs} = ets_lookup_subs(Key),
 	{ok, NewSubs} = join_subscriptions(Subscription, CurrentUserSubs),
 	ets_insert(Key, NewSubs).
