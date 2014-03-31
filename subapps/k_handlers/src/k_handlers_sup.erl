@@ -33,17 +33,19 @@ init([]) ->
 		%% The MaxR = 12 and MaxT = 1 values mean that we tolerate 2 amqp connection problems
 		%% in each of them in 1 minute. Adjust the values to more appropriate ones if you need.
 		{one_for_one, 12, 1}, [
-			?HANDLER(k_amqp_bind_request),
-			?HANDLER(k_k1api_auth_handler),
-			?HANDLER(k_k1api_delivery_status_req_handler),
-			?HANDLER(k_k1api_retrieve_sms_req_handler),
-			?HANDLER(k_k1api_subscribe_handler),
-			?HANDLER(k_amqp_k1api_sms_request),
-			?HANDLER(k_amqp_sms_request),
-			?HANDLER(k_amqp_sms_response),
-			?HANDLER(k_amqp_receipt_batch),
-			?HANDLER(k_amqp_funnel_events),
-			?HANDLER(k_amqp_incoming_sms),
+			?HANDLER(amqp_bind_request),
+            ?HANDLER(mm_auth_request),
+            ?HANDLER(soap_auth_request),
+			?HANDLER(k1api_auth_request),
+			?HANDLER(k1api_delivery_status_request),
+			?HANDLER(k1api_retrieve_sms_request),
+			?HANDLER(k1api_subscribe_request),
+			?HANDLER(amqp_k1api_sms_request),
+			?HANDLER(amqp_sms_request),
+			?HANDLER(amqp_sms_response),
+			?HANDLER(amqp_receipt_batch),
+			?HANDLER(amqp_funnel_events),
+			?HANDLER(amqp_incoming_sms),
 			%%% NOTE: k_worker_sup MUST be at the end of SPEC %%%
 			{k_worker_sup,
 				{k_worker_sup, start_link, []}, permanent, infinity, supervisor, [k_worker_sup]}
