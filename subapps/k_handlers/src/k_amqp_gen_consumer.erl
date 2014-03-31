@@ -48,12 +48,12 @@ init([HandlerSpecName])->
 
 handle_subscribe(State = #state{handler_spec_name = HandlerSpecName}) ->
 	?log_debug("Handling subscribe [amqp handler: ~p]...", [HandlerSpecName]),
-	{ok, Args} = application:get_env(HandlerSpecName),
-	Queue = proplists:get_value(queue, Args),
-	Handler = proplists:get_value(handler, Args),
-	QoS = proplists:get_value(rmq_qos, Args),
-	DeclareQueue = proplists:get_value(declare_queue, Args),
-	?log_debug("Handler [~p] will declare queue [~p]: ~p", [HandlerSpecName, Queue, DeclareQueue]),
+	{ok, Props} = application:get_env(HandlerSpecName),
+	Queue = proplists:get_value(queue, Props),
+	Handler = proplists:get_value(handler, Props),
+	QoS = proplists:get_value(rmq_qos, Props),
+	DeclareQueue = proplists:get_value(declare_queue, Props),
+	?log_debug("Handler [~p] will declare queue [~p]: ~p", [Handler, Queue, DeclareQueue]),
 	{ok, QoS, Queue, DeclareQueue, State#state{handler = Handler}}.
 
 handle_message(ContentType, Message, Channel, State = #state{
