@@ -88,7 +88,8 @@ process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType)
 ->
 	case get_customer_uuid_by_id(CustomerId) of
 		{ok, CustomerUUID} ->
-			QName = << <<"pmm.funnel.nodes.">>/binary, ConnectionId/binary >>,
+            {ok, QNameFmt} = application:get_env(k_handlers, funnel_node_queue_fmt),
+            QName = binary:replace(QNameFmt, <<"%id%">>, ConnectionId),
 			?log_debug("RMQ queue of new funnel connection: ~p", [QName]),
 			Subscription = #k_mb_funnel_sub{
 					id = ConnectionId,

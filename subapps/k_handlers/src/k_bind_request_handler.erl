@@ -182,12 +182,14 @@ build_error_response(#funnel_auth_request_dto{connection_id = ConnectionId}, Rea
 	}.
 
 reply(Response) ->
+    {ok, ReplyTo} = application:get_env(k_handlers, funnel_control_queue),
 	case adto:encode(Response) of
 		{ok, Binary} ->
 			Reply = #worker_reply{
-				reply_to = <<"pmm.funnel.server_control">>,
+				reply_to = ReplyTo,
 				content_type = <<"BindResponse">>,
-				payload = Binary},
+				payload = Binary
+            },
 			{ok, [Reply]};
 		Error ->
 			?log_warn("Unexpected funnel auth response encode error: ~p", [Error]),

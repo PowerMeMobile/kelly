@@ -8,8 +8,6 @@
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("alley_dto/include/JustAsn.hrl").
 
--define(CONTROL_KEY, <<"pmm.just.control">>).
-
 -spec get_gtws_throughput() -> ok.
 get_gtws_throughput() ->
 	{ok, Conn} = rmql:connection_start(),
@@ -19,7 +17,8 @@ get_gtws_throughput() ->
 	{ok, TmpQueue} = queue_declare(Chan),
 	{ok, _ConsumerTag} = rmql:basic_consume(Chan, TmpQueue, true),
 	BProps = [{reply_to, TmpQueue}, {message_id, <<"1">>}, {content_type, <<"ThroughputRequest">>}],
-	ok = rmql:basic_publish(Chan, ?CONTROL_KEY, list_to_binary(Payload), BProps),
+    {ok, QName} = application:get_env(k_handlers, just_control_queue),
+	ok = rmql:basic_publish(Chan, QName, list_to_binary(Payload), BProps),
 	Response =
 	receive
 		{#'basic.deliver'{}, #amqp_msg{payload = RespPayload, props = RespProps}} ->

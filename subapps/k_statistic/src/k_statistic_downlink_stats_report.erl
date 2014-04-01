@@ -17,7 +17,7 @@ get_report() ->
 	{ok, Channel} = rmql:channel_open(),
 
 	%% declare `To' queue.
-	QueueTo = <<"pmm.funnel.server_control">>,
+    {ok, QueueTo} = application:get_env(k_handlers, funnel_control_queue),
 	%% DeclareTo = #'queue.declare'{
 	%% 	queue = QueueTo,
 	%% 	durable = false,
