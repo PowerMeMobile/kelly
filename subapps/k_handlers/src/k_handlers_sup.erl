@@ -35,11 +35,16 @@ init([]) ->
 		{one_for_one, 12, 1}, [
 			?HANDLER(amqp_bind_request),
             ?HANDLER(mm_auth_request),
+            ?HANDLER(mm_delivery_status_request),
+
             ?HANDLER(soap_auth_request),
-			?HANDLER(k1api_auth_request),
-			?HANDLER(k1api_delivery_status_request),
-			?HANDLER(k1api_retrieve_sms_request),
-			?HANDLER(k1api_subscribe_request),
+			?HANDLER(soap_delivery_status_request),
+
+			?HANDLER(oneapi_auth_request),
+			?HANDLER(oneapi_delivery_status_request),
+			?HANDLER(oneapi_retrieve_sms_request),
+			?HANDLER(oneapi_subscribe_request),
+
 			?HANDLER(amqp_k1api_sms_request),
 			?HANDLER(amqp_sms_request),
 			?HANDLER(amqp_sms_response),
