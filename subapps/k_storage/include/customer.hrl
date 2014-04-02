@@ -8,13 +8,13 @@
 -type customer_uuid() :: uuid().
 -type customer_id() :: binary(). %% http customer_id | smpp system-type
 -type user_id() :: binary(). %% http user_id | smpp system-id
--type bind_type() :: transmitter | receiver | tranceiver | oneapi | soap | mm.
+-type connection_type() :: transmitter | receiver | tranceiver | oneapi | soap | mm.
 -type pay_type() :: prepaid | postpaid.
 
 -record(user, {
 	id			:: user_id(),
 	password	:: binary(),
-	bind_types	:: [bind_type()]
+	connection_types :: [connection_type()]
 }).
 -type user() :: #user{}.
 

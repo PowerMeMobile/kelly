@@ -33,7 +33,8 @@ init() ->
 		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = password, mandatory = false, repeated = false, type = binary},
-		#param{name = bind_types, mandatory = false, repeated = true, type = {custom, fun bind_type/1}}
+		#param{name = connection_types, mandatory = false, repeated = true, type =
+             {custom, fun connection_type/1}}
 	],
 	Delete = [
 		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
@@ -43,7 +44,8 @@ init() ->
 		#param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
 		#param{name = id, mandatory = true, repeated = false, type = binary},
 		#param{name = password, mandatory = true, repeated = false, type = binary},
-		#param{name = bind_types, mandatory = true, repeated = true, type = {custom, fun bind_type/1}}
+		#param{name = connection_types, mandatory = true, repeated = true, type =
+            {custom, fun connection_type/1}}
 	],
 	{ok, #specs{
 		create = Create,
@@ -123,11 +125,11 @@ create_user(Customer, Params) ->
 			{exception, 'svc0004'};
 		{error, no_entry} ->
 			Password = ?gv(password, Params),
-			BindTypes = ?gv(bind_types, Params),
+			ConnectionTypes = ?gv(connection_types, Params),
 			User = #user{
 				id = UserID,
 				password = base64:encode(crypto:sha(Password)),
-				bind_types = BindTypes
+				connection_types = ConnectionTypes
 			},
 			ok = k_aaa:set_customer_user(User, Customer#customer.customer_uuid),
 			{ok, [UserPropList]} = prepare_users([User]),
@@ -145,7 +147,7 @@ update_user(Customer, Params) ->
 			Updated = #user{
 				id = UserID,
 				password = resolve_pass(?gv(password, Params), User#user.password),
-				bind_types = ?gv(bind_types, Params, User#user.bind_types)
+				connection_types = ?gv(connection_types, Params, User#user.connection_types)
 			},
 			ok = k_aaa:set_customer_user(Updated, Customer#customer.customer_uuid),
 			{ok, [UserPropList]} = prepare_users([Updated]),
@@ -181,8 +183,10 @@ resolve_pass(undefined, Pass) ->
 resolve_pass(NewPass, _Pass) ->
 	base64:encode(crypto:sha(NewPass)).
 
-bind_type(Type) ->
+connection_type(Type) ->
 	case Type of
+        <<"mm">> -> mm;
+        <<"soap">> -> soap;
 		<<"oneapi">> -> oneapi;
 		<<"transmitter">> -> transmitter;
 		<<"receiver">> -> receiver;

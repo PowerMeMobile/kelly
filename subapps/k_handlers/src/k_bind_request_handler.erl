@@ -76,11 +76,13 @@ check_password(
 			{deny, password}
 	end.
 
-check_bind_type(#funnel_auth_request_dto{type = ReqBindType}, #user{bind_types = BindTypes}) ->
-	case lists:any(fun(T) -> T =:= ReqBindType end, BindTypes) of
+check_bind_type(BindReq, User) ->
+    BindType = BindReq#funnel_auth_request_dto.type,
+    ConnTypes = User#user.connection_types,
+	case lists:member(BindType, ConnTypes) of
 		true ->
 			allow;
-		_ ->
+		false ->
 			{deny, connection_type}
 	end.
 

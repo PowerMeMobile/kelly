@@ -83,7 +83,7 @@ register_delivery_receipt(MsgInfo, DlrTime, MessageState) ->
 	ok = k_mailbox:register_incoming_item(Item).
 
 build_receipt_item(#msg_info{
-	client_type = k1api,
+	client_type = oneapi,
 	customer_id = CustomerId,
 	user_id = UserId,
 	in_msg_id = InMsgId,

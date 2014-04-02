@@ -43,7 +43,7 @@ process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
 	ReqTime = ac_datetime:utc_timestamp(),
 	ReqInfos = sms_request_to_req_info_list(SmsReq, ReqTime),
 	case ClientType of
-		k1api ->
+		oneapi ->
 			InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
 			process_k1api_req(SmsReq, InMsgIds);
 		_ ->
@@ -218,18 +218,17 @@ get_param_by_name(Name, Params, Default) ->
 	end.
 
 process_k1api_req(#just_sms_request_dto{
-	client_type = k1api,
+	client_type = oneapi,
 	id = _RequestId,
 	customer_id = CustomerId,
 	user_id = UserId,
 	params = Params,
 	source_addr = SourceAddr
 }, InMsgIds) ->
-	InputMessageIds = [{CustomerId, UserId, k1api, InMsgId} || InMsgId <- InMsgIds],
-	NotifyURL = get_param_by_name(<<"k1api_notify_url">>, Params, undefined),
-	?log_debug("NotifyURL: ~p", [NotifyURL]),
-	CallbackData = get_param_by_name(<<"k1api_callback_data">>, Params, undefined),
-	?log_debug("CallbackData: ~p", [CallbackData]),
+	InputMessageIds = [{CustomerId, UserId, oneapi, InMsgId} || InMsgId <- InMsgIds],
+	NotifyURL = get_param_by_name(<<"oneapi_notify_url">>, Params, undefined),
+	CallbackData = get_param_by_name(<<"oneapi_callback_data">>, Params, undefined),
+	?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
 	SubId = create_k1api_receipt_subscription(CustomerId, UserId, SourceAddr, NotifyURL, CallbackData),
 	ok = link_input_id_to_sub_id(InputMessageIds, SubId);
 process_k1api_req(_, _) ->

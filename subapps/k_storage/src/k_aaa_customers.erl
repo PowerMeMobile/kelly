@@ -34,7 +34,8 @@ set_customer(CustomerUUID, Customer) ->
 		{
 			'id' , User#user.id,
 			'password'  , User#user.password,
-			'bind_types', lists:map(fun bsondoc:atom_to_binary/1, User#user.bind_types)
+			'connection_types',
+                [bsondoc:atom_to_binary(Type) || Type <- User#user.connection_types]
 		}
 		|| User <- Customer#customer.users
 	],
@@ -103,7 +104,8 @@ doc_to_record(Doc) ->
 		#user{
 			id = bsondoc:at(id, UserDoc),
 			password = bsondoc:at(password, UserDoc),
-			bind_types = lists:map(fun bsondoc:binary_to_atom/1, bsondoc:at(bind_types, UserDoc))
+			connection_types =
+                [bsondoc:binary_to_atom(Type) || Type <- bsondoc:at(connection_types, UserDoc)]
 		} || UserDoc <- UsersDocs
 	],
 

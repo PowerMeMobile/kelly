@@ -279,11 +279,11 @@ get_item(k_mb_incoming_sms, ID) ->
 get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 	MessageID = Receipt#k_mb_k1api_receipt.input_message_id,
 	CustomerID = Receipt#k_mb_k1api_receipt.customer_id,
-	InputID = {CustomerID, <<"k1api">>, MessageID},
+	InputID = {CustomerID, <<"oneapi">>, MessageID},
 	?log_debug("InputID: ~p", [InputID]),
 	Selector = {
 		'customer_id' , CustomerID,
-		'client_type' , <<"k1api">>,
+		'client_type' , <<"oneapi">>,
 		'input_id'    , MessageID
 	},
 	case mongodb_storage:find(static_storage, ?inputIdToSubIdColl, Selector) of
@@ -412,11 +412,11 @@ get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
 	{ok, Items, Total}.
 
 -spec link_input_id_to_sub_id(input_sms_id(), binary()) -> ok.
-link_input_id_to_sub_id({CID, UID, k1api, InMsgID}, SubscriptionID) ->
+link_input_id_to_sub_id({CID, UID, oneapi, InMsgID}, SubscriptionID) ->
 	Modifier = {
 		'customer_id'     , CID,
         'user_id'         , UID,
-		'client_type'     , bsondoc:atom_to_binary(k1api),
+		'client_type'     , bsondoc:atom_to_binary(oneapi),
 		'input_id'        , InMsgID,
 		'subscription_id' , SubscriptionID
 	},

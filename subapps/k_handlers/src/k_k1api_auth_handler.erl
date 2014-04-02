@@ -69,9 +69,9 @@ authenticate(BindReq = #k1api_auth_request_dto{
 					?log_debug("User found: ~p", [User]),
 					Checks = [
 						fun check_password/2,
-						fun check_bind_type/2
+						fun check_conn_type/2
 					],
-					perform_checks(BindReq, User, Checks, Customer);
+					perform_checks(AuthReq, User, Checks, Customer);
 				{error, no_entry} ->
 					?log_debug("User not found.", []),
 					{deny, no_such_customer};
@@ -92,22 +92,23 @@ check_password(#k1api_auth_request_dto{password = Pw}, #user{password = PwHash})
 			{deny, password}
 	end.
 
-check_bind_type(#k1api_auth_request_dto{}, #user{bind_types = BindTypes}) ->
-	ReqBindType = oneapi,
-	case lists:any(fun(T) -> T =:= ReqBindType end, BindTypes) of
+check_conn_type(AuthReq, User) ->
+    ConnType = AuthReq#k1api_auth_request_dto.connection_type,
+    ConnTypes = User#user.connection_types,
+	case lists:member(ConnType, ConnTypes) of
 		true ->
 			allow;
-		_ ->
+		false ->
 			{deny, connection_type}
 	end.
 
 perform_checks(_, _, [], Customer) ->
 	?log_debug("k1api auth allowed", []),
 	{allow, Customer};
-perform_checks(BindReq, User = #user{}, [Check | SoFar], Customer) ->
-	case Check(BindReq, User) of
+perform_checks(AuthReq, User = #user{}, [Check | Checks], Customer) ->
+	case Check(AuthReq, User) of
 		allow ->
-			perform_checks(BindReq, User, SoFar, Customer);
+			perform_checks(AuthReq, User, Checks, Customer);
 		{deny, DenyReason} ->
 			{deny, DenyReason}
 	end.
