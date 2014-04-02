@@ -32,7 +32,7 @@ init() ->
 		#param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = false, repeated = false, type = binary},
 		#param{name = max_validity, mandatory = false, repeated = false, type = integer},
-		#param{name = billing_type, mandatory = false, repeated = false, type = {custom, fun billing_type/1}},
+		#param{name = pay_type, mandatory = false, repeated = false, type = {custom, fun pay_type/1}},
 		#param{name = state, mandatory = false, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	Delete = [
@@ -51,7 +51,7 @@ init() ->
 		#param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
 		#param{name = default_validity, mandatory = true, repeated = false, type = binary},
 		#param{name = max_validity, mandatory = true, repeated = false, type = integer},
-		#param{name = billing_type, mandatory = true, repeated = false, type = {custom, fun billing_type/1}},
+		#param{name = pay_type, mandatory = true, repeated = false, type = {custom, fun pay_type/1}},
 		#param{name = state, mandatory = true, repeated = false, type = {custom, fun customer_state/1}}
 	],
 	{ok, #specs{
@@ -149,7 +149,7 @@ update_customer(Customer, Params) ->
 	NewReceiptsAllowed = ?gv(receipts_allowed, Params, Customer#customer.receipts_allowed),
 	NewDefaultValidity = ?gv(default_validity, Params, Customer#customer.default_validity),
 	NewMaxValidity = ?gv(max_validity, Params, Customer#customer.max_validity),
-	NewBillingType = ?gv(billing_type, Params, Customer#customer.billing_type),
+	NewPayType = ?gv(pay_type, Params, Customer#customer.pay_type),
 	NewState = ?gv(state, Params, Customer#customer.state),
 	NewCustomer = #customer{
 		customer_uuid = Customer#customer.customer_uuid,
@@ -166,7 +166,7 @@ update_customer(Customer, Params) ->
 		default_validity = NewDefaultValidity,
 		max_validity = NewMaxValidity,
 		users = Customer#customer.users,
-		billing_type = NewBillingType,
+		pay_type = NewPayType,
 		state = NewState
 	},
 	ok = k_aaa:set_customer(NewCustomer),
@@ -194,7 +194,7 @@ create_customer(Params) ->
 		default_validity = ?gv(default_validity, Params),
 		max_validity = ?gv(max_validity, Params),
 		users = [],
-		billing_type = ?gv(billing_type, Params),
+		pay_type = ?gv(pay_type, Params),
 		state = ?gv(state, Params)
 	},
 	k_snmp:set_customer(CustomerUUID, RPS, Priority),
@@ -297,7 +297,7 @@ customer_state(StateBin) ->
 		<<"1">> -> 1
 	end.
 
-billing_type(TypeBin) ->
+pay_type(TypeBin) ->
 	case TypeBin of
 		<<"prepaid">> -> prepaid;
 		<<"postpaid">> -> postpaid

@@ -9,7 +9,7 @@
 -type customer_id() :: binary(). %% http customer_id | smpp system-type
 -type user_id() :: binary(). %% http user_id | smpp system-id
 -type bind_type() :: transmitter | receiver | tranceiver | oneapi | soap | mm.
--type billing_type() :: prepaid | postpaid.
+-type pay_type() :: prepaid | postpaid.
 
 -record(user, {
 	id			:: user_id(),
@@ -33,7 +33,7 @@
 	default_validity 	:: binary(),
 	max_validity		:: integer(),
 	users = []			:: [user()] | [],
-	billing_type		:: billing_type(),
+	pay_type	    	:: pay_type(),
 	state = 0			:: non_neg_integer() %% 0 blocked, 1 active
 }).
 -type customer() 		:: #customer{}.

@@ -120,7 +120,7 @@ build_customer_response(Request, Customer) ->
 
     #customer{
 	    customer_uuid = CustomerUUID,
-		billing_type = BillingType,
+		pay_type = PayType,
 		allowed_sources = AllowedSources,
 		default_source = DefaultSource,
 		networks = NtwIdList,
@@ -173,7 +173,7 @@ build_customer_response(Request, Customer) ->
     CustomerDTO = #k1api_auth_response_customer_dto{
 		uuid = CustomerUUID,
 		id = CustomerId,
-		billing_type = BillingType,
+		pay_type = PayType,
 		allowed_sources = AllowedSources,
 		default_source = DefaultSource,
 		networks = Networks,

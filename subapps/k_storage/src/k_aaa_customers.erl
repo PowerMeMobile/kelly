@@ -54,7 +54,7 @@ set_customer(CustomerUUID, Customer) ->
 			'default_validity'    , Customer#customer.default_validity,
 			'max_validity'        , Customer#customer.max_validity,
 			'users'               , UsersDocList,
-			'billing_type'        , bsondoc:atom_to_binary(Customer#customer.billing_type),
+			'pay_type'        , bsondoc:atom_to_binary(Customer#customer.pay_type),
 			'state'               , Customer#customer.state
 		}
 	},
@@ -138,7 +138,7 @@ doc_to_record(Doc) ->
 	NoRetry = bsondoc:at(no_retry, Doc),
 	DefValidity = bsondoc:at(default_validity, Doc),
 	MaxValidity = bsondoc:at(max_validity, Doc),
-	BillingType = bsondoc:binary_to_atom(bsondoc:at(billing_type, Doc)),
+	PayType = bsondoc:binary_to_atom(bsondoc:at(pay_type, Doc)),
 	State = bsondoc:at(state, Doc),
 
  	#customer{
@@ -156,6 +156,6 @@ doc_to_record(Doc) ->
 		default_validity = DefValidity,
 		max_validity = MaxValidity,
 		users = Users,
-		billing_type = BillingType,
+		pay_type = PayType,
 		state = State
 	}.

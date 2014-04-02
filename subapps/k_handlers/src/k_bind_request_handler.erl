@@ -110,7 +110,7 @@ build_customer_response(#funnel_auth_request_dto{
 			no_retry = NR,
 			default_validity = DV,
 			max_validity = MV,
-			billing_type = BillingType
+			pay_type = PayType
 	 }) ->
 
 	{Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
@@ -166,7 +166,7 @@ build_customer_response(#funnel_auth_request_dto{
 		no_retry = NR,
 		default_validity = DV,
 		max_validity = MV,
-		billing_type = BillingType
+		pay_type = PayType
 	},
 	?log_debug("Built customer: ~p", [Customer]),
 	#funnel_auth_response_dto{
