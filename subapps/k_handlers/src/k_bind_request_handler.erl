@@ -19,15 +19,15 @@ process(Req) ->
 					{allow, Customer = #customer{}} ->
 						build_customer_response(Request, Customer);
 					{deny, Reason} ->
-						?log_notice("funnel authentication denied: ~p", [Reason]),
+						?log_notice("Auth denied: ~p", [Reason]),
 						build_error_response(Request, Reason);
 					{error, Reason} ->
-						?log_error("authentication error: ~p", [Reason]),
+						?log_error("Auth error: ~p", [Reason]),
 						build_error_response(Request, Reason)
 				end,
 			reply(Response);
 		{error, Error} ->
-			?log_error("Funnel auth request decode error: ~p", [Error]),
+			?log_error("Auth request decode error: ~p", [Error]),
 			?authentication_failed
 	end.
 
@@ -41,7 +41,7 @@ authenticate(BindReq = #funnel_auth_request_dto{
 	customer_id = CustomerId,
 	user_id = UserId
 }) ->
-	?log_debug("Got funnel auth request: ~p", [BindReq]),
+	?log_debug("Got auth request: ~p", [BindReq]),
 
 case k_aaa:get_customer_by_id(CustomerId) of
 		{ok, Customer} ->
@@ -87,7 +87,7 @@ check_bind_type(BindReq, User) ->
 	end.
 
 perform_checks(_, _, [], Customer) ->
-	?log_debug("Funnel auth allowed", []),
+	?log_debug("Auth allowed", []),
 	{allow, Customer};
 perform_checks(BindReq, User = #user{}, [Check | SoFar], Customer) ->
 	case Check(BindReq, User) of
@@ -194,6 +194,6 @@ reply(Response) ->
             },
 			{ok, [Reply]};
 		Error ->
-			?log_warn("Unexpected funnel auth response encode error: ~p", [Error]),
+			?log_warn("Unexpected auth response encode error: ~p", [Error]),
 	   		Error
 	end.

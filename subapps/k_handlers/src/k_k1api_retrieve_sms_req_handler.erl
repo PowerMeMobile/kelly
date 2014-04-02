@@ -20,7 +20,7 @@ process(Req) ->
 		{ok, RetrieveRequest} ->
 			process_retrive_sms_request(Req, RetrieveRequest);
 		Error ->
-			?log_error("k1api dto decode error: ~p", [Error]),
+			?log_error("Retrive sms decode error: ~p", [Error]),
 			{ok, []}
 	end.
 
@@ -29,7 +29,7 @@ process(Req) ->
 %% ===================================================================
 
 process_retrive_sms_request(Req, RetrieveRequest) ->
-	?log_debug("Got k1api retrieve sms request: ~p", [RetrieveRequest]),
+	?log_debug("Got retrieve sms request: ~p", [RetrieveRequest]),
 	#k1api_retrieve_sms_request_dto{
 		id = RequestID,
 		customer_id = CustomerID,
@@ -88,6 +88,6 @@ step(reply, Req, DTO) ->
             },
 			{ok, [Reply]};
 		Error ->
-			?log_warn("Unexpected k1api dto encode error: ~p", [Error]),
+			?log_warn("Unexpected retrive sms encode error: ~p", [Error]),
 	   		{ok, []}
 	end.

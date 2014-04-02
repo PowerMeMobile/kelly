@@ -39,7 +39,7 @@ process(Req) ->
 
 -spec process_sms_request(#just_sms_request_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
-	?log_debug("Got ~p sms request: ~p", [ClientType, SmsReq]),
+	?log_debug("Got sms request: ~p", [SmsReq]),
 	ReqTime = ac_datetime:utc_timestamp(),
 	ReqInfos = sms_request_to_req_info_list(SmsReq, ReqTime),
 	case ClientType of

@@ -17,7 +17,7 @@ process(Req) ->
 		{ok, StatusRequest} ->
 			process_delivery_status_request(Req, StatusRequest);
 		Error ->
-			?log_error("k1api dto decode error: ~p", [Error]),
+			?log_error("Deliver status decode error: ~p", [Error]),
 			{ok, []}
 	end.
 
@@ -26,7 +26,7 @@ process(Req) ->
 %% ===================================================================
 
 process_delivery_status_request(Req, StatusRequest) ->
-	?log_debug("Got k1api sms delivery status request: ~p", [StatusRequest]),
+	?log_debug("Got sms delivery status request: ~p", [StatusRequest]),
 	#k1api_sms_delivery_status_request_dto{
 		id = RequestID,
 		sms_request_id = SmsRequestID
@@ -65,6 +65,6 @@ step(reply, Req, DTO) ->
 				payload = Binary},
 			{ok, [Reply]};
 		Error ->
-			?log_warn("Unexpected k1api dto encode error: ~p", [Error]),
+			?log_warn("Unexpected delivery status encode error: ~p", [Error]),
 	   		{ok, []}
 	end.

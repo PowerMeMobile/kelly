@@ -41,7 +41,7 @@ process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
 	receipts = Receipts,
 	timestamp = UTCString
 }) ->
-	?log_debug("Got just delivery receipt: ~p", [ReceiptBatch]),
+	?log_debug("Got delivery receipt: ~p", [ReceiptBatch]),
 	DlrTime = ac_datetime:utc_string_to_timestamp(UTCString),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
 		ok ->

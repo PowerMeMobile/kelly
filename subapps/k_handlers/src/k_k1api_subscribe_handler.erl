@@ -28,7 +28,7 @@ process(Req, <<"SubscribeIncomingSms">>, Message) ->
 			?log_debug("Got subscribe incoming sms request: ~p", [SubRequest]),
 			process_subscription(Req, SubRequest);
 		Error ->
-			?log_error("k1api dto decode error: ~p", [Error]),
+			?log_error("Subscribe incoming sms decode error: ~p", [Error]),
 			{ok, []}
 	end;
 process(Req, <<"UnsubscribeIncomingSms">>, Message) ->
@@ -37,7 +37,7 @@ process(Req, <<"UnsubscribeIncomingSms">>, Message) ->
 			?log_debug("Got unsubscribe incoming sms request: ~p", [UnsubRequest]),
 			process_subscription(Req, UnsubRequest);
 		Error ->
-			?log_error("k1api dto decode error: ~p", [Error]),
+			?log_error("Unsubscribe incoming sms decode error: ~p", [Error]),
 			{ok, []}
 	end;
 process(Req, <<"SubscribeReceipts">>, Message) ->
@@ -46,7 +46,7 @@ process(Req, <<"SubscribeReceipts">>, Message) ->
 			?log_debug("Got subscribe sms receipts request: ~p", [SubRequest]),
 			process_subscription(Req, SubRequest);
 		Error ->
-			?log_error("k1api dto decode error: ~p", [Error]),
+			?log_error("Subscribe sms receipts decode error: ~p", [Error]),
 			{ok, []}
 	end;
 process(Req, <<"UnsubscribeReceipts">>, Message) ->
@@ -55,7 +55,7 @@ process(Req, <<"UnsubscribeReceipts">>, Message) ->
 			?log_debug("Got unsubscribe sms receipts request: ~p", [UnsubRequest]),
 			process_subscription(Req, UnsubRequest);
 		Error ->
-			?log_error("k1api dto decode error: ~p", [Error]),
+			?log_error("Unsubscribe sms receipts decode error: ~p", [Error]),
 			{ok, []}
 	end;
 
@@ -172,6 +172,6 @@ step(reply, Req, DTO) ->
 				payload = Binary},
 			{ok, [Reply]};
 		Error ->
-			?log_warn("Unexpected k1api dto encode error: ~p", [Error]),
+			?log_warn("Unexpected encode error: ~p", [Error]),
 	   		{ok, []}
 	end.

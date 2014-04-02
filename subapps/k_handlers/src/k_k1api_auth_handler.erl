@@ -20,13 +20,12 @@
 
 -spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(Req) ->
-	?log_debug("Got k1api auth request", []),
 	{ok, Payload} = k_amqp_req:payload(Req),
 	case adto:decode(#k1api_auth_request_dto{}, Payload) of
-		{ok, AuthRequest} ->
-			process_auth_req(Req, AuthRequest);
+		{ok, AuthReq} ->
+			process_auth_req(Req, AuthReq);
 		{error, Error} ->
-			?log_error("k1api auth request decode error: ~p", [Error]),
+			?log_error("Auth request decode error: ~p", [Error]),
 			?authentication_failed
 	end.
 
@@ -34,18 +33,18 @@ process(Req) ->
 %% Internals
 %% ===================================================================
 
-process_auth_req(Req, AuthRequest) ->
-	case authenticate(AuthRequest) of
+process_auth_req(Req, AuthReq) ->
+	case authenticate(AuthReq) of
 		{allow, Customer = #customer{}} ->
-			{ok, Response} = build_customer_response(AuthRequest, Customer),
+			{ok, Response} = build_customer_response(AuthReq, Customer),
 			step(is_reply_to_defined, Req, Response);
 		{deny, Reason} ->
-            {ok, Response} = build_error_response(AuthRequest, {deny, Reason}),
-			?log_notice("k1api authentication denied: ~p", [Reason]),
+            {ok, Response} = build_error_response(AuthReq, {deny, Reason}),
+			?log_notice("Auth denied: ~p", [Reason]),
 			step(is_reply_to_defined, Req, Response);
 		{error, Reason} ->
-            {ok, Response} = build_error_response(AuthRequest, {error, Reason}),
-			?log_error("authentication error: ~p", [Reason]),
+            {ok, Response} = build_error_response(AuthReq, {error, Reason}),
+			?log_error("Auth error: ~p", [Reason]),
 			step(is_reply_to_defined, Req, Response)
 	end.
 
@@ -55,11 +54,11 @@ process_auth_req(Req, AuthRequest) ->
 	{deny, no_such_customer} |
 	{deny, password} |
 	{deny, connection_type}.
-authenticate(BindReq = #k1api_auth_request_dto{
+authenticate(AuthReq = #k1api_auth_request_dto{
 	customer_id = CustomerId,
 	user_id = UserId
 }) ->
-	?log_debug("Got k1api auth request: ~p", [BindReq]),
+	?log_debug("Got auth request: ~p", [AuthReq]),
 
 	case k_aaa:get_customer_by_id(CustomerId) of
 		{ok, Customer} ->
@@ -103,7 +102,7 @@ check_conn_type(AuthReq, User) ->
 	end.
 
 perform_checks(_, _, [], Customer) ->
-	?log_debug("k1api auth allowed", []),
+	?log_debug("Auth allowed", []),
 	{allow, Customer};
 perform_checks(AuthReq, User = #user{}, [Check | Checks], Customer) ->
 	case Check(AuthReq, User) of
@@ -241,6 +240,6 @@ step(reply, Req, Response) ->
             },
 			{ok, [Reply]};
 		Error ->
-			?log_warn("Unexpected k1api auth response encode error: ~p", [Error]),
+			?log_warn("Unexpected auth response encode error: ~p", [Error]),
 	   		Error
 	end.

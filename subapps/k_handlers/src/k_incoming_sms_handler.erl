@@ -47,7 +47,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
 	part_index = _PartIndex,
 	timestamp = UTCString
 }) ->
-	?log_debug("Got just incoming sms request:~p ", [IncSmsRequest]),
+	?log_debug("Got incoming sms request:~p ", [IncSmsRequest]),
 
 	%% generate new id.
 	ItemId = uuid:unparse(uuid:generate_time()),
