@@ -128,7 +128,8 @@ create_user(Customer, Params) ->
 			ConnectionTypes = ?gv(connection_types, Params),
 			User = #user{
 				id = UserID,
-				password = base64:encode(crypto:hash(md5, Password)),
+				password = ac_hexdump:binary_to_hexdump(
+                                crypto:hash(md5, Password), to_lower),
 				connection_types = ConnectionTypes
 			},
 			ok = k_aaa:set_customer_user(User, Customer#customer.customer_uuid),
@@ -181,7 +182,7 @@ get_customer_user(Customer, UserID) ->
 resolve_pass(undefined, Pass) ->
 	Pass;
 resolve_pass(NewPass, _Pass) ->
-	base64:encode(crypto:hash(md5, NewPass)).
+	ac_hexdump:binary_to_hexdump(crypto:hash(md5, NewPass), to_lower).
 
 connection_type(Type) ->
 	case Type of
