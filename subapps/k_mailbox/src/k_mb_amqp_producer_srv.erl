@@ -36,7 +36,7 @@
 start_link() ->
 	gen_wp:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec send(binary(), binary(), bitstring(), bitstring()) -> ok.
+-spec send(binary(), binary(), binary(), binary()) -> ok.
 send(ID, Payload, QName, ContentType) ->
 	gen_wp:call(?MODULE, {send, ID, Payload, QName, ContentType}, infinity).
 
