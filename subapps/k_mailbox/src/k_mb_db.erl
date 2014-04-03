@@ -173,7 +173,7 @@ save_delivery_status(#k_mb_k1api_receipt{
 	user_id = UserId,
 	input_message_id = InMsgId
 }, Status, Timestamp) ->
-	ok = k_dynamic_storage:set_mt_downlink_dlr_status(CustomerId, UserId, k1api, InMsgId, Status, Timestamp);
+	ok = k_dynamic_storage:set_mt_downlink_dlr_status(CustomerId, UserId, oneapi, InMsgId, Status, Timestamp);
 save_delivery_status(#k_mb_incoming_sms{
 	id = Id
 }, Status, Timestamp) ->
