@@ -32,7 +32,7 @@ init() ->
 		read = Read,
 		update = undefined,
 		delete = undefined,
-		route = "/message_status"
+		route = "/message_status/:message_id/client/:client_type/customer/:customer_id/user/:user_id"
 	}}.
 
 read(Params) ->
