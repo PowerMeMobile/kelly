@@ -1,0 +1,24 @@
+YaricAsn DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+DeliveryReceipt ::= SEQUENCE {
+    customerId [0] IA5String,
+    userId     [1] IA5String,
+    clientType [2] IA5String,
+    requestId  [3] IA5String,
+    messageId  [4] IA5String,
+    status     [5] ENUMERATED {
+        enroute(1),
+        delivered(2),
+        expired(3),
+        deleted(4),
+        undeliverable(5),
+        accepted(6),
+        unknown(7),
+        rejected(8),
+        unrecognized(9)
+    },
+    timestamp  [6] UTCTime
+}
+
+END

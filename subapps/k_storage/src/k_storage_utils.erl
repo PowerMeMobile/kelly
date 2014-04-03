@@ -56,9 +56,10 @@ doc_to_mt_msg_info(Doc) ->
     DstAddrDoc = bsondoc:at(da, Doc),
     #msg_info{
         msg_id = objectid_to_binary(ObjId),
-        client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
+        req_id = bsondoc:at(ri, Doc),
         customer_id = bsondoc:at(ci, Doc),
         user_id = bsondoc:at(ui, Doc),
+        client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
         in_msg_id = bsondoc:at(imi, Doc),
         gateway_id = bsondoc:at(gi, Doc),
         out_msg_id = bsondoc:at(omi, Doc),

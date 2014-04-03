@@ -84,6 +84,7 @@
 
 -record(msg_info, {
     msg_id :: msg_id(),
+    req_id :: req_id(),
     customer_id :: customer_uuid(),
     user_id :: user_id(),
     client_type :: client_type(),

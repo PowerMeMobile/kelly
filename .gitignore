@@ -13,3 +13,6 @@ subapps/k_common/include/k1api_pb.hrl
 subapps/*/.eunit
 subapps/*/priv/*.so
 *TAGS
+subapps/k_handlers/include/YaricAsn.hrl
+subapps/k_handlers/src/YaricAsn.asn1db
+subapps/k_handlers/src/YaricAsn.erl

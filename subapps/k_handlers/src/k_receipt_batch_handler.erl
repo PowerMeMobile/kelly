@@ -8,6 +8,8 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
+-include("YaricAsn.hrl").
+
 %% ===================================================================
 %% API
 %% ===================================================================
@@ -78,7 +80,29 @@ traverse_delivery_receipts(GatewayId, DlrTime, [Receipt | Receipts]) ->
     end.
 
 process_delivery_receipt(MsgInfo) ->
-    register_delivery_receipt(MsgInfo).
+    register_delivery_receipt(MsgInfo),
+    publish_delivery_receipt(MsgInfo).
+
+publish_delivery_receipt(MsgInfo) ->
+    DeliveryReceipt = #'DeliveryReceipt'{
+        'customerId' = MsgInfo#msg_info.customer_id,
+        'userId'     = MsgInfo#msg_info.user_id,
+        'clientType' = atom_to_binary(MsgInfo#msg_info.client_type, utf8),
+        'requestId'  = MsgInfo#msg_info.req_id,
+        'messageId'  = MsgInfo#msg_info.in_msg_id,
+        'status'     = MsgInfo#msg_info.status,
+        'timestamp'  = binary_to_list(ac_datetime:timestamp_to_utc_string(MsgInfo#msg_info.dlr_time))
+    },
+    {ok, Payload} = 'YaricAsn':encode('DeliveryReceipt', DeliveryReceipt),
+    {ok, Conn} = rmql:connection_start(),
+	{ok, Chan} = rmql:channel_open(Conn),
+    QueueName = <<"pmm.alley.yaric.receipts.sms">>,
+    ok = rmql:queue_declare(Chan, QueueName, false, false, false),
+    Props = [{content_type, <<"DeliveryReceipt">>}],
+    ok = rmql:basic_publish(Chan, QueueName, list_to_binary(Payload), Props),
+    rmql:channel_close(Chan),
+	rmql:connection_close(Conn),
+    ok.
 
 register_delivery_receipt(#msg_info{client_type = ClientType})
     when ClientType =:= mm orelse ClientType =:= soap ->
