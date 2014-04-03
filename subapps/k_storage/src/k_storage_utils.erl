@@ -67,7 +67,7 @@ doc_to_mt_msg_info(Doc) ->
 		body = bsondoc:at(b, Doc),
 		src_addr = doc_to_addr(SrcAddrDoc),
 		dst_addr = doc_to_addr(DstAddrDoc),
-		status = bsondoc:at(s, Doc),
+		status = bsondoc:binary_to_atom(bsondoc:at(s, Doc)),
 		reg_dlr = bsondoc:at(rd, Doc),
 		esm_class = bsondoc:at(ec, Doc),
 		val_period = bsondoc:at(vp, Doc),

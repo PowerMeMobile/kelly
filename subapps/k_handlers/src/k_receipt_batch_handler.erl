@@ -67,19 +67,19 @@ traverse_delivery_receipts(GatewayId, DlrTime,
 	},
 	case k_dynamic_storage:set_mt_dlr_info_and_get_msg_info(DlrInfo) of
 		{ok, MsgInfo} ->
-			ok = register_delivery_receipt(MsgInfo, DlrTime, DlrStatus),
+			ok = register_delivery_receipt(MsgInfo),
 			%% process the rest receipts.
 			traverse_delivery_receipts(GatewayId, DlrTime, Receipts);
 		Error ->
 			Error
 	end.
 
-register_delivery_receipt(#msg_info{client_type = ClientType}, _, _)
+register_delivery_receipt(#msg_info{client_type = ClientType})
     when ClientType =:= mm orelse ClientType =:= soap ->
     %% no need to register receipts.
     ok;
-register_delivery_receipt(MsgInfo, DlrTime, MessageState) ->
-	{ok, Item} = build_receipt_item(MsgInfo, DlrTime, MessageState),
+register_delivery_receipt(MsgInfo) ->
+	{ok, Item} = build_receipt_item(MsgInfo),
 	ok = k_mailbox:register_incoming_item(Item).
 
 build_receipt_item(#msg_info{
@@ -88,8 +88,10 @@ build_receipt_item(#msg_info{
 	user_id = UserId,
 	in_msg_id = InMsgId,
 	src_addr = SrcAddr,
-	dst_addr = DstAddr
-}, _DlrTime, MsgState) ->
+	dst_addr = DstAddr,
+    status = Status,
+    dlr_time = _DlrTime
+}) ->
 	ItemId = uuid:unparse(uuid:generate_time()),
 	Item = #k_mb_k1api_receipt{
 		id = ItemId,
@@ -98,7 +100,7 @@ build_receipt_item(#msg_info{
 		source_addr = SrcAddr,
 		dest_addr = DstAddr,
 		input_message_id = InMsgId,
-		message_state = MsgState
+		message_state = Status
 	},
 	{ok, Item};
 build_receipt_item(#msg_info{
@@ -107,8 +109,10 @@ build_receipt_item(#msg_info{
 	user_id = UserId,
 	in_msg_id = InMsgId,
 	src_addr = SrcAddr,
-	dst_addr = DstAddr
-}, DlrTime, MsgState) ->
+	dst_addr = DstAddr,
+    status = Status,
+    dlr_time = DlrTime
+}) ->
 	ItemId = uuid:unparse(uuid:generate_time()),
 	Item = #k_mb_funnel_receipt{
 		id = ItemId,
@@ -119,6 +123,6 @@ build_receipt_item(#msg_info{
 		input_message_id = InMsgId,
 		submit_date = DlrTime,
 		done_date = DlrTime,
-		message_state = MsgState
+		message_state = Status
 	 },
 	{ok, Item}.
