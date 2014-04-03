@@ -49,4 +49,4 @@ else
 	echo Failure
 fi
 
-exit $TESTS_RESULTS
+exit $TESTS_RESULT
