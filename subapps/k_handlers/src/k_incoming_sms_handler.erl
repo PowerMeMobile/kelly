@@ -49,10 +49,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
 }) ->
 	?log_debug("Got incoming sms request:~p ", [IncSmsRequest]),
 
-	%% generate new id.
 	ItemId = uuid:unparse(uuid:generate_time()),
-
-	%% determine
 	Timestamp = ac_datetime:utc_string_to_timestamp(UTCString),
 
 	%% try to determine customer id and user id,

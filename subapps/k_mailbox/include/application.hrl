@@ -4,7 +4,7 @@
 -include_lib("k_storage/include/customer.hrl").
 
 -define(APP, k_mailbox).
--define(msisdnsColl, msisdns).
+-define(msisdnsColl, mb_msisdns).
 -define(funnelReceiptsColl, mb_funnel_receipts).
 -define(incomingSmsColl, mb_incoming_sms).
 -define(inputIdToSubIdColl, mb_k1api_input_id_to_sub_id).
@@ -106,7 +106,7 @@
 	customer_id 	:: binary(),
 	user_id 		:: binary(),
 	queue_name 		:: binary(),
-	dest_addr 		:: addr(),		%% rename to source_addr
+	dest_addr 		:: addr(),
 	notify_url 		:: binary(),
 	callback_data 	:: binary(),
 	created_at		:: erlang:timestamp()
