@@ -12,7 +12,8 @@
 %% API
 %% ===================================================================
 
--spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
+-spec process(k_amqp_req:req()) ->
+    {ok, [#worker_reply{}]} | {error, any()}.
 process(Req) ->
 	{ok, ContentType} = k_amqp_req:content_type(Req),
 	{ok, Payload} = k_amqp_req:payload(Req),
@@ -22,7 +23,8 @@ process(Req) ->
 %% Internals
 %% ===================================================================
 
--spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
+-spec process(binary(), binary()) ->
+    {ok, [#worker_reply{}]} | {error, any()}.
 process(<<"ReceiptBatch">>, Message) ->
 	case adto:decode(#just_delivery_receipt_dto{}, Message) of
 		{ok, ReceiptBatch} ->
@@ -35,13 +37,13 @@ process(ContentType, Message) ->
 	?log_warn("Got unexpected message of type ~p: ~p", [ContentType, Message]),
 	{ok, []}.
 
--spec process_receipt_batch(#just_delivery_receipt_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
-process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
-	gateway_id = GatewayId,
-	receipts = Receipts,
-	timestamp = UTCString
-}) ->
+-spec process_receipt_batch(#just_delivery_receipt_dto{}) ->
+    {ok, [#worker_reply{}]} | {error, any()}.
+process_receipt_batch(ReceiptBatch) ->
 	?log_debug("Got delivery receipt: ~p", [ReceiptBatch]),
+    GatewayId = ReceiptBatch#just_delivery_receipt_dto.gateway_id,
+	Receipts = ReceiptBatch#just_delivery_receipt_dto.receipts,
+	UTCString = ReceiptBatch#just_delivery_receipt_dto.timestamp,
 	DlrTime = ac_datetime:utc_string_to_timestamp(UTCString),
 	case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
 		ok ->
@@ -55,8 +57,9 @@ process_receipt_batch(ReceiptBatch = #just_delivery_receipt_dto{
 
 traverse_delivery_receipts(_GatewayId, _DlrTime, []) ->
 	ok;
-traverse_delivery_receipts(GatewayId, DlrTime,
-	[#just_receipt_dto{message_id = OutMsgId, message_state = DlrStatus} | Receipts]) ->
+traverse_delivery_receipts(GatewayId, DlrTime, [Receipt | Receipts]) ->
+    OutMsgId = Receipt#just_receipt_dto.message_id,
+    DlrStatus = Receipt#just_receipt_dto.message_state,
 	%% note that this is one-shot call. it tries to store #dlr_info{}
 	%% and, if succeeds, it returns the whole document.
 	DlrInfo = #dlr_info{
@@ -67,12 +70,15 @@ traverse_delivery_receipts(GatewayId, DlrTime,
 	},
 	case k_dynamic_storage:set_mt_dlr_info_and_get_msg_info(DlrInfo) of
 		{ok, MsgInfo} ->
-			ok = register_delivery_receipt(MsgInfo),
+			ok = process_delivery_receipt(MsgInfo),
 			%% process the rest receipts.
 			traverse_delivery_receipts(GatewayId, DlrTime, Receipts);
 		Error ->
 			Error
 	end.
+
+process_delivery_receipt(MsgInfo) ->
+    register_delivery_receipt(MsgInfo).
 
 register_delivery_receipt(#msg_info{client_type = ClientType})
     when ClientType =:= mm orelse ClientType =:= soap ->
