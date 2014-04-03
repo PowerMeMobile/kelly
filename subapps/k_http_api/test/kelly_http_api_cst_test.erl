@@ -43,7 +43,7 @@ create_cst() ->
 		{default_validity, <<"000003000000000R">>},
 		{max_validity, 259200},
 		{default_provider_id, <<"0a89542c-5270-11e1-bf27-001d0947ec73">>},
-		{billing_type, <<"postpaid">>},
+		{pay_type, <<"postpaid">>},
 		{state, 1}
 	],
     Response = ?perform_post(Url, [], <<>>, [Networks, Originators, DefaultOriginator | Queries]),
@@ -63,7 +63,7 @@ update_cst() ->
 		{default_validity, <<"000004000000000R">>},
 		{max_validity, 259201},
 		{default_provider_id, <<"0a89542c-5270-11e1-bf27-001d0947ec74">>},
-		{billing_type, <<"prepaid">>},
+		{pay_type, <<"prepaid">>},
 		{state, 0}
 	],
     Response = ?perform_put(Url, [], <<>>, [Networks, Originators, DefaultOriginator | Queries]),
