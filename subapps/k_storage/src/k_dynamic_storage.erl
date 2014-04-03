@@ -50,9 +50,9 @@ set_mt_req_info(#req_info{req_id = ReqId, in_msg_id = InMsgId} = ReqInfo) ->
 -spec set_mt_resp_info(#resp_info{}) -> ok | {error, reason()}.
 set_mt_resp_info(#resp_info{
 	req_id = ReqId,
-	client_type = ClientType,
 	customer_id = CustomerId,
 	in_msg_id = InMsgId,
+	client_type = ClientType,
 	gateway_id = GatewayId,
 	out_msg_id = OutMsgId,
 	resp_time = RespTime,
@@ -65,9 +65,9 @@ set_mt_resp_info(#resp_info{
 	},
 	Modifier = {
 		'$setOnInsert', {
-			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
 			'ui' , ?UNKNOWN_ID,
+			'ct' , bsondoc:atom_to_binary(ClientType),
 			'gi' , GatewayId,
 			't'  , ?UNKNOWN_TYPE,
 			'e'  , ?UNKNOWN_ENCODING,
@@ -195,9 +195,9 @@ set_mo_downlink_dlr_status(MsgId, Status, Timestamp) ->
 %% ===================================================================
 
 set_mt_req_info_modifier(#req_info{
-	client_type = ClientType,
 	customer_id = CustomerId,
 	user_id = UserId,
+	client_type = ClientType,
 	gateway_id = GatewayId,
 	type = Type,
 	encoding = Encoding,
@@ -217,9 +217,9 @@ set_mt_req_info_modifier(#req_info{
 			'dt' , ?UNKNOWN_TIME
 		},
 		'$set', {
-			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
 			'ui' , UserId,
+			'ct' , bsondoc:atom_to_binary(ClientType),
 			'gi' , GatewayId,
 			't'  , bsondoc:atom_to_binary(Type),
 			'e'  , k_storage_utils:encoding_to_binary(Encoding),
@@ -233,9 +233,9 @@ set_mt_req_info_modifier(#req_info{
 		}
 	};
 set_mt_req_info_modifier(#req_info{
-	client_type = ClientType,
 	customer_id = CustomerId,
 	user_id = UserId,
+	client_type = ClientType,
 	gateway_id = GatewayId,
 	type = {Type, #part_info{ref = PartRef, seq = PartSeq, total = PartsTotal}},
 	encoding = Encoding,
@@ -255,9 +255,9 @@ set_mt_req_info_modifier(#req_info{
 			'dt' , ?UNKNOWN_TIME
 		},
 		'$set', {
-			'ct' , bsondoc:atom_to_binary(ClientType),
 			'ci' , CustomerId,
 			'ui' , UserId,
+			'ct' , bsondoc:atom_to_binary(ClientType),
 			'gi' , GatewayId,
 			't'  , {
 				'n' , bsondoc:atom_to_binary(Type),
@@ -299,9 +299,9 @@ set_mt_req_info_modifier_regular_test() ->
 	ReqTime = {0,0,0},
 	ReqInfo = #req_info{
 			req_id = RID,
-			client_type = CT,
 			customer_id = CID,
 			user_id = UID,
+			client_type = CT,
 			in_msg_id = <<"3">>,
 			gateway_id = GID,
 			type = Type,
@@ -323,9 +323,9 @@ set_mt_req_info_modifier_regular_test() ->
 			'dt' , ?UNKNOWN_TIME
 		},
 		'$set', {
-			'ct' , bsondoc:atom_to_binary(CT),
 			'ci' , CID,
 			'ui' , UID,
+			'ct' , bsondoc:atom_to_binary(CT),
 			'gi' , GID,
 			't'  , bsondoc:atom_to_binary(Type),
 			'e'  , k_storage_utils:encoding_to_binary(Encoding),
@@ -360,9 +360,9 @@ set_mt_req_info_modifier_part_test() ->
 	ReqTime = {0,0,0},
 	ReqInfo = #req_info{
 			req_id = RID,
-			client_type = CT,
 			customer_id = CID,
 			user_id = UID,
+			client_type = CT,
 			in_msg_id = <<"3">>,
 			gateway_id = GID,
 			type = {part, #part_info{ref = PartRef, seq = PartSeq, total = PartsTotal}},
@@ -384,9 +384,9 @@ set_mt_req_info_modifier_part_test() ->
 			'dt' , ?UNKNOWN_TIME
 		},
 		'$set', {
-			'ct' , bsondoc:atom_to_binary(CT),
 			'ci' , CID,
 			'ui' , UID,
+			'ct' , bsondoc:atom_to_binary(CT),
 			'gi' , GID,
 			't'  , {
 				'n' , bsondoc:atom_to_binary(Type),

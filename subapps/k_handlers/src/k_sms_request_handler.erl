@@ -103,9 +103,9 @@ build_short_req_info(#just_sms_request_dto{
 	ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
 	#req_info{
 		req_id = ReqId,
-		client_type = ClientType,
 		customer_id = CustomerId,
 		user_id = UserId,
+		client_type = ClientType,
 		in_msg_id = InMsgId,
 		gateway_id = GatewayId,
 		type = Type,
@@ -121,9 +121,9 @@ build_short_req_info(#just_sms_request_dto{
 
 build_part_req_info(#just_sms_request_dto{
 	id = ReqId,
-	client_type = ClientType,
 	customer_id = CustomerId,
 	user_id = UserId,
+	client_type = ClientType,
 	gateway_id = GatewayId,
 	type = part,
 	message = Body,
@@ -141,9 +141,9 @@ build_part_req_info(#just_sms_request_dto{
 	ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
 	#req_info{
 		req_id = ReqId,
-		client_type = ClientType,
 		customer_id = CustomerId,
 		user_id = UserId,
+		client_type = ClientType,
 		in_msg_id = InMsgId,
 		gateway_id = GatewayId,
 		type = {part, #part_info{ref = PartRefNum, seq = PartSeqNum, total = PartsTotal}},
@@ -188,9 +188,9 @@ build_long_part_req_info(#just_sms_request_dto{
 	ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
 	#req_info{
 		req_id = ReqId,
-		client_type = ClientType,
 		customer_id = CustomerId,
 		user_id = UserId,
+		client_type = ClientType,
 		in_msg_id = InMsgId,
 		gateway_id = GatewayId,
 		type = {part, #part_info{
@@ -410,9 +410,9 @@ sms_request_to_req_info_list_regular_short_batch_test() ->
 	Expected = [
 		#req_info{
 		   req_id = RID,
-		   client_type = CT,
 		   customer_id = CID,
 		   user_id = UID,
+		   client_type = CT,
 		   in_msg_id = <<"1">>,
 		   gateway_id = GID,
 		   type = regular,
@@ -427,9 +427,9 @@ sms_request_to_req_info_list_regular_short_batch_test() ->
 		},
 		#req_info{
 		   req_id = RID,
-		   client_type = CT,
 		   customer_id = CID,
 		   user_id = UID,
+		   client_type = CT,
 		   in_msg_id = <<"2">>,
 		   gateway_id = GID,
 		   type = regular,
@@ -519,9 +519,9 @@ sms_request_to_req_info_list_part_test() ->
 	Expected = [
 		#req_info{
 			req_id = RID,
-			client_type = CT,
 			customer_id = CID,
 			user_id = UID,
+			client_type = CT,
 			in_msg_id = <<"1">>,
 			gateway_id = GID,
 			type = {part, #part_info{ref = 249, seq = 1, total = 3}},
@@ -596,9 +596,9 @@ sms_request_to_req_info_list_multipart_test() ->
 	Expected = [
 		#req_info{
 			req_id = RID,
-			client_type = CT,
 			customer_id = CID,
 			user_id = UID,
+			client_type = CT,
 			in_msg_id = <<"1">>,
 			gateway_id = GID,
 			type = {part, #part_info{ref = [<<"2">>, <<"3">>], seq = 1, total = 3}},
@@ -613,9 +613,9 @@ sms_request_to_req_info_list_multipart_test() ->
 		},
 		#req_info{
 			req_id = RID,
-			client_type = CT,
 			customer_id = CID,
 			user_id = UID,
+			client_type = CT,
 			in_msg_id = <<"2">>,
 			gateway_id = GID,
 			type = {part, #part_info{ref = [<<"1">>, <<"3">>], seq = 2, total = 3}},
@@ -630,9 +630,9 @@ sms_request_to_req_info_list_multipart_test() ->
 		},
 		#req_info{
 			req_id = RID,
-			client_type = CT,
 			customer_id = CID,
 			user_id = UID,
+			client_type = CT,
 			in_msg_id = <<"3">>,
 			gateway_id = GID,
 			type = {part, #part_info{ref = [<<"1">>, <<"2">>], seq = 3, total = 3}},

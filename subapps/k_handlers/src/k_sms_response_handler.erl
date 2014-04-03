@@ -66,8 +66,8 @@ convert(SmsResponse, SmsStatus) ->
 
 	#resp_info{
 		req_id = RequestId,
-		client_type = ClientType,
 		customer_id = CustomerId,
+		client_type = ClientType,
 		in_msg_id = OriginalId,
 		gateway_id = GatewayId,
 		out_msg_id = MessageId,

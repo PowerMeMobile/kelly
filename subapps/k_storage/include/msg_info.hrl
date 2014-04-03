@@ -47,9 +47,9 @@
 
 -record(req_info, {
 	req_id :: req_id(),
-    client_type :: client_type(),
     customer_id :: customer_uuid(),
 	user_id :: user_id(),
+    client_type :: client_type(),
 	in_msg_id :: in_msg_id(),
     gateway_id :: gateway_id(),
     type :: msg_type(),
@@ -65,9 +65,9 @@
 
 -record(resp_info, {
 	req_id :: req_id(),
-    client_type :: client_type(),
     customer_id :: customer_uuid(),
 	in_msg_id :: in_msg_id(),
+    client_type :: client_type(),
     gateway_id :: gateway_id(),
 	out_msg_id :: out_msg_id(),
 	resp_time :: timestamp(),
@@ -84,9 +84,9 @@
 
 -record(msg_info, {
 	msg_id :: msg_id(),
-    client_type :: client_type(),
     customer_id :: customer_uuid(),
 	user_id :: user_id(),
+    client_type :: client_type(),
 	in_msg_id :: in_msg_id(),
     gateway_id :: gateway_id(),
 	out_msg_id :: out_msg_id(),
