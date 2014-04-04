@@ -83,6 +83,8 @@ authenticate(AuthReq = #k1api_auth_request_dto{
             Any
     end.
 
+check_password(#k1api_auth_request_dto{password = PwHash}, #user{password = PwHash}) ->
+    allow;
 check_password(#k1api_auth_request_dto{password = Pw}, #user{password = PwHash}) ->
     case ac_hexdump:binary_to_hexdump(crypto:hash(md5, Pw), to_lower) =:= PwHash of
         true ->
