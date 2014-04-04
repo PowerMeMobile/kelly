@@ -6,12 +6,12 @@
 
 %% API
 -export([
-	start_link/0
+    start_link/0
 ]).
 
 %% Supervisor callbacks
 -export([
-	init/1
+    init/1
 ]).
 
 %% ===================================================================
@@ -20,7 +20,7 @@
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-	supervisor:start_link(?MODULE, []).
+    supervisor:start_link(?MODULE, []).
 
 %% ===================================================================
 %% Supervisor callbacks
@@ -28,11 +28,10 @@ start_link() ->
 
 -spec init([]) -> ignore.
 init([]) ->
-	{ok, { {one_for_one, 5, 10}, [
+    {ok, {{one_for_one, 5, 10}, [
+        {k_mb_amqp_consumer_srv, {k_mb_amqp_consumer_srv, start_link, []},
+            permanent, 5000, worker, [k_mb_amqp_consumer_srv]},
 
-		{k_mb_amqp_consumer_srv, {k_mb_amqp_consumer_srv, start_link, []},
-			permanent, 5000, worker, [k_mb_amqp_consumer_srv]},
-
-		{k_mb_amqp_producer_srv, {k_mb_amqp_producer_srv, start_link, []},
-			permanent, 5000, worker, [k_mb_amqp_producer_srv]}
-	]} }.
+        {k_mb_amqp_producer_srv, {k_mb_amqp_producer_srv, start_link, []},
+            permanent, 5000, worker, [k_mb_amqp_producer_srv]}
+    ]}}.

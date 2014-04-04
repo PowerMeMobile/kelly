@@ -6,128 +6,128 @@
 -include_lib("eunit/include/eunit.hrl").
 
 gtw_test_() ->
-	{"Gateway & its connections http interface tests",
-	{setup,
-		fun delete_gtw/0,
-		{inorder, [?_test(create_gtw()),
-					?_test(update_gtw()),
-					?_test(create_connection()),
-					?_test(update_connection()),
-					?_test(delete_connection()),
-					?_test(delete_gtw())]
-		}
-	}}.
+    {"Gateway & its connections http interface tests",
+    {setup,
+        fun delete_gtw/0,
+        {inorder, [?_test(create_gtw()),
+                    ?_test(update_gtw()),
+                    ?_test(create_connection()),
+                    ?_test(update_connection()),
+                    ?_test(delete_connection()),
+                    ?_test(delete_gtw())]
+        }
+    }}.
 
 %% ===================================================================
 %% GATEWAY Tests
 %% ===================================================================
 
 gtw_id() ->
-	<<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>.
+    <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>.
 
 gtw_path() ->
-	"http://127.0.0.1:8080/gateways".
+    "http://127.0.0.1:8080/gateways".
 gtw_path(ID) ->
-	gtw_path() ++ "/" ++ binary_to_list(ID).
+    gtw_path() ++ "/" ++ binary_to_list(ID).
 
 create_gtw() ->
-	Url = gtw_path(),
-	GtwID = gtw_id(),
-	GtwName = <<"test_gtw">>,
-	GtwRPS = 10000,
-	Queries = [
-		{id, GtwID},
-		{name, GtwName},
-		{rps, GtwRPS}
-	],
+    Url = gtw_path(),
+    GtwID = gtw_id(),
+    GtwName = <<"test_gtw">>,
+    GtwRPS = 10000,
+    Queries = [
+        {id, GtwID},
+        {name, GtwName},
+        {rps, GtwRPS}
+    ],
     Response = ?perform_post(Url, [], <<>>, Queries),
     ?assert_status(201, Response),
-	?assert_json_values(Queries, Response).
+    ?assert_json_values(Queries, Response).
 
 update_gtw() ->
-	GtwID = gtw_id(),
-	Url = gtw_path(GtwID),
-	%% is exist
-	Response = ?perform_get(Url),
-	?assert_status(200, Response),
-	?assert_json_value(id, GtwID, Response),
+    GtwID = gtw_id(),
+    Url = gtw_path(GtwID),
+    %% is exist
+    Response = ?perform_get(Url),
+    ?assert_status(200, Response),
+    ?assert_json_value(id, GtwID, Response),
 
-	%% update name
-	NewName = <<"new_name">>,
-	UpdateNameQueries = [{name, NewName}],
-	PutResp = ?perform_put(Url, [], <<>>, UpdateNameQueries),
-	?assert_status(200, PutResp),
-	?assert_json_value(name, NewName, PutResp),
+    %% update name
+    NewName = <<"new_name">>,
+    UpdateNameQueries = [{name, NewName}],
+    PutResp = ?perform_put(Url, [], <<>>, UpdateNameQueries),
+    ?assert_status(200, PutResp),
+    ?assert_json_value(name, NewName, PutResp),
 
-	%% update rps
-	NewRPS = 12345,
-	UpdRPSQueries = [{rps, NewRPS}],
-	UpdateRPSResp = ?perform_put(Url, [], <<>>, UpdRPSQueries),
-	?assert_status(200, UpdateRPSResp),
-	?assert_json_value(rps, NewRPS, UpdateRPSResp).
+    %% update rps
+    NewRPS = 12345,
+    UpdRPSQueries = [{rps, NewRPS}],
+    UpdateRPSResp = ?perform_put(Url, [], <<>>, UpdRPSQueries),
+    ?assert_status(200, UpdateRPSResp),
+    ?assert_json_value(rps, NewRPS, UpdateRPSResp).
 
 
 delete_gtw() ->
-	delete_gtw(gtw_id()).
+    delete_gtw(gtw_id()).
 
 delete_gtw(GtwID) ->
-	Url = gtw_path(GtwID),
-	delete_req(Url).
+    Url = gtw_path(GtwID),
+    delete_req(Url).
 
 %% ===================================================================
 %% Gtw CONNECTION Tests
 %% ===================================================================
 
 conn_id() ->
-	0.
+    0.
 
 conn_path(GtwID, ConnID) ->
-	conn_path(GtwID) ++ "/" ++ integer_to_list(ConnID).
+    conn_path(GtwID) ++ "/" ++ integer_to_list(ConnID).
 conn_path(GtwID) ->
-	gtw_path(GtwID) ++ "/connections".
+    gtw_path(GtwID) ++ "/connections".
 
 create_connection() ->
-	Url = conn_path(gtw_id()),
-	ConnID = conn_id(),
-	Queries = [
-		{id, ConnID},
-		{host, <<"127.0.0.1">>},
-		{port, 8001},
-		{bind_type, <<"transmitter">>},
-		{system_id, <<"smppclient1">>},
-		{password, <<"password">>},
-		{system_type, <<"smppclient1">>},
-		{addr_ton, 1},
-		{addr_npi, 0},
-		{addr_range, <<"">>}
-	],
-	Resp = ?perform_post(Url, [], <<>>, Queries),
-	?assert_status(201, Resp),
-	?assert_json_values(Queries, Resp).
+    Url = conn_path(gtw_id()),
+    ConnID = conn_id(),
+    Queries = [
+        {id, ConnID},
+        {host, <<"127.0.0.1">>},
+        {port, 8001},
+        {bind_type, <<"transmitter">>},
+        {system_id, <<"smppclient1">>},
+        {password, <<"password">>},
+        {system_type, <<"smppclient1">>},
+        {addr_ton, 1},
+        {addr_npi, 0},
+        {addr_range, <<"">>}
+    ],
+    Resp = ?perform_post(Url, [], <<>>, Queries),
+    ?assert_status(201, Resp),
+    ?assert_json_values(Queries, Resp).
 
 update_connection() ->
-	ConnID = conn_id(),
-	Url = conn_path(gtw_id(), ConnID),
-	Queries = [
-		{host, <<"127.0.0.2">>},
-		{port, 8002},
-		{bind_type, <<"receiver">>},
-		{system_id, <<"smppclient2">>},
-		{password, <<"password2">>},
-		{system_type, <<"smppclient2">>},
-		{addr_ton, 2},
-		{addr_npi, 2},
-		{addr_range, <<"">>}
-	],
-	Resp = ?perform_put(Url, [], <<>>, Queries),
-	?assert_status(200, Resp),
-	?assert_json_values(Queries, Resp).
+    ConnID = conn_id(),
+    Url = conn_path(gtw_id(), ConnID),
+    Queries = [
+        {host, <<"127.0.0.2">>},
+        {port, 8002},
+        {bind_type, <<"receiver">>},
+        {system_id, <<"smppclient2">>},
+        {password, <<"password2">>},
+        {system_type, <<"smppclient2">>},
+        {addr_ton, 2},
+        {addr_npi, 2},
+        {addr_range, <<"">>}
+    ],
+    Resp = ?perform_put(Url, [], <<>>, Queries),
+    ?assert_status(200, Resp),
+    ?assert_json_values(Queries, Resp).
 
 delete_connection() ->
-	delete_connection(conn_id()).
+    delete_connection(conn_id()).
 delete_connection(ConnID) ->
-	Url = conn_path(gtw_id(), ConnID),
-	delete_req(Url).
+    Url = conn_path(gtw_id(), ConnID),
+    delete_req(Url).
 
 %% ===================================================================
 %% Internals

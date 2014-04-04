@@ -4,11 +4,11 @@
 
 %% gen_cowboy_crud callbacks
 -export([
-	init/0,
-	create/1,
-	read/1,
-	update/1,
-	delete/1
+    init/0,
+    create/1,
+    read/1,
+    update/1,
+    delete/1
 ]).
 
 -include_lib("gen_http_api/include/crud_specs.hrl").
@@ -19,28 +19,28 @@
 %% ===================================================================
 
 init() ->
-	Read = [
-		#param{name = from, mandatory = true, repeated = false, type =
-			{custom, fun ac_datetime:iso8601_to_datetime/1}},
-		#param{name = to, mandatory = true, repeated = false, type =
-			{custom, fun ac_datetime:iso8601_to_datetime/1}},
-		#param{name = customer_id, mandatory = false, repeated = false, type = binary},
-		#param{name = recipient, mandatory = false, repeated = false, type = binary},
-		#param{name = status, mandatory = false, repeated = false, type = binary}
-	],
-	{ok, #specs{
-		read = Read,
-		route = "/report/mt"
-	}}.
+    Read = [
+        #param{name = from, mandatory = true, repeated = false, type =
+            {custom, fun ac_datetime:iso8601_to_datetime/1}},
+        #param{name = to, mandatory = true, repeated = false, type =
+            {custom, fun ac_datetime:iso8601_to_datetime/1}},
+        #param{name = customer_id, mandatory = false, repeated = false, type = binary},
+        #param{name = recipient, mandatory = false, repeated = false, type = binary},
+        #param{name = status, mandatory = false, repeated = false, type = binary}
+    ],
+    {ok, #specs{
+        read = Read,
+        route = "/report/mt"
+    }}.
 
 read(Params) ->
-	{ok, k_statistic_mt_messages:build_report(Params)}.
+    {ok, k_statistic_mt_messages:build_report(Params)}.
 
 create(_Params) ->
-	ok.
+    ok.
 
 update(_Params) ->
-	ok.
+    ok.
 
 delete(_Params) ->
-	ok.
+    ok.

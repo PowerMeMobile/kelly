@@ -1,15 +1,15 @@
 {application, k_handlers, [
-	{description, ""},
-	{vsn, "1"},
-	{registered, []},
-	{applications, [
-		kernel,
-		stdlib,
-		gproc,
-		k_common,
-		k_storage,
-		k_mailbox
-	]},
-	{mod, {k_handlers_app, []}},
-	{env, []}
+    {description, ""},
+    {vsn, "1"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        gproc,
+        k_common,
+        k_storage,
+        k_mailbox
+    ]},
+    {mod, {k_handlers_app, []}},
+    {env, []}
 ]}.

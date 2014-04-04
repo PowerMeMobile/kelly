@@ -12,30 +12,30 @@
 -type pay_type() :: prepaid | postpaid.
 
 -record(user, {
-	id			:: user_id(),
-	password	:: binary(),
-	connection_types :: [connection_type()]
+    id          :: user_id(),
+    password    :: binary(),
+    connection_types :: [connection_type()]
 }).
 -type user() :: #user{}.
 
 -record(customer, {
-	customer_uuid		:: customer_uuid(),
-	customer_id			:: customer_id(),
-	name 				:: binary(),
-	priority 			:: integer(),
-	rps 				:: integer() | undefined,
-	allowed_sources		:: [addr()], %% originators
-	default_source 		:: addr() | undefined, %% default originator
-	networks 			:: [network_id()],
-	default_provider_id	:: provider_id() | undefined,
-	receipts_allowed 	:: boolean(),
-	no_retry 			:: boolean(),
-	default_validity 	:: binary(),
-	max_validity		:: integer(),
-	users = []			:: [user()] | [],
-	pay_type	    	:: pay_type(),
-	state = 0			:: non_neg_integer() %% 0 blocked, 1 active
+    customer_uuid       :: customer_uuid(),
+    customer_id         :: customer_id(),
+    name                :: binary(),
+    priority            :: integer(),
+    rps                 :: integer() | undefined,
+    allowed_sources     :: [addr()], %% originators
+    default_source      :: addr() | undefined, %% default originator
+    networks            :: [network_id()],
+    default_provider_id :: provider_id() | undefined,
+    receipts_allowed    :: boolean(),
+    no_retry            :: boolean(),
+    default_validity    :: binary(),
+    max_validity        :: integer(),
+    users = []          :: [user()] | [],
+    pay_type            :: pay_type(),
+    state = 0           :: non_neg_integer() %% 0 blocked, 1 active
 }).
--type customer() 		:: #customer{}.
+-type customer()        :: #customer{}.
 
 -endif.

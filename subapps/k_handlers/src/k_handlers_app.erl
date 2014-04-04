@@ -13,8 +13,8 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-	register(?MODULE, self()),
-	k_handlers_sup:start_link().
+    register(?MODULE, self()),
+    k_handlers_sup:start_link().
 
 stop(_State) ->
     ok.

@@ -15,8 +15,8 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-	register(?MODULE, self()),
-	k_common_sup:start_link().
+    register(?MODULE, self()),
+    k_common_sup:start_link().
 
 stop(_State = #state{}) ->
-	ok.
+    ok.

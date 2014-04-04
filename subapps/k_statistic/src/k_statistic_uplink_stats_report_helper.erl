@@ -1,7 +1,7 @@
 -module(k_statistic_uplink_stats_report_helper).
 
 -export([
-	get_gtws_throughput/0
+    get_gtws_throughput/0
 ]).
 
 -include_lib("k_common/include/logging.hrl").
@@ -10,29 +10,29 @@
 
 -spec get_gtws_throughput() -> ok.
 get_gtws_throughput() ->
-	{ok, Conn} = rmql:connection_start(),
-	link(Conn),
-	{ok, Chan} = rmql:channel_open(Conn),
+    {ok, Conn} = rmql:connection_start(),
+    link(Conn),
+    {ok, Chan} = rmql:channel_open(Conn),
     {ok, Payload} = 'JustAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),
-	{ok, TmpQueue} = queue_declare(Chan),
-	{ok, _ConsumerTag} = rmql:basic_consume(Chan, TmpQueue, true),
-	BProps = [{reply_to, TmpQueue}, {message_id, <<"1">>}, {content_type, <<"ThroughputRequest">>}],
+    {ok, TmpQueue} = queue_declare(Chan),
+    {ok, _ConsumerTag} = rmql:basic_consume(Chan, TmpQueue, true),
+    BProps = [{reply_to, TmpQueue}, {message_id, <<"1">>}, {content_type, <<"ThroughputRequest">>}],
     {ok, QName} = application:get_env(k_handlers, just_control_queue),
-	ok = rmql:basic_publish(Chan, QName, list_to_binary(Payload), BProps),
-	Response =
-	receive
-		{#'basic.deliver'{}, #amqp_msg{payload = RespPayload, props = RespProps}} ->
-			process_response(RespPayload, RespProps)
-	after
-		10000 ->
-			{error, timeout}
-	end,
-	unlink(Conn),
-	rmql:connection_close(Conn),
-	Response.
+    ok = rmql:basic_publish(Chan, QName, list_to_binary(Payload), BProps),
+    Response =
+    receive
+        {#'basic.deliver'{}, #amqp_msg{payload = RespPayload, props = RespProps}} ->
+            process_response(RespPayload, RespProps)
+    after
+        10000 ->
+            {error, timeout}
+    end,
+    unlink(Conn),
+    rmql:connection_close(Conn),
+    Response.
 
 process_response(Payload, #'P_basic'{content_type = <<"ThroughputResponse">>}) ->
-	'JustAsn':decode('ThroughputResponse', Payload).
+    'JustAsn':decode('ThroughputResponse', Payload).
 
 queue_declare(Chan) ->
     Method = #'queue.declare'{durable = false,

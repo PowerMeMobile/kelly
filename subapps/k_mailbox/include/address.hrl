@@ -4,9 +4,9 @@
 -include_lib("k_storage/include/customer.hrl").
 
 -record(k_mb_address, {
-	address		:: addr(),
-	customer_id :: customer_id(),
-	user_id		:: user_id()
+    address     :: addr(),
+    customer_id :: customer_id(),
+    user_id     :: user_id()
 }).
 
 -endif.

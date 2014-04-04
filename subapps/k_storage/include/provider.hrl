@@ -5,12 +5,12 @@
 -include("gateway.hrl").
 
 -record(provider, {
-	name 			  	:: binary(),
-	gateway 		  	:: gateway_id(),
-	bulk_gateway 	  	:: gateway_id(),
-	receipts_supported 	:: boolean()
+    name                :: binary(),
+    gateway             :: gateway_id(),
+    bulk_gateway        :: gateway_id(),
+    receipts_supported  :: boolean()
 }).
--type provider_id() 	:: uuid().
--type provider() 		:: #provider{}.
+-type provider_id()     :: uuid().
+-type provider()        :: #provider{}.
 
 -endif.

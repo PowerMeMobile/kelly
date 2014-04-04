@@ -4,11 +4,11 @@
 
 %% gen_cowboy_crud callbacks
 -export([
-	init/0,
-	create/1,
-	read/1,
-	update/1,
-	delete/1
+    init/0,
+    create/1,
+    read/1,
+    update/1,
+    delete/1
 ]).
 
 -include_lib("alley_common/include/utils.hrl").
@@ -21,38 +21,38 @@
 %% ===================================================================
 
 init() ->
-	Read = [
-		#param{name = message_id, mandatory = true, repeated = false, type = binary},
-		#param{name = client_type, mandatory = true, repeated = false, type = atom},
-		#param{name = customer_id, mandatory = true, repeated = false, type = binary},
-		#param{name = user_id, mandatory = true, repeated = false, type = binary}
-	],
-	{ok, #specs{
-		create = undefined,
-		read = Read,
-		update = undefined,
-		delete = undefined,
-		route = "/message_status/:message_id/client/:client_type/customer/:customer_id/user/:user_id"
-	}}.
+    Read = [
+        #param{name = message_id, mandatory = true, repeated = false, type = binary},
+        #param{name = client_type, mandatory = true, repeated = false, type = atom},
+        #param{name = customer_id, mandatory = true, repeated = false, type = binary},
+        #param{name = user_id, mandatory = true, repeated = false, type = binary}
+    ],
+    {ok, #specs{
+        create = undefined,
+        read = Read,
+        update = undefined,
+        delete = undefined,
+        route = "/message_status/:message_id/client/:client_type/customer/:customer_id/user/:user_id"
+    }}.
 
 read(Params) ->
-	?log_debug("Params: ~p", [Params]),
-	CustomerId = ?gv(customer_id, Params),
-	UserId = ?gv(user_id, Params),
-	ClientType = ?gv(client_type, Params),
-	InMsgId = ?gv(message_id, Params),
-	case k_statistic:get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) of
-		{ok, Report} ->
-			{ok, Report};
-		{error, no_entry} ->
-			{exception, 'svc0003'}
-	end.
+    ?log_debug("Params: ~p", [Params]),
+    CustomerId = ?gv(customer_id, Params),
+    UserId = ?gv(user_id, Params),
+    ClientType = ?gv(client_type, Params),
+    InMsgId = ?gv(message_id, Params),
+    case k_statistic:get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) of
+        {ok, Report} ->
+            {ok, Report};
+        {error, no_entry} ->
+            {exception, 'svc0003'}
+    end.
 
 create(_Params) ->
-	ok.
+    ok.
 
 update(_Params) ->
-	ok.
+    ok.
 
 delete(_Params) ->
-	ok.
+    ok.

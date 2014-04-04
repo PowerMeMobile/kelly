@@ -1,14 +1,14 @@
 {application, k_storage, [
-	{description, ""},
-	{vsn, "1"},
-	{registered, []},
-	{applications, [
-		kernel,
-		stdlib,
-		mongodb,
-		gproc,
-		k_common
-	]},
-	{mod, {k_storage_app, []}},
-	{env, []}
+    {description, ""},
+    {vsn, "1"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        mongodb,
+        gproc,
+        k_common
+    ]},
+    {mod, {k_storage_app, []}},
+    {env, []}
 ]}.

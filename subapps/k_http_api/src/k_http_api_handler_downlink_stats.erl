@@ -4,11 +4,11 @@
 
 %% gen_cowboy_crud callbacks
 -export([
-	init/0,
-	create/1,
-	read/1,
-	update/1,
-	delete/1
+    init/0,
+    create/1,
+    read/1,
+    update/1,
+    delete/1
 ]).
 
 -include_lib("gen_http_api/include/crud_specs.hrl").
@@ -19,25 +19,25 @@
 %% ===================================================================
 
 init() ->
-	{ok, #specs{
-		read = [],
-		route = "/report/downlink"
-	}}.
+    {ok, #specs{
+        read = [],
+        route = "/report/downlink"
+    }}.
 
 read(_Params) ->
-	case k_statistic:downlink_report() of
-		{ok, Report} ->
-			{ok, Report};
-		{error, Error} ->
-			?log_debug("Downlink report failed with: ~p", [Error]),
-			{exception, 'svc0003'}
-	end.
+    case k_statistic:downlink_report() of
+        {ok, Report} ->
+            {ok, Report};
+        {error, Error} ->
+            ?log_debug("Downlink report failed with: ~p", [Error]),
+            {exception, 'svc0003'}
+    end.
 
 create(_Params) ->
-	ok.
+    ok.
 
 update(_Params) ->
-	ok.
+    ok.
 
 delete(_Params) ->
-	ok.
+    ok.

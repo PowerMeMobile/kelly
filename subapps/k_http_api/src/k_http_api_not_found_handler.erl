@@ -7,15 +7,15 @@
 -include_lib("k_common/include/logging.hrl").
 
 -spec init({tcp, http}, cowboy_req:req(), term()) ->
-	{ok, cowboy_req:req(), undefined_state}.
+    {ok, cowboy_req:req(), undefined_state}.
 init({tcp, http}, Req, _Opts) ->
     {ok, Req, undefined_state}.
 
 -spec handle(cowboy_req:req(), term()) ->
-	{ok, cowboy_req:req(), term()}.
+    {ok, cowboy_req:req(), term()}.
 handle(Req, State) ->
-	{ok, Req2} = cowboy_req:reply(404, [],
-		<<"Resource not found">>, Req),
+    {ok, Req2} = cowboy_req:reply(404, [],
+        <<"Resource not found">>, Req),
     ?log_debug("Error in request", []),
     ?log_debug("~p", [Req]),
     {ok, Req2, State}.

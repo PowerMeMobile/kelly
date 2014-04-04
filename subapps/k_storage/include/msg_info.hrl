@@ -6,11 +6,11 @@
 -include_lib("alley_dto/include/adto_types.hrl").
 
 -type resp_status() ::
-	sent
+    sent
   | failed.
 
 -type dlr_status() ::
-	enroute
+    enroute
   | delivered
   | expired
   | deleted
@@ -21,15 +21,15 @@
   | unrecognized.
 
 -type status() ::
-	received
+    received
   | pending
   | resp_status()
   | dlr_status().
 
 -record(part_info, {
-	ref :: integer() | [in_msg_id()],
-	seq :: pos_integer(),
-	total :: pos_integer()
+    ref :: integer() | [in_msg_id()],
+    seq :: pos_integer(),
+    total :: pos_integer()
 }).
 
 -type req_id() :: uuid().
@@ -46,11 +46,11 @@
 -type val_period() :: binary().
 
 -record(req_info, {
-	req_id :: req_id(),
+    req_id :: req_id(),
     customer_id :: customer_uuid(),
-	user_id :: user_id(),
+    user_id :: user_id(),
     client_type :: client_type(),
-	in_msg_id :: in_msg_id(),
+    in_msg_id :: in_msg_id(),
     gateway_id :: gateway_id(),
     type :: msg_type(),
     encoding :: encoding(),
@@ -58,50 +58,50 @@
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
-	esm_class  :: esm_class(),
-	val_period :: val_period(),
-	req_time :: timestamp()
+    esm_class  :: esm_class(),
+    val_period :: val_period(),
+    req_time :: timestamp()
 }).
 
 -record(resp_info, {
-	req_id :: req_id(),
+    req_id :: req_id(),
     customer_id :: customer_uuid(),
-	in_msg_id :: in_msg_id(),
+    in_msg_id :: in_msg_id(),
     client_type :: client_type(),
     gateway_id :: gateway_id(),
-	out_msg_id :: out_msg_id(),
-	resp_time :: timestamp(),
-	resp_status :: resp_status(),
-	resp_error_code :: undefined | pos_integer()
+    out_msg_id :: out_msg_id(),
+    resp_time :: timestamp(),
+    resp_status :: resp_status(),
+    resp_error_code :: undefined | pos_integer()
 }).
 
 -record(dlr_info, {
     gateway_id :: gateway_id(),
-	out_msg_id :: out_msg_id(),
-	dlr_time :: timestamp(),
-	dlr_status :: dlr_status()
+    out_msg_id :: out_msg_id(),
+    dlr_time :: timestamp(),
+    dlr_status :: dlr_status()
 }).
 
 -record(msg_info, {
-	msg_id :: msg_id(),
+    msg_id :: msg_id(),
     customer_id :: customer_uuid(),
-	user_id :: user_id(),
+    user_id :: user_id(),
     client_type :: client_type(),
-	in_msg_id :: in_msg_id(),
+    in_msg_id :: in_msg_id(),
     gateway_id :: gateway_id(),
-	out_msg_id :: out_msg_id(),
+    out_msg_id :: out_msg_id(),
     type :: msg_type(),
     encoding :: encoding(),
     body :: binary(),
     src_addr :: src_addr(),
     dst_addr :: dst_addr(),
     reg_dlr :: boolean(),
-	esm_class  :: esm_class(),
-	val_period :: val_period(),
-	status :: status(),
-	req_time :: timestamp(),
-	resp_time :: timestamp(),
-	dlr_time :: timestamp()
+    esm_class  :: esm_class(),
+    val_period :: val_period(),
+    status :: status(),
+    req_time :: timestamp(),
+    resp_time :: timestamp(),
+    dlr_time :: timestamp()
 }).
 
 -endif. % msg_info_hrl

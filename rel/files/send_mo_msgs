@@ -22,60 +22,60 @@ function usage() {
 
 # generate random 100 chars sequence.
 function generate_random_text() {
-	cat /dev/urandom | tr -dc '0-9a-zA-Z' | head -c 100
+    cat /dev/urandom | tr -dc '0-9a-zA-Z' | head -c 100
 }
 
 # parse arguments.
 while getopts c:b:sd:H:P:qh opt; do
     case "$opt" in
-		c) Count="$OPTARG";;
-		b) Text="$OPTARG"; Same=1;;
-		s) Same=1;;
-		d) DstAddr=$"$OPTARG";;
-		H) Host="$OPTARG";;
-		P) Port="$OPTARG";;
-		q) Quiet="-q";;
-		\? | h) usage; exit 0;
+        c) Count="$OPTARG";;
+        b) Text="$OPTARG"; Same=1;;
+        s) Same=1;;
+        d) DstAddr=$"$OPTARG";;
+        H) Host="$OPTARG";;
+        P) Port="$OPTARG";;
+        q) Quiet="-q";;
+        \? | h) usage; exit 0;
     esac
 done
 
 # check that the mandatory option is set.
 if [ $Count -eq 0 ]; then
-	usage
-	exit 1
+    usage
+    exit 1
 fi
 
 # generate random text message used for all messages.
 if [ $Same -eq 1 ] && [ -z "$Text" ]; then
-	Text=$(generate_random_text)
+    Text=$(generate_random_text)
 fi
 
 Index=1
 LastNetworkIndex=$((${#Networks[@]}-1))
 while [ $Index -lt $Count -o $Index -eq $Count ]; do
-	if [ -z $Quiet ]; then
-		printf "#%s\n" $Index
-	fi
+    if [ -z $Quiet ]; then
+        printf "#%s\n" $Index
+    fi
 
-	## select random network.
-	RandomNetworkIndex=$(shuf -i 0-$LastNetworkIndex -n 1)
-	Network=${Networks[$RandomNetworkIndex]}
-	## select random 7 digits number.
-	Number=$(shuf -i 1111111-9999999 -n 1)
-	## if not the same message, then generate it every time.
-	if [ $Same -eq 0 ]; then
-		Text=$(generate_random_text)
-	fi
-	## build sed patterns list.
-	Patterns="s/{{HOST}}/$Host/;s/{{PORT}}/$Port/;s/{{TEXT}}/$Text/;s/{{NETWORK}}/$Network/;s/{{NUMBER}}/$Number/;s/{{DST_ADDR}}/$DstAddr/"
-	## build the url.
-	Url=$(echo $UrlFmt | sed -e $Patterns)
-	wget $Url $Quiet -O /dev/null
-	if [ -z $Quiet ]; then
-		echo; echo
-	fi
+    ## select random network.
+    RandomNetworkIndex=$(shuf -i 0-$LastNetworkIndex -n 1)
+    Network=${Networks[$RandomNetworkIndex]}
+    ## select random 7 digits number.
+    Number=$(shuf -i 1111111-9999999 -n 1)
+    ## if not the same message, then generate it every time.
+    if [ $Same -eq 0 ]; then
+        Text=$(generate_random_text)
+    fi
+    ## build sed patterns list.
+    Patterns="s/{{HOST}}/$Host/;s/{{PORT}}/$Port/;s/{{TEXT}}/$Text/;s/{{NETWORK}}/$Network/;s/{{NUMBER}}/$Number/;s/{{DST_ADDR}}/$DstAddr/"
+    ## build the url.
+    Url=$(echo $UrlFmt | sed -e $Patterns)
+    wget $Url $Quiet -O /dev/null
+    if [ -z $Quiet ]; then
+        echo; echo
+    fi
 
-	Index=$(($Index + 1))
+    Index=$(($Index + 1))
 done
 
 exit 0

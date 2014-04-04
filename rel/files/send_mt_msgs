@@ -39,92 +39,92 @@ function usage() {
 
 # fix provided From address.
 function get_source_address() {
-	if [ -z $From ]; then
-		echo
-	else
-		echo %2B${From#+}
-	fi
+    if [ -z $From ]; then
+        echo
+    else
+        echo %2B${From#+}
+    fi
 }
 
 # generate random To address or use provided.
 function get_destination_address() {
-	if [ $SameTo -eq 1 ]; then
-		## remove leading '+'.
-		echo %2B${To#+}
-	else
-	    ## select random network.
-		LastNetworkIndex=$((${#Networks[@]}-1))
-		RandomNetworkIndex=$(shuf -i 0-$LastNetworkIndex -n 1)
-		Network=${Networks[$RandomNetworkIndex]}
-    	## select random 7 digits number.
-		Number=$(shuf -i 1111111-9999999 -n 1)
-		echo %2B$Network$Number
-	fi
+    if [ $SameTo -eq 1 ]; then
+        ## remove leading '+'.
+        echo %2B${To#+}
+    else
+        ## select random network.
+        LastNetworkIndex=$((${#Networks[@]}-1))
+        RandomNetworkIndex=$(shuf -i 0-$LastNetworkIndex -n 1)
+        Network=${Networks[$RandomNetworkIndex]}
+        ## select random 7 digits number.
+        Number=$(shuf -i 1111111-9999999 -n 1)
+        echo %2B$Network$Number
+    fi
 }
 
 # generate random $Length chars sequence.
 function generate_random_body() {
-	cat /dev/urandom | tr -dc '0-9a-zA-Z' | head -c $Length
+    cat /dev/urandom | tr -dc '0-9a-zA-Z' | head -c $Length
 }
 
 # generate random Body or use provided.
 function get_body() {
-	if [ $Same -eq 1 ]; then
-		## if body is not yet set - generate random once
-		if [ -z $Body ]; then
-			Body=$(generate_random_body)
-		fi
-	else
-		Body=$(generate_random_body)
-	fi
-	echo "$Body"
+    if [ $Same -eq 1 ]; then
+        ## if body is not yet set - generate random once
+        if [ -z $Body ]; then
+            Body=$(generate_random_body)
+        fi
+    else
+        Body=$(generate_random_body)
+    fi
+    echo "$Body"
 }
 
 # parse arguments.
 while getopts c:f:t:b:l:sd:H:P:u:p:qh opt; do
     case "$opt" in
-		c) Count="$OPTARG";;
-		f) From="$OPTARG";;
-		t) To="$OPTARG"; SameTo=1;;
-		b) Body="$OPTARG"; Same=1;;
-		l) Length="$OPTARG";;
-		s) Same=1;;
-		d) DlrMask="$OPTARG";;
-		H) Host="$OPTARG";;
-		P) Port="$OPTARG";;
-		u) Username="$OPTARG";;
-		p) Password="$OPTARG";;
-		q) Quiet="-q";;
-		\? | h) usage; exit 0;
+        c) Count="$OPTARG";;
+        f) From="$OPTARG";;
+        t) To="$OPTARG"; SameTo=1;;
+        b) Body="$OPTARG"; Same=1;;
+        l) Length="$OPTARG";;
+        s) Same=1;;
+        d) DlrMask="$OPTARG";;
+        H) Host="$OPTARG";;
+        P) Port="$OPTARG";;
+        u) Username="$OPTARG";;
+        p) Password="$OPTARG";;
+        q) Quiet="-q";;
+        \? | h) usage; exit 0;
     esac
 done
 
 # check that the mandatory option is set.
 if [ $Count -eq 0 ]; then
-	usage
-	exit 1
+    usage
+    exit 1
 fi
 
 Index=1
 while [ $Index -lt $Count ] || [ $Index -eq $Count ]; do
-	if [ -z $Quiet ]; then
-		printf "#%s\n" $Index
-	fi
+    if [ -z $Quiet ]; then
+        printf "#%s\n" $Index
+    fi
 
-	From=$(get_source_address)
-	To=$(get_destination_address)
-	Body=$(get_body)
+    From=$(get_source_address)
+    To=$(get_destination_address)
+    Body=$(get_body)
 
-	## build sed patterns list.
-	Patterns="s/{{HOST}}/$Host/;s/{{PORT}}/$Port/;s/{{USERNAME}}/$Username/;s/{{PASSWORD}}/$Password/;s/{{FROM}}/$From/;s/{{TO}}/$To/;s/{{BODY}}/$Body/;s/{{DRLMASK}}/$DlrMask/"
-	## build the url.
-	Url=$(echo $UrlFmt | sed -e $Patterns)
-	wget $Url $Quiet -O /dev/null
-	if [ -z $Quiet ]; then
-		echo; echo
-	fi
+    ## build sed patterns list.
+    Patterns="s/{{HOST}}/$Host/;s/{{PORT}}/$Port/;s/{{USERNAME}}/$Username/;s/{{PASSWORD}}/$Password/;s/{{FROM}}/$From/;s/{{TO}}/$To/;s/{{BODY}}/$Body/;s/{{DRLMASK}}/$DlrMask/"
+    ## build the url.
+    Url=$(echo $UrlFmt | sed -e $Patterns)
+    wget $Url $Quiet -O /dev/null
+    if [ -z $Quiet ]; then
+        echo; echo
+    fi
 
-	Index=$(($Index + 1))
+    Index=$(($Index + 1))
 done
 
 exit 0

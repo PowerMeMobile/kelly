@@ -2,8 +2,8 @@
 -define(daily_cfg_hrl, included).
 
 -record(daily_cfg, {
-	seq :: integer(),
-	name :: string()
+    seq :: integer(),
+    name :: string()
 }).
 
 -endif. % daily_cfg_hrl

@@ -20,16 +20,16 @@ sleep 5
 echo Ping node
 KELLY_PING_RESULT=$($KELLY_BIN ping | grep pong)
 if [[ "" == "$KELLY_PING_RESULT" ]]; then
-	exit 1
+    exit 1
 fi
 
 echo Configure kelly node
 ./rel/files/http_conf.sh
 
 if [[ "0" == "$?" ]]; then
-	echo Configure success
+    echo Configure success
 else
-	exit 1
+    exit 1
 fi
 
 echo Start tests
@@ -44,9 +44,9 @@ sleep 5
 echo OK
 
 if [[ "0" == "$TESTS_RESULT" ]]; then
-	echo Success
+    echo Success
 else
-	echo Failure
+    echo Failure
 fi
 
 exit $TESTS_RESULT

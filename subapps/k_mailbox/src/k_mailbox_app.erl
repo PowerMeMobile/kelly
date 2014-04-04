@@ -13,10 +13,10 @@
 
 -spec start(term(), term()) -> {ok, pid()}.
 start(_StartType, _StartArgs) ->
-	register(?MODULE, self()),
-	k_mb_config:init(),
-	k_mailbox_sup:start_link().
+    register(?MODULE, self()),
+    k_mb_config:init(),
+    k_mailbox_sup:start_link().
 
 -spec stop(term()) -> ok.
 stop(_State) ->
-	ok.
+    ok.

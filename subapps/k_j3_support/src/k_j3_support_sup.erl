@@ -3,7 +3,7 @@
 -behaviour(supervisor).
 
 -export([
-	start_link/0
+    start_link/0
 ]).
 
 %% Supervisor callbacks
@@ -21,12 +21,8 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-	?log_debug("k_j3_support_sup: init", []),
-	{ok, {
-		{rest_for_one, 5, 10}, [
-				{k_snmp_tasks_queue, {k_snmp_tasks_queue, start_link, []}, permanent, 1000000, worker, [k_snmp_tasks_queue]},
-				{k_snmp, {k_snmp, start_link, []}, permanent, 1000000, worker, [k_snmp]}
-		]}
-	}.
-
-%%% Internal
+    ?log_debug("k_j3_support_sup: init", []),
+    {ok, {{rest_for_one, 5, 10}, [
+        {k_snmp_tasks_queue, {k_snmp_tasks_queue, start_link, []}, permanent, 1000000, worker, [k_snmp_tasks_queue]},
+        {k_snmp, {k_snmp, start_link, []}, permanent, 1000000, worker, [k_snmp]}
+    ]}}.

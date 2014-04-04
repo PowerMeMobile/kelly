@@ -10,4 +10,4 @@
 
 -spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(_Req) ->
-	{ok, []}.
+    {ok, []}.

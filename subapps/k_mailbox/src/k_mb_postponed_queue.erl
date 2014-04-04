@@ -14,19 +14,19 @@
 
 %% API
 -export([
-	start_link/0,
+    start_link/0,
     postpone/1
 ]).
 
 
 %% GenServer Callbacks
 -export([
-	init/1,
-	handle_call/3,
-	handle_cast/2,
-	handle_info/2,
+    init/1,
+    handle_call/3,
+    handle_cast/2,
+    handle_info/2,
     terminate/2,
-	code_change/3
+    code_change/3
 ]).
 
 %% ===================================================================
@@ -39,7 +39,7 @@ start_link() ->
 
 -spec postpone(term()) -> {postponed, Seconds::integer()} | {error, reached_max}.
 postpone(Item) ->
-	{ok, CurrentAttempt} = get_current_attempt(Item),
+    {ok, CurrentAttempt} = get_current_attempt(Item),
     MaxRetry = k_mb_config:get_env(max_retry),
     postpone(Item, CurrentAttempt, MaxRetry).
 
@@ -56,9 +56,9 @@ init([]) ->
     {ok, #state{rbuff = RBuf, timeout = Timeout}, Timeout}.
 
 handle_call({postpone, Item}, _From, State = #state{rbuff = RBuf, timeout = T}) ->
- 	{ok, Attempt} = get_current_attempt(Item),
+    {ok, Attempt} = get_current_attempt(Item),
     Index = position(Attempt),
-	RetryTime = T * Index / 1000,
+    RetryTime = T * Index / 1000,
     {{value, ItemList}, RBuf} = rbuf:get(Index, RBuf),
     NewList = [Item] ++ ItemList,
     {ok, NewRBuf} = rbuf:set(NewList, Index, RBuf),
@@ -94,20 +94,20 @@ position(N) ->
     trunc(math:pow(2, N - 2)) + 1.
 
 postpone(_Item, CurrentAttempt, MaxRetry) when CurrentAttempt >= MaxRetry ->
-	{error, reached_max};
+    {error, reached_max};
 postpone(Item, Attempt, _MaxRetry) ->
     gen_server:call(?MODULE, {postpone, increment_attempt(Item, Attempt)}).
 
 get_current_attempt(Item = #k_mb_funnel_receipt{}) ->
-	{ok, Item#k_mb_funnel_receipt.delivery_attempt};
+    {ok, Item#k_mb_funnel_receipt.delivery_attempt};
 get_current_attempt(Item = #k_mb_k1api_receipt{}) ->
-	{ok, Item#k_mb_k1api_receipt.delivery_attempt};
+    {ok, Item#k_mb_k1api_receipt.delivery_attempt};
 get_current_attempt(Item = #k_mb_incoming_sms{}) ->
-	{ok, Item#k_mb_incoming_sms.delivery_attempt}.
+    {ok, Item#k_mb_incoming_sms.delivery_attempt}.
 
 increment_attempt(Item = #k_mb_funnel_receipt{}, Attempt) ->
-	Item#k_mb_funnel_receipt{delivery_attempt = Attempt + 1};
+    Item#k_mb_funnel_receipt{delivery_attempt = Attempt + 1};
 increment_attempt(Item = #k_mb_k1api_receipt{}, Attempt) ->
-	Item#k_mb_k1api_receipt{delivery_attempt = Attempt + 1};
+    Item#k_mb_k1api_receipt{delivery_attempt = Attempt + 1};
 increment_attempt(Item = #k_mb_incoming_sms{}, Attempt) ->
-	Item#k_mb_incoming_sms{delivery_attempt = Attempt + 1}.
+    Item#k_mb_incoming_sms{delivery_attempt = Attempt + 1}.

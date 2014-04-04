@@ -4,8 +4,8 @@
 
 %% API
 -export([
-	start_link/0,
-	start_child/1
+    start_link/0,
+    start_child/1
 ]).
 
 %% supervisor callbacks
@@ -27,16 +27,16 @@ start_link() ->
 
 -spec start_child(plist()) -> {ok, pid()} | {error, reason()}.
 start_child(Props) ->
-	{SupPid, _Value} = gproc:await({n, l, ?MODULE}),
-	supervisor:start_child(SupPid, [Props]).
+    {SupPid, _Value} = gproc:await({n, l, ?MODULE}),
+    supervisor:start_child(SupPid, [Props]).
 
 %% ===================================================================
 %% supervisor callbacks
 %% ===================================================================
 
 init([]) ->
-	gproc:reg({n, l, ?MODULE}),
-	{ok, {{simple_one_for_one, 5, 10}, [
-		{mongodb_storage,
-			{mongodb_storage, start_link, []}, transient, 10000, worker, [mongodb_storage]}
-	]}}.
+    gproc:reg({n, l, ?MODULE}),
+    {ok, {{simple_one_for_one, 5, 10}, [
+        {mongodb_storage,
+            {mongodb_storage, start_link, []}, transient, 10000, worker, [mongodb_storage]}
+    ]}}.

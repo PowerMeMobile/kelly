@@ -17,15 +17,15 @@ OUTPUT_SMPP_PORT=8001
 ###
 
 post(){
-	TARGET=$1
-	BODY=$2
-	echo -n "Creating $TARGET..."
-	CODE=`curl -s -D - -X "POST" http://$HOST:$PORT/$TARGET -d $BODY -l -o /dev/null | grep -i http | awk '{ print $2 }'`
-	if [ "$CODE" != "201" ]; then
-		echo -e "\nUnexpected return code [$TARGET:$BODY:$CODE]"
-		exit 1
-	fi
-	echo "OK"
+    TARGET=$1
+    BODY=$2
+    echo -n "Creating $TARGET..."
+    CODE=`curl -s -D - -X "POST" http://$HOST:$PORT/$TARGET -d $BODY -l -o /dev/null | grep -i http | awk '{ print $2 }'`
+    if [ "$CODE" != "201" ]; then
+        echo -e "\nUnexpected return code [$TARGET:$BODY:$CODE]"
+        exit 1
+    fi
+    echo "OK"
 }
 
 #
