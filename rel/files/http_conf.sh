@@ -49,7 +49,7 @@ post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=1&host=$OUT
 #
 # Providers
 #
-post "providers" 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=Provider1&gateway=7dc235d0-c938-4b66-8f8c-c9037c7eace7&bulk_gateway=7dc235d0-c938-4b66-8f8c-c9037c7eace7&receipts_supported=true'
+post "providers" 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=Provider1&gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&bulk_gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&receipts_supported=true&sms_add_credits=0'
 
 #
 # Networks

@@ -20,9 +20,10 @@ set_provider(ProviderId, Provider)->
     Modifier = {
         '$set' , {
             'name'               , Provider#provider.name,
-            'gateway'            , Provider#provider.gateway,
-            'bulk_gateway'       , Provider#provider.bulk_gateway,
-            'receipts_supported' , Provider#provider.receipts_supported
+            'gateway_id'         , Provider#provider.gateway_id,
+            'bulk_gateway_id'    , Provider#provider.bulk_gateway_id,
+            'receipts_supported' , Provider#provider.receipts_supported,
+            'sms_add_credits'    , Provider#provider.sms_add_credits
         }
     },
     mongodb_storage:upsert(static_storage, providers, {'_id', ProviderId}, Modifier).
@@ -57,12 +58,14 @@ del_provider(ProviderId) ->
 
 doc_to_record(Doc) ->
     Name = bsondoc:at(name, Doc),
-    Gtw = bsondoc:at(gateway, Doc),
-    BulkGtw = bsondoc:at(bulk_gateway, Doc),
+    GtwId = bsondoc:at(gateway_id, Doc),
+    BulkGtwId = bsondoc:at(bulk_gateway_id, Doc),
     ReceiptsSupported = bsondoc:at(receipts_supported, Doc),
+    SmsAddCredits = bsondoc:at(sms_add_credits, Doc),
     #provider{
         name = Name,
-        gateway = Gtw,
-        bulk_gateway = BulkGtw,
-        receipts_supported = ReceiptsSupported
+        gateway_id = GtwId,
+        bulk_gateway_id = BulkGtwId,
+        receipts_supported = ReceiptsSupported,
+        sms_add_credits = SmsAddCredits
     }.

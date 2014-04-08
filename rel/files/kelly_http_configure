@@ -36,7 +36,7 @@ echo -n "id=1&host=$OUTPUT_SMPP_HOST&port=$OUTPUT_SMPP_PORT&bind_type=receiver&s
 #
 # Providers
 #
-echo -n 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=Provider1&gateway=7dc235d0-c938-4b66-8f8c-c9037c7eace7&bulk_gateway=7dc235d0-c938-4b66-8f8c-c9037c7eace7&receipts_supported=true' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/providers; echo
+echo -n 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=Provider1&gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&bulk_gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&receipts_supported=true&sms_add_credits=0' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/providers; echo
 
 #
 # Networks

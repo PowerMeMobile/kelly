@@ -26,9 +26,10 @@ init() ->
     Update = [
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = name, mandatory = false, repeated = false, type = binary},
-        #param{name = gateway, mandatory = false, repeated = false, type = binary},
-        #param{name = bulk_gateway, mandatory = false, repeated = false, type = binary},
-        #param{name = receipts_supported, mandatory = false, repeated = false, type = boolean}
+        #param{name = gateway_id, mandatory = false, repeated = false, type = binary},
+        #param{name = bulk_gateway_id, mandatory = false, repeated = false, type = binary},
+        #param{name = receipts_supported, mandatory = false, repeated = false, type = boolean},
+        #param{name = sms_add_credits, mandatory = false, repeated = false, type = float}
     ],
     Delete = [
         #param{name = id, mandatory = true, repeated = false, type = binary}
@@ -36,9 +37,10 @@ init() ->
     Create = [
         #param{name = id, mandatory = false, repeated = false, type = binary},
         #param{name = name, mandatory = true, repeated = false, type = binary},
-        #param{name = gateway, mandatory = true, repeated = false, type = binary},
-        #param{name = bulk_gateway, mandatory = true, repeated = false, type = binary},
-        #param{name = receipts_supported, mandatory = true, repeated = false, type = boolean}
+        #param{name = gateway_id, mandatory = true, repeated = false, type = binary},
+        #param{name = bulk_gateway_id, mandatory = true, repeated = false, type = binary},
+        #param{name = receipts_supported, mandatory = true, repeated = false, type = boolean},
+        #param{name = sms_add_credits, mandatory = true, repeated = false, type = float}
     ],
     {ok, #specs{
         create = Create,
@@ -121,14 +123,17 @@ read_id(PrvUUID) ->
 update_provider(Provider, Params) ->
     ID = ?gv(id, Params),
     Name = ?gv(name, Params, Provider#provider.name),
-    Gateway = ?gv(gateway, Params, Provider#provider.gateway),
-    BulkGateway = ?gv(bulk_gateway, Params, Provider#provider.bulk_gateway),
+    GatewayId = ?gv(gateway_id, Params, Provider#provider.gateway_id),
+    BulkGatewayId = ?gv(bulk_gateway_id, Params, Provider#provider.bulk_gateway_id),
     ReceiptsSupported = ?gv(receipts_supported, Params, Provider#provider.receipts_supported),
+    SmsAddCredits = ?gv(sms_add_credits, Params, Provider#provider.sms_add_credits),
     Updated = #provider{
         name = Name,
-        gateway = Gateway,
-        bulk_gateway = BulkGateway,
-        receipts_supported = ReceiptsSupported},
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = ReceiptsSupported,
+        sms_add_credits = SmsAddCredits
+    },
     ok = k_config:set_provider(ID, Updated),
     {ok, [PrvPropList]} = prepare({ID, Updated}),
     ?log_debug("PrvPropList: ~p", [PrvPropList]),
@@ -137,19 +142,21 @@ update_provider(Provider, Params) ->
 create_provider(Params) ->
     UUID = ?gv(id, Params),
     Name = ?gv(name, Params),
-    Gateway = ?gv(gateway, Params),
-    BulkGateway = ?gv(bulk_gateway, Params),
+    GatewayId = ?gv(gateway_id, Params),
+    BulkGatewayId = ?gv(bulk_gateway_id, Params),
     ReceiptsSupported = ?gv(receipts_supported, Params),
+    SmsAddCredits = ?gv(sms_add_credits, Params),
     Provider = #provider{
         name = Name,
-        gateway = Gateway,
-        bulk_gateway = BulkGateway,
-        receipts_supported = ReceiptsSupported
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = ReceiptsSupported,
+        sms_add_credits = SmsAddCredits
     },
     ok = k_config:set_provider(UUID, Provider),
-    {ok, [PrvPropList]} = prepare({UUID, Provider}),
-    ?log_debug("PrvPropList: ~p", [PrvPropList]),
-    {http_code, 201, PrvPropList}.
+    {ok, [PropList]} = prepare({UUID, Provider}),
+    ?log_debug("PropList: ~p", [PropList]),
+    {http_code, 201, PropList}.
 
 prepare(PrvList) when is_list(PrvList) ->
     prepare(PrvList, []);
@@ -160,16 +167,18 @@ prepare([], Acc) ->
     {ok, Acc};
 prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
     PrvFun = ?record_to_proplist(provider),
-    PrvPropList = PrvFun(Prv),
-    Name = ?gv(name, PrvPropList),
-    BulkGateway = ?gv(bulk_gateway, PrvPropList),
-    Gateway = ?gv(gateway, PrvPropList),
-    ReceiptsSupported = ?gv(receipts_supported, PrvPropList),
+    PropList = PrvFun(Prv),
+    Name = ?gv(name, PropList),
+    GatewayId = ?gv(gateway_id, PropList),
+    BulkGatewayId = ?gv(bulk_gateway_id, PropList),
+    ReceiptsSupported = ?gv(receipts_supported, PropList),
+    SmsAddCredits = ?gv(sms_add_credits, PropList),
     Result = [
         {id, PrvUUID},
         {name, Name},
-        {gateway, Gateway},
-        {bulk_gateway, BulkGateway},
-        {receipts_supported, ReceiptsSupported}
+        {gateway_id, GatewayId},
+        {bulk_gateway_id, BulkGatewayId},
+        {receipts_supported, ReceiptsSupported},
+        {sms_add_credits, SmsAddCredits}
     ],
     prepare(Rest, [Result | Acc]).

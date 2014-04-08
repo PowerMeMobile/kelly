@@ -117,27 +117,28 @@ build_customer_response(Request, Customer) ->
 
     #customer{
         customer_uuid = CustomerUUID,
-        pay_type = PayType,
+        customer_id = CustomerId,
+        priority = _Prio,
         allowed_sources = AllowedSources,
         default_source = DefaultSource,
-        networks = NtwIdList,
+        networks = NetworkIds,
         default_provider_id = DP,
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = _DV,
-        max_validity = MV
+        max_validity = MV,
+        pay_type = PayType
     } = Customer,
 
-    {Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
-        %%%NETWORK SECTION%%%
+    {Networks, Providers} = lists:foldl(fun(NetworkId, {Ns, Ps})->
         {ok, Network} = k_config:get_network(NetworkId),
         #network{
             country_code = CC,
             numbers_len = NL,
             prefixes = Pref,
             provider_id = ProviderId
-            } = Network,
-        NNew = #network_dto{
+        } = Network,
+        NetworkDTO = #network_dto{
             id = NetworkId,
             country_code = CC,
             numbers_len = NL,
@@ -145,27 +146,27 @@ build_customer_response(Request, Customer) ->
             provider_id = ProviderId
         },
 
-        %%% PROVIDER SECTION %%%
         {ok, Provider} = k_config:get_provider(ProviderId),
         #provider{
-            gateway = Gateway,
-            bulk_gateway = BGateway,
+            gateway_id = GatewayId,
+            bulk_gateway_id = BulkGatewayId,
             receipts_supported = RS
         } = Provider,
-        PNew = #provider_dto{
+        ProviderDTO = #provider_dto{
             id = ProviderId,
-            gateway = Gateway,
-            bulk_gateway = BGateway,
+            gateway_id = GatewayId,
+            bulk_gateway_id = BulkGatewayId,
             receipts_supported = RS
         },
-        %%% check for Provider dublications %%%
-        case lists:member(PNew, P) of
+
+        %% check for Providers dublications
+        case lists:member(ProviderDTO, Ps) of
             true ->
-                {[NNew | N], P};
+                {[NetworkDTO | Ns], Ps};
             false ->
-                {[NNew | N], [PNew | P]}
+                {[NetworkDTO | Ns], [ProviderDTO | Ps]}
         end
-    end, {[], []}, NtwIdList),
+    end, {[], []}, NetworkIds),
 
     CustomerDTO = #k1api_auth_response_customer_dto{
         uuid = CustomerUUID,
@@ -182,12 +183,12 @@ build_customer_response(Request, Customer) ->
         max_validity = MV
     },
 
-    Response = #k1api_auth_response_dto{
+    ResponseDTO = #k1api_auth_response_dto{
         id = ReqId,
         result = {customer, CustomerDTO}
     },
-    ?log_debug("Built response: ~p", [Response]),
-    {ok, Response}.
+    ?log_debug("Built response: ~p", [ResponseDTO]),
+    {ok, ResponseDTO}.
 
 build_error_response(Request, {deny, Reason}) ->
     #k1api_auth_request_dto{

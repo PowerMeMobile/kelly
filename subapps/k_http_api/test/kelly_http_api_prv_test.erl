@@ -1,20 +1,19 @@
 -module(kelly_http_api_prv_test).
 
-%% -compile(export_all).
-
 -include_lib ("etest_http/include/etest_http.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 prv_test_() ->
     {"Provider http interface tests",
-    {setup,
-        fun delete_prv/0,
-        {inorder, [?_test(create_prv()),
-                    ?_test(update_prv()),
-                    ?_test(delete_prv())]
+        {setup,
+            fun delete_prv/0,
+            {inorder, [
+                ?_test(create_prv()),
+                ?_test(update_prv()),
+                ?_test(delete_prv())
+            ]}
         }
-    }}.
-
+    }.
 
 %% ===================================================================
 %% PROVIDER Tests
@@ -35,12 +34,12 @@ create_prv() ->
     Queries = [
         {id, PrvID},
         {name, <<"test_provider">>},
-        {gateway, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
-        {bulk_gateway, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
-        {receipts_supported, true}],
+        {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
+        {bulk_gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
+        {receipts_supported, true},
+        {sms_add_credits, 0.0}
+    ],
     Response = ?perform_post(Url, [], <<>>, Queries),
-    RS = ?get_json_value(receipts_supported, Response),
-    ?debugVal(RS),
     ?assert_status(201, Response),
     ?assert_json_values(Queries, Response).
 
@@ -49,12 +48,14 @@ update_prv() ->
     Url = prv_path(PrvID),
     Queries = [
         {name, <<"new_provider_name">>},
-        {gateway, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
-        {bulk_gateway, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
-        {receipts_supported, false}],
-    Resp = ?perform_put(Url, [], <<>>, Queries),
-    ?assert_status(200, Resp),
-    ?assert_json_values(Queries, Resp).
+        {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
+        {bulk_gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
+        {receipts_supported, false},
+        {sms_add_credits, 1.0}
+    ],
+    Response = ?perform_put(Url, [], <<>>, Queries),
+    ?assert_status(200, Response),
+    ?assert_json_values(Queries, Response).
 
 delete_prv() ->
     delete_prv(prv_id()).

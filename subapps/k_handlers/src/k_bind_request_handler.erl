@@ -42,8 +42,7 @@ authenticate(BindReq = #funnel_auth_request_dto{
     user_id = UserId
 }) ->
     ?log_debug("Got auth request: ~p", [BindReq]),
-
-case k_aaa:get_customer_by_id(CustomerId) of
+    case k_aaa:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
             ?log_debug("Customer found: ~p", [Customer]),
             case k_aaa:get_customer_user(Customer, UserId) of
@@ -97,26 +96,28 @@ perform_checks(BindReq, User = #user{}, [Check | SoFar], Customer) ->
             {deny, DenyReason}
     end.
 
-build_customer_response(#funnel_auth_request_dto{
-    connection_id = ConnectionId
-}, #customer{
-            customer_uuid = CustomerUUID,
-            customer_id = CustomerId,
-            priority = Prior,
-            rps = RPS,
-            allowed_sources = AllowedSources,
-            default_source = DefaultSource,
-            networks = NtwIdList,
-            default_provider_id = DP,
-            receipts_allowed = RA,
-            no_retry = NR,
-            default_validity = DV,
-            max_validity = MV,
-            pay_type = PayType
-     }) ->
+build_customer_response(Request, Customer) ->
+    #funnel_auth_request_dto{
+        connection_id = ConnectionId
+    } = Request,
 
-    {Networks, Providers} = lists:foldl(fun(NetworkId, {N, P})->
-        %%%NETWORK SECTION%%%
+    #customer{
+        customer_uuid = CustomerUUID,
+        customer_id = CustomerId,
+        priority = Prio,
+        rps = RPS,
+        allowed_sources = AllowedSources,
+        default_source = DefaultSource,
+        networks = NetworkIds,
+        default_provider_id = DP,
+        receipts_allowed = RA,
+        no_retry = NR,
+        default_validity = DV,
+        max_validity = MV,
+        pay_type = PayType
+    } = Customer,
+
+    {Networks, Providers} = lists:foldl(fun(NetworkId, {Ns, Ps})->
         {ok, Network} = k_config:get_network(NetworkId),
         #network{
             country_code = CC,
@@ -124,7 +125,7 @@ build_customer_response(#funnel_auth_request_dto{
             prefixes = Pref,
             provider_id = ProviderId
         } = Network,
-        NNew = #network_dto{
+        NetworkDTO = #network_dto{
             id = NetworkId,
             country_code = CC,
             numbers_len = NL,
@@ -132,32 +133,32 @@ build_customer_response(#funnel_auth_request_dto{
             provider_id = ProviderId
         },
 
-        %%% PROVIDER SECTION %%%
         {ok, Provider} = k_config:get_provider(ProviderId),
         #provider{
-            gateway = Gateway,
-            bulk_gateway = BGateway,
+            gateway_id = GatewayId,
+            bulk_gateway_id = BulkGatewayId,
             receipts_supported = RS
         } = Provider,
-        PNew = #provider_dto{
+        ProviderDTO = #provider_dto{
             id = ProviderId,
-            gateway = Gateway,
-            bulk_gateway = BGateway,
+            gateway_id = GatewayId,
+            bulk_gateway_id = BulkGatewayId,
             receipts_supported = RS
         },
-        %%% check for Provider dublications %%%
-        case lists:member(PNew, P) of
-            true ->
-                {[NNew | N], P};
-            false ->
-                {[NNew | N], [PNew | P]}
-        end
-    end, {[], []}, NtwIdList),
 
-    Customer = #funnel_auth_response_customer_dto{
+        %% check for Providers dublications
+        case lists:member(ProviderDTO, Ps) of
+            true ->
+                {[NetworkDTO | Ns], Ps};
+            false ->
+                {[NetworkDTO | Ns], [ProviderDTO | Ps]}
+        end
+    end, {[], []}, NetworkIds),
+
+    CustomerDTO = #funnel_auth_response_customer_dto{
         id = CustomerId,
         uuid = CustomerUUID,
-        priority = Prior,
+        priority = Prio,
         rps = RPS,
         allowed_sources = AllowedSources,
         default_source = DefaultSource,
@@ -170,11 +171,12 @@ build_customer_response(#funnel_auth_request_dto{
         max_validity = MV,
         pay_type = PayType
     },
-    ?log_debug("Built customer: ~p", [Customer]),
-    #funnel_auth_response_dto{
+    ResponseDTO = #funnel_auth_response_dto{
         connection_id = ConnectionId,
-        result = {customer, Customer}
-    }.
+        result = {customer, CustomerDTO}
+    },
+    ?log_debug("Built response: ~p", [ResponseDTO]),
+    {ok, ResponseDTO}.
 
 build_error_response(#funnel_auth_request_dto{connection_id = ConnectionId}, Reason) ->
     ?log_debug("Building auth error response...", []),
