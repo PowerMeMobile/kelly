@@ -9,11 +9,6 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
 
-%% -record('basic.deliver', {consumer_tag, delivery_tag, redelivered = false, exchange, routing_key}).
-             %% #amqp_msg{props = #'P_basic'{}, payload = Content}},
-%% -record(amqp_msg, {props = #'P_basic'{}, payload = <<>>}).
-%% -record('P_basic', {content_type, content_encoding, headers, delivery_mode, priority, correlation_id, reply_to, expiration, message_id, timestamp, type, user_id, app_id, cluster_id}).
-
 %% ===================================================================
 %% API
 %% ===================================================================
