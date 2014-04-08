@@ -133,14 +133,14 @@ build_customer_response(Request, Customer) ->
         {ok, Network} = k_config:get_network(NetworkId),
         #network{
             country_code = CC,
-            numbers_len = NL,
+            number_len = NL,
             prefixes = Pref,
             provider_id = ProviderId
         } = Network,
         NetworkDTO = #network_dto{
             id = NetworkId,
             country_code = CC,
-            numbers_len = NL,
+            number_len = NL,
             prefixes = Pref,
             provider_id = ProviderId
         },

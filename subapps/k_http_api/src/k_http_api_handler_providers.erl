@@ -154,9 +154,9 @@ create_provider(Params) ->
         sms_add_credits = SmsAddCredits
     },
     ok = k_config:set_provider(UUID, Provider),
-    {ok, [PropList]} = prepare({UUID, Provider}),
-    ?log_debug("PropList: ~p", [PropList]),
-    {http_code, 201, PropList}.
+    {ok, [PrvPropList]} = prepare({UUID, Provider}),
+    ?log_debug("PrvPropList: ~p", [PrvPropList]),
+    {http_code, 201, PrvPropList}.
 
 prepare(PrvList) when is_list(PrvList) ->
     prepare(PrvList, []);

@@ -18,12 +18,19 @@
 -spec set_network(network_id(), #network{}) -> ok | {error, term()}.
 set_network(NetworkId, Network)->
     Modifier = {
-        '$set' , {
-            'name'         , Network#network.name,
-            'country_code' , Network#network.country_code,
-            'numbers_len'  , Network#network.numbers_len,
-            'prefixes'     , Network#network.prefixes,
-            'provider_id'  , Network#network.provider_id
+        '$set', {
+            'name'        , Network#network.name,
+            'country'     , Network#network.country,
+            'hex_code'    , Network#network.hex_code,
+            'country_code', Network#network.country_code,
+            'number_len'  , Network#network.number_len,
+            'prefixes'    , Network#network.prefixes,
+            'gmt_diff'    , Network#network.gmt_diff,
+            'dst'         , Network#network.dst,
+            'provider_id' , Network#network.provider_id,
+            'is_home'     , Network#network.is_home,
+            'sms_points'  , Network#network.sms_points,
+            'sms_mult_credits', Network#network.sms_mult_credits
         }
     },
     mongodb_storage:upsert(static_storage, networks, {'_id', NetworkId}, Modifier).
@@ -58,14 +65,28 @@ del_network(NetworkId) ->
 
 doc_to_record(Doc) ->
     Name = bsondoc:at(name, Doc),
+    Country = bsondoc:at(country, Doc),
+    HexCode = bsondoc:at(hex_code, Doc),
     CountryCode = bsondoc:at(country_code, Doc),
-    NumbersLen = bsondoc:at(numbers_len, Doc),
+    NumberLen = bsondoc:at(number_len, Doc),
     Prefixes = bsondoc:at(prefixes, Doc),
+    GMTDiff = bsondoc:at(gmt_diff, Doc),
+    DST = bsondoc:at(gst, Doc),
     ProviderId = bsondoc:at(provider_id, Doc),
+    IsHome = bsondoc:at(is_home, Doc),
+    SmsPoints = bsondoc:at(sms_points, Doc),
+    SmsMultCredits = bsondoc:at(sms_mult_credits, Doc),
     #network{
         name = Name,
+        country = Country,
+        hex_code = HexCode,
         country_code = CountryCode,
-        numbers_len = NumbersLen,
+        number_len = NumberLen,
         prefixes = Prefixes,
-        provider_id = ProviderId
+        gmt_diff = GMTDiff,
+        dst = DST,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        sms_points = SmsPoints,
+        sms_mult_credits = SmsMultCredits
     }.

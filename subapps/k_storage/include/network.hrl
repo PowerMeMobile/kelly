@@ -5,11 +5,18 @@
 -include("provider.hrl").
 
 -record(network, {
-    name                :: binary(),
-    country_code        :: binary(),
-    numbers_len         :: integer(),
-    prefixes            :: [binary()],
-    provider_id         :: provider_id()
+    name         :: binary(),
+    country      :: binary(),
+    hex_code     :: binary(),
+    country_code :: binary(),
+    number_len   :: pos_integer(),
+    prefixes     :: [binary()],
+    gmt_diff     :: binary(),
+    dst          :: binary(),
+    provider_id  :: provider_id(),
+    is_home      :: boolean(),
+    sms_points   :: float(),
+    sms_mult_credits = 1.0 :: float()
 }).
 
 -type network_id()      :: uuid().

@@ -54,7 +54,7 @@ post "providers" 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=Provider1&gateway
 #
 # Networks
 #
-post "networks" 'id=920a009a-5270-11e1-b961-001d0947ec73&name=Network1&country_code=375&numbers_len=12&prefixes=29;33;44;25&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73'
+post "networks" 'id=920a009a-5270-11e1-b961-001d0947ec73&name=Network1&country=Belarus&hex_code=52F710&country_code=375&number_len=12&prefixes=29;33;44;25&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_credits=1.0'
 
 #
 # Customers

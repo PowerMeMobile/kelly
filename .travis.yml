@@ -6,6 +6,7 @@ branches:
   only:
     - master
     - develop
+    - dk_mmwl_coverage
 notifications:
   email:
     - d.klionsky@dev.powermemobile.com
