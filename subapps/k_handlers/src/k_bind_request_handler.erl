@@ -9,26 +9,38 @@
 -include_lib("k_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
 
+%% ===================================================================
+%% API
+%% ===================================================================
+
 -spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(Req) ->
     {ok, Payload} = k_amqp_req:payload(Req),
     case adto:decode(#funnel_auth_request_dto{}, Payload) of
-        {ok, Request} ->
-            Response =
-                case authenticate(Request) of
-                    {allow, Customer = #customer{}} ->
-                        build_customer_response(Request, Customer);
-                    {deny, Reason} ->
-                        ?log_notice("Auth denied: ~p", [Reason]),
-                        build_error_response(Request, Reason);
-                    {error, Reason} ->
-                        ?log_error("Auth error: ~p", [Reason]),
-                        build_error_response(Request, Reason)
-                end,
-            reply(Response);
+        {ok, AuthReq} ->
+            process_auth_req(Req, AuthReq);
         {error, Error} ->
             ?log_error("Auth request decode error: ~p", [Error]),
             ?authentication_failed
+    end.
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
+
+process_auth_req(_Req, AuthReq) ->
+    case authenticate(AuthReq) of
+        {allow, Customer = #customer{}} ->
+            {ok, Response} = build_customer_response(AuthReq, Customer),
+            reply(Response);
+        {deny, Reason} ->
+            {ok, Response} = build_error_response(AuthReq, Reason),
+            ?log_notice("Auth denied: ~p", [Reason]),
+            reply(Response);
+        {error, Reason} ->
+            {ok, Response} = build_error_response(AuthReq, Reason),
+            ?log_error("Auth error: ~p", [Reason]),
+            reply(Response)
     end.
 
 -spec authenticate(#funnel_auth_request_dto{}) ->
