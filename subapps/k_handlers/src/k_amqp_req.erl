@@ -12,18 +12,22 @@
     reply_to/1
 ]).
 
--spec payload(Req :: #amqp_req{}) -> {ok, Payload :: binary()}.
+%% ===================================================================
+%% API
+%% ===================================================================
+
+-spec payload(Req::#amqp_req{}) -> {ok, Payload::binary()}.
 payload(Req = #amqp_req{}) ->
     {ok, Req#amqp_req.'req.payload'}.
 
--spec content_type(Req :: #amqp_req{}) -> {ok, ContentType :: binary()}.
+-spec content_type(Req::#amqp_req{}) -> {ok, ContentType::binary()}.
 content_type(Req = #amqp_req{}) ->
     {ok, Req#amqp_req.'req.p_basic.content_type'}.
 
--spec channel(Req :: #amqp_req{}) -> {ok, Chan :: pid()}.
+-spec channel(Req::#amqp_req{}) -> {ok, Chan::pid()}.
 channel(Req = #amqp_req{}) ->
     {ok, Req#amqp_req.'amqp.channel'}.
 
--spec reply_to(Req :: #amqp_req{}) -> {ok, QueueName :: binary()}.
+-spec reply_to(Req::#amqp_req{}) -> {ok, QueueName::binary()}.
 reply_to(Req = #amqp_req{}) ->
     {ok, Req#amqp_req.'req.p_basic.reply_to'}.
