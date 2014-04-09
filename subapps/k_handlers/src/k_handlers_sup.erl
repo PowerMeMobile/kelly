@@ -11,9 +11,11 @@
 -export([init/1]).
 
 -define(HANDLER(Name),
-    {Name,
-        {k_amqp_gen_consumer, start_link, [Name]},
-        permanent, 10000, worker, [k_amqp_gen_consumer]}).
+    {Name, {k_amqp_gen_consumer, start_link, [Name]},
+        permanent, 10000, worker, [k_amqp_gen_consumer]
+    }
+).
+-define(WORKER(Name), {Name, {Name, start_link, []}, permanent, 5000, worker, [Name]}).
 
 -include_lib("k_common/include/logging.hrl").
 -include_lib("alley_common/include/supervisor_spec.hrl").

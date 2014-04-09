@@ -187,15 +187,16 @@ build_customer_response(Request, Customer) ->
         connection_id = ConnectionId,
         result = {customer, CustomerDTO}
     },
-    ?log_debug("Built response: ~p", [ResponseDTO]),
+    ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO}.
 
 build_error_response(#funnel_auth_request_dto{connection_id = ConnectionId}, Reason) ->
-    ?log_debug("Building auth error response...", []),
-    #funnel_auth_response_dto{
+    ResponseDTO = #funnel_auth_response_dto{
         connection_id = ConnectionId,
         result = {error, atom_to_list(Reason)}
-    }.
+    },
+    ?log_debug("Built auth response: ~p", [ResponseDTO]),
+    {ok, ResponseDTO}.
 
 reply(Response) ->
     {ok, ReplyTo} = application:get_env(k_handlers, funnel_control_queue),

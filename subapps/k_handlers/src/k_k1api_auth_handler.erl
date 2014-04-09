@@ -187,7 +187,7 @@ build_customer_response(Request, Customer) ->
         id = ReqId,
         result = {customer, CustomerDTO}
     },
-    ?log_debug("Built response: ~p", [ResponseDTO]),
+    ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO}.
 
 build_error_response(Request, {deny, Reason}) ->
@@ -200,7 +200,7 @@ build_error_response(Request, {deny, Reason}) ->
         result = {error, "Request denied: " ++ atom_to_list(Reason)}
     },
 
-    ?log_debug("Built response: ~p", [Response]),
+    ?log_debug("Built auth response: ~p", [Response]),
     {ok, Response};
 build_error_response(Request, {error, Reason}) ->
     #k1api_auth_request_dto{
@@ -212,9 +212,8 @@ build_error_response(Request, {error, Reason}) ->
         result = {error, "Request error: " ++ atom_to_list(Reason)}
     },
 
-    ?log_debug("Built response: ~p", [Response]),
+    ?log_debug("Built auth response: ~p", [Response]),
     {ok, Response}.
-
 
 step(is_reply_to_defined, Req, DTO) ->
     case k_amqp_req:reply_to(Req) of
