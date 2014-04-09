@@ -71,7 +71,7 @@ doc_to_record(Doc) ->
     NumberLen = bsondoc:at(number_len, Doc),
     Prefixes = bsondoc:at(prefixes, Doc),
     GMTDiff = bsondoc:at(gmt_diff, Doc),
-    DST = bsondoc:at(gst, Doc),
+    DST = bsondoc:at(dst, Doc),
     ProviderId = bsondoc:at(provider_id, Doc),
     IsHome = bsondoc:at(is_home, Doc),
     SmsPoints = bsondoc:at(sms_points, Doc),
