@@ -141,7 +141,8 @@ build_customer_response(Request, Customer) ->
         NetworkDTO = #network_dto{
             id = NetworkId,
             country_code = CC,
-            number_len = NL,
+            %% now number_len in db without CC length
+            number_len = NL + erlang:size(CC),
             prefixes = Pref,
             provider_id = ProviderId
         },
