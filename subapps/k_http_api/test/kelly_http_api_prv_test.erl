@@ -37,7 +37,7 @@ create_prv() ->
         {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
         {bulk_gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
         {receipts_supported, true},
-        {sms_add_credits, 0.0}
+        {sms_add_points, 0.0}
     ],
     Response = ?perform_post(Url, [], <<>>, Queries),
     ?assert_status(201, Response),
@@ -51,7 +51,7 @@ update_prv() ->
         {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
         {bulk_gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
         {receipts_supported, false},
-        {sms_add_credits, 1.0}
+        {sms_add_points, 1.0}
     ],
     Response = ?perform_put(Url, [], <<>>, Queries),
     ?assert_status(200, Response),

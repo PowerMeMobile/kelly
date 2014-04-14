@@ -45,7 +45,7 @@ create_ntw() ->
         {provider_id, PrvID},
         {is_home, true},
         {sms_points, 1.0},
-        {sms_mult_credits, 1.0}
+        {sms_mult_points, 1.0}
     ],
     Response = ?perform_post(Url, [], <<>>, Query),
     ?assert_status(201, Response),
@@ -69,7 +69,7 @@ update_ntw() ->
         {provider_id, PrvID},
         {is_home, false},
         {sms_points, 0.0},
-        {sms_mult_credits, 0.0}
+        {sms_mult_points, 0.0}
     ],
     Resp = ?perform_put(Url, [], <<>>, Query),
     ?assert_status(200, Resp),
