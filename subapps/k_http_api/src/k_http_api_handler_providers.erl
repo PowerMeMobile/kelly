@@ -29,7 +29,7 @@ init() ->
         #param{name = gateway_id, mandatory = false, repeated = false, type = binary},
         #param{name = bulk_gateway_id, mandatory = false, repeated = false, type = binary},
         #param{name = receipts_supported, mandatory = false, repeated = false, type = boolean},
-        #param{name = sms_add_credits, mandatory = false, repeated = false, type = float}
+        #param{name = sms_add_points, mandatory = false, repeated = false, type = float}
     ],
     Delete = [
         #param{name = id, mandatory = true, repeated = false, type = binary}
@@ -40,7 +40,7 @@ init() ->
         #param{name = gateway_id, mandatory = true, repeated = false, type = binary},
         #param{name = bulk_gateway_id, mandatory = true, repeated = false, type = binary},
         #param{name = receipts_supported, mandatory = true, repeated = false, type = boolean},
-        #param{name = sms_add_credits, mandatory = true, repeated = false, type = float}
+        #param{name = sms_add_points, mandatory = true, repeated = false, type = float}
     ],
     {ok, #specs{
         create = Create,
@@ -126,13 +126,13 @@ update_provider(Provider, Params) ->
     GatewayId = ?gv(gateway_id, Params, Provider#provider.gateway_id),
     BulkGatewayId = ?gv(bulk_gateway_id, Params, Provider#provider.bulk_gateway_id),
     ReceiptsSupported = ?gv(receipts_supported, Params, Provider#provider.receipts_supported),
-    SmsAddCredits = ?gv(sms_add_credits, Params, Provider#provider.sms_add_credits),
+    SmsAddPoints = ?gv(sms_add_points, Params, Provider#provider.sms_add_points),
     Updated = #provider{
         name = Name,
         gateway_id = GatewayId,
         bulk_gateway_id = BulkGatewayId,
         receipts_supported = ReceiptsSupported,
-        sms_add_credits = SmsAddCredits
+        sms_add_points = SmsAddPoints
     },
     ok = k_config:set_provider(ID, Updated),
     {ok, [PrvPropList]} = prepare({ID, Updated}),
@@ -145,13 +145,13 @@ create_provider(Params) ->
     GatewayId = ?gv(gateway_id, Params),
     BulkGatewayId = ?gv(bulk_gateway_id, Params),
     ReceiptsSupported = ?gv(receipts_supported, Params),
-    SmsAddCredits = ?gv(sms_add_credits, Params),
+    SmsAddPoints = ?gv(sms_add_points, Params),
     Provider = #provider{
         name = Name,
         gateway_id = GatewayId,
         bulk_gateway_id = BulkGatewayId,
         receipts_supported = ReceiptsSupported,
-        sms_add_credits = SmsAddCredits
+        sms_add_points = SmsAddPoints
     },
     ok = k_config:set_provider(UUID, Provider),
     {ok, [PrvPropList]} = prepare({UUID, Provider}),
@@ -172,13 +172,13 @@ prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
     GatewayId = ?gv(gateway_id, PropList),
     BulkGatewayId = ?gv(bulk_gateway_id, PropList),
     ReceiptsSupported = ?gv(receipts_supported, PropList),
-    SmsAddCredits = ?gv(sms_add_credits, PropList),
+    SmsAddPoints = ?gv(sms_add_points, PropList),
     Result = [
         {id, PrvUUID},
         {name, Name},
         {gateway_id, GatewayId},
         {bulk_gateway_id, BulkGatewayId},
         {receipts_supported, ReceiptsSupported},
-        {sms_add_credits, SmsAddCredits}
+        {sms_add_points, SmsAddPoints}
     ],
     prepare(Rest, [Result | Acc]).

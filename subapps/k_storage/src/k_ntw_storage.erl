@@ -30,7 +30,7 @@ set_network(NetworkId, Network)->
             'provider_id' , Network#network.provider_id,
             'is_home'     , Network#network.is_home,
             'sms_points'  , Network#network.sms_points,
-            'sms_mult_credits', Network#network.sms_mult_credits
+            'sms_mult_points', Network#network.sms_mult_points
         }
     },
     mongodb_storage:upsert(static_storage, networks, {'_id', NetworkId}, Modifier).
@@ -75,7 +75,7 @@ doc_to_record(Doc) ->
     ProviderId = bsondoc:at(provider_id, Doc),
     IsHome = bsondoc:at(is_home, Doc),
     SmsPoints = bsondoc:at(sms_points, Doc),
-    SmsMultCredits = bsondoc:at(sms_mult_credits, Doc),
+    SmsMultPoints = bsondoc:at(sms_mult_points, Doc),
     #network{
         name = Name,
         country = Country,
@@ -88,5 +88,5 @@ doc_to_record(Doc) ->
         provider_id = ProviderId,
         is_home = IsHome,
         sms_points = SmsPoints,
-        sms_mult_credits = SmsMultCredits
+        sms_mult_points = SmsMultPoints
     }.

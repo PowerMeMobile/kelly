@@ -23,7 +23,7 @@ set_provider(ProviderId, Provider)->
             'gateway_id'         , Provider#provider.gateway_id,
             'bulk_gateway_id'    , Provider#provider.bulk_gateway_id,
             'receipts_supported' , Provider#provider.receipts_supported,
-            'sms_add_credits'    , Provider#provider.sms_add_credits
+            'sms_add_points'     , Provider#provider.sms_add_points
         }
     },
     mongodb_storage:upsert(static_storage, providers, {'_id', ProviderId}, Modifier).
@@ -61,11 +61,11 @@ doc_to_record(Doc) ->
     GtwId = bsondoc:at(gateway_id, Doc),
     BulkGtwId = bsondoc:at(bulk_gateway_id, Doc),
     ReceiptsSupported = bsondoc:at(receipts_supported, Doc),
-    SmsAddCredits = bsondoc:at(sms_add_credits, Doc),
+    SmsAddPoints = bsondoc:at(sms_add_points, Doc),
     #provider{
         name = Name,
         gateway_id = GtwId,
         bulk_gateway_id = BulkGtwId,
         receipts_supported = ReceiptsSupported,
-        sms_add_credits = SmsAddCredits
+        sms_add_points = SmsAddPoints
     }.

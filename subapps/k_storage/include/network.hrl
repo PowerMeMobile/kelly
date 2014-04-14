@@ -16,7 +16,7 @@
     provider_id  :: provider_id(),
     is_home      :: boolean(),
     sms_points   :: float(),
-    sms_mult_credits = 1.0 :: float()
+    sms_mult_points = 1.0 :: float()
 }).
 
 -type network_id()      :: uuid().

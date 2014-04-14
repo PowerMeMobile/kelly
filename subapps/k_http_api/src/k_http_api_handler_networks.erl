@@ -36,7 +36,7 @@ init() ->
         #param{name = provider_id, mandatory = false, repeated = false, type = binary},
         #param{name = is_home, mandatory = false, repeated = false, type = boolean},
         #param{name = sms_points, mandatory = false, repeated = false, type = float},
-        #param{name = sms_mult_credits, mandatory = false, repeated = false, type = float}
+        #param{name = sms_mult_points, mandatory = false, repeated = false, type = float}
     ],
     Delete = [
         #param{name = id, mandatory = true, repeated = false, type = binary}
@@ -54,7 +54,7 @@ init() ->
         #param{name = provider_id, mandatory = true, repeated = false, type = binary},
         #param{name = is_home, mandatory = true, repeated = false, type = boolean},
         #param{name = sms_points, mandatory = true, repeated = false, type = float},
-        #param{name = sms_mult_credits, mandatory = true, repeated = false, type = float}
+        #param{name = sms_mult_points, mandatory = true, repeated = false, type = float}
     ],
     {ok, #specs{
         create = Create,
@@ -145,7 +145,7 @@ update_network(Network, Params) ->
     ProviderId = ?gv(provider_id, Params, Network#network.provider_id),
     IsHome = ?gv(is_home, Params, Network#network.is_home),
     SmsPoints = ?gv(sms_points, Params, Network#network.sms_points),
-    SmsMultCredits = ?gv(sms_mult_credits, Params, Network#network.sms_mult_credits),
+    SmsMultPoints = ?gv(sms_mult_points, Params, Network#network.sms_mult_points),
     Updated = #network{
         name = Name,
         country = Country,
@@ -158,7 +158,7 @@ update_network(Network, Params) ->
         provider_id = ProviderId,
         is_home = IsHome,
         sms_points = SmsPoints,
-        sms_mult_credits = SmsMultCredits
+        sms_mult_points = SmsMultPoints
     },
     ok = k_config:set_network(ID, Updated),
     {ok, [NtwPropList]} = prepare({ID, Updated}),
@@ -178,7 +178,7 @@ create_network(Params) ->
     ProviderId = ?gv(provider_id, Params),
     IsHome = ?gv(is_home, Params),
     SmsPoints = ?gv(sms_points, Params),
-    SmsMultCredits = ?gv(sms_mult_credits, Params),
+    SmsMultPoints = ?gv(sms_mult_points, Params),
     Network = #network{
         name = Name,
         country = Country,
@@ -191,7 +191,7 @@ create_network(Params) ->
         provider_id = ProviderId,
         is_home = IsHome,
         sms_points = SmsPoints,
-        sms_mult_credits = SmsMultCredits
+        sms_mult_points = SmsMultPoints
     },
     ok = k_config:set_network(ID, Network),
     {ok, [NtwPropList]} = prepare({ID, Network}),
@@ -219,7 +219,7 @@ prepare([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
     ProviderId = ?gv(provider_id, PropList),
     IsHome = ?gv(is_home, PropList),
     SmsPoints = ?gv(sms_points, PropList),
-    SmsMultCredits = ?gv(sms_mult_credits, PropList),
+    SmsMultPoints = ?gv(sms_mult_points, PropList),
     Result = [
         {id, NtwUUID},
         {name, Name},
@@ -233,6 +233,6 @@ prepare([{NtwUUID, Ntw = #network{}} | Rest], Acc) ->
         {provider_id, ProviderId},
         {is_home, IsHome},
         {sms_points, SmsPoints},
-        {sms_mult_credits, SmsMultCredits}
+        {sms_mult_points, SmsMultPoints}
     ],
     prepare(Rest, [Result | Acc]).

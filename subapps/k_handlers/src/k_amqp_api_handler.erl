@@ -27,9 +27,9 @@ start_link() ->
 process(<<"CoverageReq">>, <<>>) ->
     ?log_debug("Got coverage request", []),
     {ok, Networks} = k_config:get_networks(),
-    {ok, AddCredits} = get_providers_add_credits(Networks),
+    {ok, AddPoints} = get_providers_add_points(Networks),
     CoverageRespDTO = #k1api_coverage_response_dto{
-        networks = [network_to_dto(Id, N, AddCredits) || {Id, N} <- Networks]
+        networks = [network_to_dto(Id, N, AddPoints) || {Id, N} <- Networks]
     },
     ?log_debug("Built coverage response: ~p", [CoverageRespDTO]),
     case adto:encode(CoverageRespDTO) of
@@ -40,21 +40,21 @@ process(<<"CoverageReq">>, <<>>) ->
             {ok, []}
     end.
 
-get_providers_add_credits(Networks) ->
+get_providers_add_points(Networks) ->
     ProvIds = lists:usort([N#network.provider_id || {_, N} <- Networks]),
-    get_providers_add_credits(ProvIds, []).
+    get_providers_add_points(ProvIds, []).
 
-get_providers_add_credits([], Acc) ->
+get_providers_add_points([], Acc) ->
     {ok, Acc};
-get_providers_add_credits([ProvId | ProvIds], Acc) ->
+get_providers_add_points([ProvId | ProvIds], Acc) ->
     case k_config:get_provider(ProvId) of
-        {ok, #provider{sms_add_credits = AddCredits}} ->
-            get_providers_add_credits(ProvIds, [{ProvId, AddCredits} | Acc]);
+        {ok, #provider{sms_add_points = AddPoints}} ->
+            get_providers_add_points(ProvIds, [{ProvId, AddPoints} | Acc]);
         Error ->
             Error
     end.
 
-network_to_dto(Id, Network, ProvAddCredits) ->
+network_to_dto(Id, Network, ProvAddPoints) ->
     #network{
         name = Name,
         country_code = CountryCode,
@@ -65,10 +65,10 @@ network_to_dto(Id, Network, ProvAddCredits) ->
         gmt_diff = GMTDiff,
         dst = DST,
         sms_points = SmsPoints,
-        sms_mult_credits = SmsMultCredits
+        sms_mult_points = SmsMultPoints
     } = Network,
-    AddCredits = proplists:get_value(ProviderId, ProvAddCredits),
-    SmsCost = (SmsPoints + AddCredits) * SmsMultCredits,
+    AddPoints = proplists:get_value(ProviderId, ProvAddPoints),
+    SmsCost = (SmsPoints + AddPoints) * SmsMultPoints,
     #network_dto{
         id = Id,
         name = Name,

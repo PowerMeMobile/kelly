@@ -27,7 +27,7 @@
     provider_id                     :: {string, string()},
     is_home                         :: {boolean, boolean()},
     sms_points                      :: {float, float()},
-    sms_mult_credits = {float, 1.0} :: {float, float()}
+    sms_mult_points = {float, 1.0} :: {float, float()}
 }).
 
 -define(ROW_DELIM, "\r\n"). % "\r"
@@ -342,7 +342,7 @@ parse_network_1_test() ->
 
     Plist = record_to_proplist(Network),
     Json = proplist_to_json(Plist),
-    ExpJson = "{\"_id\":\"fca67c04-0b8e-4ac4-a542-6dcaf8f8da17\",\"name\":\"Mobile Comms\",\"country\":\"Albania\",\"hex_code\":\"\",\"country_code\":\"355\",\"number_len\":0,\"prefixes\":[],\"gmt_diff\":\"+1\",\"dst\":\"7,5,3;7,5,10\",\"provider_id\":\"65c4b123-2a51-49e1-84a8-b31dac878d8c\",\"is_home\":false,\"sms_points\":5.0,\"sms_mult_credits\":1.0}\n",
+    ExpJson = "{\"_id\":\"fca67c04-0b8e-4ac4-a542-6dcaf8f8da17\",\"name\":\"Mobile Comms\",\"country\":\"Albania\",\"hex_code\":\"\",\"country_code\":\"355\",\"number_len\":0,\"prefixes\":[],\"gmt_diff\":\"+1\",\"dst\":\"7,5,3;7,5,10\",\"provider_id\":\"65c4b123-2a51-49e1-84a8-b31dac878d8c\",\"is_home\":false,\"sms_points\":5.0,\"sms_mult_points\":1.0}\n",
     ?assertEqual(ExpJson, Json).
 
 parse_network_2_test() ->
@@ -365,7 +365,7 @@ parse_network_2_test() ->
 
     Plist = record_to_proplist(Network),
     Json = proplist_to_json(Plist),
-    ExpJson = "{\"_id\":\"fca67c04-0b8e-4ac4-a542-6dcaf8f8da17\",\"name\":\"Mobile Comms\",\"country\":\"Albania\",\"hex_code\":\"\",\"country_code\":\"355\",\"number_len\":0,\"prefixes\":[],\"gmt_diff\":\"+1\",\"dst\":\"\",\"provider_id\":\"\",\"is_home\":false,\"sms_points\":5.0,\"sms_mult_credits\":1.0}\n",
+    ExpJson = "{\"_id\":\"fca67c04-0b8e-4ac4-a542-6dcaf8f8da17\",\"name\":\"Mobile Comms\",\"country\":\"Albania\",\"hex_code\":\"\",\"country_code\":\"355\",\"number_len\":0,\"prefixes\":[],\"gmt_diff\":\"+1\",\"dst\":\"\",\"provider_id\":\"\",\"is_home\":false,\"sms_points\":5.0,\"sms_mult_points\":1.0}\n",
     ?assertEqual(ExpJson, Json).
 
 build_prefixes_dict_test() ->
@@ -408,7 +408,7 @@ build_full_network_test() ->
     Plist = record_to_proplist(Network2),
 
     Json = proplist_to_json(Plist),
-    ExpJson = "{\"_id\":\"fca67c04-0b8e-4ac4-a542-6dcaf8f8da17\",\"name\":\"Mobile Comms\",\"country\":\"Albania\",\"hex_code\":\"\",\"country_code\":\"355\",\"number_len\":0,\"prefixes\":[\"663\",\"664\",\"669\"],\"gmt_diff\":\"+1\",\"dst\":\"7,5,3;7,5,10\",\"provider_id\":\"65c4b123-2a51-49e1-84a8-b31dac878d8c\",\"is_home\":false,\"sms_points\":5.0,\"sms_mult_credits\":1.0}\n",
+    ExpJson = "{\"_id\":\"fca67c04-0b8e-4ac4-a542-6dcaf8f8da17\",\"name\":\"Mobile Comms\",\"country\":\"Albania\",\"hex_code\":\"\",\"country_code\":\"355\",\"number_len\":0,\"prefixes\":[\"663\",\"664\",\"669\"],\"gmt_diff\":\"+1\",\"dst\":\"7,5,3;7,5,10\",\"provider_id\":\"65c4b123-2a51-49e1-84a8-b31dac878d8c\",\"is_home\":false,\"sms_points\":5.0,\"sms_mult_points\":1.0}\n",
     ?assertEqual(ExpJson, Json).
 
 -endif.
