@@ -43,7 +43,6 @@ get_report() ->
     {ok, ConnectionsResponse} = get_response(Channel, QueueReplyTo),
     {ok, #funnel_connections_response_dto{connections = Connections}} =
         adto:decode(#funnel_connections_response_dto{}, ConnectionsResponse),
-    io:format("~p~n", [Connections]),
 
     %% %% send `Throughput' request.
     %% ThroughputProps = #'P_basic'{

@@ -10,9 +10,7 @@
 
 -spec get_gtws_throughput() -> ok.
 get_gtws_throughput() ->
-    {ok, Conn} = rmql:connection_start(),
-    link(Conn),
-    {ok, Chan} = rmql:channel_open(Conn),
+    {ok, Chan} = rmql:channel_open(),
     {ok, Payload} = 'JustAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),
     {ok, TmpQueue} = queue_declare(Chan),
     {ok, _ConsumerTag} = rmql:basic_consume(Chan, TmpQueue, true),
@@ -27,8 +25,7 @@ get_gtws_throughput() ->
         10000 ->
             {error, timeout}
     end,
-    unlink(Conn),
-    rmql:connection_close(Conn),
+    rmql:channel_close(Chan),
     Response.
 
 process_response(Payload, #'P_basic'{content_type = <<"ThroughputResponse">>}) ->
