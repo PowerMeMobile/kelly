@@ -11,7 +11,7 @@
     receipts_supported    :: boolean(),
     sms_add_points = 0.0  :: float()
 }).
--type provider_id()     :: uuid().
--type provider()        :: #provider{}.
+-type provider_id()       :: uuid().
+-type provider()          :: #provider{}.
 
 -endif.
