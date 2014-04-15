@@ -24,7 +24,7 @@ customer_test_() ->
 %% ===================================================================
 
 customer_uuid() ->
-    <<"feda5822-5271-11e1-bd27-001d0947ec73">>.
+    <<"8c18fdc4-c4a8-11e3-9f1b-00269e42f7a5">>.
 
 customer_path() ->
     "http://127.0.0.1:8080/customers".
@@ -33,9 +33,8 @@ customer_path(Uuid) ->
 
 create_customer() ->
     Url = customer_path(),
-    Networks = {networks, <<"920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5">>},
-    Originators = {originators, <<"375296660001,1,1">>},
-    DefaultOriginator = {default_originator, <<"375296660001,1,1">>},
+    AllowedSources = {allowed_sources, <<"375296660001,1,1">>},
+    DefaultSource = {default_source, <<"375296660001,1,1">>},
     Queries = [
         {customer_uuid, customer_uuid()},
         {customer_id, <<"0">>},
@@ -45,18 +44,19 @@ create_customer() ->
         {max_validity, 259200},
         {default_provider_id, <<"0a89542c-5270-11e1-bf27-001d0947ec73">>},
         {pay_type, <<"postpaid">>},
+        {network_map_id, <<"befa8b7c-c4a3-11e3-b670-00269e42f7a5">>},
         {state, 1}
     ],
-    Response = ?perform_post(Url, [], <<>>, [Networks, Originators, DefaultOriginator | Queries]),
+    Response = ?perform_post(Url, [], <<>>, [AllowedSources, DefaultSource | Queries]),
+    %?debugFmt("~p~n", [Response]),
     ?assert_status(201, Response),
     ?assert_json_values(Queries, Response).
 
 update_customer() ->
     Uuid = customer_uuid(),
     Url = customer_path(Uuid),
-    Networks = {networks, <<"920a009a-5270-11e1-b961-001d0947ec73;3b25cd8e-5eca-11e1-bf77-00269e42f7a5">>},
-    Originators = {originators, <<"375296660002,1,1">>},
-    DefaultOriginator = {default_originator, <<"375296660002,1,1">>},
+    AllowedSources = {allowed_sources, <<"375296660002,1,1">>},
+    DefaultSource = {default_source, <<"375296660002,1,1">>},
     Queries = [
         {customer_id, <<"1">>},
         {name, <<"name-new">>},
@@ -65,9 +65,11 @@ update_customer() ->
         {max_validity, 259201},
         {default_provider_id, <<"0a89542c-5270-11e1-bf27-001d0947ec74">>},
         {pay_type, <<"prepaid">>},
+        {network_map_id, <<"cf1563b0-c4a3-11e3-8a61-00269e42f7a5">>},
         {state, 0}
     ],
-    Response = ?perform_put(Url, [], <<>>, [Networks, Originators, DefaultOriginator | Queries]),
+    Response = ?perform_put(Url, [], <<>>, [AllowedSources, DefaultSource | Queries]),
+    %?debugFmt("~p~n", [Response]),
     ?assert_status(200, Response),
     ?assert_json_values(Queries, Response).
 

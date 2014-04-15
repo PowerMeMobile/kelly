@@ -55,6 +55,7 @@ api-test:
 	@./rebar skip_deps=true eunit suites=kelly_http_api_customers_test
 	@./rebar skip_deps=true eunit suites=kelly_http_api_gateways_test
 	@./rebar skip_deps=true eunit suites=kelly_http_api_networks_test
+	@./rebar skip_deps=true eunit suites=kelly_http_api_network_maps_test
 	@./rebar skip_deps=true eunit suites=kelly_http_api_providers_test
 
 simple-test: generate

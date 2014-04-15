@@ -20,7 +20,7 @@ addr2cust_test_() ->
 %% ===================================================================
 
 res_id() ->
-    <<"375296660001,1,1">>.
+    <<"999888777666,9,9">>.
 
 res_path() ->
     "http://127.0.0.1:8080/addr2cust".
@@ -30,13 +30,21 @@ res_path(Id) ->
 create_res() ->
     Url = res_path(),
     Msisdn = {msisdn, res_id()},
-    Queries = [
+    Query = [
         {customer, <<"feda5822-5271-11e1-bd27-001d0947ec73">>},
         {user, <<"undefined">>}
     ],
-    Response = ?perform_post(Url, [], <<>>, [Msisdn | Queries]),
+    Response = ?perform_post(Url, [], <<>>, [Msisdn | Query]),
+    %?debugFmt("~p~n", [Response]),
     ?assert_status(201, Response),
-    ?assert_json_values(Queries, Response).
+
+    %% Msisdn2 = {msisdn, [
+    %%     {<<"addr">>, <<"375296660001">>},
+    %%     {<<"ton">>, 1},
+    %%     {<<"npi">>, 1}
+    %% ]},
+    %% Query2 = lists:keyreplace(msisdn, 1, Query, Msisdn2),
+    ?assert_json_values(Query, Response).
 
 delete_res() ->
     delete_res(res_id()).

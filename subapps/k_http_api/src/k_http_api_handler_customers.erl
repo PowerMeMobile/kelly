@@ -25,11 +25,11 @@ init() ->
         #param{name = name, mandatory = false, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = disabled},
         #param{name = rps, mandatory = false, repeated = false, type = disabled},
-        #param{name = originators, mandatory = false, repeated = true, type =
+        #param{name = allowed_sources, mandatory = false, repeated = true, type =
             {custom, fun decode_addr/1}},
-        #param{name = default_originator, mandatory = false, repeated = false, type =
+        #param{name = default_source, mandatory = false, repeated = false, type =
             {custom, fun decode_addr/1}},
-        #param{name = network_map_id, mandatory = false, repeated = true, type = binary},
+        #param{name = network_map_id, mandatory = false, repeated = false, type = binary},
         #param{name = default_provider_id, mandatory = false, repeated = false, type = binary},
         #param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = false, repeated = false, type = binary},
@@ -48,11 +48,11 @@ init() ->
         #param{name = name, mandatory = true, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = disabled},
         #param{name = rps, mandatory = false, repeated = false, type = disabled},
-        #param{name = originators, mandatory = false, repeated = true, type =
+        #param{name = allowed_sources, mandatory = false, repeated = true, type =
             {custom, fun decode_addr/1}},
-        #param{name = default_originator, mandatory = false, repeated = false, type =
+        #param{name = default_source, mandatory = false, repeated = false, type =
             {custom, fun decode_addr/1}},
-        #param{name = network_map_id, mandatory = true, repeated = true, type = binary},
+        #param{name = network_map_id, mandatory = true, repeated = false, type = binary},
         #param{name = default_provider_id, mandatory = true, repeated = false, type = binary},
         #param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = true, repeated = false, type = binary},
@@ -150,8 +150,8 @@ delete(Params) ->
 update_customer(Customer, Params) ->
     NewCustomerId = ?gv(customer_id, Params, Customer#customer.customer_id),
     NewName = ?gv(name, Params, Customer#customer.name),
-    NewOriginators = ?gv(originators, Params, Customer#customer.allowed_sources),
-    NewDefaultOriginator = ?gv(default_originator, Params, Customer#customer.default_source),
+    NewAllowedSources = ?gv(allowed_sources, Params, Customer#customer.allowed_sources),
+    NewDefaultSource = ?gv(default_source, Params, Customer#customer.default_source),
     NewNetworkMapId = ?gv(network_map_id, Params, Customer#customer.network_map_id),
     NewDefaultProviderId = ?gv(default_provider_id, Params, Customer#customer.default_provider_id),
     NewReceiptsAllowed = ?gv(receipts_allowed, Params, Customer#customer.receipts_allowed),
@@ -165,8 +165,8 @@ update_customer(Customer, Params) ->
         name = NewName,
         priority = 1,
         rps = 10000,
-        allowed_sources = NewOriginators,
-        default_source = NewDefaultOriginator,
+        allowed_sources = NewAllowedSources,
+        default_source = NewDefaultSource,
         network_map_id = NewNetworkMapId,
         default_provider_id = NewDefaultProviderId,
         receipts_allowed = NewReceiptsAllowed,
@@ -193,8 +193,8 @@ create_customer(Params) ->
         name = ?gv(name, Params),
         priority = Priority,
         rps = RPS,
-        allowed_sources = ?gv(originators, Params),
-        default_source = ?gv(default_originator, Params),
+        allowed_sources = ?gv(allowed_sources, Params),
+        default_source = ?gv(default_source, Params),
         network_map_id = ?gv(network_map_id, Params),
         default_provider_id = ?gv(default_provider_id, Params),
         receipts_allowed = ?gv(receipts_allowed, Params),
@@ -227,7 +227,7 @@ prepare([{_CustomerUUID, Customer = #customer{}} | Rest], Acc) ->
 
     {ok, UsersPropList} = k_http_api_handler_users:prepare_users(UsersList),
 
-    %% originators constructor
+    %% allowed_sources constructor
     AddrFun = ?record_to_proplist(addr),
 
     AllowedSourcesPropList = [AddrFun(S) || S <- AllowedSources],
