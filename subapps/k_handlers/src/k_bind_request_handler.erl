@@ -120,7 +120,7 @@ build_customer_response(Request, Customer) ->
         rps = RPS,
         allowed_sources = AllowedSources,
         default_source = DefaultSource,
-        networks = NetworkIds,
+        network_map_id = NetworkMapId,
         default_provider_id = DP,
         receipts_allowed = RA,
         no_retry = NR,
@@ -128,6 +128,9 @@ build_customer_response(Request, Customer) ->
         max_validity = MV,
         pay_type = PayType
     } = Customer,
+
+    {ok, #network_map{network_ids = NetworkIds}} =
+        k_network_maps_storage:get_network_map(NetworkMapId),
 
     {Networks, Providers} = lists:foldl(fun(NetworkId, {Ns, Ps})->
         {ok, Network} = k_config:get_network(NetworkId),

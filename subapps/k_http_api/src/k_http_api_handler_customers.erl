@@ -25,15 +25,19 @@ init() ->
         #param{name = name, mandatory = false, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = disabled},
         #param{name = rps, mandatory = false, repeated = false, type = disabled},
-        #param{name = originators, mandatory = false, repeated = true, type = {custom, fun decode_addr/1}},
-        #param{name = default_originator, mandatory = false, repeated = false, type = {custom, fun decode_addr/1}},
-        #param{name = networks, mandatory = false, repeated = true, type = binary},
+        #param{name = originators, mandatory = false, repeated = true, type =
+            {custom, fun decode_addr/1}},
+        #param{name = default_originator, mandatory = false, repeated = false, type =
+            {custom, fun decode_addr/1}},
+        #param{name = network_map_id, mandatory = false, repeated = true, type = binary},
         #param{name = default_provider_id, mandatory = false, repeated = false, type = binary},
         #param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = false, repeated = false, type = binary},
         #param{name = max_validity, mandatory = false, repeated = false, type = integer},
-        #param{name = pay_type, mandatory = false, repeated = false, type = {custom, fun pay_type/1}},
-        #param{name = state, mandatory = false, repeated = false, type = {custom, fun customer_state/1}}
+        #param{name = pay_type, mandatory = false, repeated = false, type =
+            {custom, fun pay_type/1}},
+        #param{name = state, mandatory = false, repeated = false, type =
+            {custom, fun customer_state/1}}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary}
@@ -44,15 +48,19 @@ init() ->
         #param{name = name, mandatory = true, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = disabled},
         #param{name = rps, mandatory = false, repeated = false, type = disabled},
-        #param{name = originators, mandatory = false, repeated = true, type = {custom, fun decode_addr/1}},
-        #param{name = default_originator, mandatory = false, repeated = false, type = {custom, fun decode_addr/1}},
-        #param{name = networks, mandatory = true, repeated = true, type = binary},
+        #param{name = originators, mandatory = false, repeated = true, type =
+            {custom, fun decode_addr/1}},
+        #param{name = default_originator, mandatory = false, repeated = false, type =
+            {custom, fun decode_addr/1}},
+        #param{name = network_map_id, mandatory = true, repeated = true, type = binary},
         #param{name = default_provider_id, mandatory = true, repeated = false, type = binary},
         #param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = true, repeated = false, type = binary},
         #param{name = max_validity, mandatory = true, repeated = false, type = integer},
-        #param{name = pay_type, mandatory = true, repeated = false, type = {custom, fun pay_type/1}},
-        #param{name = state, mandatory = true, repeated = false, type = {custom, fun customer_state/1}}
+        #param{name = pay_type, mandatory = true, repeated = false, type =
+            {custom, fun pay_type/1}},
+        #param{name = state, mandatory = true, repeated = false, type =
+            {custom, fun customer_state/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -144,7 +152,7 @@ update_customer(Customer, Params) ->
     NewName = ?gv(name, Params, Customer#customer.name),
     NewOriginators = ?gv(originators, Params, Customer#customer.allowed_sources),
     NewDefaultOriginator = ?gv(default_originator, Params, Customer#customer.default_source),
-    NewNetworks = ?gv(networks, Params, Customer#customer.networks),
+    NewNetworkMapId = ?gv(network_map_id, Params, Customer#customer.network_map_id),
     NewDefaultProviderId = ?gv(default_provider_id, Params, Customer#customer.default_provider_id),
     NewReceiptsAllowed = ?gv(receipts_allowed, Params, Customer#customer.receipts_allowed),
     NewDefaultValidity = ?gv(default_validity, Params, Customer#customer.default_validity),
@@ -159,7 +167,7 @@ update_customer(Customer, Params) ->
         rps = 10000,
         allowed_sources = NewOriginators,
         default_source = NewDefaultOriginator,
-        networks = NewNetworks,
+        network_map_id = NewNetworkMapId,
         default_provider_id = NewDefaultProviderId,
         receipts_allowed = NewReceiptsAllowed,
         no_retry = false,
@@ -187,7 +195,7 @@ create_customer(Params) ->
         rps = RPS,
         allowed_sources = ?gv(originators, Params),
         default_source = ?gv(default_originator, Params),
-        networks = ?gv(networks, Params),
+        network_map_id = ?gv(network_map_id, Params),
         default_provider_id = ?gv(default_provider_id, Params),
         receipts_allowed = ?gv(receipts_allowed, Params),
         no_retry = false,
@@ -210,9 +218,9 @@ prepare(Item) ->
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{CustomerUUID, Customer = #customer{}} | Rest], Acc) ->
+prepare([{_CustomerUUID, Customer = #customer{}} | Rest], Acc) ->
      #customer{
-        allowed_sources = OriginatorsList,
+        allowed_sources = AllowedSources,
         default_source = DefaultSource,
         users = UsersList
     } = Customer,
@@ -222,13 +230,9 @@ prepare([{CustomerUUID, Customer = #customer{}} | Rest], Acc) ->
     %% originators constructor
     AddrFun = ?record_to_proplist(addr),
 
-    OriginatorsPropList = lists:map(
-        fun(Originator)->
-            AddrFun(Originator)
-        end, OriginatorsList),
+    AllowedSourcesPropList = [AddrFun(S) || S <- AllowedSources],
 
-    %% defaultSource field validation
-    DefSourcePropList =
+    DefaultSourcePropList =
         case DefaultSource of
             undefined ->
                 undefined;
@@ -241,45 +245,13 @@ prepare([{CustomerUUID, Customer = #customer{}} | Rest], Acc) ->
     CustomerPropList = CustomerFun(
         Customer#customer{
             users = UsersPropList,
-            allowed_sources = OriginatorsPropList,
-            default_source = DefSourcePropList
+            allowed_sources = AllowedSourcesPropList,
+            default_source = DefaultSourcePropList
         }
     ),
-    UUIDBinStr = CustomerUUID,
-    DefaultProviderIDBinStr = ?gv(default_provider_id, CustomerPropList),
-    NetworksBinStr = ?gv(networks, CustomerPropList),
-    Renamed = translate(CustomerPropList),
-    ConvertedID = lists:keyreplace(customer_uuid, 1, Renamed, {customer_uuid, UUIDBinStr}),
-    ConvertedDefaultProviderID = lists:keyreplace(default_provider_id, 1, ConvertedID, {default_provider_id, DefaultProviderIDBinStr}),
-    ConvertedNetworks = lists:keyreplace(networks, 1, ConvertedDefaultProviderID, {networks, NetworksBinStr}),
 
     ?log_debug("CustomerPropList: ~p", [CustomerPropList]),
-    prepare(Rest, [ConvertedNetworks | Acc]).
-
-
-translate(Proplist) ->
-    translate(Proplist, []).
-translate([], Acc) ->
-    lists:reverse(Acc);
-translate([{Name, Value} | Tail], Acc) ->
-    translate(Tail, [{translate_name(Name), Value} | Acc]).
-
-translate_name(allowed_sources) ->
-    originators;
-translate_name(default_source) ->
-    default_originator;
-translate_name(default_provider_id) ->
-    default_provider_id;
-translate_name(receipts_allowed) ->
-    receipts_allowed;
-translate_name(no_retry) ->
-    no_retry;
-translate_name(default_validity) ->
-    default_validity;
-translate_name(max_validity) ->
-    max_validity;
-translate_name(Name) ->
-    Name.
+    prepare(Rest, [CustomerPropList | Acc]).
 
 %% convert "addr,ton,npi" to #addr{addr, ton, npi}
 decode_addr(AddrBin) ->

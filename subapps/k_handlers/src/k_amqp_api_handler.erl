@@ -8,7 +8,9 @@
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
+-include_lib("k_storage/include/customer.hrl").
 -include_lib("k_storage/include/network.hrl").
+-include_lib("k_storage/include/network_map.hrl").
 
 %% ===================================================================
 %% API
@@ -24,20 +26,74 @@ start_link() ->
 %% ===================================================================
 
 -spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(<<"CoverageReq">>, <<>>) ->
-    ?log_debug("Got coverage request", []),
-    {ok, Networks} = k_config:get_networks(),
-    {ok, AddPoints} = get_providers_add_points(Networks),
-    CoverageRespDTO = #k1api_coverage_response_dto{
-        networks = [network_to_dto(Id, N, AddPoints) || {Id, N} <- Networks]
-    },
-    ?log_debug("Built coverage response: ~p", [CoverageRespDTO]),
-    case adto:encode(CoverageRespDTO) of
-        {ok, Bin} ->
-            {<<"CoverageResp">>, Bin};
+process(<<"CoverageReq">>, ReqBin) ->
+    case adto:decode(#k1api_coverage_request_dto{}, ReqBin) of
+        {ok, CoverageReqDTO} ->
+            ?log_debug("Got coverage request: ~p", [CoverageReqDTO]),
+            case process_coverage_request(CoverageReqDTO) of
+                {ok, CoverageRespDTO} ->
+                    ?log_debug("Built coverage response: ~p", [CoverageRespDTO]),
+                    case adto:encode(CoverageRespDTO) of
+                        {ok, RespBin} ->
+                            {<<"CoverageResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Coverage response decode error: ~p", [Error]),
+                            {ok, []}
+                    end;
+                {error, Error} ->
+                    ?log_error("Coverage request process error: ~p", [Error]),
+                    {ok, []}
+            end;
         {error, Error} ->
-            ?log_error("Coverage response decode error: ~p", [Error]),
+            ?log_error("Coverage requeste decode error: ~p", [Error]),
             {ok, []}
+    end.
+
+process_coverage_request(CoverageReqDTO) ->
+    ReqId      = CoverageReqDTO#k1api_coverage_request_dto.id,
+    CustomerId = CoverageReqDTO#k1api_coverage_request_dto.customer_id,
+    _UserId    = CoverageReqDTO#k1api_coverage_request_dto.user_id,
+    _Version   = CoverageReqDTO#k1api_coverage_request_dto.version,
+    case k_aaa:get_customer_by_id(CustomerId) of
+        {ok, Customer} ->
+            NetworkMapId = Customer#customer.network_map_id,
+            case k_network_maps_storage:get_network_map(NetworkMapId) of
+                {ok, NetworkMap} ->
+                    NetworkIds = NetworkMap#network_map.network_ids,
+                    case get_networks(NetworkIds) of
+                        {ok, Networks} ->
+                            case get_providers_add_points(Networks) of
+                                {ok, AddPoints} ->
+                                    NetworksDTO =
+                                        [network_to_dto(Id, N, AddPoints) || {Id, N} <- Networks],
+                                    {ok, #k1api_coverage_response_dto{
+                                        id = ReqId,
+                                        networks = NetworksDTO
+                                    }};
+                                Error ->
+                                    Error
+                            end;
+                        Error ->
+                            Error
+                    end;
+                Error ->
+                    Error
+            end;
+        Error ->
+            Error
+    end.
+
+get_networks(NetworkIds) ->
+    get_networks(NetworkIds, []).
+
+get_networks([], Acc) ->
+    {ok, Acc};
+get_networks([NetworkId | NetworkIds], Acc) ->
+    case k_config:get_network(NetworkId) of
+        {ok, Network} ->
+            get_networks(NetworkIds, [{NetworkId, Network} | Acc]);
+        Error ->
+            Error
     end.
 
 get_providers_add_points(Networks) ->

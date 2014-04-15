@@ -2,7 +2,7 @@
 -define(customer_hrl, included).
 
 -include("storages.hrl").
--include("network.hrl").
+-include("network_map.hrl").
 -include("provider.hrl").
 
 -type customer_uuid() :: uuid().
@@ -26,7 +26,7 @@
     rps                 :: integer() | undefined,
     allowed_sources     :: [addr()], %% originators
     default_source      :: addr() | undefined, %% default originator
-    networks            :: [network_id()],
+    network_map_id      :: network_map_id(),
     default_provider_id :: provider_id() | undefined,
     receipts_allowed    :: boolean(),
     no_retry            :: boolean(),
