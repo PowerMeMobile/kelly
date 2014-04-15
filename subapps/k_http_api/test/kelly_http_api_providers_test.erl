@@ -1,16 +1,16 @@
--module(kelly_http_api_prv_test).
+-module(kelly_http_api_providers_test).
 
 -include_lib ("etest_http/include/etest_http.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-prv_test_() ->
+provider_test_() ->
     {"Provider http interface tests",
         {setup,
-            fun delete_prv/0,
+            fun delete_provider/0,
             {inorder, [
-                ?_test(create_prv()),
-                ?_test(update_prv()),
-                ?_test(delete_prv())
+                ?_test(create_provider()),
+                ?_test(update_provider()),
+                ?_test(delete_provider())
             ]}
         }
     }.
@@ -19,20 +19,20 @@ prv_test_() ->
 %% PROVIDER Tests
 %% ===================================================================
 
-prv_id() ->
+provider_id() ->
     <<"0a89542c-5270-11e1-bf27-001d0947ec73">>.
 
-prv_path() ->
+provider_path() ->
     "http://127.0.0.1:8080/providers".
 
-prv_path(ID) ->
-    prv_path() ++ "/" ++ binary_to_list(ID).
+provider_path(Id) ->
+    provider_path() ++ "/" ++ binary_to_list(Id).
 
-create_prv() ->
-    Url = prv_path(),
-    PrvID = prv_id(),
+create_provider() ->
+    Url = provider_path(),
+    ProviderId = provider_id(),
     Queries = [
-        {id, PrvID},
+        {id, ProviderId},
         {name, <<"test_provider">>},
         {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
         {bulk_gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
@@ -43,9 +43,9 @@ create_prv() ->
     ?assert_status(201, Response),
     ?assert_json_values(Queries, Response).
 
-update_prv() ->
-    PrvID = prv_id(),
-    Url = prv_path(PrvID),
+update_provider() ->
+    ProviderId = provider_id(),
+    Url = provider_path(ProviderId),
     Queries = [
         {name, <<"new_provider_name">>},
         {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
@@ -57,11 +57,11 @@ update_prv() ->
     ?assert_status(200, Response),
     ?assert_json_values(Queries, Response).
 
-delete_prv() ->
-    delete_prv(prv_id()).
+delete_provider() ->
+    delete_provider(provider_id()).
 
-delete_prv(PrvID) ->
-    Url = prv_path(PrvID),
+delete_provider(ProviderId) ->
+    Url = provider_path(ProviderId),
     delete_req(Url).
 
 %% ===================================================================

@@ -1,56 +1,57 @@
--module(kelly_http_api_gtw_test).
+-module(kelly_http_api_gateways_test).
 
 %% -compile(export_all).
 
 -include_lib ("etest_http/include/etest_http.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-gtw_test_() ->
+gateway_test_() ->
     {"Gateway & its connections http interface tests",
     {setup,
-        fun delete_gtw/0,
-        {inorder, [?_test(create_gtw()),
-                    ?_test(update_gtw()),
-                    ?_test(create_connection()),
-                    ?_test(update_connection()),
-                    ?_test(delete_connection()),
-                    ?_test(delete_gtw())]
-        }
+        fun delete_gateway/0,
+        {inorder, [
+            ?_test(create_gateway()),
+            ?_test(update_gateway()),
+            ?_test(create_connection()),
+            ?_test(update_connection()),
+            ?_test(delete_connection()),
+            ?_test(delete_gateway())
+        ]}
     }}.
 
 %% ===================================================================
 %% GATEWAY Tests
 %% ===================================================================
 
-gtw_id() ->
+gateway_id() ->
     <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>.
 
-gtw_path() ->
+gateway_path() ->
     "http://127.0.0.1:8080/gateways".
-gtw_path(ID) ->
-    gtw_path() ++ "/" ++ binary_to_list(ID).
+gateway_path(Id) ->
+    gateway_path() ++ "/" ++ binary_to_list(Id).
 
-create_gtw() ->
-    Url = gtw_path(),
-    GtwID = gtw_id(),
-    GtwName = <<"test_gtw">>,
-    GtwRPS = 10000,
+create_gateway() ->
+    Url = gateway_path(),
+    GatewayId = gateway_id(),
+    GatewayName = <<"gateway">>,
+    GatewayRPS = 10000,
     Queries = [
-        {id, GtwID},
-        {name, GtwName},
-        {rps, GtwRPS}
+        {id, GatewayId},
+        {name, GatewayName},
+        {rps, GatewayRPS}
     ],
     Response = ?perform_post(Url, [], <<>>, Queries),
     ?assert_status(201, Response),
     ?assert_json_values(Queries, Response).
 
-update_gtw() ->
-    GtwID = gtw_id(),
-    Url = gtw_path(GtwID),
-    %% is exist
+update_gateway() ->
+    GatewayId = gateway_id(),
+    Url = gateway_path(GatewayId),
+    %% does exist?
     Response = ?perform_get(Url),
     ?assert_status(200, Response),
-    ?assert_json_value(id, GtwID, Response),
+    ?assert_json_value(id, GatewayId, Response),
 
     %% update name
     NewName = <<"new_name">>,
@@ -66,31 +67,30 @@ update_gtw() ->
     ?assert_status(200, UpdateRPSResp),
     ?assert_json_value(rps, NewRPS, UpdateRPSResp).
 
+delete_gateway() ->
+    delete_gateway(gateway_id()).
 
-delete_gtw() ->
-    delete_gtw(gtw_id()).
-
-delete_gtw(GtwID) ->
-    Url = gtw_path(GtwID),
+delete_gateway(GatewayId) ->
+    Url = gateway_path(GatewayId),
     delete_req(Url).
 
 %% ===================================================================
-%% Gtw CONNECTION Tests
+%% Gateway CONNECTION Tests
 %% ===================================================================
 
 conn_id() ->
     0.
 
-conn_path(GtwID, ConnID) ->
-    conn_path(GtwID) ++ "/" ++ integer_to_list(ConnID).
-conn_path(GtwID) ->
-    gtw_path(GtwID) ++ "/connections".
+conn_path(GatewayId, ConnId) ->
+    conn_path(GatewayId) ++ "/" ++ integer_to_list(ConnId).
+conn_path(GatewayId) ->
+    gateway_path(GatewayId) ++ "/connections".
 
 create_connection() ->
-    Url = conn_path(gtw_id()),
-    ConnID = conn_id(),
+    Url = conn_path(gateway_id()),
+    ConnId = conn_id(),
     Queries = [
-        {id, ConnID},
+        {id, ConnId},
         {host, <<"127.0.0.1">>},
         {port, 8001},
         {bind_type, <<"transmitter">>},
@@ -106,8 +106,8 @@ create_connection() ->
     ?assert_json_values(Queries, Resp).
 
 update_connection() ->
-    ConnID = conn_id(),
-    Url = conn_path(gtw_id(), ConnID),
+    ConnId = conn_id(),
+    Url = conn_path(gateway_id(), ConnId),
     Queries = [
         {host, <<"127.0.0.2">>},
         {port, 8002},
@@ -125,8 +125,8 @@ update_connection() ->
 
 delete_connection() ->
     delete_connection(conn_id()).
-delete_connection(ConnID) ->
-    Url = conn_path(gtw_id(), ConnID),
+delete_connection(ConnId) ->
+    Url = conn_path(gateway_id(), ConnId),
     delete_req(Url).
 
 %% ===================================================================
