@@ -70,8 +70,8 @@ read(Params) ->
     end.
 
 create(Params) ->
-    GtwUUID = ?gv(gateway_id, Params),
-    case k_config:get_gateway(GtwUUID) of
+    GtwUuid = ?gv(gateway_id, Params),
+    case k_storage_gateways:get_gateway(GtwUuid) of
         {ok, Gtw = #gateway{}} ->
             check_connection_id(Gtw, Params);
         {error, no_entry} ->
@@ -79,8 +79,8 @@ create(Params) ->
     end.
 
 update(Params) ->
-    GtwUUID = ?gv(gateway_id, Params),
-    case k_config:get_gateway(GtwUUID) of
+    GtwUuid = ?gv(gateway_id, Params),
+    case k_storage_gateways:get_gateway(GtwUuid) of
         {ok, Gtw = #gateway{}} ->
             update_connection(Gtw, Params);
         {error, no_entry} ->
@@ -88,10 +88,10 @@ update(Params) ->
     end.
 
 delete(Params) ->
-    GtwUUID = ?gv(gateway_id, Params),
+    GtwUuid = ?gv(gateway_id, Params),
     ConnectionID = ?gv(id, Params),
-    ok = k_config:del_gateway_connection(GtwUUID, ConnectionID),
-    k_snmp:delete_connection(GtwUUID, ConnectionID),
+    ok = k_storage_gateways:del_gateway_connection(GtwUuid, ConnectionID),
+    k_snmp:delete_connection(GtwUuid, ConnectionID),
     {http_code, 204}.
 
 %% ===================================================================
@@ -99,7 +99,7 @@ delete(Params) ->
 %% ===================================================================
 
 read_all(GatewayID) ->
-    case k_config:get_gateway(GatewayID) of
+    case k_storage_gateways:get_gateway(GatewayID) of
         {ok, #gateway{connections = Connections}} ->
             {ok, ConnsPropList} = prepare_connections(Connections),
             ?log_debug("ConnsPropList: ~p", [ConnsPropList]),
@@ -109,7 +109,7 @@ read_all(GatewayID) ->
     end.
 
 read_id(GatewayID, ConnectionID) ->
-    case k_config:get_gateway(GatewayID) of
+    case k_storage_gateways:get_gateway(GatewayID) of
         {ok, #gateway{connections = Connections}} ->
             case get_connection(ConnectionID, Connections) of
                 undefined ->
@@ -153,7 +153,7 @@ update_connection(Gtw, Params) ->
                 addr_range = NewAddrRange
             },
             {ok, NewConnections} = replace_connection(NewConnection, Connections),
-            ok = k_config:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
+            ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
             k_snmp:set_connection(GtwID, NewConnection),
             {ok, [ConnPropList]} = prepare_connections(NewConnection),
             ?log_debug("ConnPropList: ~p", [ConnPropList]),
@@ -230,9 +230,9 @@ create_connection(Params) ->
         addr_npi    = AddrNPI,
         addr_range  = AddrRange
     },
-    GtwUUID = ?gv(gateway_id, Params),
-    k_config:set_gateway_connection(GtwUUID, Connection),
-    k_snmp:set_connection(GtwUUID, Connection),
+    GtwUuid = ?gv(gateway_id, Params),
+    k_storage_gateways:set_gateway_connection(GtwUuid, Connection),
+    k_snmp:set_connection(GtwUuid, Connection),
     {ok, [ConnPropList]} = prepare_connections(Connection),
     ?log_debug("ConnPropList: ~p", [ConnPropList]),
     {http_code, 201, ConnPropList}.

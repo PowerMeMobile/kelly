@@ -67,19 +67,19 @@ process(Type, _Message) ->
 
 process_connection_down_event(ConnectionId, CustomerId, UserId) ->
     case get_customer_uuid_by_id(CustomerId) of
-        {ok, CustomerUUID} ->
-            perform_unregister_connection(CustomerUUID, ConnectionId, UserId);
+        {ok, CustomerUuid} ->
+            perform_unregister_connection(CustomerUuid, ConnectionId, UserId);
         {error, Reason} ->
             ?log_error("Could not unregister customer_id: ~p with: ~p", [CustomerId, Reason]),
             {ok, []}
     end.
 
-perform_unregister_connection(CustomerUUID, ConnectionId, UserId) ->
-    case k_mailbox:unregister_subscription(ConnectionId, CustomerUUID, UserId) of
+perform_unregister_connection(CustomerUuid, ConnectionId, UserId) ->
+    case k_mailbox:unregister_subscription(ConnectionId, CustomerUuid, UserId) of
         ok ->
             {ok, []};
         {error, Reason} ->
-            ?log_error("Could not unregister ~p with: ~p", [{CustomerUUID, ConnectionId}, Reason]),
+            ?log_error("Could not unregister ~p with: ~p", [{CustomerUuid, ConnectionId}, Reason]),
             {ok, []}
     end.
 
@@ -87,13 +87,13 @@ process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType)
     when ConnType == receiver orelse ConnType == transceiver
 ->
     case get_customer_uuid_by_id(CustomerId) of
-        {ok, CustomerUUID} ->
+        {ok, CustomerUuid} ->
             {ok, QNameFmt} = application:get_env(k_handlers, funnel_node_queue_fmt),
             QName = binary:replace(QNameFmt, <<"%id%">>, ConnectionId),
             ?log_debug("RMQ queue of new funnel connection: ~p", [QName]),
             Subscription = #k_mb_funnel_sub{
                     id = ConnectionId,
-                    customer_id = CustomerUUID,
+                    customer_id = CustomerUuid,
                     user_id = UserId,
                     priority = 0,
                     queue_name = QName,
@@ -110,9 +110,9 @@ process_connection_up_event(_ConnectionId, _CustomerId, _UserId, _ConnType) ->
     {ok, []}.
 
 get_customer_uuid_by_id(CustomerId) ->
-    case k_aaa:get_customer_by_id(CustomerId) of
-        {ok, #customer{customer_uuid = CustomerUUID}} ->
-            {ok, CustomerUUID};
+    case k_storage_customers:get_customer_by_id(CustomerId) of
+        {ok, #customer{customer_uuid = CustomerUuid}} ->
+            {ok, CustomerUuid};
         Error ->
             Error
     end.

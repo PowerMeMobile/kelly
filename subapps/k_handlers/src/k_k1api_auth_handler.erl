@@ -55,10 +55,10 @@ authenticate(AuthReq = #k1api_auth_request_dto{
 }) ->
     ?log_debug("Got auth request: ~p", [AuthReq]),
 
-    case k_aaa:get_customer_by_id(CustomerId) of
+    case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
             ?log_debug("Customer found: ~p", [Customer]),
-            case k_aaa:get_customer_user(Customer, UserId) of
+            case k_storage_customers:get_customer_user(Customer, UserId) of
                 {ok, User = #user{}} ->
                     ?log_debug("User found: ~p", [User]),
                     Checks = [
@@ -116,7 +116,7 @@ build_customer_response(Request, Customer) ->
     } = Request,
 
     #customer{
-        customer_uuid = CustomerUUID,
+        customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         priority = _Prio,
         allowed_sources = AllowedSources,
@@ -131,10 +131,10 @@ build_customer_response(Request, Customer) ->
     } = Customer,
 
     {ok, #network_map{network_ids = NetworkIds}} =
-        k_network_maps_storage:get_network_map(NetworkMapId),
+        k_storage_network_maps:get_network_map(NetworkMapId),
 
     {Networks, Providers} = lists:foldl(fun(NetworkId, {Ns, Ps})->
-        {ok, Network} = k_config:get_network(NetworkId),
+        {ok, Network} = k_storage_networks:get_network(NetworkId),
         #network{
             country_code = CC,
             number_len = NL,
@@ -150,7 +150,7 @@ build_customer_response(Request, Customer) ->
             provider_id = ProviderId
         },
 
-        {ok, Provider} = k_config:get_provider(ProviderId),
+        {ok, Provider} = k_storage_providers:get_provider(ProviderId),
         #provider{
             gateway_id = GatewayId,
             bulk_gateway_id = BulkGatewayId,
@@ -173,7 +173,7 @@ build_customer_response(Request, Customer) ->
     end, {[], []}, NetworkIds),
 
     CustomerDTO = #k1api_auth_response_customer_dto{
-        uuid = CustomerUUID,
+        uuid = CustomerUuid,
         id = CustomerId,
         pay_type = PayType,
         allowed_sources = AllowedSources,

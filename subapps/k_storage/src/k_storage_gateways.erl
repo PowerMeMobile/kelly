@@ -1,11 +1,13 @@
--module(k_gtw_storage).
+-module(k_storage_gateways).
 
 %% API
 -export([
     set_gateway/2,
     get_gateway/1,
     get_gateways/0,
-    del_gateway/1
+    del_gateway/1,
+    set_gateway_connection/2,
+    del_gateway_connection/2
 ]).
 
 -include("storages.hrl").
@@ -71,6 +73,26 @@ get_gateways() ->
 del_gateway(GatewayId) ->
     mongodb_storage:delete(static_storage, gateways, {'_id', GatewayId}).
 
+-spec set_gateway_connection(gateway_id(), #connection{}) -> ok | {error, no_entry} | {error, term()}.
+set_gateway_connection(GatewayId, Connection = #connection{id = ConnId}) ->
+    case get_gateway(GatewayId) of
+        {ok, Gateway = #gateway{connections = Conns}} ->
+            NewConns = delete_connection(Conns, ConnId),
+            set_gateway(GatewayId, Gateway#gateway{connections = [Connection | NewConns]});
+        Error ->
+             Error
+    end.
+
+-spec del_gateway_connection(gateway_id(), connection_id()) -> ok | {error, no_entry} | {error, term()}.
+del_gateway_connection(GatewayId, ConnectionId) ->
+    case get_gateway(GatewayId) of
+        {ok, Gateway = #gateway{connections = Conns}} ->
+            NewConns = delete_connection(Conns, ConnectionId),
+            set_gateway(GatewayId, Gateway#gateway{connections = NewConns});
+        Error ->
+            Error
+    end.
+
 %% ===================================================================
 %% Internals
 %% ===================================================================
@@ -111,3 +133,13 @@ doc_to_record(Doc) ->
         connections = Connections,
         settings = Settings
     }.
+
+delete_connection(Conns, ConnId) ->
+    lists:foldl(
+        fun(CurrentConn = #connection{id = CurrentConnId}, Acc)->
+            case CurrentConnId of
+                ConnId -> Acc;
+                _Any -> [CurrentConn | Acc]
+            end
+        end, [], Conns
+    ).

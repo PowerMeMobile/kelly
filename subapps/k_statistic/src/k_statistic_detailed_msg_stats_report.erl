@@ -111,7 +111,7 @@ detailed_msg_stats_report(Records, SliceRanges) ->
 
 -spec get_gateway_name(GatewayId::gateway_id()) -> string().
 get_gateway_name(GatewayId) ->
-    case k_config:get_gateway(GatewayId) of
+    case k_storage_gateways:get_gateway(GatewayId) of
         {ok, #gateway{name = Name}} ->
             Name;
         _ ->

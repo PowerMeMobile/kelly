@@ -73,15 +73,15 @@ init() ->
 create(Params) ->
     case ?gv(customer_uuid, Params) of
         undefined ->
-            CustomerUUID = uuid:unparse(uuid:generate_time()),
-            create_customer(lists:keyreplace(customer_uuid, 1, Params, {customer_uuid, CustomerUUID}));
+            CustomerUuid = uuid:unparse(uuid:generate_time()),
+            create_customer(lists:keyreplace(customer_uuid, 1, Params, {customer_uuid, CustomerUuid}));
         _ ->
             is_exist(Params)
     end.
 
 is_exist(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
-    case k_aaa:get_customer_by_uuid(CustomerUUID) of
+    CustomerUuid = ?gv(customer_uuid, Params),
+    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, #customer{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
@@ -92,16 +92,16 @@ is_exist(Params) ->
     end.
 
 read(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
-    case CustomerUUID of
+    CustomerUuid = ?gv(customer_uuid, Params),
+    case CustomerUuid of
         undefined ->
             read_all();
         _ ->
-            read_customer_uuid(CustomerUUID)
+            read_customer_uuid(CustomerUuid)
     end.
 
 read_all() ->
-    case k_aaa:get_customers() of
+    case k_storage_customers:get_customers() of
         {ok, CustList} ->
             {ok, CustPropLists} = prepare(CustList),
             ?log_debug("CustPropLists: ~p", [CustPropLists]),
@@ -111,10 +111,10 @@ read_all() ->
             {http_code, 500}
     end.
 
-read_customer_uuid(CustomerUUID) ->
-    case k_aaa:get_customer_by_uuid(CustomerUUID) of
+read_customer_uuid(CustomerUuid) ->
+    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            {ok, [CustPropList]} = prepare({CustomerUUID, Customer}),
+            {ok, [CustPropList]} = prepare({CustomerUuid, Customer}),
             ?log_debug("CustPropList: ~p", [CustPropList]),
             {ok, CustPropList};
         {error, no_entry} ->
@@ -125,8 +125,8 @@ read_customer_uuid(CustomerUUID) ->
     end.
 
 update(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
-    case k_aaa:get_customer_by_uuid(CustomerUUID) of
+    CustomerUuid = ?gv(customer_uuid, Params),
+    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
             update_customer(Customer, Params);
         {error, no_entry} ->
@@ -138,9 +138,9 @@ update(Params) ->
 
 
 delete(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
-    k_snmp:delete_customer(CustomerUUID),
-    ok = k_aaa:del_customer(CustomerUUID),
+    CustomerUuid = ?gv(customer_uuid, Params),
+    k_snmp:delete_customer(CustomerUuid),
+    ok = k_storage_customers:del_customer(CustomerUuid),
     {http_code, 204}.
 
 %% ===================================================================
@@ -148,6 +148,7 @@ delete(Params) ->
 %% ===================================================================
 
 update_customer(Customer, Params) ->
+    CustomerUuid = Customer#customer.customer_uuid,
     NewCustomerId = ?gv(customer_id, Params, Customer#customer.customer_id),
     NewName = ?gv(name, Params, Customer#customer.name),
     NewAllowedSources = ?gv(allowed_sources, Params, Customer#customer.allowed_sources),
@@ -160,7 +161,7 @@ update_customer(Customer, Params) ->
     NewPayType = ?gv(pay_type, Params, Customer#customer.pay_type),
     NewState = ?gv(state, Params, Customer#customer.state),
     NewCustomer = #customer{
-        customer_uuid = Customer#customer.customer_uuid,
+        customer_uuid = CustomerUuid,
         customer_id = NewCustomerId,
         name = NewName,
         priority = 1,
@@ -177,22 +178,23 @@ update_customer(Customer, Params) ->
         pay_type = NewPayType,
         state = NewState
     },
-    ok = k_aaa:set_customer(NewCustomer),
-    {ok, [CustPropList]} = prepare({Customer#customer.customer_uuid, NewCustomer}),
+
+    ok = k_storage_customers:set_customer(CustomerUuid, NewCustomer),
+    {ok, [CustPropList]} = prepare({CustomerUuid, NewCustomer}),
     ?log_debug("CustPropList: ~p", [CustPropList]),
     {http_code, 200, CustPropList}.
 
 create_customer(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
     Priority = 1,
-    RPS = 10000,
-    CustomerID = ?gv(customer_id, Params),
+    Rps = 10000,
+    CustomerId = ?gv(customer_id, Params),
     Customer = #customer{
-        customer_uuid = CustomerUUID,
-        customer_id = CustomerID,
+        customer_uuid = CustomerUuid,
+        customer_id = CustomerId,
         name = ?gv(name, Params),
         priority = Priority,
-        rps = RPS,
+        rps = Rps,
         allowed_sources = ?gv(allowed_sources, Params),
         default_source = ?gv(default_source, Params),
         network_map_id = ?gv(network_map_id, Params),
@@ -205,9 +207,9 @@ create_customer(Params) ->
         pay_type = ?gv(pay_type, Params),
         state = ?gv(state, Params)
     },
-    k_snmp:set_customer(CustomerUUID, RPS, Priority),
-    ok = k_aaa:set_customer(Customer),
-    {ok, [CustPropList]} = prepare({CustomerUUID, Customer}),
+    k_snmp:set_customer(CustomerUuid, Rps, Priority),
+    ok = k_storage_customers:set_customer(CustomerUuid, Customer),
+    {ok, [CustPropList]} = prepare({CustomerUuid, Customer}),
     ?log_debug("CustPropList: ~p", [CustPropList]),
     {http_code, 201, CustPropList}.
 
@@ -218,7 +220,7 @@ prepare(Item) ->
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{_CustomerUUID, Customer = #customer{}} | Rest], Acc) ->
+prepare([{_CustomerUuid, Customer = #customer{}} | Rest], Acc) ->
      #customer{
         allowed_sources = AllowedSources,
         default_source = DefaultSource,

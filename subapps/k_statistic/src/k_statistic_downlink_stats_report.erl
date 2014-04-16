@@ -85,7 +85,7 @@ get_response(Channel, QueueReplyTo) ->
 
 prepare_conns(ConnList) when is_list(ConnList) ->
     prepare_conns(ConnList, []).
-%% prepare_conns(Gtw = {_UUID, #gateway{}}) ->
+%% prepare_conns(Gtw = {_Uuid, #gateway{}}) ->
 %%  prepare_gtws([Gtw], []).
 
 prepare_conns([], Acc) ->

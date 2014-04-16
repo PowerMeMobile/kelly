@@ -91,7 +91,7 @@ read(Params) ->
 
 create(Params) ->
     GtwID = ?gv(gateway_id, Params),
-    case k_config:get_gateway(GtwID) of
+    case k_storage_gateways:get_gateway(GtwID) of
         {ok, Gtw = #gateway{}} ->
             create_setting(validate, Gtw, Params);
         {error, no_entry} ->
@@ -100,7 +100,7 @@ create(Params) ->
 
 update(Params) ->
     GtwID = ?gv(gateway_id, Params),
-    case k_config:get_gateway(GtwID) of
+    case k_storage_gateways:get_gateway(GtwID) of
         {ok, Gtw = #gateway{}} ->
             update_setting(validate, Gtw, Params);
         {error, no_entry} ->
@@ -110,10 +110,10 @@ update(Params) ->
 delete(Params) ->
     GtwID = ?gv(gateway_id, Params),
     SettingID = ?gv(id, Params),
-    case k_config:get_gateway(GtwID) of
+    case k_storage_gateways:get_gateway(GtwID) of
         {ok, Gtw = #gateway{settings = Settings}} ->
             NewSettings = lists:keydelete(SettingID, #setting.name, Settings),
-            ok = k_config:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
+            ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
             k_snmp:delete_setting(GtwID, SettingID),
             {ok, StsPropList} = prepare_settings(Settings),
             ?log_debug("StsPropList: ~p", [StsPropList]),
@@ -128,7 +128,7 @@ delete(Params) ->
 
 read_all(GatewayID) ->
     ?log_debug("Try to search gtw ~p", [GatewayID]),
-    case k_config:get_gateway(GatewayID) of
+    case k_storage_gateways:get_gateway(GatewayID) of
         {ok, #gateway{settings = Settings}} ->
             {ok, StsPropList} = prepare_settings(Settings),
             ?log_debug("StsPropList: ~p", [StsPropList]),
@@ -138,7 +138,7 @@ read_all(GatewayID) ->
     end.
 
 read_id(GatewayID, StsName) ->
-    case k_config:get_gateway(GatewayID) of
+    case k_storage_gateways:get_gateway(GatewayID) of
         {ok, #gateway{settings = Settings}} ->
             case get_setting(StsName, Settings) of
                 false ->
@@ -171,7 +171,7 @@ update_setting(update, Gtw, Params) ->
                 value = NewValue
             },
             NewSettings = lists:keyreplace(SettingID, #setting.name, Settings, NewSetting),
-            ok = k_config:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
+            ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
             k_snmp:set_setting(GtwID, NewSetting),
             {ok, [StsPropList]} = prepare_settings(NewSetting),
             ?log_debug("StsPropList: ~p", [StsPropList]),
@@ -203,7 +203,7 @@ create_setting(create, GTW, Params) ->
         value = Value
     },
     GtwID = ?gv(gateway_id, Params),
-    k_config:set_gateway(GtwID, GTW#gateway{settings = [Setting | GTW#gateway.settings]}),
+    k_storage_gateways:set_gateway(GtwID, GTW#gateway{settings = [Setting | GTW#gateway.settings]}),
     k_snmp:set_setting(GtwID, Setting),
     {ok, [StsPropList]} = prepare_settings(Setting),
     ?log_debug("StsPropList: ~p", [StsPropList]),

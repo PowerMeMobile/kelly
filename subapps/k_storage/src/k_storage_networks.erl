@@ -1,4 +1,4 @@
--module(k_ntw_storage).
+-module(k_storage_networks).
 
 %% API
 -export([

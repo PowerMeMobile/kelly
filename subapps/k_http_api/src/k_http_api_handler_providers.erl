@@ -51,23 +51,23 @@ init() ->
     }}.
 
 read(Params) ->
-    UUID = ?gv(id, Params),
-    case UUID of
+    Uuid = ?gv(id, Params),
+    case Uuid of
         undefined -> read_all();
-        _ -> read_id(UUID)
+        _ -> read_id(Uuid)
     end.
 
 create(Params) ->
     case ?gv(id, Params) of
         undefined ->
-            UUID = uuid:unparse(uuid:generate_time()),
-            create_provider(lists:keyreplace(id, 1, Params, {id, UUID}));
+            Uuid = uuid:unparse(uuid:generate_time()),
+            create_provider(lists:keyreplace(id, 1, Params, {id, Uuid}));
         _ ->
             is_exist(Params)
     end.
 
 update(Params) ->
-    case k_config:get_provider(?gv(id, Params)) of
+    case k_storage_providers:get_provider(?gv(id, Params)) of
         {ok, Provider = #provider{}} ->
             update_provider(Provider, Params);
         {error, no_entry} ->
@@ -78,7 +78,7 @@ update(Params) ->
     end.
 
 delete(Params) ->
-    ok = k_config:del_provider(?gv(id, Params)),
+    ok = k_storage_providers:del_provider(?gv(id, Params)),
     {http_code, 204}.
 
 %% ===================================================================
@@ -86,7 +86,7 @@ delete(Params) ->
 %% ===================================================================
 
 is_exist(Params) ->
-    case k_config:get_provider(?gv(id, Params)) of
+    case k_storage_providers:get_provider(?gv(id, Params)) of
         {ok, #provider{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
@@ -97,7 +97,7 @@ is_exist(Params) ->
     end.
 
 read_all() ->
-    case k_config:get_providers() of
+    case k_storage_providers:get_providers() of
         {ok, PrvList} ->
             {ok, PrvPropLists} = prepare(PrvList),
             ?log_debug("PrvPropLists: ~p", [PrvPropLists]),
@@ -107,10 +107,10 @@ read_all() ->
             {http_code, 500}
     end.
 
-read_id(PrvUUID) ->
-    case k_config:get_provider(PrvUUID) of
+read_id(PrvUuid) ->
+    case k_storage_providers:get_provider(PrvUuid) of
         {ok, Prv = #provider{}} ->
-            {ok, [PrvPropList]} = prepare({PrvUUID, Prv}),
+            {ok, [PrvPropList]} = prepare({PrvUuid, Prv}),
             ?log_debug("PrvPropList: ~p", [PrvPropList]),
             {http_code, 200, PrvPropList};
         {error, no_entry} ->
@@ -134,13 +134,13 @@ update_provider(Provider, Params) ->
         receipts_supported = ReceiptsSupported,
         sms_add_points = SmsAddPoints
     },
-    ok = k_config:set_provider(ID, Updated),
+    ok = k_storage_providers:set_provider(ID, Updated),
     {ok, [PrvPropList]} = prepare({ID, Updated}),
     ?log_debug("PrvPropList: ~p", [PrvPropList]),
     {http_code, 200, PrvPropList}.
 
 create_provider(Params) ->
-    UUID = ?gv(id, Params),
+    Uuid = ?gv(id, Params),
     Name = ?gv(name, Params),
     GatewayId = ?gv(gateway_id, Params),
     BulkGatewayId = ?gv(bulk_gateway_id, Params),
@@ -153,19 +153,19 @@ create_provider(Params) ->
         receipts_supported = ReceiptsSupported,
         sms_add_points = SmsAddPoints
     },
-    ok = k_config:set_provider(UUID, Provider),
-    {ok, [PrvPropList]} = prepare({UUID, Provider}),
+    ok = k_storage_providers:set_provider(Uuid, Provider),
+    {ok, [PrvPropList]} = prepare({Uuid, Provider}),
     ?log_debug("PrvPropList: ~p", [PrvPropList]),
     {http_code, 201, PrvPropList}.
 
 prepare(PrvList) when is_list(PrvList) ->
     prepare(PrvList, []);
-prepare(Prv = {_UUID, #provider{}}) ->
+prepare(Prv = {_Uuid, #provider{}}) ->
     prepare([Prv]).
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
+prepare([{PrvUuid, Prv = #provider{}} | Rest], Acc) ->
     PrvFun = ?record_to_proplist(provider),
     PropList = PrvFun(Prv),
     Name = ?gv(name, PropList),
@@ -174,7 +174,7 @@ prepare([{PrvUUID, Prv = #provider{}} | Rest], Acc) ->
     ReceiptsSupported = ?gv(receipts_supported, PropList),
     SmsAddPoints = ?gv(sms_add_points, PropList),
     Result = [
-        {id, PrvUUID},
+        {id, PrvUuid},
         {name, Name},
         {gateway_id, GatewayId},
         {bulk_gateway_id, BulkGatewayId},

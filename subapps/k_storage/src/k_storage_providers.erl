@@ -1,4 +1,4 @@
--module(k_prv_storage).
+-module(k_storage_providers).
 
 %% API
 -export([

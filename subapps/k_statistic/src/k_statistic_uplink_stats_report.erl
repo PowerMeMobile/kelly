@@ -14,7 +14,7 @@
 
 -spec get_report() -> {ok, Report::term()} | {error, Reason::term()}.
 get_report() ->
-    case k_config:get_gateways() of
+    case k_storage_gateways:get_gateways() of
         {ok, GtwList} ->
             {ok, #'ThroughputResponse'{slices = Slices}} =
                 k_statistic_uplink_stats_report_helper:get_gtws_throughput(),
@@ -33,20 +33,20 @@ get_report() ->
 
 prepare_gtws(Counters, GtwList) when is_list(GtwList) ->
     prepare_gtws(Counters, GtwList, []);
-prepare_gtws(Counters, Gtw = {_UUID, #gateway{}}) ->
+prepare_gtws(Counters, Gtw = {_Uuid, #gateway{}}) ->
     prepare_gtws(Counters, [Gtw], []).
 
 prepare_gtws(_Counters, [], Acc) ->
     {ok, Acc};
-prepare_gtws(Counters, [{GtwUUIDBin, #gateway{}} | Rest], Acc) ->
-    GtwUUID = binary_to_list(GtwUUIDBin),
-    {ok, Name} = k_snmp:get_column_val(gtwName, GtwUUID),
-    {ok, Status} = k_snmp:get_column_val(gtwStatus, GtwUUID),
-    {ok, MaxRPS} = k_snmp:get_column_val(gtwRPS, GtwUUID),
-    {ok, ActualRpsIn} = get_actual_rps_sms(smsIn, GtwUUID, Counters),
-    {ok, ActualRpsOut} = get_actual_rps_sms(smsOut, GtwUUID, Counters),
+prepare_gtws(Counters, [{GtwUuidBin, #gateway{}} | Rest], Acc) ->
+    GtwUuid = binary_to_list(GtwUuidBin),
+    {ok, Name} = k_snmp:get_column_val(gtwName, GtwUuid),
+    {ok, Status} = k_snmp:get_column_val(gtwStatus, GtwUuid),
+    {ok, MaxRPS} = k_snmp:get_column_val(gtwRPS, GtwUuid),
+    {ok, ActualRpsIn} = get_actual_rps_sms(smsIn, GtwUuid, Counters),
+    {ok, ActualRpsOut} = get_actual_rps_sms(smsOut, GtwUuid, Counters),
     GtwPropList = [
-        {id, GtwUUIDBin},
+        {id, GtwUuidBin},
         {name, list_to_binary(Name)},
         {status, Status},
         {max_rps, MaxRPS},
@@ -55,9 +55,9 @@ prepare_gtws(Counters, [{GtwUUIDBin, #gateway{}} | Rest], Acc) ->
     ],
     prepare_gtws(Counters, Rest, [GtwPropList | Acc]).
 
-get_actual_rps_sms(_Type, _UUID, []) ->
+get_actual_rps_sms(_Type, _Uuid, []) ->
     {ok, 0};
-get_actual_rps_sms(Type, UUID, [#'Counter'{gatewayId = UUID, type = Type, count = Count} | _]) ->
+get_actual_rps_sms(Type, Uuid, [#'Counter'{gatewayId = Uuid, type = Type, count = Count} | _]) ->
     {ok, Count};
-get_actual_rps_sms(Type, UUID, [_| Rest]) ->
-    get_actual_rps_sms(Type, UUID, Rest).
+get_actual_rps_sms(Type, Uuid, [_| Rest]) ->
+    get_actual_rps_sms(Type, Uuid, Rest).

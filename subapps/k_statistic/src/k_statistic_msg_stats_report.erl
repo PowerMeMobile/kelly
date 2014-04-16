@@ -139,7 +139,7 @@ lookup_network_id(Address, Map) ->
 -spec get_network_id_prefix_map() ->
     {ok, [{network_id(), prefix()}]} | {error, reason()}.
 get_network_id_prefix_map() ->
-    case k_config:get_networks() of
+    case k_storage_networks:get_networks() of
         {ok, Networks} ->
             {ok, lists:flatmap(
                     fun({NetworkId, Network}) ->

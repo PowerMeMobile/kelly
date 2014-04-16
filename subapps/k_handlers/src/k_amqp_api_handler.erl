@@ -54,10 +54,10 @@ process_coverage_request(CoverageReqDTO) ->
     CustomerId = CoverageReqDTO#k1api_coverage_request_dto.customer_id,
     _UserId    = CoverageReqDTO#k1api_coverage_request_dto.user_id,
     _Version   = CoverageReqDTO#k1api_coverage_request_dto.version,
-    case k_aaa:get_customer_by_id(CustomerId) of
+    case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
             NetworkMapId = Customer#customer.network_map_id,
-            case k_network_maps_storage:get_network_map(NetworkMapId) of
+            case k_storage_network_maps:get_network_map(NetworkMapId) of
                 {ok, NetworkMap} ->
                     NetworkIds = NetworkMap#network_map.network_ids,
                     case get_networks(NetworkIds) of
@@ -89,7 +89,7 @@ get_networks(NetworkIds) ->
 get_networks([], Acc) ->
     {ok, Acc};
 get_networks([NetworkId | NetworkIds], Acc) ->
-    case k_config:get_network(NetworkId) of
+    case k_storage_networks:get_network(NetworkId) of
         {ok, Network} ->
             get_networks(NetworkIds, [{NetworkId, Network} | Acc]);
         Error ->
@@ -103,7 +103,7 @@ get_providers_add_points(Networks) ->
 get_providers_add_points([], Acc) ->
     {ok, Acc};
 get_providers_add_points([ProvId | ProvIds], Acc) ->
-    case k_config:get_provider(ProvId) of
+    case k_storage_providers:get_provider(ProvId) of
         {ok, #provider{sms_add_points = AddPoints}} ->
             get_providers_add_points(ProvIds, [{ProvId, AddPoints} | Acc]);
         Error ->

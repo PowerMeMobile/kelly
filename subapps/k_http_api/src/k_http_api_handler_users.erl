@@ -56,8 +56,8 @@ init() ->
     }}.
 
 create(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
-    case k_aaa:get_customer_by_uuid(CustomerUUID) of
+    CustomerUuid = ?gv(customer_uuid, Params),
+    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
             create_user(Customer, Params);
         {error, no_entry} ->
@@ -68,8 +68,8 @@ create(Params) ->
     end.
 
 read(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
-    case k_aaa:get_customer_by_uuid(CustomerUUID) of
+    CustomerUuid = ?gv(customer_uuid, Params),
+    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
             get_customer_user(Customer, ?gv(id, Params));
         {error, no_entry} ->
@@ -80,8 +80,8 @@ read(Params) ->
     end.
 
 update(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
-    case k_aaa:get_customer_by_uuid(CustomerUUID) of
+    CustomerUuid = ?gv(customer_uuid, Params),
+    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
             update_user(Customer, Params);
         {error, no_entry} ->
@@ -92,11 +92,11 @@ update(Params) ->
     end.
 
 delete(Params) ->
-    CustomerUUID = ?gv(customer_uuid, Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
     UserID = ?gv(id, Params),
-    case k_aaa:del_customer_user(CustomerUUID, UserID) of
+    case k_storage_customers:del_customer_user(CustomerUuid, UserID) of
         {error, no_entry} ->
-            ?log_warn("Customer [~p] not found", [CustomerUUID]),
+            ?log_warn("Customer [~p] not found", [CustomerUuid]),
             {exception, 'svc0003'};
         ok ->
             {http_code, 204};
@@ -120,7 +120,7 @@ prepare_users(Users) when is_list(Users) ->
 
 create_user(Customer, Params) ->
     UserID = ?gv(id, Params),
-    case k_aaa:get_customer_user(Customer, UserID) of
+    case k_storage_customers:get_customer_user(Customer, UserID) of
         {ok, #user{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
@@ -132,7 +132,7 @@ create_user(Customer, Params) ->
                                 crypto:hash(md5, Password), to_lower),
                 connection_types = ConnectionTypes
             },
-            ok = k_aaa:set_customer_user(User, Customer#customer.customer_uuid),
+            ok = k_storage_customers:set_customer_user(User, Customer#customer.customer_uuid),
             {ok, [UserPropList]} = prepare_users([User]),
             ?log_debug("UserPropList: ~p", [UserPropList]),
             {http_code, 201, UserPropList};
@@ -143,14 +143,14 @@ create_user(Customer, Params) ->
 
 update_user(Customer, Params) ->
     UserID = ?gv(id, Params),
-    case k_aaa:get_customer_user(Customer, UserID) of
+    case k_storage_customers:get_customer_user(Customer, UserID) of
         {ok, User} ->
             Updated = #user{
                 id = UserID,
                 password = resolve_pass(?gv(password, Params), User#user.password),
                 connection_types = ?gv(connection_types, Params, User#user.connection_types)
             },
-            ok = k_aaa:set_customer_user(Updated, Customer#customer.customer_uuid),
+            ok = k_storage_customers:set_customer_user(Updated, Customer#customer.customer_uuid),
             {ok, [UserPropList]} = prepare_users([Updated]),
             ?log_debug("UserPropList: ~p", [UserPropList]),
             {ok, UserPropList};
@@ -167,7 +167,7 @@ get_customer_user(Customer, undefined) ->
     ?log_debug("UserPropList: ~p", [UserPropList]),
     {ok, UserPropList};
 get_customer_user(Customer, UserID) ->
-    case k_aaa:get_customer_user(Customer, UserID) of
+    case k_storage_customers:get_customer_user(Customer, UserID) of
         {ok, User} ->
             {ok, [UserPropList]} = prepare_users([User]),
             ?log_debug("UserPropList: ~p", [UserPropList]),

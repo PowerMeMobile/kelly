@@ -63,7 +63,7 @@ create(Params) ->
 
 update(Params) ->
     Id = ?gv(id, Params),
-    case k_network_maps_storage:get_network_map(Id) of
+    case k_storage_network_maps:get_network_map(Id) of
         {ok, NtwMap = #network_map{}} ->
             update_network_map(NtwMap, Params);
         {error, no_entry} ->
@@ -72,7 +72,7 @@ update(Params) ->
 
 delete(Params) ->
     Id = ?gv(id, Params),
-    ok = k_network_maps_storage:del_network_map(Id),
+    ok = k_storage_network_maps:del_network_map(Id),
     {http_code, 204}.
 
 %% ===================================================================
@@ -80,7 +80,7 @@ delete(Params) ->
 %% ===================================================================
 
 read_all() ->
-    case k_network_maps_storage:get_network_maps() of
+    case k_storage_network_maps:get_network_maps() of
         {ok, List} ->
             {ok, PropLists} = prepare(List),
             ?log_debug("NtwMapPropLists: ~p", [PropLists]),
@@ -94,7 +94,7 @@ read_all() ->
     end.
 
 read_id(Id) ->
-    case k_network_maps_storage:get_network_map(Id) of
+    case k_storage_network_maps:get_network_map(Id) of
         {ok, NtwMap = #network_map{}} ->
             {ok, [PropList]} = prepare({Id, NtwMap}),
             ?log_debug("NtwMapPropList: ~p", [PropList]),
@@ -105,7 +105,7 @@ read_id(Id) ->
 
 is_exist(Params) ->
     Id = ?gv(id, Params),
-    case k_network_maps_storage:get_network_map(Id) of
+    case k_storage_network_maps:get_network_map(Id) of
         {ok, #network_map{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
@@ -120,7 +120,7 @@ update_network_map(NetworkMap, Params) ->
         name = Name,
         network_ids = NetworkIds
     },
-    ok = k_network_maps_storage:set_network_map(Id, Updated),
+    ok = k_storage_network_maps:set_network_map(Id, Updated),
     {ok, [PropList]} = prepare({Id, Updated}),
     ?log_debug("NtwMapPropList: ~p", [PropList]),
     {http_code, 200, PropList}.
@@ -133,7 +133,7 @@ create_network_map(Params) ->
         name = Name,
         network_ids = NetworkIds
     },
-    ok = k_network_maps_storage:set_network_map(Id, NetworkMap),
+    ok = k_storage_network_maps:set_network_map(Id, NetworkMap),
     {ok, [PropList]} = prepare({Id, NetworkMap}),
     ?log_debug("NtwMapPropList: ~p", [PropList]),
     {http_code, 201, PropList}.

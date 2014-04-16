@@ -46,24 +46,24 @@ init() ->
     }}.
 
 read(Params) ->
-    UUID = ?gv(id, Params),
-    case UUID of
+    Uuid = ?gv(id, Params),
+    case Uuid of
         undefined -> read_all();
-        _ -> read_id(UUID)
+        _ -> read_id(Uuid)
     end.
 
 create(Params) ->
     case ?gv(id, Params) of
         undefined ->
-            UUID = uuid:unparse(uuid:generate()),
-            create_gtw(lists:keyreplace(id, 1, Params, {id, UUID}));
+            Uuid = uuid:unparse(uuid:generate()),
+            create_gtw(lists:keyreplace(id, 1, Params, {id, Uuid}));
         _Value ->
             is_exist(Params)
     end.
 
 update(Params) ->
-    UUID = ?gv(id, Params),
-    case k_config:get_gateway(UUID) of
+    Uuid = ?gv(id, Params),
+    case k_storage_gateways:get_gateway(Uuid) of
         {ok, Gtw = #gateway{}} ->
             update_gtw(Gtw, Params);
         {error, no_entry} ->
@@ -71,9 +71,9 @@ update(Params) ->
     end.
 
 delete(Params) ->
-    UUID = ?gv(id, Params),
-    k_snmp:delete_gateway(UUID),
-    ok = k_config:del_gateway(UUID),
+    Uuid = ?gv(id, Params),
+    k_snmp:delete_gateway(Uuid),
+    ok = k_storage_gateways:del_gateway(Uuid),
     {http_code, 204}.
 
 %% ===================================================================
@@ -81,7 +81,7 @@ delete(Params) ->
 %% ===================================================================
 
 read_all() ->
-    case k_config:get_gateways() of
+    case k_storage_gateways:get_gateways() of
         {ok, GtwList} ->
             {ok, GtwPropLists} = prepare_gtws(GtwList),
             ?log_debug("GtwPropLists: ~p", [GtwPropLists]),
@@ -90,10 +90,10 @@ read_all() ->
             {exception, 'svc0003'}
     end.
 
-read_id(GtwUUID) ->
-    case k_config:get_gateway(GtwUUID) of
+read_id(GtwUuid) ->
+    case k_storage_gateways:get_gateway(GtwUuid) of
         {ok, Gtw = #gateway{}} ->
-            {ok, [GtwPropList]} = prepare_gtws([{GtwUUID, Gtw}]),
+            {ok, [GtwPropList]} = prepare_gtws([{GtwUuid, Gtw}]),
             ?log_debug("GtwPropList: ~p", [GtwPropList]),
             {ok, GtwPropList};
         {error, no_entry} ->
@@ -101,8 +101,8 @@ read_id(GtwUUID) ->
     end.
 
 is_exist(Params) ->
-    UUID = ?gv(id, Params),
-    case k_config:get_gateway(UUID) of
+    Uuid = ?gv(id, Params),
+    case k_storage_gateways:get_gateway(Uuid) of
         {ok, #gateway{}} ->
             ?log_warn("Gateway already exist. Abort.", []),
             {exception, 'svc0004'};
@@ -111,23 +111,23 @@ is_exist(Params) ->
     end.
 
 update_gtw(Gtw, Params) ->
-    UUID = ?gv(id, Params),
+    Uuid = ?gv(id, Params),
     #gateway{rps = RPS, name = Name, connections = Conns} = Gtw,
     NewRPS = ?gv(rps, Params, RPS),
     ?log_debug("NewRPS: ~p", [NewRPS]),
     NewName = ?gv(name, Params, Name),
     NewGtw = #gateway{rps = NewRPS, name = NewName, connections = Conns},
     ?log_debug("New gtw: ~p", [NewGtw]),
-    k_snmp:set_gateway(UUID, NewName, NewRPS),
-    ok = k_config:set_gateway(UUID, NewGtw),
-    case k_config:get_gateway(UUID) of
+    k_snmp:set_gateway(Uuid, NewName, NewRPS),
+    ok = k_storage_gateways:set_gateway(Uuid, NewGtw),
+    case k_storage_gateways:get_gateway(Uuid) of
         {ok, NewGtw = #gateway{}} ->
             ?log_debug("NewGtw: ~p", [NewGtw]),
-            {ok, [GtwPropList]} = prepare_gtws([{UUID, NewGtw}]),
+            {ok, [GtwPropList]} = prepare_gtws([{Uuid, NewGtw}]),
             ?log_debug("GtwPropList: ~p", [GtwPropList]),
             {http_code, 200, GtwPropList};
         {error, no_entry} ->
-            ?log_warn("Gateway not found after creation [~p]", [UUID]),
+            ?log_warn("Gateway not found after creation [~p]", [Uuid]),
             {http_code, 500};
         Any ->
             ?log_error("Unexpected error: ~p", [Any]),
@@ -137,17 +137,17 @@ update_gtw(Gtw, Params) ->
 create_gtw(Params) ->
     RPS = ?gv(rps, Params),
     Name = ?gv(name, Params),
-    UUID = ?gv(id, Params),
+    Uuid = ?gv(id, Params),
     Gateway = #gateway{rps = RPS, name = Name},
-    k_snmp:set_gateway(UUID, Name, RPS),
-    ok = k_config:set_gateway(UUID, Gateway),
-    case k_config:get_gateway(UUID) of
+    k_snmp:set_gateway(Uuid, Name, RPS),
+    ok = k_storage_gateways:set_gateway(Uuid, Gateway),
+    case k_storage_gateways:get_gateway(Uuid) of
         {ok, Gtw = #gateway{}} ->
-            {ok, [GtwPropList]} = prepare_gtws([{UUID, Gtw}]),
+            {ok, [GtwPropList]} = prepare_gtws([{Uuid, Gtw}]),
             ?log_debug("GtwPropList: ~p", [GtwPropList]),
             {http_code, 201, GtwPropList};
         {error, no_entry} ->
-            ?log_warn("Gateway not found after creation [~p]", [UUID]),
+            ?log_warn("Gateway not found after creation [~p]", [Uuid]),
             {http_code, 500};
         Any ->
             ?log_error("Unexpected error: ~p", [Any]),
@@ -156,17 +156,17 @@ create_gtw(Params) ->
 
 prepare_gtws(GtwList) when is_list(GtwList) ->
     prepare_gtws(GtwList, []);
-prepare_gtws(Gtw = {_UUID, #gateway{}}) ->
+prepare_gtws(Gtw = {_Uuid, #gateway{}}) ->
     prepare_gtws([Gtw], []).
 
 prepare_gtws([], Acc) ->
     {ok, Acc};
-prepare_gtws([{GtwUUID, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
+prepare_gtws([{GtwUuid, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
     %% convert connections records to proplists
     ConnFun = ?record_to_proplist(connection),
     ConnPropLists = [ConnFun(ConnRec) || ConnRec <- Conns],
     %% convert gateway record to proplist
     GatewayFun = ?record_to_proplist(gateway),
-    GtwPropList =  [{id, GtwUUID}] ++
+    GtwPropList =  [{id, GtwUuid}] ++
         GatewayFun(Gtw#gateway{connections = ConnPropLists}),
     prepare_gtws(Rest, [GtwPropList | Acc]).

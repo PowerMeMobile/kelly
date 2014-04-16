@@ -1,4 +1,4 @@
--module(k_network_maps_storage).
+-module(k_storage_network_maps).
 
 %% API
 -export([
