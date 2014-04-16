@@ -28,19 +28,19 @@ process(Req) ->
 %% Internal
 %% ===================================================================
 
-process_auth_req(_Req, AuthReq) ->
+process_auth_req(Req, AuthReq) ->
     case authenticate(AuthReq) of
         {allow, Customer = #customer{}} ->
             {ok, Response} = build_customer_response(AuthReq, Customer),
-            reply(Response);
+            reply(Req, Response);
         {deny, Reason} ->
             {ok, Response} = build_error_response(AuthReq, Reason),
             ?log_notice("Auth denied: ~p", [Reason]),
-            reply(Response);
+            reply(Req, Response);
         {error, Reason} ->
             {ok, Response} = build_error_response(AuthReq, Reason),
             ?log_error("Auth error: ~p", [Reason]),
-            reply(Response)
+            reply(Req, Response)
     end.
 
 -spec authenticate(#funnel_auth_request_dto{}) ->
@@ -202,8 +202,8 @@ build_error_response(#funnel_auth_request_dto{connection_id = ConnectionId}, Rea
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO}.
 
-reply(Response) ->
-    {ok, ReplyTo} = application:get_env(k_handlers, funnel_control_queue),
+reply(Req, Response) ->
+    {ok, ReplyTo} = k_amqp_req:reply_to(Req),
     case adto:encode(Response) of
         {ok, Binary} ->
             Reply = #worker_reply{
