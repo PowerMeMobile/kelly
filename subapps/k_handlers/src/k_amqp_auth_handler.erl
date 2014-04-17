@@ -1,8 +1,7 @@
 -module(k_amqp_auth_handler).
 
--export([process/1]).
-
--define(authentication_failed, {ok, []}).
+-export([start_link/0]).
+-export([process/2]).
 
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
@@ -13,19 +12,18 @@
 %% API
 %% ===================================================================
 
--spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
-process(Req) ->
-    {ok, ContentType} = k_amqp_req:content_type(Req),
-    process(ContentType, Req).
+-spec start_link() -> {ok, pid()}.
+start_link() ->
+    {ok, Queue} = application:get_env(k_handlers, kelly_auth_queue),
+    rmql_rpc_server:start_link(?MODULE, Queue, fun ?MODULE:process/2).
 
 %% ===================================================================
 %% Internal
 %% ===================================================================
 
-process(<<"BindRequest">>, Req) ->
-    {ok, Payload} = k_amqp_req:payload(Req),
-    {ok, ReplyTo} = k_amqp_req:reply_to(Req),
-    case adto:decode(#funnel_auth_request_dto{}, Payload) of
+-spec process(binary(), binary()) -> {binary(), binary()} | {ok, []}.
+process(<<"BindRequest">>, ReqBin) ->
+    case adto:decode(#funnel_auth_request_dto{}, ReqBin) of
         {ok, AuthReq} ->
             ?log_debug("Got auth request: ~p", [AuthReq]),
             CustomerId = AuthReq#funnel_auth_request_dto.customer_id,
@@ -38,24 +36,22 @@ process(<<"BindRequest">>, Req) ->
                     {ok, Networks, Providers} = build_networks_providers(Customer),
                     {ok, Response} = build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers),
                     ?log_debug("Auth allowed", []),
-                    reply(<<"BindResponse">>, Response, ReplyTo);
+                    encode_response(<<"BindResponse">>, Response);
                 {deny, Reason} ->
                     {ok, Response} = build_error_response(<<"BindResponse">>, ReqId, {deny, Reason}),
                     ?log_notice("Auth denied: ~p", [Reason]),
-                    reply(<<"BindResponse">>, Response, ReplyTo);
+                    encode_response(<<"BindResponse">>, Response);
                 {error, Reason} ->
                     {ok, Response} = build_error_response(<<"BindResponse">>, ReqId, {error, Reason}),
                     ?log_error("Auth error: ~p", [Reason]),
-                    reply(<<"BindResponse">>, Response, ReplyTo)
+                    encode_response(<<"BindResponse">>, Response)
             end;
         {error, Error} ->
             ?log_error("Auth request decode error: ~p", [Error]),
-            ?authentication_failed
+            {ok, []}
     end;
-process(<<"OneAPIAuthReq">>, Req) ->
-    {ok, Payload} = k_amqp_req:payload(Req),
-    {ok, ReplyTo} = k_amqp_req:reply_to(Req),
-    case adto:decode(#k1api_auth_request_dto{}, Payload) of
+process(<<"OneAPIAuthReq">>, ReqBin) ->
+    case adto:decode(#k1api_auth_request_dto{}, ReqBin) of
         {ok, AuthReq} ->
             ?log_debug("Got auth request: ~p", [AuthReq]),
             CustomerId = AuthReq#k1api_auth_request_dto.customer_id,
@@ -68,23 +64,23 @@ process(<<"OneAPIAuthReq">>, Req) ->
                     {ok, Networks, Providers} = build_networks_providers(Customer),
                     {ok, Response} = build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers),
                     ?log_debug("Auth allowed", []),
-                    reply(<<"OneAPIAuthResp">>, Response, ReplyTo);
+                    encode_response(<<"OneAPIAuthResp">>, Response);
                 {deny, Reason} ->
                     {ok, Response} = build_error_response(<<"OneAPIAuthResp">>, ReqId, {deny, Reason}),
                     ?log_notice("Auth denied: ~p", [Reason]),
-                    reply(<<"OneAPIAuthResp">>, Response, ReplyTo);
+                    encode_response(<<"OneAPIAuthResp">>, Response);
                 {error, Reason} ->
                     {ok, Response} = build_error_response(<<"OneAPIAuthResp">>, ReqId, {error, Reason}),
                     ?log_error("Auth error: ~p", [Reason]),
-                    reply(<<"OneAPIAuthResp">>, Response, ReplyTo)
+                    encode_response(<<"OneAPIAuthResp">>, Response)
             end;
         {error, Error} ->
             ?log_error("Auth request decode error: ~p", [Error]),
-            ?authentication_failed
+            {ok, []}
     end;
-process(_, Req) ->
-    ?log_error("Got unknown auth request: ~p", [Req]),
-    ?authentication_failed.
+process(ContentType, ReqBin) ->
+    ?log_error("Got unknown auth request: ~p ~p", [ContentType, ReqBin]),
+    {ok, []}.
 
 -spec authenticate(customer_uuid(), user_id(), binary(), atom()) ->
     {allow, #customer{}} |
@@ -286,16 +282,11 @@ build_error_response(<<"OneAPIAuthResp">>, ReqId, {error, Reason}) ->
     ?log_debug("Built auth response: ~p", [Response]),
     {ok, Response}.
 
-reply(ContentType, Response, ReplyTo) ->
+encode_response(ContentType, Response) ->
     case adto:encode(Response) of
-        {ok, Binary} ->
-            Reply = #worker_reply{
-                content_type = ContentType,
-                payload = Binary,
-                reply_to = ReplyTo
-            },
-            {ok, [Reply]};
-        Error ->
+        {ok, RespBin} ->
+            {ContentType, RespBin};
+        {error, Error} ->
             ?log_warn("Unexpected auth response encode error: ~p", [Error]),
-            Error
+            {ok, []}
     end.

@@ -3,8 +3,6 @@
 -export([start_link/0]).
 -export([process/2]).
 
--define(authentication_failed, {ok, []}).
-
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("k_common/include/logging.hrl").
@@ -25,7 +23,7 @@ start_link() ->
 %% Internal
 %% ===================================================================
 
--spec process(binary(), binary()) -> {ok, [#worker_reply{}]} | {error, any()}.
+-spec process(binary(), binary()) -> {binary(), binary()} | {ok, []}.
 process(<<"CoverageReq">>, ReqBin) ->
     case adto:decode(#k1api_coverage_request_dto{}, ReqBin) of
         {ok, CoverageReqDTO} ->

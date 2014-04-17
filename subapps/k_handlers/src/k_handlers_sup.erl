@@ -35,11 +35,12 @@ init([]) ->
     %% in each of them in 1 minute. Adjust the values to more appropriate ones if you need.
     {ok, {{one_for_one, 12, 1}, [
         ?WORKER(k_amqp_api_handler),
+        ?WORKER(k_amqp_auth_handler),
 
-        ?HANDLER(funnel_bind_request),
-        ?HANDLER(mm_auth_request),
-        ?HANDLER(oneapi_auth_request),
-        ?HANDLER(soap_auth_request),
+        %% ?HANDLER(funnel_bind_request),
+        %% ?HANDLER(mm_auth_request),
+        %% ?HANDLER(oneapi_auth_request),
+        %% ?HANDLER(soap_auth_request),
 
         ?HANDLER(mm_delivery_status_request),
         ?HANDLER(soap_delivery_status_request),
