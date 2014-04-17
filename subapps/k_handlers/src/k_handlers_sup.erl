@@ -37,11 +37,6 @@ init([]) ->
         ?WORKER(k_amqp_api_handler),
         ?WORKER(k_amqp_auth_handler),
 
-        %% ?HANDLER(funnel_bind_request),
-        %% ?HANDLER(mm_auth_request),
-        %% ?HANDLER(oneapi_auth_request),
-        %% ?HANDLER(soap_auth_request),
-
         ?HANDLER(mm_delivery_status_request),
         ?HANDLER(soap_delivery_status_request),
         ?HANDLER(oneapi_delivery_status_request),
