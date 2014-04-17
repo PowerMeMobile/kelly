@@ -14,11 +14,11 @@
 
 -spec process(#k1api_coverage_request_dto{}) ->
     {ok, #k1api_coverage_response_dto{}} | {error, term()}.
-process(CoverageReqDTO) ->
-    ReqId      = CoverageReqDTO#k1api_coverage_request_dto.id,
-    CustomerId = CoverageReqDTO#k1api_coverage_request_dto.customer_id,
-    _UserId    = CoverageReqDTO#k1api_coverage_request_dto.user_id,
-    _Version   = CoverageReqDTO#k1api_coverage_request_dto.version,
+process(ReqDTO) ->
+    ReqId      = ReqDTO#k1api_coverage_request_dto.id,
+    CustomerId = ReqDTO#k1api_coverage_request_dto.customer_id,
+    _UserId    = ReqDTO#k1api_coverage_request_dto.user_id,
+    _Version   = ReqDTO#k1api_coverage_request_dto.version,
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
             NetworkMapId = Customer#customer.network_map_id,

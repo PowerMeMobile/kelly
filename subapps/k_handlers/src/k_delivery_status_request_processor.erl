@@ -11,9 +11,9 @@
 
 -spec process(#k1api_sms_delivery_status_request_dto{}) ->
     {ok, #k1api_sms_delivery_status_response_dto{}} | {error, term()}.
-process(DeliveryStatusReqDTO) ->
-    ReqId    = DeliveryStatusReqDTO#k1api_sms_delivery_status_request_dto.id,
-    SmsReqId = DeliveryStatusReqDTO#k1api_sms_delivery_status_request_dto.sms_request_id,
+process(ReqDTO) ->
+    ReqId    = ReqDTO#k1api_sms_delivery_status_request_dto.id,
+    SmsReqId = ReqDTO#k1api_sms_delivery_status_request_dto.sms_request_id,
     case shifted_storage:find(mt_messages, {ri, SmsReqId}) of
         {ok, Msgs} ->
             {ok, #k1api_sms_delivery_status_response_dto{
