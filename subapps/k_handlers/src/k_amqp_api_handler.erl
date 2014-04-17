@@ -10,6 +10,11 @@
 -include_lib("k_storage/include/network.hrl").
 -include_lib("k_storage/include/network_map.hrl").
 
+-type req_ct()  :: binary().
+-type req_bin() :: binary().
+-type resp_ct() :: binary().
+-type resp_bin() :: binary().
+
 %% ===================================================================
 %% API
 %% ===================================================================
@@ -23,7 +28,7 @@ start_link() ->
 %% Internal
 %% ===================================================================
 
--spec process(binary(), binary()) -> {binary(), binary()} | {ok, []}.
+-spec process(req_ct(), req_bin()) -> {resp_ct(), resp_bin()} | {req_ct(), <<>>}.
 process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReq">> ->
     case adto:decode(#k1api_coverage_request_dto{}, ReqBin) of
         {ok, ReqDTO} ->
