@@ -73,6 +73,28 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"DeliveryStatusReq">> ->
             ?log_error("Delivery status request decode error: ~p", [Error]),
             {ReqCT, <<>>}
     end;
+process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReq">> ->
+    case adto:decode(#k1api_retrieve_sms_request_dto{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got retrieve sms request: ~p", [ReqDTO]),
+            case k_retrieve_sms_request_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built retrieve sms response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"RetrieveSmsResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Retrieve sms response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Retrieve sms request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Retrieve sms request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
 process(ReqCT, ReqBin) ->
     ?log_error("Got unknown api request: ~p ~p", [ReqCT, ReqBin]),
     {ReqCT, <<>>}.
