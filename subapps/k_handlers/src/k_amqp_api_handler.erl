@@ -24,25 +24,50 @@ start_link() ->
 %% ===================================================================
 
 -spec process(binary(), binary()) -> {binary(), binary()} | {ok, []}.
-process(<<"CoverageReq">>, ReqBin) ->
+process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReq">> ->
     case adto:decode(#k1api_coverage_request_dto{}, ReqBin) of
-        {ok, CoverageReqDTO} ->
-            ?log_debug("Got coverage request: ~p", [CoverageReqDTO]),
-            case k_coverage_request_processor:process(CoverageReqDTO) of
-                {ok, CoverageRespDTO} ->
-                    ?log_debug("Built coverage response: ~p", [CoverageRespDTO]),
-                    case adto:encode(CoverageRespDTO) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got coverage request: ~p", [ReqDTO]),
+            case k_coverage_request_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built coverage response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
                         {ok, RespBin} ->
                             {<<"CoverageResp">>, RespBin};
                         {error, Error} ->
                             ?log_error("Coverage response decode error: ~p", [Error]),
-                            {ok, []}
+                            {ReqCT, <<>>}
                     end;
                 {error, Error} ->
                     ?log_error("Coverage request process error: ~p", [Error]),
-                    {ok, []}
+                    {ReqCT, <<>>}
             end;
         {error, Error} ->
-            ?log_error("Coverage requeste decode error: ~p", [Error]),
-            {ok, []}
-    end.
+            ?log_error("Coverage request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+process(ReqCT, ReqBin) when ReqCT =:= <<"DeliveryStatusReq">> ->
+    case adto:decode(#k1api_sms_delivery_status_request_dto{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got delivery status request: ~p", [ReqDTO]),
+            case k_delivery_status_request_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built delivery status response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"DeliveryStatusResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Delivery status response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Delivery status request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Delivery status request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+process(ReqCT, ReqBin) ->
+    ?log_error("Got unknown api request: ~p ~p", [ReqCT, ReqBin]),
+    {ReqCT, <<>>}.

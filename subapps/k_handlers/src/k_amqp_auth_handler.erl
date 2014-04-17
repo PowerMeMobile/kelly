@@ -287,6 +287,6 @@ encode_response(ContentType, Response) ->
         {ok, RespBin} ->
             {ContentType, RespBin};
         {error, Error} ->
-            ?log_warn("Unexpected auth response encode error: ~p", [Error]),
+            ?log_error("Unexpected auth response encode error: ~p", [Error]),
             {ok, []}
     end.
