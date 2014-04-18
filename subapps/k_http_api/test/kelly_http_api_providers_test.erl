@@ -31,7 +31,7 @@ provider_path(Id) ->
 create_provider() ->
     Url = provider_path(),
     ProviderId = provider_id(),
-    Queries = [
+    Query = [
         {id, ProviderId},
         {name, <<"test_provider">>},
         {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>},
@@ -39,23 +39,23 @@ create_provider() ->
         {receipts_supported, true},
         {sms_add_points, 0.0}
     ],
-    Response = ?perform_post(Url, [], <<>>, Queries),
-    ?assert_status(201, Response),
-    ?assert_json_values(Queries, Response).
+    Resp = ?perform_post(Url, [], <<>>, Query),
+    ?assert_status(201, Resp),
+    ?assert_json_values(Query, Resp).
 
 update_provider() ->
     ProviderId = provider_id(),
     Url = provider_path(ProviderId),
-    Queries = [
+    Query = [
         {name, <<"new_provider_name">>},
         {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
         {bulk_gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},
         {receipts_supported, false},
         {sms_add_points, 1.0}
     ],
-    Response = ?perform_put(Url, [], <<>>, Queries),
-    ?assert_status(200, Response),
-    ?assert_json_values(Queries, Response).
+    Resp = ?perform_put(Url, [], <<>>, Query),
+    ?assert_status(200, Resp),
+    ?assert_json_values(Query, Resp).
 
 delete_provider() ->
     delete_provider(provider_id()).
@@ -69,5 +69,5 @@ delete_provider(ProviderId) ->
 %% ===================================================================
 
 delete_req(Url) ->
-    Response = ?perform_delete(Url),
-    ?assert_status(204, Response).
+    Resp = ?perform_delete(Url),
+    ?assert_status(204, Resp).

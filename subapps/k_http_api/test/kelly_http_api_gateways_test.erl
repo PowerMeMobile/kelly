@@ -36,34 +36,34 @@ create_gateway() ->
     GatewayId = gateway_id(),
     GatewayName = <<"gateway">>,
     GatewayRPS = 10000,
-    Queries = [
+    Query = [
         {id, GatewayId},
         {name, GatewayName},
         {rps, GatewayRPS}
     ],
-    Response = ?perform_post(Url, [], <<>>, Queries),
-    ?assert_status(201, Response),
-    ?assert_json_values(Queries, Response).
+    Resp = ?perform_post(Url, [], <<>>, Query),
+    ?assert_status(201, Resp),
+    ?assert_json_values(Query, Resp).
 
 update_gateway() ->
     GatewayId = gateway_id(),
     Url = gateway_path(GatewayId),
     %% does exist?
-    Response = ?perform_get(Url),
-    ?assert_status(200, Response),
-    ?assert_json_value(id, GatewayId, Response),
+    Resp = ?perform_get(Url),
+    ?assert_status(200, Resp),
+    ?assert_json_value(id, GatewayId, Resp),
 
     %% update name
     NewName = <<"new_name">>,
-    UpdateNameQueries = [{name, NewName}],
-    PutResp = ?perform_put(Url, [], <<>>, UpdateNameQueries),
+    UpdateNameQuery = [{name, NewName}],
+    PutResp = ?perform_put(Url, [], <<>>, UpdateNameQuery),
     ?assert_status(200, PutResp),
     ?assert_json_value(name, NewName, PutResp),
 
     %% update rps
     NewRPS = 12345,
-    UpdRPSQueries = [{rps, NewRPS}],
-    UpdateRPSResp = ?perform_put(Url, [], <<>>, UpdRPSQueries),
+    UpdRPSQuery = [{rps, NewRPS}],
+    UpdateRPSResp = ?perform_put(Url, [], <<>>, UpdRPSQuery),
     ?assert_status(200, UpdateRPSResp),
     ?assert_json_value(rps, NewRPS, UpdateRPSResp).
 
@@ -89,7 +89,7 @@ conn_path(GatewayId) ->
 create_connection() ->
     Url = conn_path(gateway_id()),
     ConnId = conn_id(),
-    Queries = [
+    Query = [
         {id, ConnId},
         {host, <<"127.0.0.1">>},
         {port, 8001},
@@ -101,14 +101,14 @@ create_connection() ->
         {addr_npi, 0},
         {addr_range, <<"">>}
     ],
-    Resp = ?perform_post(Url, [], <<>>, Queries),
+    Resp = ?perform_post(Url, [], <<>>, Query),
     ?assert_status(201, Resp),
-    ?assert_json_values(Queries, Resp).
+    ?assert_json_values(Query, Resp).
 
 update_connection() ->
     ConnId = conn_id(),
     Url = conn_path(gateway_id(), ConnId),
-    Queries = [
+    Query = [
         {host, <<"127.0.0.2">>},
         {port, 8002},
         {bind_type, <<"receiver">>},
@@ -119,9 +119,9 @@ update_connection() ->
         {addr_npi, 2},
         {addr_range, <<"">>}
     ],
-    Resp = ?perform_put(Url, [], <<>>, Queries),
+    Resp = ?perform_put(Url, [], <<>>, Query),
     ?assert_status(200, Resp),
-    ?assert_json_values(Queries, Resp).
+    ?assert_json_values(Query, Resp).
 
 delete_connection() ->
     delete_connection(conn_id()).
@@ -134,5 +134,5 @@ delete_connection(ConnId) ->
 %% ===================================================================
 
 delete_req(Url) ->
-    Response = ?perform_delete(Url),
-    ?assert_status(204, Response).
+    Resp = ?perform_delete(Url),
+    ?assert_status(204, Resp).

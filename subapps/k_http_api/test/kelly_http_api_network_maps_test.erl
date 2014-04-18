@@ -37,15 +37,15 @@ create_network_map() ->
             <<"80755f2a-c4b3-11e3-b7a4-00269e42f7a5a;977ffa0e-c4b3-11e3-a01f-00269e42f7a5">>
         }
     ],
-    Response = ?perform_post(Url, [], <<>>, Query),
-    ?assert_status(201, Response),
+    Resp = ?perform_post(Url, [], <<>>, Query),
+    ?assert_status(201, Resp),
 
     NetworkIds = {network_ids, [
         <<"80755f2a-c4b3-11e3-b7a4-00269e42f7a5a">>,
         <<"977ffa0e-c4b3-11e3-a01f-00269e42f7a5">>
     ]},
     Query2 = lists:keyreplace(network_ids, 1, Query, NetworkIds),
-    ?assert_json_values(Query2, Response).
+    ?assert_json_values(Query2, Resp).
 
 update_network_map() ->
     Uuid = network_map_uuid(),
@@ -56,12 +56,12 @@ update_network_map() ->
             <<"80755f2a-c4b3-11e3-b7a4-00269e42f7a5a">>
         }
     ],
-    Response = ?perform_put(Url, [], <<>>, Query),
-    ?assert_status(200, Response),
+    Resp = ?perform_put(Url, [], <<>>, Query),
+    ?assert_status(200, Resp),
 
     NetworkIds = {network_ids, [<<"80755f2a-c4b3-11e3-b7a4-00269e42f7a5a">>]},
     Query2 = lists:keyreplace(network_ids, 1, Query, NetworkIds),
-    ?assert_json_values(Query2, Response).
+    ?assert_json_values(Query2, Resp).
 
 delete_network_map() ->
     delete_network_map(network_map_uuid()).
@@ -75,5 +75,5 @@ delete_network_map(Id) ->
 %% ===================================================================
 
 delete_req(Url) ->
-    Response = ?perform_delete(Url),
-    ?assert_status(204, Response).
+    Resp = ?perform_delete(Url),
+    ?assert_status(204, Resp).

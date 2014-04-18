@@ -35,7 +35,7 @@ create_customer() ->
     Url = customer_path(),
     AllowedSources = {allowed_sources, <<"375296660001,1,1">>},
     DefaultSource = {default_source, <<"375296660001,1,1">>},
-    Queries = [
+    Query = [
         {customer_uuid, customer_uuid()},
         {customer_id, <<"0">>},
         {name, <<"name">>},
@@ -49,17 +49,17 @@ create_customer() ->
         {credit_limit, 10000.0},
         {state, 1}
     ],
-    Response = ?perform_post(Url, [], <<>>, [AllowedSources, DefaultSource | Queries]),
-    %?debugFmt("~p~n", [Response]),
-    ?assert_status(201, Response),
-    ?assert_json_values(Queries, Response).
+    Resp = ?perform_post(Url, [], <<>>, [AllowedSources, DefaultSource | Query]),
+    %?debugFmt("~p~n", [Resp]),
+    ?assert_status(201, Resp),
+    ?assert_json_values(Query, Resp).
 
 update_customer() ->
     Uuid = customer_uuid(),
     Url = customer_path(Uuid),
     AllowedSources = {allowed_sources, <<"375296660002,1,1">>},
     DefaultSource = {default_source, <<"375296660002,1,1">>},
-    Queries = [
+    Query = [
         {customer_id, <<"1">>},
         {name, <<"name-new">>},
         {receipts_allowed, false},
@@ -72,10 +72,10 @@ update_customer() ->
         {credit_limit, 20000.0},
         {state, 0}
     ],
-    Response = ?perform_put(Url, [], <<>>, [AllowedSources, DefaultSource | Queries]),
-    %?debugFmt("~p~n", [Response]),
-    ?assert_status(200, Response),
-    ?assert_json_values(Queries, Response).
+    Resp = ?perform_put(Url, [], <<>>, [AllowedSources, DefaultSource | Query]),
+    %?debugFmt("~p~n", [Resp]),
+    ?assert_status(200, Resp),
+    ?assert_json_values(Query, Resp).
 
 delete_customer() ->
     delete_customer(customer_uuid()).
@@ -98,20 +98,27 @@ user_path(CustomerId) ->
 create_user() ->
     Url = user_path(customer_uuid()),
     Pswd = {password, <<"password">>},
-    PermittedTypes = {bind_types, <<"transmitter;receiver;transceiver">>},
-    Queries = [{id, user_id()}],
-    Resp = ?perform_post(Url, [], <<>>, [PermittedTypes, Pswd | Queries]),
+    Query = [
+        {id, user_id()},
+        {connection_types, <<"transmitter;receiver">>}
+    ],
+    Resp = ?perform_post(Url, [], <<>>, [Pswd | Query]),
+    %?debugFmt("~p~n", [Resp]),
     ?assert_status(201, Resp),
-    ?assert_json_values(Queries, Resp).
+    Query2 = lists:keyreplace(connection_types, 1, Query, {connection_types, [<<"transmitter">>, <<"receiver">>]}),
+    ?assert_json_values(Query2, Resp).
 
 update_user() ->
     Url = user_path(customer_uuid(), user_id()),
     Pswd = {password, <<"new-password">>},
-    PermittedTypes = {bind_types, <<"transmitter">>},
-    Queries = [],
-    Resp = ?perform_put(Url, [], <<>>, [PermittedTypes, Pswd | Queries]),
+    Query = [
+        {connection_types, <<"transmitter">>}
+    ],
+    Resp = ?perform_put(Url, [], <<>>, [Pswd | Query]),
+    %?debugFmt("~p~n", [Resp]),
     ?assert_status(200, Resp),
-    ?assert_json_values(Queries, Resp).
+    Query2 = lists:keyreplace(connection_types, 1, Query, {connection_types, [<<"transmitter">>]}),
+    ?assert_json_values(Query2, Resp).
 
 delete_user() ->
     delete_user(user_id()).
@@ -124,5 +131,5 @@ delete_user(UserId) ->
 %% ===================================================================
 
 delete_req(Url) ->
-    Response = ?perform_delete(Url),
-    ?assert_status(204, Response).
+    Resp = ?perform_delete(Url),
+    ?assert_status(204, Resp).

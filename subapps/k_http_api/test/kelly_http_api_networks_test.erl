@@ -47,10 +47,10 @@ create_network() ->
         {sms_points, 1.0},
         {sms_mult_points, 1.0}
     ],
-    Response = ?perform_post(Url, [], <<>>, Query),
-    ?assert_status(201, Response),
+    Resp = ?perform_post(Url, [], <<>>, Query),
+    ?assert_status(201, Resp),
     Query2 = lists:keyreplace(prefixes, 1, Query, {prefixes, [<<"29">>, <<"33">>, <<"44">>]}),
-    ?assert_json_values(Query2, Response).
+    ?assert_json_values(Query2, Resp).
 
 update_network() ->
     NetworkId = network_id(),
@@ -87,5 +87,5 @@ delete_network(NetworkId) ->
 %% ===================================================================
 
 delete_req(Url) ->
-    Response = ?perform_delete(Url),
-    ?assert_status(204, Response).
+    Resp = ?perform_delete(Url),
+    ?assert_status(204, Resp).

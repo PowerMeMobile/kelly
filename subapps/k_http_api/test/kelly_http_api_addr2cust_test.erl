@@ -34,9 +34,9 @@ create_res() ->
         {customer, <<"feda5822-5271-11e1-bd27-001d0947ec73">>},
         {user, <<"undefined">>}
     ],
-    Response = ?perform_post(Url, [], <<>>, [Msisdn | Query]),
-    %?debugFmt("~p~n", [Response]),
-    ?assert_status(201, Response),
+    Resp = ?perform_post(Url, [], <<>>, [Msisdn | Query]),
+    %?debugFmt("~p~n", [Resp]),
+    ?assert_status(201, Resp),
 
     %% Msisdn2 = {msisdn, [
     %%     {<<"addr">>, <<"375296660001">>},
@@ -44,7 +44,7 @@ create_res() ->
     %%     {<<"npi">>, 1}
     %% ]},
     %% Query2 = lists:keyreplace(msisdn, 1, Query, Msisdn2),
-    ?assert_json_values(Query, Response).
+    ?assert_json_values(Query, Resp).
 
 delete_res() ->
     delete_res(res_id()).
@@ -58,5 +58,5 @@ delete_res(ResId) ->
 %% ===================================================================
 
 delete_req(Url) ->
-    Response = ?perform_delete(Url),
-    ?assert_status(204, Response).
+    Resp = ?perform_delete(Url),
+    ?assert_status(204, Resp).
