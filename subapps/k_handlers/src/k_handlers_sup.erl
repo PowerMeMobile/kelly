@@ -37,8 +37,6 @@ init([]) ->
         ?WORKER(k_amqp_api_handler),
         ?WORKER(k_amqp_auth_handler),
 
-        ?HANDLER(oneapi_subscribe_request),
-
         ?HANDLER(amqp_k1api_sms_request),
         ?HANDLER(amqp_sms_request),
         ?HANDLER(amqp_sms_response),
