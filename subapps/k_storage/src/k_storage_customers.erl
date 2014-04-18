@@ -59,6 +59,8 @@ set_customer(CustomerUuid, Customer) ->
             'max_validity'        , Customer#customer.max_validity,
             'users'               , UsersDocList,
             'pay_type'            , bsondoc:atom_to_binary(Customer#customer.pay_type),
+            'credit'              , Customer#customer.credit,
+            'credit_limit'        , Customer#customer.credit_limit,
             'state'               , Customer#customer.state
         }
     },
@@ -167,6 +169,8 @@ doc_to_record(Doc) ->
     DefValidity = bsondoc:at(default_validity, Doc),
     MaxValidity = bsondoc:at(max_validity, Doc),
     PayType = bsondoc:binary_to_atom(bsondoc:at(pay_type, Doc)),
+    Credit = bsondoc:at(credit, Doc),
+    CreditLimit = bsondoc:at(credit_limit, Doc),
     State = bsondoc:at(state, Doc),
 
     #customer{
@@ -185,6 +189,8 @@ doc_to_record(Doc) ->
         max_validity = MaxValidity,
         users = Users,
         pay_type = PayType,
+        credit = Credit,
+        credit_limit = CreditLimit,
         state = State
     }.
 

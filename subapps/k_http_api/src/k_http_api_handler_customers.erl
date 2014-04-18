@@ -36,6 +36,8 @@ init() ->
         #param{name = max_validity, mandatory = false, repeated = false, type = integer},
         #param{name = pay_type, mandatory = false, repeated = false, type =
             {custom, fun pay_type/1}},
+        #param{name = credit, mandatory = false, repeated = false, type = float},
+        #param{name = credit_limit, mandatory = false, repeated = false, type = float},
         #param{name = state, mandatory = false, repeated = false, type =
             {custom, fun customer_state/1}}
     ],
@@ -59,6 +61,8 @@ init() ->
         #param{name = max_validity, mandatory = true, repeated = false, type = integer},
         #param{name = pay_type, mandatory = true, repeated = false, type =
             {custom, fun pay_type/1}},
+        #param{name = credit, mandatory = true, repeated = false, type = float},
+        #param{name = credit_limit, mandatory = true, repeated = false, type = float},
         #param{name = state, mandatory = true, repeated = false, type =
             {custom, fun customer_state/1}}
     ],
@@ -159,6 +163,8 @@ update_customer(Customer, Params) ->
     NewDefaultValidity = ?gv(default_validity, Params, Customer#customer.default_validity),
     NewMaxValidity = ?gv(max_validity, Params, Customer#customer.max_validity),
     NewPayType = ?gv(pay_type, Params, Customer#customer.pay_type),
+    NewCredit = ?gv(credit, Params, Customer#customer.credit),
+    NewCreditLimit = ?gv(credit_limit, Params, Customer#customer.credit_limit),
     NewState = ?gv(state, Params, Customer#customer.state),
     NewCustomer = #customer{
         customer_uuid = CustomerUuid,
@@ -176,6 +182,8 @@ update_customer(Customer, Params) ->
         max_validity = NewMaxValidity,
         users = Customer#customer.users,
         pay_type = NewPayType,
+        credit = NewCredit,
+        credit_limit = NewCreditLimit,
         state = NewState
     },
 
@@ -205,6 +213,8 @@ create_customer(Params) ->
         max_validity = ?gv(max_validity, Params),
         users = [],
         pay_type = ?gv(pay_type, Params),
+        credit = ?gv(credit, Params),
+        credit_limit = ?gv(credit_limit, Params),
         state = ?gv(state, Params)
     },
     k_snmp:set_customer(CustomerUuid, Rps, Priority),

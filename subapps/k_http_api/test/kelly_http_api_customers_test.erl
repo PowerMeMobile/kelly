@@ -43,8 +43,10 @@ create_customer() ->
         {default_validity, <<"000003000000000R">>},
         {max_validity, 259200},
         {default_provider_id, <<"0a89542c-5270-11e1-bf27-001d0947ec73">>},
-        {pay_type, <<"postpaid">>},
         {network_map_id, <<"befa8b7c-c4a3-11e3-b670-00269e42f7a5">>},
+        {pay_type, <<"postpaid">>},
+        {credit, 10000.0},
+        {credit_limit, 10000.0},
         {state, 1}
     ],
     Response = ?perform_post(Url, [], <<>>, [AllowedSources, DefaultSource | Queries]),
@@ -64,8 +66,10 @@ update_customer() ->
         {default_validity, <<"000004000000000R">>},
         {max_validity, 259201},
         {default_provider_id, <<"0a89542c-5270-11e1-bf27-001d0947ec74">>},
-        {pay_type, <<"prepaid">>},
         {network_map_id, <<"cf1563b0-c4a3-11e3-8a61-00269e42f7a5">>},
+        {pay_type, <<"prepaid">>},
+        {credit, 20000.0},
+        {credit_limit, 20000.0},
         {state, 0}
     ],
     Response = ?perform_put(Url, [], <<>>, [AllowedSources, DefaultSource | Queries]),

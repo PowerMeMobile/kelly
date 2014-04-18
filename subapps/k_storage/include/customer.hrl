@@ -34,6 +34,8 @@
     max_validity        :: integer(),
     users = []          :: [user()] | [],
     pay_type            :: pay_type(),
+    credit              :: float(),
+    credit_limit        :: float(),
     state = 0           :: non_neg_integer() %% 0 blocked, 1 active
 }).
 -type customer()        :: #customer{}.
