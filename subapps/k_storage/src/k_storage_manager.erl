@@ -56,8 +56,9 @@ get_storage_mode() ->
 %% ===================================================================
 
 -spec ensure_static_storage_indexes(server_name()) -> ok.
-ensure_static_storage_indexes(_ServerName) ->
-    ok.
+ensure_static_storage_indexes(ServerName) ->
+    ok = mongodb_storage:ensure_index(ServerName, customers,
+        {key, {customer_id, 1}}).
 
 -spec ensure_dynamic_storage_indexes(server_name()) -> ok.
 ensure_dynamic_storage_indexes(ServerName) ->
