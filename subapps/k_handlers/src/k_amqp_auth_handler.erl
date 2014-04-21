@@ -87,7 +87,8 @@ process(ContentType, ReqBin) ->
     {error, term()} |
     {deny, no_such_customer} |
     {deny, password} |
-    {deny, connection_type}.
+    {deny, connection_type} |
+    {deny, blocked}.
 authenticate(CustomerId, UserId, Password, ConnType) ->
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
@@ -99,7 +100,12 @@ authenticate(CustomerId, UserId, Password, ConnType) ->
                         allow ->
                             case check_conn_type(ConnType, User#user.connection_types) of
                                 allow ->
-                                    {allow, Customer};
+                                    case check_blocked(Customer#customer.state) of
+                                        allow ->
+                                            {allow, Customer};
+                                        Deny ->
+                                            Deny
+                                    end;
                                 Deny ->
                                     Deny
                             end;
@@ -135,6 +141,11 @@ check_conn_type(ConnType, ConnTypes) ->
         false ->
             {deny, connection_type}
     end.
+
+check_blocked(active) ->
+    allow;
+check_blocked(blocked) ->
+    {deny, blocked}.
 
 build_networks_providers(Customer) ->
     NetworkMapId = Customer#customer.network_map_id,

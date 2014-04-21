@@ -49,7 +49,7 @@ create_customer() ->
         {pay_type, <<"postpaid">>},
         {credit, 10000.0},
         {credit_limit, 10000.0},
-        {state, 1}
+        {state, <<"active">>}
     ],
     Resp = ?perform_post(Url, [], <<>>, [AllowedSources, DefaultSource | Query]),
     %?debugFmt("~p~n", [Resp]),
@@ -74,7 +74,7 @@ update_customer() ->
         {pay_type, <<"prepaid">>},
         {credit, 20000.0},
         {credit_limit, 20000.0},
-        {state, 0}
+        {state, <<"blocked">>}
     ],
     Resp = ?perform_put(Url, [], <<>>, [AllowedSources, DefaultSource | Query]),
     %?debugFmt("~p~n", [Resp]),

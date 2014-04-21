@@ -53,7 +53,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/network_maps -d 'id=c51a94bf-618a-48a4-90b
 # NowSMS
 
 # postpaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=132109c8-ae67-11e2-bc5a-00269e42f7a5&customer_id=nowsms&name=nowsms&priority=1&rps=1000&allowed_sources=375296660001,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660001,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=132109c8-ae67-11e2-bc5a-00269e42f7a5&customer_id=nowsms&name=nowsms&priority=1&rps=1000&allowed_sources=375296660001,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660001,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 # NowSMS users
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/132109c8-ae67-11e2-bc5a-00269e42f7a5/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
@@ -63,7 +63,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/132109c8-ae67-11e2-bc5a-00269e42
 # Kannel
 
 # postpaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=feda5822-5271-11e1-bd27-001d0947ec73&customer_id=fun-postpaid&name=funnel-postpaid&priority=1&rps=1000&allowed_sources=375296660001,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660001,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=feda5822-5271-11e1-bd27-001d0947ec73&customer_id=fun-postpaid&name=funnel-postpaid&priority=1&rps=1000&allowed_sources=375296660001,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660001,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 # Kannel users
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
@@ -73,7 +73,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users -d 'id=user5&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
 
 # prepaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=6bd667ae-1793-11e2-95fe-00269e42f7a5&customer_id=fun-prepaid&name=funnel-prepaid&priority=1&rps=1000&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=6bd667ae-1793-11e2-95fe-00269e42f7a5&customer_id=fun-prepaid&name=funnel-prepaid&priority=1&rps=1000&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 # Kannel's users
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
@@ -86,12 +86,12 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42
 # OneAPI
 
 # postpaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=a3ddc34a-1793-11e2-9602-00269e42f7a5&customer_id=oneapi-postpaid&name=oneapi-postpaid&priority=1&rps=1000&allowed_sources=375296660003,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660003,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=a3ddc34a-1793-11e2-9602-00269e42f7a5&customer_id=oneapi-postpaid&name=oneapi-postpaid&priority=1&rps=1000&allowed_sources=375296660003,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660003,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users -d 'id=user&password=password&connection_types=oneapi'; echo; echo
 
 # prepaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=16f87550-1794-11e2-ade6-00269e42f7a5&customer_id=oneapi-prepaid&name=oneapi-prepaid&priority=1&rps=1000&allowed_sources=375296660004,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660004,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=16f87550-1794-11e2-ade6-00269e42f7a5&customer_id=oneapi-prepaid&name=oneapi-prepaid&priority=1&rps=1000&allowed_sources=375296660004,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660004,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users -d 'id=user&password=password&connection_types=oneapi'; echo; echo
 
@@ -100,7 +100,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/16f87550-1794-11e2-ade6-00269e42
 #
 
 # postpaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=soap-postpaid&name=soap-postpaid&priority=1&rps=1000&allowed_sources=999,6,0&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=999,6,0&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=soap-postpaid&name=soap-postpaid&priority=1&rps=1000&allowed_sources=999,6,0&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=999,6,0&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/c173786e-63ce-11e2-8740-001d0947ec73/users -d 'id=user&password=password&connection_types=soap'; echo; echo
 
@@ -109,7 +109,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/c173786e-63ce-11e2-8740-001d0947
 #
 
 # postpaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=1&name=mm-postpaid&priority=1&rps=1000&allowed_sources=375296660003,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660004,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=1&name=mm-postpaid&priority=1&rps=1000&allowed_sources=375296660003,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660004,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users -d 'id=user&password=password&connection_types=mm'; echo; echo
 
@@ -118,7 +118,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/8032706a-b4ec-11e3-b3d7-00269e42
 #
 
 # postpaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=493b3678-9dc8-11e2-8cce-00269e42f7a5&customer_id=&name=smppload-postpaid&priority=1&rps=1000&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=493b3678-9dc8-11e2-8cce-00269e42f7a5&customer_id=&name=smppload-postpaid&priority=1&rps=1000&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 # users
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
@@ -128,7 +128,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d 'id=user5&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
 
 # prepaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&customer_id=prepaid&name=smppload-prepaid&priority=1&rps=1000&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&customer_id=prepaid&name=smppload-prepaid&priority=1&rps=1000&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=active'; echo; echo
 
 # users
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo

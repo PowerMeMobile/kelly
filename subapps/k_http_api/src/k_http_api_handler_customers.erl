@@ -278,8 +278,8 @@ decode_addr(AddrBin) ->
 
 customer_state(StateBin) ->
     case StateBin of
-        <<"0">> -> 0;
-        <<"1">> -> 1
+        <<"active">> -> active;
+        <<"blocked">> -> blocked
     end.
 
 pay_type(TypeBin) ->

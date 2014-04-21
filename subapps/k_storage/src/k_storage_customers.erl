@@ -61,7 +61,7 @@ set_customer(CustomerUuid, Customer) ->
             'pay_type'            , bsondoc:atom_to_binary(Customer#customer.pay_type),
             'credit'              , Customer#customer.credit,
             'credit_limit'        , Customer#customer.credit_limit,
-            'state'               , Customer#customer.state
+            'state'               , bsondoc:atom_to_binary(Customer#customer.state)
         }
     },
     mongodb_storage:upsert(static_storage, customers, {'_id', CustomerUuid}, Modifier).
@@ -171,7 +171,7 @@ doc_to_record(Doc) ->
     PayType = bsondoc:binary_to_atom(bsondoc:at(pay_type, Doc)),
     Credit = bsondoc:at(credit, Doc),
     CreditLimit = bsondoc:at(credit_limit, Doc),
-    State = bsondoc:at(state, Doc),
+    State = bsondoc:binary_to_atom(bsondoc:at(state, Doc)),
 
     #customer{
         customer_uuid = CustomerUuid,

@@ -10,6 +10,7 @@
 -type user_id() :: binary(). %% http user_id | smpp system-id
 -type connection_type() :: transmitter | receiver | tranceiver | oneapi | soap | mm.
 -type pay_type() :: prepaid | postpaid.
+-type state() :: active | blocked.
 
 -record(user, {
     id          :: user_id(),
@@ -24,8 +25,8 @@
     name                :: binary(),
     priority            :: integer(),
     rps                 :: integer() | undefined,
-    allowed_sources     :: [addr()], %% originators
-    default_source      :: addr() | undefined, %% default originator
+    allowed_sources     :: [addr()],
+    default_source      :: addr() | undefined,
     network_map_id      :: network_map_id(),
     default_provider_id :: provider_id() | undefined,
     receipts_allowed    :: boolean(),
@@ -36,7 +37,7 @@
     pay_type            :: pay_type(),
     credit              :: float(),
     credit_limit        :: float(),
-    state = 0           :: non_neg_integer() %% 0 blocked, 1 active
+    state               :: state()
 }).
 -type customer()        :: #customer{}.
 
