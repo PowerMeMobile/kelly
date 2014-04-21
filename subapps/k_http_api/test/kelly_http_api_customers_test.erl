@@ -39,6 +39,8 @@ create_customer() ->
         {customer_uuid, customer_uuid()},
         {customer_id, <<"0">>},
         {name, <<"name">>},
+        {priority, 1},
+        {rps, 1000},
         {receipts_allowed, true},
         {default_validity, <<"000003000000000R">>},
         {max_validity, 259200},
@@ -62,6 +64,8 @@ update_customer() ->
     Query = [
         {customer_id, <<"1">>},
         {name, <<"name-new">>},
+        {priority, 2},
+        {rps, 500},
         {receipts_allowed, false},
         {default_validity, <<"000004000000000R">>},
         {max_validity, 259201},

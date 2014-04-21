@@ -23,8 +23,8 @@ init() ->
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
         #param{name = customer_id, mandatory = false, repeated = false, type = binary},
         #param{name = name, mandatory = false, repeated = false, type = binary},
-        #param{name = priority, mandatory = false, repeated = false, type = disabled},
-        #param{name = rps, mandatory = false, repeated = false, type = disabled},
+        #param{name = priority, mandatory = false, repeated = false, type = integer},
+        #param{name = rps, mandatory = false, repeated = false, type = integer},
         #param{name = allowed_sources, mandatory = false, repeated = true, type =
             {custom, fun decode_addr/1}},
         #param{name = default_source, mandatory = false, repeated = false, type =
@@ -48,8 +48,8 @@ init() ->
         #param{name = customer_uuid, mandatory = false, repeated = false, type = binary},
         #param{name = customer_id, mandatory = true, repeated = false, type = binary},
         #param{name = name, mandatory = true, repeated = false, type = binary},
-        #param{name = priority, mandatory = false, repeated = false, type = disabled},
-        #param{name = rps, mandatory = false, repeated = false, type = disabled},
+        #param{name = priority, mandatory = false, repeated = false, type = integer},
+        #param{name = rps, mandatory = false, repeated = false, type = integer},
         #param{name = allowed_sources, mandatory = false, repeated = true, type =
             {custom, fun decode_addr/1}},
         #param{name = default_source, mandatory = false, repeated = false, type =
@@ -155,6 +155,8 @@ update_customer(Customer, Params) ->
     CustomerUuid = Customer#customer.customer_uuid,
     NewCustomerId = ?gv(customer_id, Params, Customer#customer.customer_id),
     NewName = ?gv(name, Params, Customer#customer.name),
+    NewPriority = ?gv(priority, Params, Customer#customer.priority),
+    NewRps = ?gv(rps, Params, Customer#customer.rps),
     NewAllowedSources = ?gv(allowed_sources, Params, Customer#customer.allowed_sources),
     NewDefaultSource = ?gv(default_source, Params, Customer#customer.default_source),
     NewNetworkMapId = ?gv(network_map_id, Params, Customer#customer.network_map_id),
@@ -170,8 +172,8 @@ update_customer(Customer, Params) ->
         customer_uuid = CustomerUuid,
         customer_id = NewCustomerId,
         name = NewName,
-        priority = 1,
-        rps = 10000,
+        priority = NewPriority,
+        rps = NewRps,
         allowed_sources = NewAllowedSources,
         default_source = NewDefaultSource,
         network_map_id = NewNetworkMapId,
@@ -194,12 +196,11 @@ update_customer(Customer, Params) ->
 
 create_customer(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
-    Priority = 1,
-    Rps = 10000,
-    CustomerId = ?gv(customer_id, Params),
+    Priority = ?gv(priority, Params),
+    Rps = ?gv(rps, Params),
     Customer = #customer{
         customer_uuid = CustomerUuid,
-        customer_id = CustomerId,
+        customer_id = ?gv(customer_id, Params),
         name = ?gv(name, Params),
         priority = Priority,
         rps = Rps,
