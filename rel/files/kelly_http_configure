@@ -13,37 +13,37 @@
 #
 # Gateways
 #
-echo -n 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=SMPPSim&rps=10000' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=SMPPSim&rps=10000'; echo; echo
 
 # set gateway's settings
-#echo -n 'id=log_smpp_pdus&value=true' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings; echo
+#curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings -d 'id=log_smpp_pdus&value=true'
 
 
 #
 # Connections (SMPPSim)
 #
-echo -n "id=0&host=127.0.0.1&port=8001&bind_type=transmitter&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections -d "id=0&host=127.0.0.1&port=8001&bind_type=transmitter&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="; echo; echo
 
-echo -n "id=1&host=127.0.0.1&port=8001&bind_type=receiver&system_id=smppclient2&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range=" | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections -d "id=1&host=127.0.0.1&port=8001&bind_type=receiver&system_id=smppclient2&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="; echo; echo
 
 #
 # Providers
 #
-echo -n 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=Provider1&gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&bulk_gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&receipts_supported=true&sms_add_points=0.0' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/providers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/providers -d 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=Provider1&gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&bulk_gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&receipts_supported=true&sms_add_points=0.0'; echo; echo
 
 #
 # Networks
 #
-echo -n 'id=0456837f-e874-4b05-8e89-95ae20b897d2&name=Mobile%20Telesystems&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=292;295;296;297;298;33&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/networks; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/networks -d 'id=0456837f-e874-4b05-8e89-95ae20b897d2&name=Mobile%20Telesystems&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=292;295;296;297;298;33&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0'; echo; echo
 
-echo -n 'id=6dd0af45-7cdf-41aa-954b-cc368fe1968e&name=Velcom%20Mobile%20Digital%20Comm.&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=291;293;296;299;44&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/networks; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/networks -d 'id=6dd0af45-7cdf-41aa-954b-cc368fe1968e&name=Velcom%20Mobile%20Digital%20Comm.&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=291;293;296;299;44&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0'; echo; echo
 
-echo -n 'id=793e7b47-b248-4c86-a26f-eadfc44f84e2&name=Life&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=251;252;253;254;255;256;257;258;259&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/networks; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/networks -d 'id=793e7b47-b248-4c86-a26f-eadfc44f84e2&name=Life&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=251;252;253;254;255;256;257;258;259&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0'; echo; echo
 
 #
 # Network maps
 #
-echo -n 'id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=0456837f-e874-4b05-8e89-95ae20b897d2;6dd0af45-7cdf-41aa-954b-cc368fe1968e;793e7b47-b248-4c86-a26f-eadfc44f84e2' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/network_maps; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/network_maps -d 'id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=0456837f-e874-4b05-8e89-95ae20b897d2;6dd0af45-7cdf-41aa-954b-cc368fe1968e;793e7b47-b248-4c86-a26f-eadfc44f84e2'; echo; echo
 
 
 #
@@ -54,102 +54,100 @@ echo -n 'id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=045683
 # NowSMS
 
 # postpaid
-echo -n 'customer_uuid=132109c8-ae67-11e2-bc5a-00269e42f7a5&customer_id=nowsms&name=nowsms&allowed_sources=375296660001,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660001,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=132109c8-ae67-11e2-bc5a-00269e42f7a5&customer_id=nowsms&name=nowsms&allowed_sources=375296660001,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660001,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
 # NowSMS users
-echo -n 'id=user&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/132109c8-ae67-11e2-bc5a-00269e42f7a5/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/132109c8-ae67-11e2-bc5a-00269e42f7a5/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
 
 
 #
 # Kannel
 
 # postpaid customer
-echo -n 'customer_uuid=feda5822-5271-11e1-bd27-001d0947ec73&customer_id=fun-postpaid&name=funnel-postpaid&allowed_sources=375296660001,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660001,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=feda5822-5271-11e1-bd27-001d0947ec73&customer_id=fun-postpaid&name=funnel-postpaid&allowed_sources=375296660001,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660001,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
 # Kannel users
-echo -n 'id=user&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user2&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user3&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user4&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
-echo -n 'id=user5&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users -d 'id=user2&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users -d 'id=user3&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users -d 'id=user4&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/feda5822-5271-11e1-bd27-001d0947ec73/users -d 'id=user5&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
 
 # prepaid customer
-echo -n 'customer_uuid=6bd667ae-1793-11e2-95fe-00269e42f7a5&customer_id=fun-prepaid&name=funnel-prepaid&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=6bd667ae-1793-11e2-95fe-00269e42f7a5&customer_id=fun-prepaid&name=funnel-prepaid&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
 # Kannel's users
-echo -n 'id=user&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
-echo -n 'id=user2&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
-echo -n 'id=user3&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
-echo -n 'id=user4&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
-echo -n 'id=user5&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users -d 'id=user2&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users -d 'id=user3&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users -d 'id=user4&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/6bd667ae-1793-11e2-95fe-00269e42f7a5/users -d 'id=user5&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
 
 #
 # OneAPI
 
 # postpaid customer
-echo -n 'customer_uuid=a3ddc34a-1793-11e2-9602-00269e42f7a5&customer_id=oneapi-postpaid&name=oneapi-postpaid&allowed_sources=375296660003,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660003,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=a3ddc34a-1793-11e2-9602-00269e42f7a5&customer_id=oneapi-postpaid&name=oneapi-postpaid&allowed_sources=375296660003,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660003,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
-echo -n 'id=user&password=password&connection_types=oneapi' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users -d 'id=user&password=password&connection_types=oneapi'; echo; echo
 
 # prepaid customer
-echo -n 'customer_uuid=16f87550-1794-11e2-ade6-00269e42f7a5&customer_id=oneapi-prepaid&name=oneapi-prepaid&allowed_sources=375296660004,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660004,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=16f87550-1794-11e2-ade6-00269e42f7a5&customer_id=oneapi-prepaid&name=oneapi-prepaid&allowed_sources=375296660004,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660004,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
-echo -n 'id=user&password=password&connection_types=oneapi' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users -d 'id=user&password=password&connection_types=oneapi'; echo; echo
 
 #
 # Soap
 #
 
 # postpaid customer
-echo -n 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=soap-postpaid&name=soap-postpaid&allowed_sources=999,6,0&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=999,6,0&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=soap-postpaid&name=soap-postpaid&allowed_sources=999,6,0&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=999,6,0&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
-echo -n 'id=user&password=password&connection_types=soap' |
-lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/c173786e-63ce-11e2-8740-001d0947ec73/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/c173786e-63ce-11e2-8740-001d0947ec73/users -d 'id=user&password=password&connection_types=soap'; echo; echo
 
 #
 # MM-client
 #
 
 # postpaid customer
-echo -n 'customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=1&name=mm-postpaid&allowed_sources=375296660003,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660004,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=1&name=mm-postpaid&allowed_sources=375296660003,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660004,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
-echo -n 'id=user&password=password&connection_types=mm' |
-lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users -d 'id=user&password=password&connection_types=mm'; echo; echo
 
 #
 # smppload
 #
 
 # postpaid customer
-echo -n 'customer_uuid=493b3678-9dc8-11e2-8cce-00269e42f7a5&customer_id=&name=smppload-postpaid&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=493b3678-9dc8-11e2-8cce-00269e42f7a5&customer_id=&name=smppload-postpaid&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
 # users
-echo -n 'id=user&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users; echo
-echo -n 'id=user2&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users; echo
-echo -n 'id=user3&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users; echo
-echo -n 'id=user4&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users; echo
-echo -n 'id=user5&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d 'id=user2&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d 'id=user3&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d 'id=user4&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d 'id=user5&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
 
 # prepaid customer
-echo -n 'customer_uuid=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&customer_id=prepaid&name=smppload-prepaid&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&customer_id=prepaid&name=smppload-prepaid&allowed_sources=375296660002,1,1&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&default_validity=000003000000000R&max_validity=259200&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&default_source=375296660002,1,1&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&state=1'; echo; echo
 
 # users
-echo -n 'id=user&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
-echo -n 'id=user2&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
-echo -n 'id=user3&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
-echo -n 'id=user4&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
-echo -n 'id=user5&password=password&connection_types=transmitter;receiver;transceiver' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d 'id=user&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d 'id=user2&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d 'id=user3&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d 'id=user4&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d 'id=user5&password=password&connection_types=transmitter;receiver;transceiver'; echo; echo
 
 
 #
 # Addr2Cust
 #
 
-echo -n 'msisdn=375296660001,1,1&customer=feda5822-5271-11e1-bd27-001d0947ec73&user=user' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
-echo -n 'msisdn=375296660002,1,1&customer=6bd667ae-1793-11e2-95fe-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660001,1,1&customer=feda5822-5271-11e1-bd27-001d0947ec73&user=user'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660002,1,1&customer=6bd667ae-1793-11e2-95fe-00269e42f7a5&user=undefined'; echo; echo
 # oneapi postpaid customer
-echo -n 'msisdn=375296660003,1,1&customer=a3ddc34a-1793-11e2-9602-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660003,1,1&customer=a3ddc34a-1793-11e2-9602-00269e42f7a5&user=undefined'; echo; echo
 # oneapi prepaid customer
-echo -n 'msisdn=375296660004,1,1&customer=16f87550-1794-11e2-ade6-00269e42f7a5&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660004,1,1&customer=16f87550-1794-11e2-ade6-00269e42f7a5&user=undefined'; echo; echo
 # soap postpaid customer
-echo -n 'msisdn=375296660005,1,1&customer=c173786e-63ce-11e2-8740-001d0947ec73&user=undefined' | lwp-request -UsSe -m 'POST' 127.0.0.1:8080/addr2cust; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660005,1,1&customer=c173786e-63ce-11e2-8740-001d0947ec73&user=undefined'; echo; echo
