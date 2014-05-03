@@ -176,8 +176,8 @@ build_networks_and_providers(Customer) ->
                         NetworkDTO = #network_dto{
                             id = NetworkId,
                             country_code = CC,
-                            %% now number_len in db without CC length
-                            number_len = NL + erlang:size(CC),
+                            %% now number_len in db without CC length or zero
+                            number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
                             prefixes = Pref,
                             provider_id = ProviderId
                         },
