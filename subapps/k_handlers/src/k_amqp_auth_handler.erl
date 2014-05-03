@@ -200,8 +200,7 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers) ->
         customer_id = CustomerId,
         priority = Prio,
         rps = RPS,
-        allowed_sources = AllowedSources,
-        default_source = DefaultSource,
+        originators = Originators,
         default_provider_id = DP,
         receipts_allowed = RA,
         no_retry = NR,
@@ -215,8 +214,8 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers) ->
         uuid = CustomerUuid,
         priority = Prio,
         rps = RPS,
-        allowed_sources = AllowedSources,
-        default_source = DefaultSource,
+        allowed_sources = allowed_sources(Originators),
+        default_source = default_source(Originators),
         networks = Networks,
         providers = Providers,
         default_provider_id = DP,
@@ -237,8 +236,7 @@ build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers) 
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         priority = _Prio,
-        allowed_sources = AllowedSources,
-        default_source = DefaultSource,
+        originators = Originators,
         default_provider_id = DP,
         receipts_allowed = RA,
         no_retry = NR,
@@ -251,8 +249,8 @@ build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers) 
         uuid = CustomerUuid,
         id = CustomerId,
         pay_type = PayType,
-        allowed_sources = AllowedSources,
-        default_source = DefaultSource,
+        allowed_sources = allowed_sources(Originators),
+        default_source = default_source(Originators),
         networks = Networks,
         providers = Providers,
         default_provider_id = DP,
@@ -300,4 +298,16 @@ encode_response(ContentType, Response) ->
         {error, Error} ->
             ?log_error("Unexpected auth response encode error: ~p", [Error]),
             {ok, []}
+    end.
+
+allowed_sources(Originators) ->
+    [O#originator.address || O <- Originators, O#originator.state =:= approved].
+
+default_source(Originators) ->
+    case [O#originator.address || O <- Originators,
+            O#originator.state =:= approved, O#originator.is_default] of
+        [] ->
+            undefined;
+        [Address | _] ->
+            Address
     end.

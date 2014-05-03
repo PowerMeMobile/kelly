@@ -34,7 +34,17 @@ init() ->
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = false, repeated = false, type = binary},
         #param{name = connection_types, mandatory = false, repeated = true, type =
-             {custom, fun connection_type/1}}
+             {custom, fun connection_type/1}},
+        #param{name = mobile_phone, mandatory = false, repeated = false, type = binary},
+        #param{name = first_name, mandatory = false, repeated = false, type = binary},
+        #param{name = last_name, mandatory = false, repeated = false, type = binary},
+        #param{name = company, mandatory = false, repeated = false, type = binary},
+        #param{name = occupation, mandatory = false, repeated = false, type = binary},
+        #param{name = email, mandatory = false, repeated = false, type = binary},
+        #param{name = country, mandatory = false, repeated = false, type = binary},
+        #param{name = language, mandatory = false, repeated = false, type = binary},
+        #param{name = state, mandatory = false, repeated = false, type =
+            {custom, fun user_state/1}}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
@@ -45,7 +55,17 @@ init() ->
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = true, repeated = false, type = binary},
         #param{name = connection_types, mandatory = true, repeated = true, type =
-            {custom, fun connection_type/1}}
+            {custom, fun connection_type/1}},
+        #param{name = mobile_phone, mandatory = false, repeated = false, type = binary},
+        #param{name = first_name, mandatory = false, repeated = false, type = binary},
+        #param{name = last_name, mandatory = false, repeated = false, type = binary},
+        #param{name = company, mandatory = false, repeated = false, type = binary},
+        #param{name = occupation, mandatory = false, repeated = false, type = binary},
+        #param{name = email, mandatory = false, repeated = false, type = binary},
+        #param{name = country, mandatory = false, repeated = false, type = binary},
+        #param{name = language, mandatory = false, repeated = false, type = binary},
+        #param{name = state, mandatory = true, repeated = false, type =
+            {custom, fun user_state/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -93,8 +113,8 @@ update(Params) ->
 
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
-    UserID = ?gv(id, Params),
-    case k_storage_customers:del_customer_user(CustomerUuid, UserID) of
+    UserId = ?gv(id, Params),
+    case k_storage_customers:del_customer_user(CustomerUuid, UserId) of
         {error, no_entry} ->
             ?log_warn("Customer [~p] not found", [CustomerUuid]),
             {exception, 'svc0003'};
@@ -107,9 +127,9 @@ delete(Params) ->
 
 -spec prepare_users(#user{}) -> {ok, [{atom(), term()}]}.
 prepare_users(User = #user{}) ->
-    UserFun = ?record_to_proplist(user),
-    UserPropList = UserFun(User),
-    proplists:delete(password, UserPropList);
+    Fun = ?record_to_proplist(user),
+    Plist = Fun(User),
+    proplists:delete(password, Plist);
 prepare_users(Users) when is_list(Users) ->
     {ok, [prepare_users(User) || User <- Users]}.
 
@@ -117,43 +137,80 @@ prepare_users(Users) when is_list(Users) ->
 %% Local Functions
 %% ===================================================================
 
-
 create_user(Customer, Params) ->
-    UserID = ?gv(id, Params),
-    case k_storage_customers:get_customer_user(Customer, UserID) of
+    UserId = ?gv(id, Params),
+    case k_storage_customers:get_customer_user(Customer, UserId) of
         {ok, #user{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
             Password = ?gv(password, Params),
             ConnectionTypes = ?gv(connection_types, Params),
+            MobilePhone = ?gv(mobile_phone, Params),
+            FirstName = ?gv(first_name, Params),
+            LastName = ?gv(last_name, Params),
+            Company = ?gv(company, Params),
+            Occupation = ?gv(occupation, Params),
+            Email = ?gv(email, Params),
+            Country = ?gv(country, Params),
+            Language = ?gv(language, Params),
+            State = ?gv(state, Params),
             User = #user{
-                id = UserID,
+                id = UserId,
                 password = ac_hexdump:binary_to_hexdump(
                                 crypto:hash(md5, Password), to_lower),
-                connection_types = ConnectionTypes
+                connection_types = ConnectionTypes,
+                mobile_phone = MobilePhone,
+                first_name = FirstName,
+                last_name = LastName,
+                company = Company,
+                occupation = Occupation,
+                email = Email,
+                country = Country,
+                language = Language,
+                state = State
             },
             ok = k_storage_customers:set_customer_user(User, Customer#customer.customer_uuid),
-            {ok, [UserPropList]} = prepare_users([User]),
-            ?log_debug("UserPropList: ~p", [UserPropList]),
-            {http_code, 201, UserPropList};
+            {ok, [Plist]} = prepare_users([User]),
+            ?log_debug("User: ~p", [Plist]),
+            {http_code, 201, Plist};
         Error ->
             ?log_error("Unexpected error: ~p", [Error]),
             {http_code, 500}
     end.
 
 update_user(Customer, Params) ->
-    UserID = ?gv(id, Params),
-    case k_storage_customers:get_customer_user(Customer, UserID) of
+    UserId = ?gv(id, Params),
+    case k_storage_customers:get_customer_user(Customer, UserId) of
         {ok, User} ->
+            Password = resolve_pass(?gv(password, Params), User#user.password),
+            ConnectionTypes = ?gv(connection_types, Params, User#user.connection_types),
+            MobilePhone = ?gv(mobile_phone, Params, User#user.mobile_phone),
+            FirstName = ?gv(first_name, Params, User#user.first_name),
+            LastName = ?gv(last_name, Params, User#user.last_name),
+            Company = ?gv(company, Params, User#user.company),
+            Occupation = ?gv(occupation, Params, User#user.occupation),
+            Email = ?gv(email, Params, User#user.email),
+            Country = ?gv(country, Params, User#user.country),
+            Language = ?gv(language, Params, User#user.language),
+            State = ?gv(state, Params, User#user.state),
             Updated = #user{
-                id = UserID,
-                password = resolve_pass(?gv(password, Params), User#user.password),
-                connection_types = ?gv(connection_types, Params, User#user.connection_types)
+                id = UserId,
+                password = Password,
+                connection_types = ConnectionTypes,
+                mobile_phone = MobilePhone,
+                first_name = FirstName,
+                last_name = LastName,
+                company = Company,
+                occupation = Occupation,
+                email = Email,
+                country = Country,
+                language = Language,
+                state = State
             },
             ok = k_storage_customers:set_customer_user(Updated, Customer#customer.customer_uuid),
-            {ok, [UserPropList]} = prepare_users([Updated]),
-            ?log_debug("UserPropList: ~p", [UserPropList]),
-            {ok, UserPropList};
+            {ok, [Plist]} = prepare_users([Updated]),
+            ?log_debug("User: ~p", [Plist]),
+            {ok, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'};
         Error ->
@@ -163,15 +220,15 @@ update_user(Customer, Params) ->
 
 get_customer_user(Customer, undefined) ->
     #customer{users = Users} = Customer,
-    {ok, UserPropList} = prepare_users(Users),
-    ?log_debug("UserPropList: ~p", [UserPropList]),
-    {ok, UserPropList};
-get_customer_user(Customer, UserID) ->
-    case k_storage_customers:get_customer_user(Customer, UserID) of
+    {ok, Plist} = prepare_users(Users),
+    ?log_debug("User: ~p", [Plist]),
+    {ok, Plist};
+get_customer_user(Customer, UserId) ->
+    case k_storage_customers:get_customer_user(Customer, UserId) of
         {ok, User} ->
-            {ok, [UserPropList]} = prepare_users([User]),
-            ?log_debug("UserPropList: ~p", [UserPropList]),
-            {ok, UserPropList};
+            {ok, [Plist]} = prepare_users([User]),
+            ?log_debug("User: ~p", [Plist]),
+            {ok, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'};
         Error ->
@@ -192,4 +249,11 @@ connection_type(Type) ->
         <<"transmitter">> -> transmitter;
         <<"receiver">> -> receiver;
         <<"transceiver">> -> transceiver
+    end.
+
+user_state(State) ->
+    case State of
+        <<"active">> -> active;
+        <<"blocked">> -> blocked;
+        <<"deactivated">> -> deactivated
     end.

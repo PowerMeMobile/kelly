@@ -25,10 +25,6 @@ init() ->
         #param{name = name, mandatory = false, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = integer},
         #param{name = rps, mandatory = false, repeated = false, type = integer},
-        #param{name = allowed_sources, mandatory = false, repeated = true, type =
-            {custom, fun decode_addr/1}},
-        #param{name = default_source, mandatory = false, repeated = false, type =
-            {custom, fun decode_addr/1}},
         #param{name = network_map_id, mandatory = false, repeated = false, type = binary},
         #param{name = default_provider_id, mandatory = false, repeated = false, type = binary},
         #param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
@@ -38,6 +34,7 @@ init() ->
             {custom, fun pay_type/1}},
         #param{name = credit, mandatory = false, repeated = false, type = float},
         #param{name = credit_limit, mandatory = false, repeated = false, type = float},
+        #param{name = language, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = false, repeated = false, type =
             {custom, fun customer_state/1}}
     ],
@@ -50,10 +47,6 @@ init() ->
         #param{name = name, mandatory = true, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = integer},
         #param{name = rps, mandatory = false, repeated = false, type = integer},
-        #param{name = allowed_sources, mandatory = false, repeated = true, type =
-            {custom, fun decode_addr/1}},
-        #param{name = default_source, mandatory = false, repeated = false, type =
-            {custom, fun decode_addr/1}},
         #param{name = network_map_id, mandatory = true, repeated = false, type = binary},
         #param{name = default_provider_id, mandatory = true, repeated = false, type = binary},
         #param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
@@ -63,6 +56,7 @@ init() ->
             {custom, fun pay_type/1}},
         #param{name = credit, mandatory = true, repeated = false, type = float},
         #param{name = credit_limit, mandatory = true, repeated = false, type = float},
+        #param{name = language, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = true, repeated = false, type =
             {custom, fun customer_state/1}}
     ],
@@ -106,10 +100,10 @@ read(Params) ->
 
 read_all() ->
     case k_storage_customers:get_customers() of
-        {ok, CustList} ->
-            {ok, CustPropLists} = prepare(CustList),
-            ?log_debug("CustPropLists: ~p", [CustPropLists]),
-            {ok, {customers, CustPropLists}};
+        {ok, Customers} ->
+            {ok, Plists} = prepare(Customers),
+            ?log_debug("Customers: ~p", [Plists]),
+            {ok, {customers, Plists}};
         {error, Error} ->
             ?log_error("Unexpected error: ~p", [Error]),
             {http_code, 500}
@@ -118,9 +112,9 @@ read_all() ->
 read_customer_uuid(CustomerUuid) ->
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            {ok, [CustPropList]} = prepare({CustomerUuid, Customer}),
-            ?log_debug("CustPropList: ~p", [CustPropList]),
-            {ok, CustPropList};
+            {ok, [Plist]} = prepare({CustomerUuid, Customer}),
+            ?log_debug("Customer: ~p", [Plist]),
+            {ok, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'};
         Error ->
@@ -157,8 +151,6 @@ update_customer(Customer, Params) ->
     NewName = ?gv(name, Params, Customer#customer.name),
     NewPriority = ?gv(priority, Params, Customer#customer.priority),
     NewRps = ?gv(rps, Params, Customer#customer.rps),
-    NewAllowedSources = ?gv(allowed_sources, Params, Customer#customer.allowed_sources),
-    NewDefaultSource = ?gv(default_source, Params, Customer#customer.default_source),
     NewNetworkMapId = ?gv(network_map_id, Params, Customer#customer.network_map_id),
     NewDefaultProviderId = ?gv(default_provider_id, Params, Customer#customer.default_provider_id),
     NewReceiptsAllowed = ?gv(receipts_allowed, Params, Customer#customer.receipts_allowed),
@@ -167,6 +159,7 @@ update_customer(Customer, Params) ->
     NewPayType = ?gv(pay_type, Params, Customer#customer.pay_type),
     NewCredit = ?gv(credit, Params, Customer#customer.credit),
     NewCreditLimit = ?gv(credit_limit, Params, Customer#customer.credit_limit),
+    NewLanguage = ?gv(language, Params, Customer#customer.language),
     NewState = ?gv(state, Params, Customer#customer.state),
     NewCustomer = #customer{
         customer_uuid = CustomerUuid,
@@ -174,8 +167,7 @@ update_customer(Customer, Params) ->
         name = NewName,
         priority = NewPriority,
         rps = NewRps,
-        allowed_sources = NewAllowedSources,
-        default_source = NewDefaultSource,
+        originators = Customer#customer.originators,
         network_map_id = NewNetworkMapId,
         default_provider_id = NewDefaultProviderId,
         receipts_allowed = NewReceiptsAllowed,
@@ -186,6 +178,7 @@ update_customer(Customer, Params) ->
         pay_type = NewPayType,
         credit = NewCredit,
         credit_limit = NewCreditLimit,
+        language = NewLanguage,
         state = NewState
     },
 
@@ -204,8 +197,7 @@ create_customer(Params) ->
         name = ?gv(name, Params),
         priority = Priority,
         rps = Rps,
-        allowed_sources = ?gv(allowed_sources, Params),
-        default_source = ?gv(default_source, Params),
+        originators = [],
         network_map_id = ?gv(network_map_id, Params),
         default_provider_id = ?gv(default_provider_id, Params),
         receipts_allowed = ?gv(receipts_allowed, Params),
@@ -216,13 +208,14 @@ create_customer(Params) ->
         pay_type = ?gv(pay_type, Params),
         credit = ?gv(credit, Params),
         credit_limit = ?gv(credit_limit, Params),
+        language = ?gv(language, Params),
         state = ?gv(state, Params)
     },
     k_snmp:set_customer(CustomerUuid, Rps, Priority),
     ok = k_storage_customers:set_customer(CustomerUuid, Customer),
-    {ok, [CustPropList]} = prepare({CustomerUuid, Customer}),
-    ?log_debug("CustPropList: ~p", [CustPropList]),
-    {http_code, 201, CustPropList}.
+    {ok, [Plist]} = prepare({CustomerUuid, Customer}),
+    ?log_debug("Customer: ~p", [Plist]),
+    {http_code, 201, Plist}.
 
 prepare(ItemList) when is_list(ItemList) ->
     prepare(ItemList, []);
@@ -233,57 +226,34 @@ prepare([], Acc) ->
     {ok, Acc};
 prepare([{_CustomerUuid, Customer = #customer{}} | Rest], Acc) ->
      #customer{
-        allowed_sources = AllowedSources,
-        default_source = DefaultSource,
-        users = UsersList
+        originators = Originators,
+        users = Users
     } = Customer,
 
-    {ok, UsersPropList} = k_http_api_handler_users:prepare_users(UsersList),
-
-    %% allowed_sources constructor
-    AddrFun = ?record_to_proplist(addr),
-
-    AllowedSourcesPropList = [AddrFun(S) || S <- AllowedSources],
-
-    DefaultSourcePropList =
-        case DefaultSource of
-            undefined ->
-                undefined;
-            Record when is_tuple(Record) ->
-                AddrFun(Record)
-        end,
+    {ok, OriginatorPlists} = k_http_api_handler_originators:prepare_originators(Originators),
+    {ok, UserPlists} = k_http_api_handler_users:prepare_users(Users),
 
     %% preparation customer's record
-    CustomerFun = ?record_to_proplist(customer),
-    CustomerPropList = CustomerFun(
+    Fun = ?record_to_proplist(customer),
+    Plist = Fun(
         Customer#customer{
-            users = UsersPropList,
-            allowed_sources = AllowedSourcesPropList,
-            default_source = DefaultSourcePropList
+            users = UserPlists,
+            originators = OriginatorPlists
         }
     ),
 
-    ?log_debug("CustomerPropList: ~p", [CustomerPropList]),
-    prepare(Rest, [CustomerPropList | Acc]).
+    ?log_debug("Customer: ~p", [Plist]),
+    prepare(Rest, [Plist | Acc]).
 
-%% convert "addr,ton,npi" to #addr{addr, ton, npi}
-decode_addr(AddrBin) ->
-    AddrString = binary_to_list(AddrBin),
-    [Addr, Ton, Npi] = string:tokens(AddrString, ","),
-    #addr{
-        addr = list_to_binary(Addr),
-        ton = list_to_integer(Ton),
-        npi = list_to_integer(Npi)
-    }.
-
-customer_state(StateBin) ->
-    case StateBin of
+customer_state(State) ->
+    case State of
         <<"active">> -> active;
-        <<"blocked">> -> blocked
+        <<"blocked">> -> blocked;
+        <<"deactivated">> -> deactivated
     end.
 
-pay_type(TypeBin) ->
-    case TypeBin of
+pay_type(Type) ->
+    case Type of
         <<"prepaid">> -> prepaid;
         <<"postpaid">> -> postpaid
     end.

@@ -15,6 +15,9 @@ customer_test_() ->
             ?_test(create_user()),
             ?_test(update_user()),
             ?_test(delete_user()),
+            ?_test(create_originator()),
+            ?_test(update_originator()),
+            ?_test(delete_originator()),
             ?_test(delete_customer())
         ]}
     }}.
@@ -33,8 +36,6 @@ customer_path(Uuid) ->
 
 create_customer() ->
     Url = customer_path(),
-    AllowedSources = {allowed_sources, <<"375296660001,1,1">>},
-    DefaultSource = {default_source, <<"375296660001,1,1">>},
     Query = [
         {customer_uuid, customer_uuid()},
         {customer_id, <<"0">>},
@@ -49,9 +50,10 @@ create_customer() ->
         {pay_type, <<"postpaid">>},
         {credit, 10000.0},
         {credit_limit, 10000.0},
+        {language, <<"en">>},
         {state, <<"active">>}
     ],
-    Resp = ?perform_post(Url, [], <<>>, [AllowedSources, DefaultSource | Query]),
+    Resp = ?perform_post(Url, [], <<>>, Query),
     %?debugFmt("~p~n", [Resp]),
     ?assert_status(201, Resp),
     ?assert_json_values(Query, Resp).
@@ -59,8 +61,6 @@ create_customer() ->
 update_customer() ->
     Uuid = customer_uuid(),
     Url = customer_path(Uuid),
-    AllowedSources = {allowed_sources, <<"375296660002,1,1">>},
-    DefaultSource = {default_source, <<"375296660002,1,1">>},
     Query = [
         {customer_id, <<"1">>},
         {name, <<"name-new">>},
@@ -74,9 +74,10 @@ update_customer() ->
         {pay_type, <<"prepaid">>},
         {credit, 20000.0},
         {credit_limit, 20000.0},
+        {language, <<"fr">>},
         {state, <<"blocked">>}
     ],
-    Resp = ?perform_put(Url, [], <<>>, [AllowedSources, DefaultSource | Query]),
+    Resp = ?perform_put(Url, [], <<>>, Query),
     %?debugFmt("~p~n", [Resp]),
     ?assert_status(200, Resp),
     ?assert_json_values(Query, Resp).
@@ -101,12 +102,21 @@ user_path(CustomerId) ->
 
 create_user() ->
     Url = user_path(customer_uuid()),
-    Pswd = {password, <<"password">>},
+    Password = {password, <<"password">>},
     Query = [
         {id, user_id()},
-        {connection_types, <<"transmitter;receiver">>}
+        {connection_types, <<"transmitter;receiver">>},
+        {mobile_phone, <<"111223335566">>},
+        {first_name, <<"fn">>},
+        {last_name, <<"ln">>},
+        {company, <<"com">>},
+        {occupation, <<"o">>},
+        {email, <<"u@m.c">>},
+        {country, <<"cou">>},
+        {language, <<"en">>},
+        {state, <<"active">>}
     ],
-    Resp = ?perform_post(Url, [], <<>>, [Pswd | Query]),
+    Resp = ?perform_post(Url, [], <<>>, [Password | Query]),
     %?debugFmt("~p~n", [Resp]),
     ?assert_status(201, Resp),
     Query2 = lists:keyreplace(connection_types, 1, Query, {connection_types, [<<"transmitter">>, <<"receiver">>]}),
@@ -114,11 +124,20 @@ create_user() ->
 
 update_user() ->
     Url = user_path(customer_uuid(), user_id()),
-    Pswd = {password, <<"new-password">>},
+    Password = {password, <<"new-password">>},
     Query = [
-        {connection_types, <<"transmitter">>}
+        {connection_types, <<"transmitter">>},
+        {mobile_phone, <<"111223335577">>},
+        {first_name, <<"fn1">>},
+        {last_name, <<"ln2">>},
+        {company, <<"com2">>},
+        {occupation, <<"o2">>},
+        {email, <<"u@m.d">>},
+        {country, <<"cou2">>},
+        {language, <<"fr">>},
+        {state, <<"blocked">>}
     ],
-    Resp = ?perform_put(Url, [], <<>>, [Pswd | Query]),
+    Resp = ?perform_put(Url, [], <<>>, [Password | Query]),
     %?debugFmt("~p~n", [Resp]),
     ?assert_status(200, Resp),
     Query2 = lists:keyreplace(connection_types, 1, Query, {connection_types, [<<"transmitter">>]}),
@@ -128,6 +147,50 @@ delete_user() ->
     delete_user(user_id()).
 delete_user(UserId) ->
     Url = user_path(customer_uuid(), UserId),
+    delete_req(Url).
+
+%% %% ===================================================================
+%% %% Customer USER Tests
+%% %% ===================================================================
+
+originator_id() -> 1.
+
+originator_path(CustomerId, OriginatorId) ->
+    originator_path(CustomerId) ++ "/" ++ integer_to_list(OriginatorId).
+originator_path(CustomerId) ->
+    customer_path(CustomerId) ++ "/originators".
+
+create_originator() ->
+    Url = originator_path(customer_uuid()),
+    Address = {address, <<"375296660001,1,1">>},
+    Query = [
+        {id, originator_id()},
+        {description, <<"descr">>},
+        {state, <<"approved">>},
+        {is_default, true}
+    ],
+    Resp = ?perform_post(Url, [], <<>>, [Address | Query]),
+    %?debugFmt("~p~n", [Resp]),
+    ?assert_status(201, Resp),
+    ?assert_json_values(Query, Resp).
+
+update_originator() ->
+    Url = originator_path(customer_uuid(), originator_id()),
+    Address = {address, <<"375296660002,1,1">>},
+    Query = [
+        {description, <<"descr2">>},
+        {state, <<"rejected">>},
+        {is_default, false}
+    ],
+    Resp = ?perform_put(Url, [], <<>>, [Address | Query]),
+    %?debugFmt("~p~n", [Resp]),
+    ?assert_status(200, Resp),
+    ?assert_json_values(Query, Resp).
+
+delete_originator() ->
+    delete_originator(originator_id()).
+delete_originator(OriginatorId) ->
+    Url = originator_path(customer_uuid(), OriginatorId),
     delete_req(Url).
 
 %% ===================================================================

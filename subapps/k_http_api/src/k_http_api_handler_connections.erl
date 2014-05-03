@@ -101,9 +101,9 @@ delete(Params) ->
 read_all(GatewayID) ->
     case k_storage_gateways:get_gateway(GatewayID) of
         {ok, #gateway{connections = Connections}} ->
-            {ok, ConnsPropList} = prepare_connections(Connections),
-            ?log_debug("ConnsPropList: ~p", [ConnsPropList]),
-            {http_code, 200, {connections, ConnsPropList}};
+            {ok, Plists} = prepare_connections(Connections),
+            ?log_debug("Connections: ~p", [Plists]),
+            {http_code, 200, {connections, Plists}};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
@@ -116,9 +116,9 @@ read_id(GatewayID, ConnectionID) ->
                     ?log_debug("Connection [~p] not found", [ConnectionID]),
                     {exception, 'svc0003'};
                 Connection = #connection{} ->
-                    {ok, [ConnPropList]} = prepare_connections(Connection),
-                    ?log_debug("ConnPropList: ~p", [ConnPropList]),
-                    {http_code, 200, ConnPropList}
+                    {ok, [Plist]} = prepare_connections(Connection),
+                    ?log_debug("Connection: ~p", [Plist]),
+                    {http_code, 200, Plist}
             end;
         {error, no_entry} ->
             {exception, 'svc0003'}
@@ -155,9 +155,9 @@ update_connection(Gtw, Params) ->
             {ok, NewConnections} = replace_connection(NewConnection, Connections),
             ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
             k_snmp:set_connection(GtwID, NewConnection),
-            {ok, [ConnPropList]} = prepare_connections(NewConnection),
-            ?log_debug("ConnPropList: ~p", [ConnPropList]),
-            {http_code, 200, ConnPropList}
+            {ok, [Plist]} = prepare_connections(NewConnection),
+            ?log_debug("Connection: ~p", [Plist]),
+            {http_code, 200, Plist}
     end.
 
 replace_connection(NewConnection, Connections) ->
@@ -233,9 +233,9 @@ create_connection(Params) ->
     GtwUuid = ?gv(gateway_id, Params),
     k_storage_gateways:set_gateway_connection(GtwUuid, Connection),
     k_snmp:set_connection(GtwUuid, Connection),
-    {ok, [ConnPropList]} = prepare_connections(Connection),
-    ?log_debug("ConnPropList: ~p", [ConnPropList]),
-    {http_code, 201, ConnPropList}.
+    {ok, [Plist]} = prepare_connections(Connection),
+    ?log_debug("Connection: ~p", [Plist]),
+    {http_code, 201, Plist}.
 
 prepare_connections(ConnectionsList) when is_list(ConnectionsList) ->
     prepare_connections(ConnectionsList, []);
@@ -246,9 +246,9 @@ prepare_connections([], Acc) ->
     {ok, Acc};
 prepare_connections([Connection = #connection{} | Rest], Acc) ->
     %% convert connections records to proplists
-    ConnFun = ?record_to_proplist(connection),
-    ConnPropList = ConnFun(Connection),
-    prepare_connections(Rest, [ConnPropList | Acc]).
+    Fun = ?record_to_proplist(connection),
+    Plist = Fun(Connection),
+    prepare_connections(Rest, [Plist | Acc]).
 
 bind_type(TypeBin) ->
     case TypeBin of
