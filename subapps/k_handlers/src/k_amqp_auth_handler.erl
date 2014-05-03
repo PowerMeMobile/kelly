@@ -86,42 +86,52 @@ process(ContentType, ReqBin) ->
     {allow, #customer{}} |
     {error, term()} |
     {deny, no_such_customer} |
+    {deny, no_such_user} |
     {deny, password} |
     {deny, connection_type} |
-    {deny, blocked}.
+    {deny, blocked} |
+    {deny, deactivated}.
 authenticate(CustomerId, UserId, Password, ConnType) ->
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
             ?log_debug("Customer found: ~p", [Customer]),
-            case k_storage_customers:get_customer_user(Customer, UserId) of
-                {ok, User = #user{}} ->
-                    ?log_debug("User found: ~p", [User]),
-                    case check_password(Password, User#user.password) of
-                        allow ->
-                            case check_conn_type(ConnType, User#user.connection_types) of
+            case check_state(Customer#customer.state) of
+                allow ->
+                    case k_storage_customers:get_customer_user(Customer, UserId) of
+                        {ok, User = #user{}} ->
+                            ?log_debug("User found: ~p", [User]),
+                            case check_password(Password, User#user.password) of
                                 allow ->
-                                    case check_blocked(Customer#customer.state) of
+                                    case check_state(User#user.state) of
                                         allow ->
-                                            {allow, Customer};
+                                            case check_conn_type(ConnType, User#user.connection_types) of
+                                                allow ->
+                                                    {allow, Customer};
+                                                Deny ->
+                                                    Deny
+                                            end;
                                         Deny ->
                                             Deny
                                     end;
                                 Deny ->
                                     Deny
                             end;
-                        Deny ->
-                            Deny
+                        {error, no_entry} ->
+                            ?log_debug("Customer id: ~p User id: ~p not found", [CustomerId, UserId]),
+                            {deny, no_such_user};
+                        Error ->
+                            ?log_error("Unexpected error: ~p", [Error]),
+                            Error
                     end;
-                {error, no_entry} ->
-                    ?log_debug("User not found.", []),
-                    {deny, no_such_customer};
-                Error ->
-                    ?log_error("Unexpected error: ~p", [Error]),
-                    Error
+                Deny ->
+                    Deny
             end;
-        Any ->
-            ?log_debug("Customer not found.", []),
-            Any
+        {error, no_entry} ->
+            ?log_info("Customer id: ~p not found", [CustomerId]),
+            {deny, no_such_customer};
+        Error ->
+            ?log_error("Unexpected error: ~p.", [Error]),
+            Error
     end.
 
 check_password(PasswHash, PasswHash) ->
@@ -142,10 +152,12 @@ check_conn_type(ConnType, ConnTypes) ->
             {deny, connection_type}
     end.
 
-check_blocked(active) ->
+check_state(active) ->
     allow;
-check_blocked(blocked) ->
-    {deny, blocked}.
+check_state(blocked) ->
+    {deny, blocked};
+check_state(deactivated) ->
+    {deny, deactivate}.
 
 build_networks_and_providers(Customer) ->
     NetworkMapId = Customer#customer.network_map_id,
