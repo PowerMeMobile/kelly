@@ -33,7 +33,7 @@ process(<<"BindRequest">>, ReqBin) ->
             ReqId      = AuthReq#funnel_auth_request_dto.connection_id,
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}} ->
-                    {ok, Networks, Providers} = build_networks_providers(Customer),
+                    {ok, Networks, Providers} = build_networks_and_providers(Customer),
                     {ok, Response} = build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers),
                     ?log_debug("Auth allowed", []),
                     encode_response(<<"BindResponse">>, Response);
@@ -61,7 +61,7 @@ process(<<"OneAPIAuthReq">>, ReqBin) ->
             ReqId      = AuthReq#k1api_auth_request_dto.id,
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}} ->
-                    {ok, Networks, Providers} = build_networks_providers(Customer),
+                    {ok, Networks, Providers} = build_networks_and_providers(Customer),
                     {ok, Response} = build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers),
                     ?log_debug("Auth allowed", []),
                     encode_response(<<"OneAPIAuthResp">>, Response);
@@ -147,52 +147,65 @@ check_blocked(active) ->
 check_blocked(blocked) ->
     {deny, blocked}.
 
-build_networks_providers(Customer) ->
+build_networks_and_providers(Customer) ->
     NetworkMapId = Customer#customer.network_map_id,
 
-    {ok, #network_map{network_ids = NetworkIds}} =
-        k_storage_network_maps:get_network_map(NetworkMapId),
+    case k_storage_network_maps:get_network_map(NetworkMapId) of
+        {ok, #network_map{network_ids = NetworkIds}} ->
+            {NetworksDTO, ProvidersDTO} = lists:foldl(fun(NetworkId, {Ns, Ps})->
+                case k_storage_networks:get_network(NetworkId) of
+                    {ok, Network} ->
+                        #network{
+                            country_code = CC,
+                            number_len = NL,
+                            prefixes = Pref,
+                            provider_id = ProviderId
+                        } = Network,
+                        NetworkDTO = #network_dto{
+                            id = NetworkId,
+                            country_code = CC,
+                            %% now number_len in db without CC length
+                            number_len = NL + erlang:size(CC),
+                            prefixes = Pref,
+                            provider_id = ProviderId
+                        },
+                        case k_storage_providers:get_provider(ProviderId) of
+                            {ok, Provider} ->
+                                #provider{
+                                    gateway_id = GatewayId,
+                                    bulk_gateway_id = BulkGatewayId,
+                                    receipts_supported = RS
+                                } = Provider,
+                                ProviderDTO = #provider_dto{
+                                    id = ProviderId,
+                                    gateway_id = GatewayId,
+                                    bulk_gateway_id = BulkGatewayId,
+                                    receipts_supported = RS
+                                },
 
-    {NetworksDTO, ProvidersDTO} = lists:foldl(fun(NetworkId, {Ns, Ps})->
-        {ok, Network} = k_storage_networks:get_network(NetworkId),
-        #network{
-            country_code = CC,
-            number_len = NL,
-            prefixes = Pref,
-            provider_id = ProviderId
-        } = Network,
-        NetworkDTO = #network_dto{
-            id = NetworkId,
-            country_code = CC,
-            %% now number_len in db without CC length
-            number_len = NL + erlang:size(CC),
-            prefixes = Pref,
-            provider_id = ProviderId
-        },
-
-        {ok, Provider} = k_storage_providers:get_provider(ProviderId),
-        #provider{
-            gateway_id = GatewayId,
-            bulk_gateway_id = BulkGatewayId,
-            receipts_supported = RS
-        } = Provider,
-        ProviderDTO = #provider_dto{
-            id = ProviderId,
-            gateway_id = GatewayId,
-            bulk_gateway_id = BulkGatewayId,
-            receipts_supported = RS
-        },
-
-        %% check for Providers duplications.
-        case lists:member(ProviderDTO, Ps) of
-            true ->
-                {[NetworkDTO | Ns], Ps};
-            false ->
-                {[NetworkDTO | Ns], [ProviderDTO | Ps]}
-        end
-    end, {[], []}, NetworkIds),
-
-    {ok, NetworksDTO, ProvidersDTO}.
+                                %% check for Providers duplications.
+                                case lists:member(ProviderDTO, Ps) of
+                                    true ->
+                                        {[NetworkDTO | Ns], Ps};
+                                    false ->
+                                        {[NetworkDTO | Ns], [ProviderDTO | Ps]}
+                                end;
+                            {error, Error} ->
+                                ?log_error("Get provider id: ~p from network id: ~p from map id: ~p failed with: ~p",
+                                    [ProviderId, NetworkId, NetworkMapId, Error]),
+                                {Ns, Ps}
+                        end;
+                    {error, Error} ->
+                        ?log_error("Get network id: ~p from map id: ~p failed with: ~p",
+                            [NetworkId, NetworkMapId, Error]),
+                        {Ns, Ps}
+                end
+            end, {[], []}, NetworkIds),
+            {ok, NetworksDTO, ProvidersDTO};
+        {error, Error} ->
+            ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
+            {ok, [], []}
+    end.
 
 build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers) ->
     #customer{
