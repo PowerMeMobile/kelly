@@ -208,7 +208,7 @@ doc_to_record(Doc) ->
     Priority = bsondoc:at(priority, Doc),
     RPS = bsondoc:at(rps, Doc),
     NetworkMapId = bsondoc:at(network_map_id, Doc),
-    DefProviderId = bsondoc:at(default_provider_id, Doc),
+    DefaultProviderId = bsondoc:at(default_provider_id, Doc),
     ReceiptsAllowed = bsondoc:at(receipts_allowed, Doc),
     NoRetry = bsondoc:at(no_retry, Doc),
     DefValidity = bsondoc:at(default_validity, Doc),
@@ -227,7 +227,7 @@ doc_to_record(Doc) ->
         rps = RPS,
         originators = Originators,
         network_map_id = NetworkMapId,
-        default_provider_id = DefProviderId,
+        default_provider_id = check_undefined(DefaultProviderId),
         receipts_allowed = ReceiptsAllowed,
         no_retry = NoRetry,
         default_validity = DefValidity,
@@ -251,4 +251,12 @@ find(Key, Pos, List) ->
             {error, no_entry};
         Item ->
             {ok, Item}
+    end.
+
+check_undefined(Value) ->
+    case Value of
+        <<>> ->
+            undefined;
+        _ ->
+            Value
     end.
