@@ -16,8 +16,8 @@ init({tcp, http}, Req, _Opts) ->
 handle(Req, State) ->
     {ok, Req2} = cowboy_req:reply(404, [],
         <<"Resource not found">>, Req),
-    ?log_debug("Error in request", []),
-    ?log_debug("~p", [Req]),
+    ?log_error("Error in request", []),
+    ?log_error("~p", [Req]),
     {ok, Req2, State}.
 
 -spec terminate(any(), cowboy_req:req(), term()) -> ok.
