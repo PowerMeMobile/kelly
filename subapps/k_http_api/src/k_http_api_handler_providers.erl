@@ -98,21 +98,21 @@ is_exist(Params) ->
 
 read_all() ->
     case k_storage_providers:get_providers() of
-        {ok, PrvList} ->
-            {ok, PrvPropLists} = prepare(PrvList),
-            ?log_debug("PrvPropLists: ~p", [PrvPropLists]),
-            {http_code, 200, {providers, PrvPropLists}};
+        {ok, Entries} ->
+            {ok, Plists} = prepare(Entries),
+            ?log_debug("Providers: ~p", [Plists]),
+            {http_code, 200, {providers, Plists}};
         {error, Error} ->
             ?log_error("Unexpected error: ~p", [Error]),
             {http_code, 500}
     end.
 
-read_id(PrvUuid) ->
-    case k_storage_providers:get_provider(PrvUuid) of
-        {ok, Prv = #provider{}} ->
-            {ok, [PrvPropList]} = prepare({PrvUuid, Prv}),
-            ?log_debug("PrvPropList: ~p", [PrvPropList]),
-            {http_code, 200, PrvPropList};
+read_id(Uuid) ->
+    case k_storage_providers:get_provider(Uuid) of
+        {ok, Entry = #provider{}} ->
+            {ok, [Plist]} = prepare({Uuid, Entry}),
+            ?log_debug("Provider: ~p", [Plist]),
+            {http_code, 200, Plist};
         {error, no_entry} ->
             {exception, 'svc0003', []};
         {error, Error} ->
@@ -135,9 +135,9 @@ update_provider(Provider, Params) ->
         sms_add_points = SmsAddPoints
     },
     ok = k_storage_providers:set_provider(ID, Updated),
-    {ok, [PrvPropList]} = prepare({ID, Updated}),
-    ?log_debug("PrvPropList: ~p", [PrvPropList]),
-    {http_code, 200, PrvPropList}.
+    {ok, [Plist]} = prepare({ID, Updated}),
+    ?log_debug("Provider: ~p", [Plist]),
+    {http_code, 200, Plist}.
 
 create_provider(Params) ->
     Uuid = ?gv(id, Params),
@@ -154,18 +154,18 @@ create_provider(Params) ->
         sms_add_points = SmsAddPoints
     },
     ok = k_storage_providers:set_provider(Uuid, Provider),
-    {ok, [PrvPropList]} = prepare({Uuid, Provider}),
-    ?log_debug("PrvPropList: ~p", [PrvPropList]),
-    {http_code, 201, PrvPropList}.
+    {ok, [Plist]} = prepare({Uuid, Provider}),
+    ?log_debug("Provider: ~p", [Plist]),
+    {http_code, 201, Plist}.
 
-prepare(PrvList) when is_list(PrvList) ->
-    prepare(PrvList, []);
-prepare(Prv = {_Uuid, #provider{}}) ->
-    prepare([Prv]).
+prepare(List) when is_list(List) ->
+    prepare(List, []);
+prepare(Entry = {_Uuid, #provider{}}) ->
+    prepare([Entry]).
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{PrvUuid, Prv = #provider{}} | Rest], Acc) ->
+prepare([{Uuid, Prv = #provider{}} | Rest], Acc) ->
     PrvFun = ?record_to_proplist(provider),
     PropList = PrvFun(Prv),
     Name = ?gv(name, PropList),
@@ -174,7 +174,7 @@ prepare([{PrvUuid, Prv = #provider{}} | Rest], Acc) ->
     ReceiptsSupported = ?gv(receipts_supported, PropList),
     SmsAddPoints = ?gv(sms_add_points, PropList),
     Result = [
-        {id, PrvUuid},
+        {id, Uuid},
         {name, Name},
         {gateway_id, GatewayId},
         {bulk_gateway_id, BulkGatewayId},

@@ -45,7 +45,7 @@ update_dispatch_rules() ->
     catch
         Class:Error ->
             ?log_warn("Failed to update dispatch rules (~p:~p)",
-                [Class,Error])
+                [Class, Error])
     end.
 
 %% on load try to update dispatch rules automatically

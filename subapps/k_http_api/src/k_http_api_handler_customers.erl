@@ -183,9 +183,9 @@ update_customer(Customer, Params) ->
     },
 
     ok = k_storage_customers:set_customer(CustomerUuid, NewCustomer),
-    {ok, [CustPropList]} = prepare({CustomerUuid, NewCustomer}),
-    ?log_debug("CustPropList: ~p", [CustPropList]),
-    {http_code, 200, CustPropList}.
+    {ok, [Plist]} = prepare({CustomerUuid, NewCustomer}),
+    ?log_debug("Customer: ~p", [Plist]),
+    {http_code, 200, Plist}.
 
 create_customer(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),

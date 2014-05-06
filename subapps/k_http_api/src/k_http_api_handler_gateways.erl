@@ -48,8 +48,10 @@ init() ->
 read(Params) ->
     Uuid = ?gv(id, Params),
     case Uuid of
-        undefined -> read_all();
-        _ -> read_id(Uuid)
+        undefined ->
+            read_all();
+        _ ->
+            read_id(Uuid)
     end.
 
 create(Params) ->
@@ -82,20 +84,20 @@ delete(Params) ->
 
 read_all() ->
     case k_storage_gateways:get_gateways() of
-        {ok, GtwList} ->
-            {ok, GtwPropLists} = prepare_gtws(GtwList),
-            ?log_debug("GtwPropLists: ~p", [GtwPropLists]),
-            {ok, {gateways, GtwPropLists}};
+        {ok, Entries} ->
+            {ok, Plists} = prepare_gtws(Entries),
+            ?log_debug("Gateways: ~p", [Plists]),
+            {ok, {gateways, Plists}};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
 
-read_id(GtwUuid) ->
-    case k_storage_gateways:get_gateway(GtwUuid) of
-        {ok, Gtw = #gateway{}} ->
-            {ok, [GtwPropList]} = prepare_gtws([{GtwUuid, Gtw}]),
-            ?log_debug("GtwPropList: ~p", [GtwPropList]),
-            {ok, GtwPropList};
+read_id(Uuid) ->
+    case k_storage_gateways:get_gateway(Uuid) of
+        {ok, Entry = #gateway{}} ->
+            {ok, [Plist]} = prepare_gtws([{Uuid, Entry}]),
+            ?log_debug("Gateway: ~p", [Plist]),
+            {ok, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
@@ -114,18 +116,15 @@ update_gtw(Gtw, Params) ->
     Uuid = ?gv(id, Params),
     #gateway{rps = RPS, name = Name, connections = Conns} = Gtw,
     NewRPS = ?gv(rps, Params, RPS),
-    ?log_debug("NewRPS: ~p", [NewRPS]),
     NewName = ?gv(name, Params, Name),
     NewGtw = #gateway{rps = NewRPS, name = NewName, connections = Conns},
-    ?log_debug("New gtw: ~p", [NewGtw]),
     k_snmp:set_gateway(Uuid, NewName, NewRPS),
     ok = k_storage_gateways:set_gateway(Uuid, NewGtw),
     case k_storage_gateways:get_gateway(Uuid) of
         {ok, NewGtw = #gateway{}} ->
-            ?log_debug("NewGtw: ~p", [NewGtw]),
-            {ok, [GtwPropList]} = prepare_gtws([{Uuid, NewGtw}]),
-            ?log_debug("GtwPropList: ~p", [GtwPropList]),
-            {http_code, 200, GtwPropList};
+            {ok, [Plist]} = prepare_gtws([{Uuid, NewGtw}]),
+            ?log_debug("Gateway: ~p", [Plist]),
+            {http_code, 200, Plist};
         {error, no_entry} ->
             ?log_warn("Gateway not found after creation [~p]", [Uuid]),
             {http_code, 500};
@@ -143,9 +142,9 @@ create_gtw(Params) ->
     ok = k_storage_gateways:set_gateway(Uuid, Gateway),
     case k_storage_gateways:get_gateway(Uuid) of
         {ok, Gtw = #gateway{}} ->
-            {ok, [GtwPropList]} = prepare_gtws([{Uuid, Gtw}]),
-            ?log_debug("GtwPropList: ~p", [GtwPropList]),
-            {http_code, 201, GtwPropList};
+            {ok, [Plist]} = prepare_gtws([{Uuid, Gtw}]),
+            ?log_debug("Gateway: ~p", [Plist]),
+            {http_code, 201, Plist};
         {error, no_entry} ->
             ?log_warn("Gateway not found after creation [~p]", [Uuid]),
             {http_code, 500};
@@ -154,19 +153,19 @@ create_gtw(Params) ->
             {http_code, 500}
     end.
 
-prepare_gtws(GtwList) when is_list(GtwList) ->
-    prepare_gtws(GtwList, []);
-prepare_gtws(Gtw = {_Uuid, #gateway{}}) ->
-    prepare_gtws([Gtw], []).
+prepare_gtws(List) when is_list(List) ->
+    prepare_gtws(List, []);
+prepare_gtws(Entry = {_Uuid, #gateway{}}) ->
+    prepare_gtws([Entry], []).
 
 prepare_gtws([], Acc) ->
     {ok, Acc};
-prepare_gtws([{GtwUuid, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
+prepare_gtws([{Uuid, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
     %% convert connections records to proplists
     ConnFun = ?record_to_proplist(connection),
-    ConnPropLists = [ConnFun(ConnRec) || ConnRec <- Conns],
+    ConnPlists = [ConnFun(ConnRec) || ConnRec <- Conns],
     %% convert gateway record to proplist
     GatewayFun = ?record_to_proplist(gateway),
-    GtwPropList =  [{id, GtwUuid}] ++
-        GatewayFun(Gtw#gateway{connections = ConnPropLists}),
-    prepare_gtws(Rest, [GtwPropList | Acc]).
+    Plist =  [{id, Uuid}] ++
+        GatewayFun(Gtw#gateway{connections = ConnPlists}),
+    prepare_gtws(Rest, [Plist | Acc]).

@@ -65,11 +65,12 @@ init() ->
     }}.
 
 read(Params) ->
-    NetworkUuid = ?gv(id, Params),
-    case NetworkUuid of
+    Uuid = ?gv(id, Params),
+    case Uuid of
         undefined ->
             read_all();
-        _ -> read_id(NetworkUuid)
+        _ ->
+            read_id(Uuid)
     end.
 
 create(Params) ->
@@ -84,15 +85,15 @@ create(Params) ->
 update(Params) ->
     ID = ?gv(id, Params),
     case k_storage_networks:get_network(ID) of
-        {ok, Network = #network{}} ->
-            update_network(Network, Params);
+        {ok, Entry = #network{}} ->
+            update_network(Entry, Params);
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
 
 delete(Params) ->
-    NetworkId = ?gv(id, Params),
-    ok = k_storage_networks:del_network(NetworkId),
+    Uuid = ?gv(id, Params),
+    ok = k_storage_networks:del_network(Uuid),
     {http_code, 204}.
 
 %% ===================================================================
@@ -101,10 +102,10 @@ delete(Params) ->
 
 read_all() ->
     case k_storage_networks:get_networks() of
-        {ok, NtwList} ->
-            {ok, NtwPropLists} = prepare(NtwList),
-            ?log_debug("NtwPropLists: ~p", [NtwPropLists]),
-            {http_code, 200, {networks, NtwPropLists}};
+        {ok, Entries} ->
+            {ok, Plists} = prepare(Entries),
+            ?log_debug("Networks: ~p", [Plists]),
+            {http_code, 200, {networks, Plists}};
         {error, Error} ->
             ?log_error("Unexpected error: ~p", [Error]),
             {http_code, 500};
@@ -113,12 +114,12 @@ read_all() ->
             {http_code, 500}
     end.
 
-read_id(NtwUuid) ->
-    case k_storage_networks:get_network(NtwUuid) of
-        {ok, Ntw = #network{}} ->
-            {ok, [NtwPropList]} = prepare({NtwUuid, Ntw}),
-            ?log_debug("NtwPropList: ~p", [NtwPropList]),
-            {http_code, 200, NtwPropList};
+read_id(Uuid) ->
+    case k_storage_networks:get_network(Uuid) of
+        {ok, Entry = #network{}} ->
+            {ok, [Plist]} = prepare({Uuid, Entry}),
+            ?log_debug("Network: ~p", [Plist]),
+            {http_code, 200, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
@@ -161,9 +162,9 @@ update_network(Network, Params) ->
         sms_mult_points = SmsMultPoints
     },
     ok = k_storage_networks:set_network(ID, Updated),
-    {ok, [NtwPropList]} = prepare({ID, Updated}),
-    ?log_debug("NtwPropList: ~p", [NtwPropList]),
-    {http_code, 200, NtwPropList}.
+    {ok, [Plist]} = prepare({ID, Updated}),
+    ?log_debug("Network: ~p", [Plist]),
+    {http_code, 200, Plist}.
 
 create_network(Params) ->
     ID = ?gv(id, Params),
@@ -194,18 +195,18 @@ create_network(Params) ->
         sms_mult_points = SmsMultPoints
     },
     ok = k_storage_networks:set_network(ID, Network),
-    {ok, [NtwPropList]} = prepare({ID, Network}),
-    ?log_debug("NtwPropList: ~p", [NtwPropList]),
-    {http_code, 201, NtwPropList}.
+    {ok, [Plist]} = prepare({ID, Network}),
+    ?log_debug("Network: ~p", [Plist]),
+    {http_code, 201, Plist}.
 
-prepare(NtwList) when is_list(NtwList) ->
-    prepare(NtwList, []);
-prepare(Ntw = {_Uuid, #network{}}) ->
-    prepare([Ntw]).
+prepare(List) when is_list(List) ->
+    prepare(List, []);
+prepare(Entry = {_Uuid, #network{}}) ->
+    prepare([Entry]).
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{NtwUuid, Ntw = #network{}} | Rest], Acc) ->
+prepare([{Uuid, Ntw = #network{}} | Rest], Acc) ->
     NtwFun = ?record_to_proplist(network),
     PropList = NtwFun(Ntw),
     Name = ?gv(name, PropList),
@@ -221,7 +222,7 @@ prepare([{NtwUuid, Ntw = #network{}} | Rest], Acc) ->
     SmsPoints = ?gv(sms_points, PropList),
     SmsMultPoints = ?gv(sms_mult_points, PropList),
     Result = [
-        {id, NtwUuid},
+        {id, Uuid},
         {name, Name},
         {country, Country},
         {hex_code, HexCode},

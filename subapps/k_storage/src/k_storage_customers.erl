@@ -27,12 +27,11 @@ set_customer(CustomerUuid, Customer) ->
     OriginatorsDocList = [
         {
             'id'     , O#originator.id,
-            'address',
-                 {
-                    'addr', (O#originator.address)#addr.addr,
-                    'ton' , (O#originator.address)#addr.ton,
-                    'npi' , (O#originator.address)#addr.npi
-                },
+            'address', {
+                'addr', (O#originator.address)#addr.addr,
+                'ton' , (O#originator.address)#addr.ton,
+                'npi' , (O#originator.address)#addr.npi
+            },
             'description', O#originator.description,
             'is_default' , O#originator.is_default,
             'state'      , bsondoc:atom_to_binary(O#originator.state)
