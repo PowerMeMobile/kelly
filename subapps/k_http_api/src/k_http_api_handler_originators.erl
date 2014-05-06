@@ -169,7 +169,7 @@ update_originator(Customer, Params) ->
             ok = k_storage_customers:set_customer_originator(Updated, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_originators([Updated]),
             ?log_debug("Originator: ~p", [Plist]),
-            {ok, Plist};
+            {http_code, 200, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'};
         Error ->
@@ -181,13 +181,13 @@ get_customer_originator(Customer, undefined) ->
     #customer{originators = Originators} = Customer,
     {ok, Plist} = prepare_originators(Originators),
     ?log_debug("Originator: ~p", [Plist]),
-    {ok, Plist};
+    {http_code, 200, Plist};
 get_customer_originator(Customer, Id) ->
     case k_storage_customers:get_customer_originator(Customer, Id) of
         {ok, Originator} ->
             {ok, [Plist]} = prepare_originators([Originator]),
             ?log_debug("Originator: ~p", [Plist]),
-            {ok, Plist};
+            {http_code, 200, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'};
         Error ->

@@ -101,7 +101,7 @@ read_all() ->
         {ok, Entries} ->
             {ok, Plists} = prepare(Entries),
             ?log_debug("Providers: ~p", [Plists]),
-            {http_code, 200, {providers, Plists}};
+            {http_code, 200, Plists};
         {error, Error} ->
             ?log_error("Unexpected error: ~p", [Error]),
             {http_code, 500}

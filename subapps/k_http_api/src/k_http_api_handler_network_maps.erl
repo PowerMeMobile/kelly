@@ -81,10 +81,10 @@ delete(Params) ->
 
 read_all() ->
     case k_storage_network_maps:get_network_maps() of
-        {ok, List} ->
-            {ok, PropLists} = prepare(List),
-            ?log_debug("NtwMapPropLists: ~p", [PropLists]),
-            {http_code, 200, {network_maps, PropLists}};
+        {ok, Entries} ->
+            {ok, Plists} = prepare(Entries),
+            ?log_debug("Network maps: ~p", [Plists]),
+            {http_code, 200, Plists};
         {error, Error} ->
             ?log_error("Unexpected error: ~p", [Error]),
             {http_code, 500};
@@ -95,10 +95,10 @@ read_all() ->
 
 read_id(Id) ->
     case k_storage_network_maps:get_network_map(Id) of
-        {ok, NtwMap = #network_map{}} ->
-            {ok, [PropList]} = prepare({Id, NtwMap}),
-            ?log_debug("NtwMapPropList: ~p", [PropList]),
-            {http_code, 200, PropList};
+        {ok, Entry = #network_map{}} ->
+            {ok, [Plist]} = prepare({Id, Entry}),
+            ?log_debug("Network map: ~p", [Plist]),
+            {http_code, 200, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
@@ -121,9 +121,9 @@ update_network_map(NetworkMap, Params) ->
         network_ids = NetworkIds
     },
     ok = k_storage_network_maps:set_network_map(Id, Updated),
-    {ok, [PropList]} = prepare({Id, Updated}),
-    ?log_debug("NtwMapPropList: ~p", [PropList]),
-    {http_code, 200, PropList}.
+    {ok, [Plist]} = prepare({Id, Updated}),
+    ?log_debug("Network map: ~p", [Plist]),
+    {http_code, 200, Plist}.
 
 create_network_map(Params) ->
     Id = ?gv(id, Params),
@@ -134,22 +134,22 @@ create_network_map(Params) ->
         network_ids = NetworkIds
     },
     ok = k_storage_network_maps:set_network_map(Id, NetworkMap),
-    {ok, [PropList]} = prepare({Id, NetworkMap}),
-    ?log_debug("NtwMapPropList: ~p", [PropList]),
-    {http_code, 201, PropList}.
+    {ok, [Plist]} = prepare({Id, NetworkMap}),
+    ?log_debug("Network map: ~p", [Plist]),
+    {http_code, 201, Plist}.
 
 prepare(List) when is_list(List) ->
     prepare(List, []);
-prepare(Item = {_Id, #network_map{}}) ->
-    prepare([Item]).
+prepare(Entry = {_Id, #network_map{}}) ->
+    prepare([Entry]).
 
 prepare([], Acc) ->
     {ok, Acc};
 prepare([{Id, NtwMap = #network_map{}} | Rest], Acc) ->
     Fun = ?record_to_proplist(network_map),
-    PropList = Fun(NtwMap),
-    Name = ?gv(name, PropList),
-    NetworkIds = ?gv(network_ids, PropList),
+    Plist = Fun(NtwMap),
+    Name = ?gv(name, Plist),
+    NetworkIds = ?gv(network_ids, Plist),
     Result = [
         {id, Id},
         {name, Name},

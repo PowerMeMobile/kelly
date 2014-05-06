@@ -103,7 +103,7 @@ read_all() ->
         {ok, Customers} ->
             {ok, Plists} = prepare(Customers),
             ?log_debug("Customers: ~p", [Plists]),
-            {ok, {customers, Plists}};
+            {http_code, 200, Plists};
         {error, Error} ->
             ?log_error("Unexpected error: ~p", [Error]),
             {http_code, 500}
@@ -114,7 +114,7 @@ read_customer_uuid(CustomerUuid) ->
         {ok, Customer = #customer{}} ->
             {ok, [Plist]} = prepare({CustomerUuid, Customer}),
             ?log_debug("Customer: ~p", [Plist]),
-            {ok, Plist};
+            {http_code, 200, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'};
         Error ->

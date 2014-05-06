@@ -60,7 +60,7 @@ get_msisdn(Msisdn) ->
             {exception, 'svc0003'};
         {ok, CustomerID, UserID} ->
             Response = prepare(CustomerID, UserID, Msisdn),
-            {ok, Response}
+            {http_code, 200, Response}
     end.
 
 create(Params) ->

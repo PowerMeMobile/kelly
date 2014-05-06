@@ -87,7 +87,7 @@ read_all() ->
         {ok, Entries} ->
             {ok, Plists} = prepare_gtws(Entries),
             ?log_debug("Gateways: ~p", [Plists]),
-            {ok, {gateways, Plists}};
+            {http_code, 200, Plists};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
@@ -97,7 +97,7 @@ read_id(Uuid) ->
         {ok, Entry = #gateway{}} ->
             {ok, [Plist]} = prepare_gtws([{Uuid, Entry}]),
             ?log_debug("Gateway: ~p", [Plist]),
-            {ok, Plist};
+            {http_code, 200, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.

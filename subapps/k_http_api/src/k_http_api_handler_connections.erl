@@ -103,7 +103,7 @@ read_all(GatewayID) ->
         {ok, #gateway{connections = Connections}} ->
             {ok, Plists} = prepare_connections(Connections),
             ?log_debug("Connections: ~p", [Plists]),
-            {http_code, 200, {connections, Plists}};
+            {http_code, 200, Plists};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
