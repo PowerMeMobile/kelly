@@ -6,6 +6,7 @@
 
 -record(provider, {
     name                  :: binary(),
+    description           :: binary(),
     gateway_id            :: gateway_id(),
     bulk_gateway_id       :: gateway_id(),
     receipts_supported    :: boolean(),
