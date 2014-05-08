@@ -108,7 +108,7 @@ read_all() ->
 read_id(Uuid) ->
     case k_storage_blacklist:get_blacklist_entry(Uuid) of
         {ok, Entry = #blacklist_entry{}} ->
-            {ok, [Plist]} = prepare({Uuid, Entry}),
+            {ok, [Plist]} = prepare(Entry),
             ?log_debug("Blacklist Entry: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -127,7 +127,7 @@ update_blacklist_entry(Entry, Params) ->
         src_addr = SrcAddr
     },
     ok = k_storage_blacklist:set_blacklist_entry(Uuid, Updated),
-    {ok, [Plist]} = prepare({Uuid, Updated}),
+    {ok, [Plist]} = prepare(Updated),
     ?log_debug("Blacklist Entry: ~p", [Plist]),
     {http_code, 200, Plist}.
 
@@ -140,18 +140,18 @@ create_blacklist_entry(Params) ->
         src_addr = SrcAddr
     },
     ok = k_storage_blacklist:set_blacklist_entry(Uuid, Entry),
-    {ok, [Plist]} = prepare({Uuid, Entry}),
+    {ok, [Plist]} = prepare(Entry),
     ?log_debug("Blacklist Entry: ~p", [Plist]),
     {http_code, 201, Plist}.
 
 prepare(List) when is_list(List) ->
     prepare(List, []);
-prepare(Entry = {_Uuid, #blacklist_entry{}}) ->
+prepare(Entry = #blacklist_entry{}) ->
     prepare([Entry]).
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{Uuid, Entry = #blacklist_entry{}} | Rest], Acc) ->
+prepare([Entry = #blacklist_entry{} | Rest], Acc) ->
     AddrFun = ?record_to_proplist(addr),
     SafeAddrFun =
         fun(undefined) -> undefined;
@@ -160,11 +160,12 @@ prepare([{Uuid, Entry = #blacklist_entry{}} | Rest], Acc) ->
     EntryFun = ?record_to_proplist(blacklist_entry),
     DstAddrPlist = SafeAddrFun(Entry#blacklist_entry.dst_addr),
     SrcAddrPlist = SafeAddrFun(Entry#blacklist_entry.src_addr),
-    Plist = [{id, Uuid}] ++
-        EntryFun(Entry#blacklist_entry{
+    Plist = EntryFun(
+        Entry#blacklist_entry{
             dst_addr = DstAddrPlist,
             src_addr = SrcAddrPlist
-        }),
+        }
+    ),
     prepare(Rest, [Plist | Acc]).
 
 %% convert "addr,ton,npi" to #addr{addr, ton, npi}

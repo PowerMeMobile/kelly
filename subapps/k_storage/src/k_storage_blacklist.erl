@@ -34,13 +34,11 @@ get_blacklist_entry(EntryId) ->
             Error
     end.
 
--spec get_blacklist_entries() -> {ok, [{blacklist_entry_id(), #blacklist_entry{}}]} | {error, term()}.
+-spec get_blacklist_entries() -> {ok, [#blacklist_entry{}]} | {error, term()}.
 get_blacklist_entries() ->
     case mongodb_storage:find(static_storage, blacklist, {}) of
         {ok, List} ->
-            {ok, [
-                {Id, doc_to_record(Doc)} || {Id, Doc} <- List
-            ]};
+            {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
         Error ->
             Error
     end.
@@ -54,9 +52,11 @@ del_blacklist_entry(EntryId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
+    Id = bsondoc:at('_id', Doc),
     DstAddr = doc_to_addr(bsondoc:at(dst_addr, Doc)),
     SrcAddr = doc_to_addr(bsondoc:at(src_addr, Doc)),
     #blacklist_entry{
+        id = Id,
         dst_addr = DstAddr,
         src_addr = SrcAddr
     }.
