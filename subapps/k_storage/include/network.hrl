@@ -4,7 +4,10 @@
 -include("storages.hrl").
 -include("provider.hrl").
 
+-type network_id()        :: uuid().
+
 -record(network, {
+    id                    :: network_id(),
     name                  :: binary(),
     country               :: binary(),
     hex_code              :: binary(),
@@ -19,7 +22,6 @@
     sms_mult_points = 1.0 :: float()
 }).
 
--type network_id()        :: uuid().
 -type network()           :: #network{}.
 
 -endif.

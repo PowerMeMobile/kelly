@@ -22,7 +22,6 @@
     is_default = false   :: boolean(),
     state                :: originator_state()
 }).
--type originator() :: #originator{}.
 
 -record(user, {
     id                    :: user_id(),
@@ -38,7 +37,6 @@
     language     = <<"">> :: binary(),
     state                 :: user_state()
 }).
--type user() :: #user{}.
 
 -record(customer, {
     customer_uuid       :: customer_uuid(),
@@ -60,6 +58,9 @@
     language            :: binary(),
     state               :: customer_state()
 }).
+
+-type originator()      :: #originator{}.
+-type user()            :: #user{}.
 -type customer()        :: #customer{}.
 
 -endif.

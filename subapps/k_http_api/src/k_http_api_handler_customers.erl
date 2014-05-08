@@ -112,7 +112,7 @@ read_all() ->
 read_customer_uuid(CustomerUuid) ->
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            {ok, [Plist]} = prepare({CustomerUuid, Customer}),
+            {ok, [Plist]} = prepare(Customer),
             ?log_debug("Customer: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -183,7 +183,7 @@ update_customer(Customer, Params) ->
     },
 
     ok = k_storage_customers:set_customer(CustomerUuid, NewCustomer),
-    {ok, [Plist]} = prepare({CustomerUuid, NewCustomer}),
+    {ok, [Plist]} = prepare(NewCustomer),
     ?log_debug("Customer: ~p", [Plist]),
     {http_code, 200, Plist}.
 
@@ -213,7 +213,7 @@ create_customer(Params) ->
     },
     k_snmp:set_customer(CustomerUuid, Rps, Priority),
     ok = k_storage_customers:set_customer(CustomerUuid, Customer),
-    {ok, [Plist]} = prepare({CustomerUuid, Customer}),
+    {ok, [Plist]} = prepare(Customer),
     ?log_debug("Customer: ~p", [Plist]),
     {http_code, 201, Plist}.
 
@@ -224,7 +224,7 @@ prepare(Item) ->
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{_CustomerUuid, Customer = #customer{}} | Rest], Acc) ->
+prepare([Customer = #customer{} | Rest], Acc) ->
      #customer{
         originators = Originators,
         users = Users

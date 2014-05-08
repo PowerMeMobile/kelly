@@ -3,6 +3,7 @@
 
 -include("storages.hrl").
 
+-type gateway_id()      :: uuid().
 -type connection_id()   :: integer().
 -type smpp_bind_type() :: transmitter | receiver | transceiver.
 
@@ -19,15 +20,13 @@
     addr_range          :: binary()
 }).
 
--type connection()      :: #connection{}.
-
 -record(setting, {
     name                :: binary(),
     value               :: binary()
 }).
--type setting()         :: #setting{}.
 
 -record(gateway, {
+    id                  :: gateway_id(),
     name                :: binary(),
     rps                 :: integer(),
     connections = []    :: [connection()],
@@ -35,7 +34,8 @@
 
 }).
 
+-type connection()      :: #connection{}.
+-type setting()         :: #setting{}.
 -type gateway()         :: #gateway{}.
--type gateway_id()      :: uuid().
 
 -endif.

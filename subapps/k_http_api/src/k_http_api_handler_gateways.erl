@@ -85,7 +85,7 @@ delete(Params) ->
 read_all() ->
     case k_storage_gateways:get_gateways() of
         {ok, Entries} ->
-            {ok, Plists} = prepare_gtws(Entries),
+            {ok, Plists} = prepare(Entries),
             ?log_debug("Gateways: ~p", [Plists]),
             {http_code, 200, Plists};
         {error, no_entry} ->
@@ -95,7 +95,7 @@ read_all() ->
 read_id(Uuid) ->
     case k_storage_gateways:get_gateway(Uuid) of
         {ok, Entry = #gateway{}} ->
-            {ok, [Plist]} = prepare_gtws([{Uuid, Entry}]),
+            {ok, [Plist]} = prepare(Entry),
             ?log_debug("Gateway: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -122,7 +122,7 @@ update_gtw(Gtw, Params) ->
     ok = k_storage_gateways:set_gateway(Uuid, NewGtw),
     case k_storage_gateways:get_gateway(Uuid) of
         {ok, NewGtw = #gateway{}} ->
-            {ok, [Plist]} = prepare_gtws([{Uuid, NewGtw}]),
+            {ok, [Plist]} = prepare(NewGtw),
             ?log_debug("Gateway: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -142,7 +142,7 @@ create_gtw(Params) ->
     ok = k_storage_gateways:set_gateway(Uuid, Gateway),
     case k_storage_gateways:get_gateway(Uuid) of
         {ok, Gtw = #gateway{}} ->
-            {ok, [Plist]} = prepare_gtws([{Uuid, Gtw}]),
+            {ok, [Plist]} = prepare(Gtw),
             ?log_debug("Gateway: ~p", [Plist]),
             {http_code, 201, Plist};
         {error, no_entry} ->
@@ -153,19 +153,18 @@ create_gtw(Params) ->
             {http_code, 500}
     end.
 
-prepare_gtws(List) when is_list(List) ->
-    prepare_gtws(List, []);
-prepare_gtws(Entry = {_Uuid, #gateway{}}) ->
-    prepare_gtws([Entry], []).
+prepare(List) when is_list(List) ->
+    prepare(List, []);
+prepare(Entry = #gateway{}) ->
+    prepare([Entry], []).
 
-prepare_gtws([], Acc) ->
+prepare([], Acc) ->
     {ok, Acc};
-prepare_gtws([{Uuid, Gtw = #gateway{connections = Conns}} | Rest], Acc) ->
+prepare([Gtw = #gateway{connections = Conns} | Rest], Acc) ->
     %% convert connections records to proplists
     ConnFun = ?record_to_proplist(connection),
     ConnPlists = [ConnFun(ConnRec) || ConnRec <- Conns],
     %% convert gateway record to proplist
     GatewayFun = ?record_to_proplist(gateway),
-    Plist =  [{id, Uuid}] ++
-        GatewayFun(Gtw#gateway{connections = ConnPlists}),
-    prepare_gtws(Rest, [Plist | Acc]).
+    Plist = GatewayFun(Gtw#gateway{connections = ConnPlists}),
+    prepare(Rest, [Plist | Acc]).

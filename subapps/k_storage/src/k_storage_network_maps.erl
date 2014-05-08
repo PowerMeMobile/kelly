@@ -37,13 +37,11 @@ get_network_map(NetworkMapId) ->
     end.
 
 -spec get_network_maps() ->
-    {ok, [{network_map_id(), #network_map{}}]} | {error, term()}.
+    {ok, [#network_map{}]} | {error, term()}.
 get_network_maps() ->
     case mongodb_storage:find(static_storage, network_maps, {}) of
         {ok, List} ->
-            {ok, [
-                {Id, doc_to_record(Doc)} || {Id, Doc} <- List
-            ]};
+            {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
         Error ->
             Error
     end.
@@ -58,9 +56,11 @@ del_network_map(NetworkMapId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
+    Id = bsondoc:at('_id', Doc),
     Name = bsondoc:at(name, Doc),
     NetworkIds = bsondoc:at(network_ids, Doc),
     #network_map{
+        id = Id,
         name = Name,
         network_ids = NetworkIds
     }.

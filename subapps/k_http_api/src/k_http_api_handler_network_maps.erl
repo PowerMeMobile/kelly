@@ -49,7 +49,8 @@ read(Params) ->
     case Id of
         undefined ->
             read_all();
-        _ -> read_id(Id)
+        _ ->
+            read_id(Id)
     end.
 
 create(Params) ->
@@ -96,7 +97,7 @@ read_all() ->
 read_id(Id) ->
     case k_storage_network_maps:get_network_map(Id) of
         {ok, Entry = #network_map{}} ->
-            {ok, [Plist]} = prepare({Id, Entry}),
+            {ok, [Plist]} = prepare(Entry),
             ?log_debug("Network map: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -121,7 +122,7 @@ update_network_map(NetworkMap, Params) ->
         network_ids = NetworkIds
     },
     ok = k_storage_network_maps:set_network_map(Id, Updated),
-    {ok, [Plist]} = prepare({Id, Updated}),
+    {ok, [Plist]} = prepare(Updated),
     ?log_debug("Network map: ~p", [Plist]),
     {http_code, 200, Plist}.
 
@@ -134,25 +135,18 @@ create_network_map(Params) ->
         network_ids = NetworkIds
     },
     ok = k_storage_network_maps:set_network_map(Id, NetworkMap),
-    {ok, [Plist]} = prepare({Id, NetworkMap}),
+    {ok, [Plist]} = prepare(NetworkMap),
     ?log_debug("Network map: ~p", [Plist]),
     {http_code, 201, Plist}.
 
 prepare(List) when is_list(List) ->
     prepare(List, []);
-prepare(Entry = {_Id, #network_map{}}) ->
+prepare(Entry = #network_map{}) ->
     prepare([Entry]).
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{Id, NtwMap = #network_map{}} | Rest], Acc) ->
+prepare([NtwMap = #network_map{} | Rest], Acc) ->
     Fun = ?record_to_proplist(network_map),
     Plist = Fun(NtwMap),
-    Name = ?gv(name, Plist),
-    NetworkIds = ?gv(network_ids, Plist),
-    Result = [
-        {id, Id},
-        {name, Name},
-        {network_ids, NetworkIds}
-    ],
-    prepare(Rest, [Result | Acc]).
+    prepare(Rest, [Plist | Acc]).

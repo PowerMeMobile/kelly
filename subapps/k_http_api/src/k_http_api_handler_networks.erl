@@ -117,7 +117,7 @@ read_all() ->
 read_id(Uuid) ->
     case k_storage_networks:get_network(Uuid) of
         {ok, Entry = #network{}} ->
-            {ok, [Plist]} = prepare({Uuid, Entry}),
+            {ok, [Plist]} = prepare(Entry),
             ?log_debug("Network: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -134,7 +134,7 @@ is_exist(Params) ->
     end.
 
 update_network(Network, Params) ->
-    ID = ?gv(id, Params),
+    Id = ?gv(id, Params),
     Name = ?gv(name, Params, Network#network.name),
     Country = ?gv(country, Params, Network#network.country),
     HexCode = ?gv(hex_code, Params, Network#network.hex_code),
@@ -161,13 +161,13 @@ update_network(Network, Params) ->
         sms_points = SmsPoints,
         sms_mult_points = SmsMultPoints
     },
-    ok = k_storage_networks:set_network(ID, Updated),
-    {ok, [Plist]} = prepare({ID, Updated}),
+    ok = k_storage_networks:set_network(Id, Updated),
+    {ok, [Plist]} = prepare(Updated),
     ?log_debug("Network: ~p", [Plist]),
     {http_code, 200, Plist}.
 
 create_network(Params) ->
-    ID = ?gv(id, Params),
+    Id = ?gv(id, Params),
     Name = ?gv(name, Params),
     Country = ?gv(country, Params),
     HexCode = ?gv(hex_code, Params),
@@ -194,46 +194,19 @@ create_network(Params) ->
         sms_points = SmsPoints,
         sms_mult_points = SmsMultPoints
     },
-    ok = k_storage_networks:set_network(ID, Network),
-    {ok, [Plist]} = prepare({ID, Network}),
+    ok = k_storage_networks:set_network(Id, Network),
+    {ok, [Plist]} = prepare(Network),
     ?log_debug("Network: ~p", [Plist]),
     {http_code, 201, Plist}.
 
 prepare(List) when is_list(List) ->
     prepare(List, []);
-prepare(Entry = {_Uuid, #network{}}) ->
+prepare(Entry = #network{}) ->
     prepare([Entry]).
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{Uuid, Ntw = #network{}} | Rest], Acc) ->
-    NtwFun = ?record_to_proplist(network),
-    PropList = NtwFun(Ntw),
-    Name = ?gv(name, PropList),
-    Country = ?gv(country, PropList),
-    HexCode = ?gv(hex_code, PropList),
-    CountryCode = ?gv(country_code, PropList),
-    NumberLen = ?gv(number_len, PropList),
-    Prefixes = ?gv(prefixes, PropList),
-    GMTDiff = ?gv(gmt_diff, PropList),
-    DST = ?gv(dst, PropList),
-    ProviderId = ?gv(provider_id, PropList),
-    IsHome = ?gv(is_home, PropList),
-    SmsPoints = ?gv(sms_points, PropList),
-    SmsMultPoints = ?gv(sms_mult_points, PropList),
-    Result = [
-        {id, Uuid},
-        {name, Name},
-        {country, Country},
-        {hex_code, HexCode},
-        {country_code, CountryCode},
-        {number_len, NumberLen},
-        {prefixes, Prefixes},
-        {gmt_diff, GMTDiff},
-        {dst, DST},
-        {provider_id, ProviderId},
-        {is_home, IsHome},
-        {sms_points, SmsPoints},
-        {sms_mult_points, SmsMultPoints}
-    ],
-    prepare(Rest, [Result | Acc]).
+prepare([Ntw = #network{} | Rest], Acc) ->
+    Fun = ?record_to_proplist(network),
+    Plist = Fun(Ntw),
+    prepare(Rest, [Plist | Acc]).

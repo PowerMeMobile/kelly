@@ -81,13 +81,11 @@ set_customer(CustomerUuid, Customer) ->
     },
     mongodb_storage:upsert(static_storage, customers, {'_id', CustomerUuid}, Modifier).
 
--spec get_customers() -> {ok, [{customer_uuid(), #customer{}}]} | {error, term()}.
+-spec get_customers() -> {ok, [#customer{}]} | {error, term()}.
 get_customers() ->
     case mongodb_storage:find(static_storage, customers, {}) of
         {ok, List} ->
-            {ok, [
-                {Id, doc_to_record(Doc)} || {Id, Doc} <- List
-            ]};
+            {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
         Error ->
             Error
     end.

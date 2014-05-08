@@ -44,13 +44,11 @@ get_network(NetworkId) ->
             Error
     end.
 
--spec get_networks() -> {ok, [{network_id(), #network{}}]} | {error, term()}.
+-spec get_networks() -> {ok, [#network{}]} | {error, term()}.
 get_networks() ->
     case mongodb_storage:find(static_storage, networks, {}) of
         {ok, List} ->
-            {ok, [
-                {Id, doc_to_record(Doc)} || {Id, Doc} <- List
-            ]};
+            {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
         Error ->
             Error
     end.
@@ -64,6 +62,7 @@ del_network(NetworkId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
+    Id = bsondoc:at('_id', Doc),
     Name = bsondoc:at(name, Doc),
     Country = bsondoc:at(country, Doc),
     HexCode = bsondoc:at(hex_code, Doc),
@@ -77,6 +76,7 @@ doc_to_record(Doc) ->
     SmsPoints = bsondoc:at(sms_points, Doc),
     SmsMultPoints = bsondoc:at(sms_mult_points, Doc),
     #network{
+        id = Id,
         name = Name,
         country = Country,
         hex_code = HexCode,

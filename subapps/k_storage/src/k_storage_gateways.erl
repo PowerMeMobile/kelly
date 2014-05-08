@@ -58,13 +58,11 @@ get_gateway(GatewayId) ->
             Error
     end.
 
--spec get_gateways() -> {ok, [{gateway_id(), #gateway{}}]} | {error, term()}.
+-spec get_gateways() -> {ok, [#gateway{}]} | {error, term()}.
 get_gateways() ->
     case mongodb_storage:find(static_storage, gateways, {}) of
         {ok, List} ->
-            {ok, [
-                {Id, doc_to_record(Doc)} || {Id, Doc} <- List
-            ]};
+            {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
         Error ->
             Error
     end.
@@ -77,17 +75,17 @@ del_gateway(GatewayId) ->
 set_gateway_connection(GatewayId, Connection = #connection{id = ConnId}) ->
     case get_gateway(GatewayId) of
         {ok, Gateway = #gateway{connections = Conns}} ->
-            NewConns = delete_connection(Conns, ConnId),
+            NewConns = lists:keydelete(ConnId, #connection.id, Conns),
             set_gateway(GatewayId, Gateway#gateway{connections = [Connection | NewConns]});
         Error ->
              Error
     end.
 
 -spec del_gateway_connection(gateway_id(), connection_id()) -> ok | {error, no_entry} | {error, term()}.
-del_gateway_connection(GatewayId, ConnectionId) ->
+del_gateway_connection(GatewayId, ConnId) ->
     case get_gateway(GatewayId) of
         {ok, Gateway = #gateway{connections = Conns}} ->
-            NewConns = delete_connection(Conns, ConnectionId),
+            NewConns = lists:keydelete(ConnId, #connection.id, Conns),
             set_gateway(GatewayId, Gateway#gateway{connections = NewConns});
         Error ->
             Error
@@ -98,6 +96,7 @@ del_gateway_connection(GatewayId, ConnectionId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
+    Id = bsondoc:at('_id', Doc),
     Name = bsondoc:at(name, Doc),
     RPS = bsondoc:at(rps, Doc),
     ConnectionsDoc = bsondoc:at(connections, Doc),
@@ -113,33 +112,22 @@ doc_to_record(Doc) ->
             addr_ton = bsondoc:at(addr_ton, ConnDoc),
             addr_npi = bsondoc:at(addr_npi, ConnDoc),
             addr_range = bsondoc:at(addr_range, ConnDoc)
-        }
-        || ConnDoc <- ConnectionsDoc
+        } || ConnDoc <- ConnectionsDoc
     ],
-    StsDoc =
-    case bsondoc:at(settings, Doc) of
-        undefined -> [];
-        Val -> Val
-    end,
+    StsDoc = case bsondoc:at(settings, Doc) of
+                undefined -> [];
+                Val -> Val
+             end,
     Settings = [
         #setting{
             name = bsondoc:at(name, StDoc),
             value = bsondoc:at(value, StDoc)
-        }
-        || StDoc <- StsDoc],
+        } || StDoc <- StsDoc
+    ],
     #gateway{
+        id = Id,
         name = Name,
         rps = RPS,
         connections = Connections,
         settings = Settings
     }.
-
-delete_connection(Conns, ConnId) ->
-    lists:foldl(
-        fun(CurrentConn = #connection{id = CurrentConnId}, Acc)->
-            case CurrentConnId of
-                ConnId -> Acc;
-                _Any -> [CurrentConn | Acc]
-            end
-        end, [], Conns
-    ).
