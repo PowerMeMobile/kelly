@@ -57,6 +57,7 @@ update_network() ->
     Url = network_path(NetworkId),
     ProviderId = <<"0a89542c-5270-11e1-bf27-001d0947ec74">>,
     Query = [
+        {id, NetworkId},
         {name, <<"new_network">>},
         {country, <<"new_country">>},
         {hex_code, <<"AA">>},

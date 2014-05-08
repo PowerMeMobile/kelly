@@ -118,6 +118,7 @@ update_network_map(NetworkMap, Params) ->
     Name = ?gv(name, Params, NetworkMap#network_map.name),
     NetworkIds = ?gv(network_ids, Params, NetworkMap#network_map.network_ids),
     Updated = #network_map{
+        id = Id,
         name = Name,
         network_ids = NetworkIds
     },
@@ -131,6 +132,7 @@ create_network_map(Params) ->
     Name = ?gv(name, Params),
     NetworkIds = ?gv(network_ids, Params),
     NetworkMap = #network_map{
+        id = Id,
         name = Name,
         network_ids = NetworkIds
     },

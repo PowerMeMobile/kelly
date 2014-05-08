@@ -33,12 +33,12 @@ get_report() ->
 
 prepare_gtws(Counters, GtwList) when is_list(GtwList) ->
     prepare_gtws(Counters, GtwList, []);
-prepare_gtws(Counters, Gtw = {_Uuid, #gateway{}}) ->
+prepare_gtws(Counters, Gtw = #gateway{}) ->
     prepare_gtws(Counters, [Gtw], []).
 
 prepare_gtws(_Counters, [], Acc) ->
     {ok, Acc};
-prepare_gtws(Counters, [{GtwUuidBin, #gateway{}} | Rest], Acc) ->
+prepare_gtws(Counters, [#gateway{id = GtwUuidBin} | Rest], Acc) ->
     GtwUuid = binary_to_list(GtwUuidBin),
     {ok, Name} = k_snmp:get_column_val(gtwName, GtwUuid),
     {ok, Status} = k_snmp:get_column_val(gtwStatus, GtwUuid),

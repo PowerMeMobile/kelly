@@ -48,9 +48,10 @@ create_network_map() ->
     ?assert_json_values(Query2, Resp).
 
 update_network_map() ->
-    Uuid = network_map_uuid(),
-    Url = network_map_path(Uuid),
+    Id = network_map_uuid(),
+    Url = network_map_path(Id),
     Query = [
+        {id, Id},
         {name, <<"country-new">>},
         {network_ids,
             <<"80755f2a-c4b3-11e3-b7a4-00269e42f7a5a">>

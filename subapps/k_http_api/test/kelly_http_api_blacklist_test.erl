@@ -42,18 +42,20 @@ create_blacklist_entry() ->
     ?assert_json_values(Query, Resp).
 
 update_blacklist_1_entry() ->
-    Blacklist_EntryId = blacklist_entry_id(),
-    Url = blacklist_entry_path(Blacklist_EntryId),
+    EntryId = blacklist_entry_id(),
+    Url = blacklist_entry_path(EntryId),
     DstAddr = {dst_addr, <<"375296660003,1,1">>},
     SrcAddr = {src_addr, <<"">>},
-    Query = [],
+    Query = [
+        {id, EntryId}
+    ],
     Resp = ?perform_put(Url, [], <<>>, [DstAddr, SrcAddr | Query]),
     ?assert_status(200, Resp),
     ?assert_json_values(Query, Resp).
 
 update_blacklist_2_entry() ->
-    Blacklist_EntryId = blacklist_entry_id(),
-    Url = blacklist_entry_path(Blacklist_EntryId),
+    EntryId = blacklist_entry_id(),
+    Url = blacklist_entry_path(EntryId),
     DstAddr = {dst_addr, <<"375296660003,1,1">>},
     Query = [],
     Resp = ?perform_put(Url, [], <<>>, [DstAddr | Query]),

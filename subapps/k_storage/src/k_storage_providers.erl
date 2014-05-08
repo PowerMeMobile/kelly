@@ -38,13 +38,11 @@ get_provider(ProviderId) ->
             Error
     end.
 
--spec get_providers() -> {ok, [{provider_id(), #provider{}}]} | {error, term()}.
+-spec get_providers() -> {ok, [#provider{}]} | {error, term()}.
 get_providers() ->
     case mongodb_storage:find(static_storage, providers, {}) of
         {ok, List} ->
-            {ok, [
-                {Id, doc_to_record(Doc)} || {Id, Doc} <- List
-            ]};
+            {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
         Error ->
             Error
     end.
@@ -58,6 +56,7 @@ del_provider(ProviderId) ->
 %% ===================================================================
 
 doc_to_record(Doc) ->
+    Id = bsondoc:at('_id', Doc),
     Name = bsondoc:at(name, Doc),
     Description = bsondoc:at(description, Doc),
     GtwId = bsondoc:at(gateway_id, Doc),
@@ -65,6 +64,7 @@ doc_to_record(Doc) ->
     ReceiptsSupported = bsondoc:at(receipts_supported, Doc),
     SmsAddPoints = bsondoc:at(sms_add_points, Doc),
     #provider{
+        id = Id,
         name = Name,
         description = Description,
         gateway_id = GtwId,

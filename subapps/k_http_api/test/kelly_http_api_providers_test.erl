@@ -48,6 +48,7 @@ update_provider() ->
     ProviderId = provider_id(),
     Url = provider_path(ProviderId),
     Query = [
+        {id, ProviderId},
         {name, <<"new_name">>},
         {description, <<"new_description">>},
         {gateway_id, <<"7dc235d0-c938-4b66-8f8c-c9037c7eace6">>},

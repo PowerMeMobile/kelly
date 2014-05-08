@@ -121,8 +121,8 @@ update_gtw(Gtw, Params) ->
     k_snmp:set_gateway(Uuid, NewName, NewRPS),
     ok = k_storage_gateways:set_gateway(Uuid, NewGtw),
     case k_storage_gateways:get_gateway(Uuid) of
-        {ok, NewGtw = #gateway{}} ->
-            {ok, [Plist]} = prepare(NewGtw),
+        {ok, Updated = #gateway{}} ->
+            {ok, [Plist]} = prepare(Updated),
             ?log_debug("Gateway: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->

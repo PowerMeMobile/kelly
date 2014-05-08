@@ -142,7 +142,8 @@ get_network_id_prefix_map() ->
     case k_storage_networks:get_networks() of
         {ok, Networks} ->
             {ok, lists:flatmap(
-                    fun({NetworkId, Network}) ->
+                    fun(Network) ->
+                        NetworkId = Network#network.id,
                         Code = Network#network.country_code,
                         Prefixes = Network#network.prefixes,
                         [

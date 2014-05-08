@@ -119,27 +119,29 @@ read_id(Uuid) ->
     end.
 
 update_blacklist_entry(Entry, Params) ->
-    Uuid = ?gv(id, Params),
+    Id = ?gv(id, Params),
     DstAddr = ?gv(dst_addr, Params, Entry#blacklist_entry.dst_addr),
     SrcAddr = ?gv(src_addr, Params, Entry#blacklist_entry.src_addr),
     Updated = #blacklist_entry{
+        id = Id,
         dst_addr = DstAddr,
         src_addr = SrcAddr
     },
-    ok = k_storage_blacklist:set_blacklist_entry(Uuid, Updated),
+    ok = k_storage_blacklist:set_blacklist_entry(Id, Updated),
     {ok, [Plist]} = prepare(Updated),
     ?log_debug("Blacklist Entry: ~p", [Plist]),
     {http_code, 200, Plist}.
 
 create_blacklist_entry(Params) ->
-    Uuid = ?gv(id, Params),
+    Id= ?gv(id, Params),
     DstAddr = ?gv(dst_addr, Params),
     SrcAddr = ?gv(src_addr, Params),
     Entry = #blacklist_entry{
+        id = Id,
         dst_addr = DstAddr,
         src_addr = SrcAddr
     },
-    ok = k_storage_blacklist:set_blacklist_entry(Uuid, Entry),
+    ok = k_storage_blacklist:set_blacklist_entry(Id, Entry),
     {ok, [Plist]} = prepare(Entry),
     ?log_debug("Blacklist Entry: ~p", [Plist]),
     {http_code, 201, Plist}.

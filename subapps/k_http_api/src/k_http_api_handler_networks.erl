@@ -148,6 +148,7 @@ update_network(Network, Params) ->
     SmsPoints = ?gv(sms_points, Params, Network#network.sms_points),
     SmsMultPoints = ?gv(sms_mult_points, Params, Network#network.sms_mult_points),
     Updated = #network{
+        id = Id,
         name = Name,
         country = Country,
         hex_code = HexCode,
@@ -181,6 +182,7 @@ create_network(Params) ->
     SmsPoints = ?gv(sms_points, Params),
     SmsMultPoints = ?gv(sms_mult_points, Params),
     Network = #network{
+        id = Id,
         name = Name,
         country = Country,
         hex_code = HexCode,

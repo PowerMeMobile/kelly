@@ -112,7 +112,7 @@ read_all() ->
 read_id(Uuid) ->
     case k_storage_providers:get_provider(Uuid) of
         {ok, Entry = #provider{}} ->
-            {ok, [Plist]} = prepare({Uuid, Entry}),
+            {ok, [Plist]} = prepare(Entry),
             ?log_debug("Provider: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -123,7 +123,7 @@ read_id(Uuid) ->
     end.
 
 update_provider(Provider, Params) ->
-    ID = ?gv(id, Params),
+    Id = ?gv(id, Params),
     Name = ?gv(name, Params, Provider#provider.name),
     Description = ?gv(description, Params, Provider#provider.description),
     GatewayId = ?gv(gateway_id, Params, Provider#provider.gateway_id),
@@ -131,6 +131,7 @@ update_provider(Provider, Params) ->
     ReceiptsSupported = ?gv(receipts_supported, Params, Provider#provider.receipts_supported),
     SmsAddPoints = ?gv(sms_add_points, Params, Provider#provider.sms_add_points),
     Updated = #provider{
+        id = Id,
         name = Name,
         description = Description,
         gateway_id = GatewayId,
@@ -138,13 +139,13 @@ update_provider(Provider, Params) ->
         receipts_supported = ReceiptsSupported,
         sms_add_points = SmsAddPoints
     },
-    ok = k_storage_providers:set_provider(ID, Updated),
-    {ok, [Plist]} = prepare({ID, Updated}),
+    ok = k_storage_providers:set_provider(Id, Updated),
+    {ok, [Plist]} = prepare(Updated),
     ?log_debug("Provider: ~p", [Plist]),
     {http_code, 200, Plist}.
 
 create_provider(Params) ->
-    Uuid = ?gv(id, Params),
+    Id = ?gv(id, Params),
     Name = ?gv(name, Params),
     Description = ?gv(description, Params),
     GatewayId = ?gv(gateway_id, Params),
@@ -152,6 +153,7 @@ create_provider(Params) ->
     ReceiptsSupported = ?gv(receipts_supported, Params),
     SmsAddPoints = ?gv(sms_add_points, Params),
     Provider = #provider{
+        id = Id,
         name = Name,
         description = Description,
         gateway_id = GatewayId,
@@ -159,20 +161,19 @@ create_provider(Params) ->
         receipts_supported = ReceiptsSupported,
         sms_add_points = SmsAddPoints
     },
-    ok = k_storage_providers:set_provider(Uuid, Provider),
-    {ok, [Plist]} = prepare({Uuid, Provider}),
+    ok = k_storage_providers:set_provider(Id, Provider),
+    {ok, [Plist]} = prepare(Provider),
     ?log_debug("Provider: ~p", [Plist]),
     {http_code, 201, Plist}.
 
 prepare(List) when is_list(List) ->
     prepare(List, []);
-prepare(Entry = {_Uuid, #provider{}}) ->
+prepare(Entry = #provider{}) ->
     prepare([Entry]).
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([{Uuid, Prv = #provider{}} | Rest], Acc) ->
+prepare([Prv = #provider{} | Rest], Acc) ->
     Fun = ?record_to_proplist(provider),
     Plist = Fun(Prv),
-    Result = [{id, Uuid}] ++ Plist,
-    prepare(Rest, [Result | Acc]).
+    prepare(Rest, [Plist | Acc]).

@@ -30,7 +30,7 @@ process(ReqDTO) ->
                             case get_providers_add_points(Networks) of
                                 {ok, AddPoints} ->
                                     NetworksDTO =
-                                        [network_to_dto(Id, N, AddPoints) || {Id, N} <- Networks],
+                                        [network_to_dto(N, AddPoints) || N <- Networks],
                                     {ok, #k1api_coverage_response_dto{
                                         id = ReqId,
                                         networks = NetworksDTO
@@ -60,13 +60,13 @@ get_networks([], Acc) ->
 get_networks([NetworkId | NetworkIds], Acc) ->
     case k_storage_networks:get_network(NetworkId) of
         {ok, Network} ->
-            get_networks(NetworkIds, [{NetworkId, Network} | Acc]);
+            get_networks(NetworkIds, [Network | Acc]);
         Error ->
             Error
     end.
 
 get_providers_add_points(Networks) ->
-    ProvIds = lists:usort([N#network.provider_id || {_, N} <- Networks]),
+    ProvIds = lists:usort([N#network.provider_id || N <- Networks]),
     get_providers_add_points(ProvIds, []).
 
 get_providers_add_points([], Acc) ->
@@ -79,8 +79,9 @@ get_providers_add_points([ProvId | ProvIds], Acc) ->
             Error
     end.
 
-network_to_dto(Id, Network, ProvAddPoints) ->
+network_to_dto(Network, ProvAddPoints) ->
     #network{
+        id = Id,
         name = Name,
         country_code = CountryCode,
         number_len = NumberLen,

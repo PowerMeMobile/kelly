@@ -33,9 +33,9 @@ read(_Params) ->
     {ok, Customers} = k_storage_customers:get_customers(),
     [k_snmp:set_customer(
         C#customer.customer_uuid, C#customer.rps, C#customer.priority
-    ) || {_,C} <-Customers],
+    ) || C <- Customers],
     {ok, Gtws} = k_storage_gateways:get_gateways(),
-    [set_gtw(GtwID, Gtw) || {GtwID, Gtw} <- Gtws],
+    [set_gtw(Gtw) || Gtw <- Gtws],
     {ok, {result, ok}}.
 
 create(_Params) ->
@@ -51,7 +51,8 @@ delete(_Params) ->
 %% Internal
 %% ===================================================================
 
-set_gtw(GtwID, Gtw) ->
-    k_snmp:set_gateway(GtwID, Gtw#gateway.name, Gtw#gateway.rps),
-    [k_snmp:set_connection(GtwID, Conn) || Conn <- Gtw#gateway.connections],
-    [k_snmp:set_setting(GtwID, Setting) || Setting <- Gtw#gateway.settings].
+set_gtw(Gtw) ->
+    GtwId = Gtw#gateway.id,
+    k_snmp:set_gateway(GtwId, Gtw#gateway.name, Gtw#gateway.rps),
+    [k_snmp:set_connection(GtwId, Conn) || Conn <- Gtw#gateway.connections],
+    [k_snmp:set_setting(GtwId, Setting) || Setting <- Gtw#gateway.settings].

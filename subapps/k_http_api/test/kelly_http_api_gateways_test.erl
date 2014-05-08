@@ -109,6 +109,7 @@ update_connection() ->
     ConnId = conn_id(),
     Url = conn_path(gateway_id(), ConnId),
     Query = [
+        {id, ConnId},
         {host, <<"127.0.0.2">>},
         {port, 8002},
         {bind_type, <<"receiver">>},
