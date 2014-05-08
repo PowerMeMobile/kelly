@@ -18,13 +18,13 @@ get_gtws_throughput() ->
     {ok, QName} = application:get_env(k_handlers, just_control_queue),
     ok = rmql:basic_publish(Chan, QName, Payload, BProps),
     Response =
-    receive
-        {#'basic.deliver'{}, #amqp_msg{payload = RespPayload, props = RespProps}} ->
-            process_response(RespPayload, RespProps)
-    after
-        10000 ->
-            {error, timeout}
-    end,
+        receive
+            {#'basic.deliver'{}, #amqp_msg{payload = RespPayload, props = RespProps}} ->
+                process_response(RespPayload, RespProps)
+        after
+            10000 ->
+                {error, timeout}
+        end,
     rmql:channel_close(Chan),
     Response.
 
