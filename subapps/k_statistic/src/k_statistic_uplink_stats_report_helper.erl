@@ -16,7 +16,7 @@ get_gtws_throughput() ->
     {ok, _ConsumerTag} = rmql:basic_consume(Chan, TmpQueue, true),
     BProps = [{reply_to, TmpQueue}, {message_id, <<"1">>}, {content_type, <<"ThroughputRequest">>}],
     {ok, QName} = application:get_env(k_handlers, just_control_queue),
-    ok = rmql:basic_publish(Chan, QName, list_to_binary(Payload), BProps),
+    ok = rmql:basic_publish(Chan, QName, Payload, BProps),
     Response =
     receive
         {#'basic.deliver'{}, #amqp_msg{payload = RespPayload, props = RespProps}} ->
