@@ -10,6 +10,7 @@ network_map_test_() ->
     {setup,
         fun delete_network_map/0,
         {inorder, [
+            ?_test(create_network_map_wo_network_ids_fail()),
             ?_test(create_network_map()),
             ?_test(update_network_map()),
             ?_test(delete_network_map())
@@ -27,6 +28,16 @@ network_map_path() ->
     "http://127.0.0.1:8080/network_maps".
 network_map_path(Uuid) ->
     network_map_path() ++ "/" ++ binary_to_list(Uuid).
+
+create_network_map_wo_network_ids_fail() ->
+    Url = network_map_path(),
+    Query = [
+        {id, network_map_uuid()},
+        {name, <<"country">>}
+    ],
+    Resp = ?perform_post(Url, [], <<>>, Query),
+    %% no network_ids field
+    ?assert_status(400, Resp).
 
 create_network_map() ->
     Url = network_map_path(),
