@@ -92,12 +92,11 @@ del_row(TableName, Index)->
 
 -spec set_customer(binary(), integer(), integer()) -> ok.
 set_customer(ID, RPS, Priority) when
-                    is_binary(ID) andalso
-                    is_integer(RPS) andalso
-                    is_integer(Priority) ->
+        is_binary(ID) andalso is_integer(RPS) andalso is_integer(Priority) ->
     set_row(cst, binary_to_list(ID), [
         {cstRPS, RPS},
-        {cstPriority, Priority}]).
+        {cstPriority, Priority}
+    ]).
 
 -spec delete_customer(binary()) -> ok.
 delete_customer(ID) when is_binary(ID) ->
@@ -105,11 +104,10 @@ delete_customer(ID) when is_binary(ID) ->
 
 -spec set_gateway(binary(), binary(), integer()) -> ok.
 set_gateway(ID, Name, RPS) when
-                    is_binary(ID) andalso
-                    is_binary(Name) andalso
-                    is_integer(RPS) ->
-    set_row(gtw, binary_to_list(ID),
-            [{gtwName, binary_to_list(Name)}, {gtwRPS, RPS}]).
+        is_binary(ID) andalso is_binary(Name) andalso is_integer(RPS) ->
+    set_row(gtw, binary_to_list(ID), [
+        {gtwName, binary_to_list(Name)}, {gtwRPS, RPS}
+    ]).
 
 -spec delete_gateway(binary()) -> ok.
 delete_gateway(ID) when is_binary(ID) ->
@@ -131,20 +129,21 @@ set_connection(GtwID, Conn = #connection{}) when is_binary(GtwID) ->
 
 -spec delete_connection(binary(), integer()) -> ok.
 delete_connection(GtwID, ConnID) when
-                    is_binary(GtwID) andalso
-                    is_integer(ConnID) ->
+        is_binary(GtwID) andalso is_integer(ConnID) ->
     del_row(cnn, binary_to_list(GtwID) ++ [ConnID]).
 
 -spec set_setting(binary(), #setting{}) -> ok.
 set_setting(GtwID, Setting = #setting{}) when is_binary(GtwID) ->
-    Index = binary_to_list(GtwID) ++ [size(Setting#setting.name)] ++ binary_to_list(Setting#setting.name),
-    set_row(sts, Index,
-                [{stsValue, binary_to_list(Setting#setting.value)}]).
+    Index = binary_to_list(GtwID) ++
+            [size(Setting#setting.name)] ++
+            binary_to_list(Setting#setting.name),
+    set_row(sts, Index, [
+        {stsValue, binary_to_list(Setting#setting.value)}
+    ]).
 
 -spec delete_setting(binary(), integer()) -> ok.
 delete_setting(GtwID, SettingID) when
-                    is_binary(GtwID) andalso
-                    is_binary(SettingID) ->
+        is_binary(GtwID) andalso is_binary(SettingID) ->
     Index = binary_to_list(GtwID) ++ [size(SettingID)] ++ binary_to_list(SettingID),
     del_row(sts, Index).
 
@@ -156,8 +155,8 @@ init(_Args) ->
     {ok, ready, #state{}}.
 
 -spec sleep(process_queue, #state{}) -> {next_state, sleep, #state{}};
-            (wake_up, #state{}) -> {next_state, ready, #state{}};
-            (term(), #state{}) -> {stop, {bad_event, term()}, #state{}}.
+           (wake_up, #state{})       -> {next_state, ready, #state{}};
+           (term(), #state{})        -> {stop, {bad_event, term()}, #state{}}.
 sleep(process_queue, State = #state{}) ->
     {next_state, sleep, State};
 sleep(wake_up, State = #state{}) ->
@@ -166,11 +165,8 @@ sleep(wake_up, State = #state{}) ->
 sleep(Event, State = #state{}) ->
     {stop, {bad_event, Event}, State}.
 
--spec ready(process_queue, #state{}) ->
-    {next_state, ready, #state{}} |
-    {next_state, sleep, #state{}};
-            (term(), #state{}) ->
-    {stop, {bad_event, term()}, #state{}}.
+-spec ready(process_queue, #state{}) -> {next_state, ready, #state{}} | {next_state, sleep, #state{}};
+           (term(), #state{})        -> {stop, {bad_event, term()}, #state{}}.
 ready(process_queue, State = #state{time = Time}) ->
     case next() of
     {ok, #task{id = Id, function = Fun, args = Args}} ->
@@ -242,10 +238,14 @@ process_task(Task) ->
 
 set_row({TableName, Index, ValueList}) ->
     case is_exist(TableName, Index) of
-        exist -> update(Index, ValueList);
-        notExist -> create(TableName, Index, ValueList);
-        incorrectState -> recreate(TableName, Index, ValueList);
-        Any -> Any
+        exist ->
+            update(Index, ValueList);
+        notExist ->
+            create(TableName, Index, ValueList);
+        incorrectState ->
+            recreate(TableName, Index, ValueList);
+        Unexpected ->
+            ?log_warn("Not expected value: ~p", [Unexpected])
     end.
 
 del_row({TableName, Index}) ->
@@ -284,7 +284,6 @@ create(TableName, Index, ValueList) ->
 update(Index, ValueList) ->
     set(Index, ValueList).
 
-
 set(Index, ValueList) ->
     set(Index, ValueList, _InitResult = {ok, init}).
 
@@ -318,7 +317,7 @@ status_column_name(TableName) ->
 
 parse_snmp_result(Result) ->
     case Result of
-        {ok, { noError, 0, [#varbind{value = Value}]}, _Remaining} ->
+        {ok, {noError, 0, [#varbind{value = Value}]}, _Remaining} ->
             case Value of
                 noSuchObject ->
                     {error, noSuchObject};
