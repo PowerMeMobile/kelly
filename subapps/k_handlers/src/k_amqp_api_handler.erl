@@ -51,6 +51,29 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReq">> ->
             {ReqCT, <<>>}
     end;
 
+process(ReqCT, ReqBin) when ReqCT =:= <<"BlacklistReq">> ->
+    case adto:decode(#k1api_blacklist_request_dto{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got blacklist request: ~p", [ReqDTO]),
+            case k_blacklist_request_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built blacklist response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"BlacklistResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Blacklist response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Blacklist request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Blacklist request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
 process(ReqCT, ReqBin) when ReqCT =:= <<"DeliveryStatusReq">> ->
     case adto:decode(#k1api_sms_delivery_status_request_dto{}, ReqBin) of
         {ok, ReqDTO} ->
