@@ -9,7 +9,8 @@ network_test_() ->
             fun delete_network/0,
             {inorder, [
                 ?_test(create_network()),
-                ?_test(update_network()),
+                ?_test(update_1_network()),
+                ?_test(update_2_network()),
                 ?_test(delete_network())
             ]}
         }
@@ -52,7 +53,7 @@ create_network() ->
     Query2 = lists:keyreplace(prefixes, 1, Query, {prefixes, [<<"29">>, <<"33">>, <<"44">>]}),
     ?assert_json_values(Query2, Resp).
 
-update_network() ->
+update_1_network() ->
     NetworkId = network_id(),
     Url = network_path(NetworkId),
     ProviderId = <<"0a89542c-5270-11e1-bf27-001d0947ec74">>,
@@ -75,6 +76,18 @@ update_network() ->
     ?assert_status(200, Resp),
     Query2 = lists:keyreplace(prefixes, 1, Query, {prefixes, [<<"33">>, <<"44">>]}),
     ?assert_json_values(Query2, Resp).
+
+update_2_network() ->
+    NetworkId = network_id(),
+    Url = network_path(NetworkId),
+    ProviderId = <<"0a89542c-5270-11e1-bf27-001d0947ec74">>,
+    Query = [
+        {id, NetworkId},
+        {is_home, true}
+    ],
+    Resp = ?perform_put(Url, [], <<>>, Query),
+    ?assert_status(200, Resp),
+    ?assert_json_values(Query, Resp).
 
 delete_network() ->
     delete_network(network_id()).
