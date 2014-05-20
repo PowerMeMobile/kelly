@@ -23,7 +23,13 @@ set_blacklist_entry(EntryId, Entry)->
             'src_addr', addr_to_doc(Entry#blacklist_entry.src_addr)
         }
     },
-    mongodb_storage:upsert(static_storage, blacklist, {'_id', EntryId}, Modifier).
+    case mongodb_storage:upsert(static_storage, blacklist, {'_id', EntryId}, Modifier) of
+        ok ->
+            k_event_manager:notify_blacklist_changed(),
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 -spec get_blacklist_entry(blacklist_entry_id()) -> {ok, #blacklist_entry{}} | {error, no_entry} | {error, term()}.
 get_blacklist_entry(EntryId) ->
@@ -45,7 +51,13 @@ get_blacklist_entries() ->
 
 -spec del_blacklist_entry(blacklist_entry_id()) -> ok | {error, no_entry} | {error, term()}.
 del_blacklist_entry(EntryId) ->
-    mongodb_storage:delete(static_storage, blacklist, {'_id', EntryId}).
+    case mongodb_storage:delete(static_storage, blacklist, {'_id', EntryId}) of
+        ok ->
+            k_event_manager:notify_blacklist_changed(),
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 %% ===================================================================
 %% Internals

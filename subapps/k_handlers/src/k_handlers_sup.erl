@@ -34,6 +34,8 @@ init([]) ->
     %% The MaxR = 12 and MaxT = 1 values mean that we tolerate 2 amqp connection problems
     %% in each of them in 1 minute. Adjust the values to more appropriate ones if you need.
     {ok, {{one_for_one, 12, 1}, [
+        ?WORKER(k_event_manager),
+
         ?WORKER(k_amqp_api_handler),
         ?WORKER(k_amqp_auth_handler),
 

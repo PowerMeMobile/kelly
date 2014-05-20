@@ -79,7 +79,13 @@ set_customer(CustomerUuid, Customer) ->
             'state'              , bsondoc:atom_to_binary(Customer#customer.state)
         }
     },
-    mongodb_storage:upsert(static_storage, customers, {'_id', CustomerUuid}, Modifier).
+    case mongodb_storage:upsert(static_storage, customers, {'_id', CustomerUuid}, Modifier) of
+        ok ->
+            k_event_manager:notify_customer_changed(CustomerUuid, Customer#customer.customer_id),
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 -spec get_customers() -> {ok, [#customer{}]} | {error, term()}.
 get_customers() ->
@@ -110,7 +116,20 @@ get_customer_by_id(CustomerId) ->
 
 -spec del_customer(customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
 del_customer(CustomerUuid) ->
-    mongodb_storage:delete(static_storage, customers, {'_id', CustomerUuid}).
+    case get_customer_by_uuid(CustomerUuid) of
+        {ok, #customer{customer_id = CustomerId}} ->
+            case mongodb_storage:delete(static_storage, customers, {'_id', CustomerUuid}) of
+                ok ->
+                    k_event_manager:notify_customer_changed(CustomerUuid, CustomerId),
+                    ok;
+                {error, Reason} ->
+                    {error, Reason}
+            end;
+        {error, no_entry} ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 -spec get_customer_user(#customer{}, user_id()) -> {ok, #user{}} | {error, no_entry}.
 get_customer_user(#customer{users = Users}, UserId) ->
