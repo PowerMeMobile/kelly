@@ -2,9 +2,9 @@
 
 -behaviour(gen_server).
 
--include_lib("k_common/include/logging.hrl").
--include_lib("alley_common/include/gen_server_spec.hrl").
 -include("application.hrl").
+-include_lib("alley_common/include/logging.hrl").
+-include_lib("alley_common/include/gen_server_spec.hrl").
 
 -record(state, {
     rbuff :: term(),

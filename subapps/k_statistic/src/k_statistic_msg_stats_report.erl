@@ -5,7 +5,7 @@
 ]).
 
 -include_lib("k_storage/include/network.hrl").
--include_lib("k_common/include/logging.hrl").
+-include_lib("alley_common/include/logging.hrl").
 
 -type report_type() :: customers | networks.
 -type reason() :: any().

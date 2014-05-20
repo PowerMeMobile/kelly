@@ -17,7 +17,7 @@
 ).
 -define(WORKER(Name), {Name, {Name, start_link, []}, permanent, 5000, worker, [Name]}).
 
--include_lib("k_common/include/logging.hrl").
+-include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/supervisor_spec.hrl").
 
 -spec start_link() -> {ok, pid()}.

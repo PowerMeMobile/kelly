@@ -6,9 +6,9 @@
     build_aggr_recipient_report/0
 ]).
 
--include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_dto/include/adto.hrl").
--include_lib("k_common/include/logging.hrl").
+-include_lib("alley_common/include/utils.hrl").
+-include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
 
 %% ===================================================================

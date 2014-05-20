@@ -28,8 +28,8 @@
     code_change/3
 ]).
 
+-include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/gen_server_spec.hrl").
--include_lib("k_common/include/logging.hrl").
 
 -record(state, {
     db_name :: binary(),

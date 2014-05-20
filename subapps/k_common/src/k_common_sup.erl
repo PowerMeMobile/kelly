@@ -9,7 +9,7 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--include("logging.hrl").
+-include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/supervisor_spec.hrl").
 
 -spec start_link() -> {ok, pid()}.

@@ -20,7 +20,7 @@
     code_change/3
 ]).
 
--include_lib("k_common/include/logging.hrl").
+-include_lib("alley_common/include/logging.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("alley_common/include/gen_server_spec.hrl").
 -include("amqp_req.hrl").

@@ -3,7 +3,7 @@
 -export([process/1]).
 
 -include_lib("alley_dto/include/adto.hrl").
--include_lib("k_common/include/logging.hrl").
+-include_lib("alley_common/include/logging.hrl").
 
 %% ===================================================================
 %% API

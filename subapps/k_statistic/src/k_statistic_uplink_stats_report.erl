@@ -5,7 +5,7 @@
 ]).
 
 -include_lib("alley_dto/include/JustAsn.hrl").
--include_lib("k_common/include/logging.hrl").
+-include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/gateway.hrl").
 
 %% ===================================================================

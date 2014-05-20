@@ -22,8 +22,8 @@
     handle_cancel_ok/1
 ]).
 
--include_lib("k_common/include/logging.hrl").
 -include("gen_consumer_spec.hrl").
+-include_lib("alley_common/include/logging.hrl").
 
 -record(state, {
     handler_spec_name :: atom(),

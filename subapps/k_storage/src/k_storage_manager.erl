@@ -18,7 +18,7 @@
 ]).
 
 -include("application.hrl").
--include_lib("k_common/include/logging.hrl").
+-include_lib("alley_common/include/logging.hrl").
 
 -type event_name() :: gen_storage_manager:event_name() | 'ResponseEndEvent' | 'DeliveryEndEvent'.
 -type storage_mode() :: gen_storage_manager:storage_mode() | 'ResponseMode' | 'DeliveryMode'.

@@ -1,8 +1,8 @@
 -module(k_mb_db).
 
--include_lib("k_common/include/logging.hrl").
--include("application.hrl").
 -include("address.hrl").
+-include("application.hrl").
+-include_lib("alley_common/include/logging.hrl").
 
 %% API
 -export([

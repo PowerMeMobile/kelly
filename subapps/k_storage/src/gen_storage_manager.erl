@@ -21,8 +21,8 @@
 ]).
 
 -include("application.hrl").
+-include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/gen_server_spec.hrl").
--include_lib("k_common/include/logging.hrl").
 
 -type event_name() :: 'ShiftEvent' | atom().
 -type storage_mode() :: 'RegularMode' | atom().

@@ -2,10 +2,10 @@
 
 -behaviour(gen_wp).
 
--include_lib("k_common/include/logging.hrl").
--include_lib("gen_wp/include/gen_wp_spec.hrl").
--include_lib("alley_dto/include/adto.hrl").
 -include("application.hrl").
+-include_lib("alley_dto/include/adto.hrl").
+-include_lib("alley_common/include/logging.hrl").
+-include_lib("gen_wp/include/gen_wp_spec.hrl").
 
 %% API
 -export([

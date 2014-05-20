@@ -2,10 +2,10 @@
 
 -behaviour(gen_fsm).
 
--include_lib("k_common/include/logging.hrl").
--include_lib("k_storage/include/gateway.hrl").
--include_lib("alley_common/include/gen_fsm_spec.hrl").
 -include("snmp_task.hrl").
+-include_lib("k_storage/include/gateway.hrl").
+-include_lib("alley_common/include/logging.hrl").
+-include_lib("alley_common/include/gen_fsm_spec.hrl").
 
 -define(USER, "user").
 -define(TARGET, "just").

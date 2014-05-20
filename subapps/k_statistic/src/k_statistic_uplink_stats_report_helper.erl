@@ -4,9 +4,9 @@
     get_gtws_throughput/0
 ]).
 
--include_lib("k_common/include/logging.hrl").
--include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("alley_dto/include/JustAsn.hrl").
+-include_lib("alley_common/include/logging.hrl").
+-include_lib("amqp_client/include/amqp_client.hrl").
 
 -spec get_gtws_throughput() -> ok.
 get_gtws_throughput() ->

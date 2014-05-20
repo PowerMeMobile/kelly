@@ -22,8 +22,8 @@
 ]).
 
 
--include_lib("k_common/include/logging.hrl").
 -include_lib("gen_wp/include/gen_wp_spec.hrl").
+-include_lib("alley_common/include/logging.hrl").
 
 -record(state, {
     chan :: pid(),
