@@ -171,7 +171,9 @@ build_networks_and_providers(Customer) ->
                             country_code = CC,
                             number_len = NL,
                             prefixes = Pref,
-                            provider_id = ProviderId
+                            provider_id = ProviderId,
+                            sms_points = SmsPoints,
+                            sms_mult_points = SmsMultPoints
                         } = Network,
                         NetworkDTO = #network_dto{
                             id = NetworkId,
@@ -179,20 +181,24 @@ build_networks_and_providers(Customer) ->
                             %% now number_len in db without CC length or zero
                             number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
                             prefixes = Pref,
-                            provider_id = ProviderId
+                            provider_id = ProviderId,
+                            sms_points = SmsPoints,
+                            sms_mult_points = SmsMultPoints
                         },
                         case k_storage_providers:get_provider(ProviderId) of
                             {ok, Provider} ->
                                 #provider{
                                     gateway_id = GatewayId,
                                     bulk_gateway_id = BulkGatewayId,
-                                    receipts_supported = RS
+                                    receipts_supported = RS,
+                                    sms_add_points = SmsAddPoints
                                 } = Provider,
                                 ProviderDTO = #provider_dto{
                                     id = ProviderId,
                                     gateway_id = GatewayId,
                                     bulk_gateway_id = BulkGatewayId,
-                                    receipts_supported = RS
+                                    receipts_supported = RS,
+                                    sms_add_points = SmsAddPoints
                                 },
 
                                 %% check for Providers duplications.

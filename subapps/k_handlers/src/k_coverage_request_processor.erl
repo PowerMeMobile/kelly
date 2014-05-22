@@ -27,13 +27,18 @@ process(ReqDTO) ->
                     NetworkIds = NetworkMap#network_map.network_ids,
                     case get_networks(NetworkIds) of
                         {ok, Networks} ->
-                            case get_providers_add_points(Networks) of
-                                {ok, AddPoints} ->
+                            case get_providers(Networks) of
+                                {ok, Providers} ->
                                     NetworksDTO =
-                                        [network_to_dto(N, AddPoints) || N <- Networks],
+                                        [network_to_dto(N) || N <- Networks],
+                                    ProvidersDTO =
+                                        [provider_to_dto(P) || P <- Providers],
+                                    DefaultProviderId = Customer#customer.default_provider_id,
                                     {ok, #k1api_coverage_response_dto{
                                         id = ReqId,
-                                        networks = NetworksDTO
+                                        networks = NetworksDTO,
+                                        providers = ProvidersDTO,
+                                        default_provider_id = DefaultProviderId
                                     }};
                                 Error ->
                                     Error
@@ -65,21 +70,21 @@ get_networks([NetworkId | NetworkIds], Acc) ->
             Error
     end.
 
-get_providers_add_points(Networks) ->
+get_providers(Networks) ->
     ProvIds = lists:usort([N#network.provider_id || N <- Networks]),
-    get_providers_add_points(ProvIds, []).
+    get_providers(ProvIds, []).
 
-get_providers_add_points([], Acc) ->
+get_providers([], Acc) ->
     {ok, Acc};
-get_providers_add_points([ProvId | ProvIds], Acc) ->
+get_providers([ProvId | ProvIds], Acc) ->
     case k_storage_providers:get_provider(ProvId) of
-        {ok, #provider{sms_add_points = AddPoints}} ->
-            get_providers_add_points(ProvIds, [{ProvId, AddPoints} | Acc]);
+        {ok, Provider} ->
+            get_providers(ProvIds, [Provider | Acc]);
         Error ->
             Error
     end.
 
-network_to_dto(Network, ProvAddPoints) ->
+network_to_dto(Network) ->
     #network{
         id = Id,
         name = Name,
@@ -93,8 +98,6 @@ network_to_dto(Network, ProvAddPoints) ->
         sms_points = SmsPoints,
         sms_mult_points = SmsMultPoints
     } = Network,
-    AddPoints = proplists:get_value(ProviderId, ProvAddPoints),
-    SmsCost = (SmsPoints + AddPoints) * SmsMultPoints,
     #network_dto{
         id = Id,
         name = Name,
@@ -105,5 +108,22 @@ network_to_dto(Network, ProvAddPoints) ->
         country = Country,
         gmt_diff = GMTDiff,
         dst = DST,
-        sms_cost = SmsCost
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
+    }.
+
+provider_to_dto(Provider) ->
+    #provider{
+        id = Id,
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = ReceiptsSupported,
+        sms_add_points = SmsAddPoints
+    } = Provider,
+    #provider_dto{
+        id = Id,
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = ReceiptsSupported,
+        sms_add_points = SmsAddPoints
     }.

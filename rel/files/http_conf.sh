@@ -44,11 +44,11 @@ post "providers" 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=SMPPSim%20Provide
 #
 # Networks
 #
-post "networks" 'id=0456837f-e874-4b05-8e89-95ae20b897d2&name=Mobile%20Telesystems&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=292;295;296;297;298;33&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0'
+post "networks" 'id=0456837f-e874-4b05-8e89-95ae20b897d2&name=Mobile%20Telesystems&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=292;295;296;297;298;33&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=2.0&sms_mult_points=1.0'
 
 post "networks" 'id=6dd0af45-7cdf-41aa-954b-cc368fe1968e&name=Velcom%20Mobile%20Digital%20Comm.&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=291;293;296;299;44&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0'
 
-post "networks" 'id=793e7b47-b248-4c86-a26f-eadfc44f84e2&name=Life&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=251;252;253;254;255;256;257;258;259&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0'
+post "networks" 'id=793e7b47-b248-4c86-a26f-eadfc44f84e2&name=Life&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=251;252;253;254;255;256;257;258;259&gmt_diff=%2B2&dst=7,5,3;7,5,10&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=2.0&sms_mult_points=1.0'
 
 #
 # Network maps
