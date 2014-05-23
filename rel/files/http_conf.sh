@@ -8,7 +8,7 @@ HOST="127.0.0.1"
 # Customer's `default_validity' in time format, described in SMPP specification v3.4
 ###
 
-post(){
+post() {
     TARGET=$1
     BODY=$2
     echo -n "Creating $TARGET..."
