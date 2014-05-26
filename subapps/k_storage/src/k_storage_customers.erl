@@ -12,7 +12,8 @@
     del_customer_user/2,
     get_customer_originator/2,
     set_customer_originator/2,
-    del_customer_originator/2
+    del_customer_originator/2,
+    reduce_credit/2
 ]).
 
 -include("storages.hrl").
@@ -177,6 +178,15 @@ del_customer_originator(CustomerUuid, OriginatorId) ->
         Error ->
             Error
     end.
+
+-spec reduce_credit(customer_uuid(), float()) -> ok | {error, term()}.
+reduce_credit(CustomerUuid, Credit) ->
+    Modifier = {
+        '$inc', {
+            'credit', -Credit
+        }
+    },
+    mongodb_storage:upsert(static_storage, customers, {'_id', CustomerUuid}, Modifier).
 
 %% ===================================================================
 %% Internals

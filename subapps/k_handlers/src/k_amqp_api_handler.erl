@@ -120,6 +120,29 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReq">> ->
             {ReqCT, <<>>}
     end;
 
+process(ReqCT, ReqBin) when ReqCT =:= <<"RequestCreditReq">> ->
+    case adto:decode(#k1api_request_credit_request_dto{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got request credit request: ~p", [ReqDTO]),
+            case k_request_credit_request_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built request credit response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"RequestCreditResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("request credit response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("request credit request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("request credit request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
 process(ReqCT, ReqBin) when ReqCT =:= <<"SubscribeIncomingSmsReq">> ->
     case adto:decode(#k1api_subscribe_incoming_sms_request_dto{}, ReqBin) of
         {ok, ReqDTO} ->
