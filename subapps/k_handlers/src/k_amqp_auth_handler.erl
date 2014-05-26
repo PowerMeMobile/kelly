@@ -90,7 +90,8 @@ process(ContentType, ReqBin) ->
     {deny, password} |
     {deny, connection_type} |
     {deny, blocked} |
-    {deny, deactivated}.
+    {deny, deactivated} |
+    {deny, credit_limit_exceeded}.
 authenticate(CustomerId, UserId, Password, ConnType) ->
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
@@ -106,7 +107,12 @@ authenticate(CustomerId, UserId, Password, ConnType) ->
                                         allow ->
                                             case check_conn_type(ConnType, User#user.connection_types) of
                                                 allow ->
-                                                    {allow, Customer};
+                                                    case check_credit_limit(Customer) of
+                                                        allow ->
+                                                            {allow, Customer};
+                                                        Deny ->
+                                                            Deny
+                                                    end;
                                                 Deny ->
                                                     Deny
                                             end;
@@ -158,6 +164,16 @@ check_state(blocked) ->
     {deny, blocked};
 check_state(deactivated) ->
     {deny, deactivate}.
+
+check_credit_limit(Customer) ->
+    Credit = Customer#customer.credit,
+    CreditLimit = Customer#customer.credit_limit,
+    case Credit =< -CreditLimit of
+        true ->
+            {deny, credit_limit_exceeded};
+        false ->
+            allow
+    end.
 
 build_networks_and_providers(Customer) ->
     NetworkMapId = Customer#customer.network_map_id,
