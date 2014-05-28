@@ -50,6 +50,9 @@ process_receipt_batch(ReceiptBatch) ->
             {ok, []};
         %% abnormal case, sms response isn't handled yet.
         {error, no_entry} ->
+            %% don't waste resources trying to requeue multiple times
+            %% sleep for 10 secs before requeuing again.
+            timer:sleep(10000),
             {error, not_enough_data_to_proceed};
         Error ->
             Error
