@@ -6,6 +6,11 @@
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
 
+%-define(TEST, 1).
+-ifdef(TEST).
+   -include_lib("eunit/include/eunit.hrl").
+-endif.
+
 %% ===================================================================
 %% API
 %% ===================================================================
@@ -22,15 +27,13 @@ process(ReqDTO) ->
             CustomerUuid = Customer#customer.customer_uuid,
             Credit = Customer#customer.credit,
             CreditLimit = Customer#customer.credit_limit,
-            Credit2 = Credit - CreditRequested,
-            {Result, CreditLeft} =
-                case Credit2 < -CreditLimit of
-                    true ->
-                        {denied, Credit};
-                    false ->
-                        ok = k_storage_customers:reduce_credit(CustomerUuid, CreditRequested),
-                        {allowed, Credit2}
-                end,
+            {Result, CreditLeft} = request_credit(Credit, CreditLimit, CreditRequested),
+            case Result of
+                allowed ->
+                    ok = k_storage_customers:reduce_credit(CustomerUuid, CreditRequested);
+                _ ->
+                    nop
+            end,
             {ok, #k1api_request_credit_response_dto{
                 id = ReqId,
                 result = Result,
@@ -42,4 +45,33 @@ process(ReqDTO) ->
 
 %% ===================================================================
 %% Internal
+%% ===================================================================
+
+request_credit(Credit, CreditLimit, CreditRequested) ->
+    Credit2 = Credit - CreditRequested,
+    CreditLeft = Credit2 + CreditLimit,
+    case CreditLeft < 0 of
+        true ->
+            {denied, Credit};
+        false ->
+            {allowed, CreditLeft}
+    end.
+
+%% ===================================================================
+%% Tests begin
+%% ===================================================================
+
+-ifdef(TEST).
+
+request_credit_test_() -> [
+    ?_assertEqual({allowed, 8}, request_credit(10,  0,  2)),
+    ?_assertEqual({allowed, 0}, request_credit(10,  0, 10)),
+    ?_assertEqual({denied, 10}, request_credit(10,  0, 12)),
+    ?_assertEqual({allowed, 8}, request_credit( 0, 10,  2))
+].
+
+-endif.
+
+%% ===================================================================
+%% Tests end
 %% ===================================================================
