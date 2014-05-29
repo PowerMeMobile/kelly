@@ -14,8 +14,8 @@ KELLY_BIN='./rel/kelly/bin/kelly'
 echo Start kelly node
 $KELLY_BIN start
 
-echo Wait 5 sec for kelly node start
-sleep 5
+echo Wait 10 sec for kelly node start
+sleep 10
 
 echo Ping node
 KELLY_PING_RESULT=$($KELLY_BIN ping | grep pong)
