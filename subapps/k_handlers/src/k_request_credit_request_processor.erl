@@ -24,7 +24,7 @@ process(ReqDTO) ->
             CreditLimit = Customer#customer.credit_limit,
             Credit2 = Credit - CreditRequested,
             {Result, CreditLeft} =
-                case Credit2 =< -CreditLimit of
+                case Credit2 < -CreditLimit of
                     true ->
                         {denied, Credit};
                     false ->
