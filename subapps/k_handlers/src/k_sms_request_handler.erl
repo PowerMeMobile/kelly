@@ -161,12 +161,13 @@ build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds) ->
     Body = SmsReq#just_sms_request_dto.message,
     Encoding = SmsReq#just_sms_request_dto.encoding,
     Params = SmsReq#just_sms_request_dto.params,
-    {_Encoding, _DC, Bitness} = encoding_dc_bitness(Encoding, Params, default_gateway_settings()),
+    {Encoding2, _DC, Bitness} = encoding_dc_bitness(Encoding, Params, default_gateway_settings()),
+    EncodedBody = encode_msg(Body, Encoding2),
     PortAddressing = port_addressing(Params),
 
     PartsTotal = length(InMsgIds),
     PartSeqNums = lists:seq(1, PartsTotal),
-    BodyParts = split_msg(Body, Bitness, PortAddressing),
+    BodyParts = split_msg(EncodedBody, Bitness, PortAddressing),
     [
         build_long_part_req_info(
             SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal
@@ -297,6 +298,19 @@ encoding_dc_bitness(Encoding, Params, Settings) ->
                 {other, Other, 8}
         end,
     {E, ?gv(data_coding, Params, DC), B}.
+
+encode_msg(Msg, gsm0338) ->
+    gsm0338:from_utf8(Msg);
+encode_msg(Msg, ascii) ->
+    Msg;
+encode_msg(Msg, latin1) ->
+    {ok, Encoded} = iconverl:conv("latin1//IGNORE", "utf-8", Msg),
+    Encoded;
+encode_msg(Msg, ucs2) ->
+    {ok, Encoded} = iconverl:conv("ucs-2be//IGNORE", "utf-8", Msg),
+    Encoded;
+encode_msg(Msg, other) ->
+    Msg.
 
 port_addressing(Params) ->
     DstPort = get_param_by_name(<<"destination_port">>, Params, undefined),
