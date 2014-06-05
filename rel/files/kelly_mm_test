@@ -1,0 +1,15 @@
+#!/bin/bash
+
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators -d 'id=2&address=AlfaOrig,5,0&description=&is_default=false&state=approved'; echo; echo
+
+curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/793e7b47-b248-4c86-a26f-eadfc44f84e2 -d 'sms_points=0.5'; echo; echo
+
+curl -s -D - -X 'POST' 127.0.0.1:8080/blacklist -d 'id=91d4c388-ec85-11e3-8304-00269e42f7a5&dst_addr=375291000001,1,1'; echo; echo
+
+curl -s -D - -X 'POST' 127.0.0.1:8080/blacklist -d 'id=e9669400-ec85-11e3-ad7f-00269e42f7a5&dst_addr=375291000002,1,1&src_addr=AlfaOrig,5,0'; echo; echo
+
+curl -s -D - -X 'POST' 127.0.0.1:8080/blacklist -d 'id=cc00b030-ec85-11e3-a399-00269e42f7a5&dst_addr=375292000001,1,1'; echo; echo
+
+curl -s -D - -X 'POST' 127.0.0.1:8080/blacklist -d 'id=07b1e1b2-ec86-11e3-ab1b-00269e42f7a5&dst_addr=375292000002,1,1&src_addr=AlfaOrig,5,0'; echo; echo
+
+#curl -s -D - -X 'PUT' 127.0.0.1:8080/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user -d 'password=qwe123'; echo; echo

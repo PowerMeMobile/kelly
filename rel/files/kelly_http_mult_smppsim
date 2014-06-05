@@ -34,8 +34,8 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/providers -d 'id=2277349a-dc39-11e3-9202-0
 #
 # Networks
 #
-curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/0456837f-e874-4b05-8e89-95ae20b897d2 -d 'provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=false&sms_points=1.0&sms_mult_points=1.0'; echo; echo
-
 curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/6dd0af45-7cdf-41aa-954b-cc368fe1968e -d 'provider_id=103fc6bc-dc39-11e3-859e-00269e42f7a5&is_home=true&sms_points=1.0&sms_mult_points=1.0'; echo; echo
 
-curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/793e7b47-b248-4c86-a26f-eadfc44f84e2 -d 'provider_id=2277349a-dc39-11e3-9202-00269e42f7a5&is_home=false&sms_points=1.0&sms_mult_points=1.0'; echo; echo
+curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/0456837f-e874-4b05-8e89-95ae20b897d2 -d 'provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=false&sms_points=2.0&sms_mult_points=1.0'; echo; echo
+
+curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/793e7b47-b248-4c86-a26f-eadfc44f84e2 -d 'provider_id=2277349a-dc39-11e3-9202-00269e42f7a5&is_home=false&sms_points=3.0&sms_mult_points=1.0'; echo; echo
