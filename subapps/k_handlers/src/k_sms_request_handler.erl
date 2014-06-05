@@ -10,6 +10,7 @@
 -include_lib("k_storage/include/msg_info.hrl").
 -include_lib("k_mailbox/include/application.hrl").
 
+%-define(TEST, 1).
 -ifdef(TEST).
    -include_lib("eunit/include/eunit.hrl").
 -endif.
@@ -372,7 +373,7 @@ sms_request_to_req_info_list_regular_short_batch_test() ->
     UID = <<"user">>,
     CT = funnel,
     Body = <<"Hello">>,
-    Encoding = default,
+    Encoding = ascii,
     ReqTime = {0,0,0},
 
     SmsReq = #just_sms_request_dto{
@@ -466,7 +467,7 @@ sms_request_to_req_info_list_part_test() ->
     UID = <<"user">>,
     CT = funnel,
     Body = <<"111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111">>,
-    Encoding = default,
+    Encoding = ascii,
     ReqTime = {0,0,0},
 
     SmsReq = #just_sms_request_dto{
@@ -559,7 +560,7 @@ sms_request_to_req_info_list_multipart_test() ->
     UID = <<"user">>,
     CT = funnel,
     Body = <<"1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222223333333">>,
-    Encoding = default,
+    Encoding = ascii,
     ReqTime = {0,0,0},
 
     SmsReq = #just_sms_request_dto{
