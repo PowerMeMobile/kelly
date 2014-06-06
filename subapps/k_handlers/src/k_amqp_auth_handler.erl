@@ -188,6 +188,7 @@ build_networks_and_providers(Customer) ->
                             number_len = NL,
                             prefixes = Pref,
                             provider_id = ProviderId,
+                            is_home = IsHome,
                             sms_points = SmsPoints,
                             sms_mult_points = SmsMultPoints
                         } = Network,
@@ -198,6 +199,7 @@ build_networks_and_providers(Customer) ->
                             number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
                             prefixes = Pref,
                             provider_id = ProviderId,
+                            is_home = IsHome,
                             sms_points = SmsPoints,
                             sms_mult_points = SmsMultPoints
                         },
