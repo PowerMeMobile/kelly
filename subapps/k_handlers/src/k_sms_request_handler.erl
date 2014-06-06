@@ -13,6 +13,7 @@
 %-define(TEST, 1).
 -ifdef(TEST).
    -include_lib("eunit/include/eunit.hrl").
+   -compile(export_all).
 -endif.
 
 -record(port_addressing, {
@@ -301,7 +302,8 @@ encoding_dc_bitness(Encoding, Params, Settings) ->
     {E, ?gv(data_coding, Params, DC), B}.
 
 encode_msg(Msg, gsm0338) ->
-    gsm0338:from_utf8(Msg);
+    {valid, Encoded} = gsm0338:from_utf8(Msg),
+    Encoded;
 encode_msg(Msg, ascii) ->
     Msg;
 encode_msg(Msg, latin1) ->
