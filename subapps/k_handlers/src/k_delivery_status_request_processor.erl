@@ -29,7 +29,16 @@ process(ReqDTO) ->
 %% ===================================================================
 
 status({_ID, MsgDoc}) ->
+    Address = case bson:at(da, MsgDoc) of
+        <<"xxxxxxxxxx">> ->
+            %% the most probable case when this happens is
+            %% when the sms request hasn't yet been processed,
+            %% possible due to an error in it.
+            #addr{addr = <<"unknown">>, ton = 5, npi = 0};
+        AddrDoc ->
+            k_storage_utils:doc_to_addr(AddrDoc)
+    end,
     #k1api_sms_status_dto{
-        address = k_storage_utils:doc_to_addr(bson:at(da, MsgDoc)),
+        address = Address,
         status = bson:at(s, MsgDoc)
     }.
