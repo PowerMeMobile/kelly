@@ -145,7 +145,8 @@ project(monthly) ->
 
 build_mt_report_response(Doc) ->
     MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
-    Type = transform_type(MsgInfo#msg_info.type),
+    Type = get_type(MsgInfo#msg_info.type),
+    PartInfo = get_part_info(MsgInfo#msg_info.type),
     ReqTime  = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
     RespTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
     DlrTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
@@ -161,6 +162,7 @@ build_mt_report_response(Doc) ->
         {gateway_id, MsgInfo#msg_info.gateway_id},
         {out_msg_id, MsgInfo#msg_info.out_msg_id},
         {type, Type},
+        {part_info, PartInfo},
         {encoding, MsgInfo#msg_info.encoding},
         {body, MsgInfo#msg_info.body},
         {src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
@@ -187,9 +189,14 @@ addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
         {ref_num, RefNum}
     ].
 
-transform_type(regular) ->
+get_type(regular) ->
     regular;
-transform_type({part, #part_info{
+get_type({part, #part_info{}}) ->
+    part.
+
+get_part_info(regular) ->
+    undefined;
+get_part_info({part, #part_info{
     ref = PartRef,
     seq = PartSeq,
     total = TotalParts
