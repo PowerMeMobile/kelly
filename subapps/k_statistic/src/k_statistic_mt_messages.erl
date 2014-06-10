@@ -201,7 +201,6 @@ get_part_info({part, #part_info{
     seq = PartSeq,
     total = TotalParts
 }}) -> [
-    {name, part},
     {ref, PartRef},
     {seq, PartSeq},
     {total, TotalParts}
