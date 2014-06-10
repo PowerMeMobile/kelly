@@ -45,7 +45,7 @@ init() ->
     ],
     Create = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
-        #param{name = id, mandatory = true, repeated = false, type = integer},
+        #param{name = id, mandatory = false, repeated = false, type = integer},
         #param{name = address, mandatory = true, repeated = false, type =
             {custom, fun decode_addr/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
@@ -126,7 +126,12 @@ prepare_originators(Originators) when is_list(Originators) ->
 %% ===================================================================
 
 create_originator(Customer, Params) ->
-    Id = ?gv(id, Params),
+    Id = case ?gv(id, Params) of
+        undefined ->
+            uuid:unparse(uuid:generate_time());
+        GivenId ->
+            GivenId
+    end,
     case k_storage_customers:get_customer_originator(Customer, Id) of
         {ok, #originator{}} ->
             {exception, 'svc0004'};
