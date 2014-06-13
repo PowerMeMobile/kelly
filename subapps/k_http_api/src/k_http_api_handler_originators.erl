@@ -27,11 +27,11 @@
 init() ->
     Read = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
-        #param{name = id, mandatory = false, repeated = false, type = integer}
+        #param{name = id, mandatory = false, repeated = false, type = binary}
     ],
     Update = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
-        #param{name = id, mandatory = true, repeated = false, type = integer},
+        #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = address, mandatory = false, repeated = false, type =
             {custom, fun decode_addr/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
@@ -41,11 +41,11 @@ init() ->
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
-        #param{name = id, mandatory = true, repeated = false, type = integer}
+        #param{name = id, mandatory = true, repeated = false, type = binary}
     ],
     Create = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
-        #param{name = id, mandatory = false, repeated = false, type = integer},
+        #param{name = id, mandatory = false, repeated = false, type = binary},
         #param{name = address, mandatory = true, repeated = false, type =
             {custom, fun decode_addr/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},

@@ -155,10 +155,10 @@ delete_user(UserId) ->
 %% %% Customer USER Tests
 %% %% ===================================================================
 
-originator_id() -> 1.
+originator_id() -> <<"d4000b38-f2d8-11e3-ba01-00269e42f7a5">>.
 
 originator_path(CustomerId, OriginatorId) ->
-    originator_path(CustomerId) ++ "/" ++ integer_to_list(OriginatorId).
+    originator_path(CustomerId) ++ "/" ++ binary_to_list(OriginatorId).
 originator_path(CustomerId) ->
     customer_path(CustomerId) ++ "/originators".
 
