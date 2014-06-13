@@ -225,7 +225,47 @@ Result:
 Problems:
 Looks very much like a subset of the previous report. Shouldn't we combine these two into something more generic?
 
+#
+# MT message by id
+#
+REST call
+GET /report/mt_msg?msg_id=MSG_ID
 
+Example:
+http://localhost:8080/report/mt_msg?msg_id=53885ca25f351586c19125ae
+
+Result:
+<object>
+  <item>
+    <msg_id>53885ca25f351586c19125ae</msg_id>
+    <client_type>funnel</client_type>
+    <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
+    <user_id>user</user_id>
+    <in_msg_id>7592</in_msg_id>
+    <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+    <out_msg_id>126979</out_msg_id>
+    <type>regular</type>
+    <part_info>undefined</part_info>
+    <encoding>default</encoding>
+    <body>Hello</body>
+    <src_addr>
+      <addr>375296660002</addr>
+      <ton>1</ton>
+      <npi>1</npi>
+    </src_addr>
+    <dst_addr>
+      <addr>375293000000</addr>
+      <ton>1</ton>
+      <npi>1</npi>
+    </dst_addr>
+    <reg_dlr>false</reg_dlr>
+    <esm_class>0</esm_class>
+    <validity_period>000003000000000R</validity_period>
+    <req_time>2014-05-30T10:25:38</req_time>
+    <status>sent</status>
+    <status_update_time>2014-05-30T10:25:38</status_update_time>
+  </item>
+</object>
 
 #
 # MT messages by customer id and destination address
