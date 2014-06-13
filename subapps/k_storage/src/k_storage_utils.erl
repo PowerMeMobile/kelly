@@ -106,12 +106,12 @@ objectid_to_binary({ObjId}) ->
 encoding_to_binary(Encoding) when is_atom(Encoding) ->
     bsondoc:atom_to_binary(Encoding);
 encoding_to_binary(Encoding) when is_integer(Encoding) ->
-    list_to_binary(integer_to_list(Encoding)).
+    integer_to_binary(Encoding).
 
 -spec binary_to_encoding(binary()) -> atom() | integer().
 binary_to_encoding(Binary) ->
     try bsondoc:binary_to_atom(Binary)
     catch
         _:_ ->
-            list_to_integer(binary_to_list(Binary))
+            binary_to_integer(Binary)
     end.
