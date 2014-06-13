@@ -5,7 +5,7 @@
 -include("network_map.hrl").
 -include("provider.hrl").
 
--type originator_id() :: integer().
+-type originator_id() :: uuid().
 -type customer_uuid() :: uuid().
 -type customer_id() :: binary(). %% http customer_id | smpp system-type
 -type user_id() :: binary(). %% http user_id | smpp system-id
