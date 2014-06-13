@@ -100,5 +100,6 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_statuses_stats,
         k_http_api_handler_msg_stats,
         k_http_api_handler_mt_msg_aggr_stats,
-        k_http_api_handler_mt_msg_stats
+        k_http_api_handler_mt_msg_stats,
+        k_http_api_handler_mt_msg
     ]).

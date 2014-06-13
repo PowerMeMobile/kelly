@@ -7,9 +7,17 @@
     doc_to_mt_msg_info/1,
     doc_to_mo_msg_info/1,
 
+    objectid_to_binary/1,
+    binary_to_objectid/1,
+
     encoding_to_binary/1,
     binary_to_encoding/1
 ]).
+
+%-define(TEST, 1).
+-ifdef(TEST).
+    -include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -include("msg_info.hrl").
 
@@ -95,12 +103,13 @@ doc_to_mo_msg_info(Doc) ->
         req_time = bsondoc:at(rqt, Doc)
     }.
 
+-spec objectid_to_binary(bson:objectid()) -> binary().
 objectid_to_binary({ObjId}) ->
-    list_to_binary(
-        lists:flatten(
-            [io_lib:format("~2.16.0b", [X]) || X <- binary_to_list(ObjId)]
-        )
-    ).
+    ac_hexdump:binary_to_hexdump(ObjId, to_lower).
+
+-spec binary_to_objectid(binary()) -> bson:objectid().
+binary_to_objectid(Bin) ->
+    {ac_hexdump:hexdump_to_binary(Bin)}.
 
 -spec encoding_to_binary(atom() | integer()) -> binary().
 encoding_to_binary(Encoding) when is_atom(Encoding) ->
@@ -115,3 +124,27 @@ binary_to_encoding(Binary) ->
         _:_ ->
             binary_to_integer(Binary)
     end.
+
+%% ===================================================================
+%% Tests begin
+%% ===================================================================
+
+-ifdef(TEST).
+
+objectid_to_binary_test() ->
+    ObjId = {<<83,149,217,23,77,52,173,92,254,208,16,218>>},
+    Exp = <<"5395d9174d34ad5cfed010da">>,
+    Act = objectid_to_binary(ObjId),
+    ?assertEqual(Exp, Act).
+
+binary_to_objectid_test() ->
+    Bin = <<"5395d9174d34ad5cfed010da">>,
+    Exp = {<<83,149,217,23,77,52,173,92,254,208,16,218>>},
+    Act = binary_to_objectid(Bin),
+    ?assertEqual(Exp, Act).
+
+-endif.
+
+%% ===================================================================
+%% Tests end
+%% ===================================================================
