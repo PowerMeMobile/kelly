@@ -25,32 +25,24 @@ process(ReqDTO) ->
             case k_storage_network_maps:get_network_map(NetworkMapId) of
                 {ok, NetworkMap} ->
                     NetworkIds = NetworkMap#network_map.network_ids,
-                    case get_networks(NetworkIds) of
-                        {ok, Networks} ->
-                            case get_providers(Networks) of
-                                {ok, Providers} ->
-                                    NetworksDTO =
-                                        [network_to_dto(N) || N <- Networks],
-                                    ProvidersDTO =
-                                        [provider_to_dto(P) || P <- Providers],
-                                    DefaultProviderId = Customer#customer.default_provider_id,
-                                    {ok, #k1api_coverage_response_dto{
-                                        id = ReqId,
-                                        networks = NetworksDTO,
-                                        providers = ProvidersDTO,
-                                        default_provider_id = DefaultProviderId
-                                    }};
-                                Error ->
-                                    Error
-                            end;
-                        Error ->
-                            Error
-                    end;
-                Error ->
-                    Error
+                    Networks = get_networks(NetworkIds),
+                    Providers = get_providers(Networks),
+                    NetworksDTO = [network_to_dto(N) || N <- Networks],
+                    ProvidersDTO = [provider_to_dto(P) || P <- Providers],
+                    DefaultProviderId = Customer#customer.default_provider_id,
+                    {ok, #k1api_coverage_response_dto{
+                        id = ReqId,
+                        networks = NetworksDTO,
+                        providers = ProvidersDTO,
+                        default_provider_id = DefaultProviderId
+                    }};
+                {error, Error} ->
+                    ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
+                    {error, Error}
             end;
-        Error ->
-            Error
+        {error, Error} ->
+            ?log_error("Get customer id: ~p failed with: ~p", [CustomerId, Error]),
+            {error, Error}
     end.
 
 %% ===================================================================
@@ -61,13 +53,14 @@ get_networks(NetworkIds) ->
     get_networks(NetworkIds, []).
 
 get_networks([], Acc) ->
-    {ok, Acc};
+    Acc;
 get_networks([NetworkId | NetworkIds], Acc) ->
     case k_storage_networks:get_network(NetworkId) of
         {ok, Network} ->
             get_networks(NetworkIds, [Network | Acc]);
-        Error ->
-            Error
+        {error, Error} ->
+            ?log_error("Get network id: ~p failed with: ~p", [NetworkId, Error]),
+            get_networks(NetworkIds, Acc)
     end.
 
 get_providers(Networks) ->
@@ -75,13 +68,14 @@ get_providers(Networks) ->
     get_providers(ProvIds, []).
 
 get_providers([], Acc) ->
-    {ok, Acc};
+    Acc;
 get_providers([ProvId | ProvIds], Acc) ->
     case k_storage_providers:get_provider(ProvId) of
         {ok, Provider} ->
             get_providers(ProvIds, [Provider | Acc]);
-        Error ->
-            Error
+        {error, Error} ->
+            ?log_error("Get provider id: ~p failed with: ~p", [ProvId, Error]),
+            get_providers(ProvIds, Acc)
     end.
 
 network_to_dto(Network) ->
