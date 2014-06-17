@@ -21,13 +21,17 @@
 start(_StartType, _StartArgs) ->
     register(?MODULE, self()),
 
-    {ok, NumAcceptors} = application:get_env(?APP, num_acceptors),
+    {ok, Addr} = application:get_env(?APP, addr),
     {ok, Port} = application:get_env(?APP, port),
-    ProtocolOpts = [
+    {ok, AcceptorsNum} = application:get_env(?APP, acceptors_num),
+
+    TransOpts = [{ip, Addr}, {port, Port}],
+    ProtoOpts = [
         {env, [{dispatch, dispatch_rules()}]}
     ],
     {ok, _Pid} =
-        cowboy:start_http(?MODULE, NumAcceptors, [{port, Port}], ProtocolOpts),
+        cowboy:start_http(?MODULE, AcceptorsNum, TransOpts, ProtoOpts),
+
     k_http_api_sup:start_link().
 
 stop(_State) ->
