@@ -2,8 +2,8 @@
 
 -export([
     get_mt_msg_status_report/4,
-    get_aggregated_statuses_report/2,
-    get_msgs_by_status_report/3,
+    get_aggregated_statuses_report/3,
+    get_msgs_by_status_report/4,
 
     get_msg_stats_report/3,
     get_detailed_msg_stats_report/3,
@@ -28,19 +28,20 @@
 get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
     k_statistic_status_reports:get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId).
 
--spec get_aggregated_statuses_report(calendar:datetime(), calendar:datetime()) ->
+-spec get_aggregated_statuses_report(calendar:datetime(), calendar:datetime(), customer_id()) ->
     {ok, report()} | {error, reason()}.
-get_aggregated_statuses_report(FromDate, ToDate) when FromDate < ToDate ->
+get_aggregated_statuses_report(FromDate, ToDate, CustomerId) when FromDate < ToDate ->
     From = ac_datetime:datetime_to_timestamp(FromDate),
     To = ac_datetime:datetime_to_timestamp(ToDate),
-    k_statistic_status_reports:get_aggregated_statuses_report(From, To).
+    k_statistic_status_reports:get_aggregated_statuses_report(From, To, CustomerId).
 
--spec get_msgs_by_status_report(calendar:datetime(), calendar:datetime(), status()) ->
-    {ok, report()} | {error, reason()}.
-get_msgs_by_status_report(FromDate, ToDate, Status) when FromDate < ToDate ->
+-spec get_msgs_by_status_report(
+    calendar:datetime(), calendar:datetime(), customer_id(), status()
+) -> {ok, report()} | {error, reason()}.
+get_msgs_by_status_report(FromDate, ToDate, CustomerId, Status) when FromDate < ToDate ->
     From = ac_datetime:datetime_to_timestamp(FromDate),
     To = ac_datetime:datetime_to_timestamp(ToDate),
-    k_statistic_status_reports:get_msgs_by_status_report(From, To, Status).
+    k_statistic_status_reports:get_msgs_by_status_report(From, To, CustomerId, Status).
 
 -spec get_msg_stats_report(integer(), calendar:datetime(), calendar:datetime()) ->
     {ok, report()} | {error, reason()}.

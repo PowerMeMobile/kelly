@@ -40,7 +40,7 @@ Result:
 #
 
 REST call:
-GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]
+GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID]
 Where
 	YYYY - year
 	MM - month
@@ -48,9 +48,10 @@ Where
 	hh - hours
 	mm - minutes
 	ss - seconds (optional)
+	CUSTOMER_ID - customer uuid (optional)
 
 Example:
-http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00
+http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&customer_id=feda5822-5271-11e1-bd27-001d0947ec73
 
 Result:
 <object>
@@ -69,7 +70,7 @@ Result:
 #
 
 REST call:
-GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&status=STATUS
+GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&status=STATUS[&customer_id=CUSTOMER_ID]
 Where
 	STATUS - mt: pending (request status)
 		   	 	 sent, failed (response status)
@@ -81,9 +82,10 @@ Where
 	hh - hours
 	mm - minutes
 	ss - seconds (optional)
+	CUSTOMER_ID - customer uuid (optional)
 
 Example:
-http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted
+http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted&customer_id=feda5822-5271-11e1-bd27-001d0947ec73
 
 Result:
 <object>
@@ -272,7 +274,7 @@ Result:
 #
 
 REST call:
-GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID][&recipient=RECIPIENT][&status=STATUS]
+GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID][&recipient=RECIPIENT][&status=STATUS]&skip=SKIP&limit=LIMIT&order_by=ORDER_BY&order_direction=ORDER_DIRECTION
 Where
 	YYYY - year
 	MM - month
@@ -283,10 +285,14 @@ Where
 	CUSTOMER_ID - customer uuid (optional)
 	RECIPIENT - destination address (optional)
 	STATUS - message status (optional)
+    SKIP - how many to skip
+    LIMIT - how many to take
+    ORDER_BY - field to order by
+    ORDER_DIRECTION - asc | desc
 
 
 Example:
-http://localhost:8080/report/mt?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_id=feda5822-5271-11e1-bd27-001d0947ec73&recipient=375258298600
+http://localhost:8080/report/mt?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_id=feda5822-5271-11e1-bd27-001d0947ec73&recipient=375258298600&skip=0&limit=1&order_by=req_time&order_direction=asc
 
 Result:
 <object>

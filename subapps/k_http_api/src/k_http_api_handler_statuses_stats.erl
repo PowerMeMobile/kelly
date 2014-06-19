@@ -25,6 +25,7 @@ init() ->
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = to, mandatory = true, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
+        #param{name = customer_id, mandatory = false, repeated = false, type = binary},
         #param{name = status, mandatory = false, repeated = false, type = atom}
     ],
     {ok, #specs{
@@ -34,10 +35,11 @@ init() ->
 
 read(Params) ->
     ?log_debug("Params: ~p", [Params]),
-    HttpFrom = ?gv(from, Params),
-    HttpTo = ?gv(to, Params),
-    HttpStatus = ?gv(status, Params),
-    case build_report(HttpFrom, HttpTo, HttpStatus) of
+    From = ?gv(from, Params),
+    To = ?gv(to, Params),
+    CustomerId = ?gv(customer_id, Params),
+    Status = ?gv(status, Params),
+    case build_report(From, To, CustomerId, Status) of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->
@@ -58,8 +60,8 @@ delete(_Params) ->
 %% Internal
 %% ===================================================================
 
-build_report(From, To, undefined) ->
-    k_statistic:get_aggregated_statuses_report(From, To);
+build_report(From, To, CustomerId, undefined) ->
+    k_statistic:get_aggregated_statuses_report(From, To, CustomerId);
 
-build_report(From, To, Status) ->
-    k_statistic:get_msgs_by_status_report(From, To, Status).
+build_report(From, To, CustomerId, Status) ->
+    k_statistic:get_msgs_by_status_report(From, To, CustomerId, Status).

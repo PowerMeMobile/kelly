@@ -20,6 +20,10 @@
 build_report(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
+    Skip = ?gv(skip, Params),
+    Limit = ?gv(limit, Params),
+    OrderBy = decode_order_by(?gv(order_by, Params)),
+    OrderDirection = decode_order_direction(?gv(order_direction, Params)),
     CustomerSelector =
         case ?gv(customer_id, Params) of
             undefined -> [];
@@ -35,13 +39,17 @@ build_report(Params) ->
             undefined -> [];
             Status -> [{'s', Status}]
         end,
-
     Selector =
-        [{'rqt', {'$gte', From, '$lt', To}}] ++
-        CustomerSelector ++
-        RecipientSelector ++
-        StatusSelector,
-    {ok, Docs} = shifted_storage:find(mt_messages, bson:document(Selector)),
+        {'$query',
+            bson:document(
+                [{'rqt', {'$gte', From, '$lt', To}}] ++
+                CustomerSelector ++
+                RecipientSelector ++
+                StatusSelector
+            ),
+         '$orderby', {OrderBy, OrderDirection}
+        },
+    {ok, Docs} = shifted_storage:find(mt_messages, Selector, {}, Skip, Limit),
     [build_mt_report_response(Doc) || {_, Doc} <- Docs].
 
 -spec build_msg_report(msg_id()) -> [[{atom(), term()}]].
@@ -212,3 +220,23 @@ get_part_info({part, #part_info{
     {seq, PartSeq},
     {total, TotalParts}
 ].
+
+decode_order_by(<<"req_time">>) ->
+    rqt;
+decode_order_by(<<"status">>) ->
+    s;
+decode_order_by(<<"customer_name">>) ->
+    rqt;
+decode_order_by(<<"user_id">>) ->
+    rqt;
+decode_order_by(<<"client_type">>) ->
+    ct;
+decode_order_by(<<"dst_addr.addr">>) ->
+    'da.a';
+decode_order_by(<<"src_addr.addr">>) ->
+    'sa.a'.
+
+decode_order_direction(<<"asc">>) ->
+    1;
+decode_order_direction(<<"desc">>) ->
+    -1.

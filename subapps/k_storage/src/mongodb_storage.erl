@@ -9,8 +9,11 @@
 
     find/3,
     find/4,
+    find/5,
+    find/6,
     find_one/3,
     find_one/4,
+    find_one/5,
     insert/3,
     upsert/4,
     delete/3,
@@ -43,6 +46,8 @@
 -type document() :: bson:document().
 -type selector() :: bson:document().
 -type projector() :: bson:document().
+-type skip() :: non_neg_integer().
+-type limit() :: undefined | non_neg_integer().
 -type modifier() :: bson:document().
 -type command() :: bson:document().
 -type index_spec() :: bson:document().
@@ -68,10 +73,26 @@ find(ServerName, Coll, Selector) ->
 -spec find(server_name(), collection(), selector(), projector()) ->
     {ok, [{key(), document()}]} | {error, reason()}.
 find(ServerName, Coll, Selector, Projector) ->
+    find(ServerName, Coll, Selector, Projector, 0).
+
+-spec find(server_name(), collection(), selector(), projector(), skip()) ->
+    {ok, [{key(), document()}]} | {error, reason()}.
+find(ServerName, Coll, Selector, Projector, Skip) ->
+    find(ServerName, Coll, Selector, Projector, Skip, undefined).
+
+-spec find(server_name(), collection(), selector(), projector(), skip(), limit()) ->
+    {ok, [{key(), document()}]} | {error, reason()}.
+find(ServerName, Coll, Selector, Projector, Skip, Limit) ->
     mongo_do(ServerName, safe, master,
         fun() ->
-            Cursor = mongo:find(Coll, Selector, Projector),
-            Documents = mongo_cursor:rest(Cursor),
+            Cursor = mongo:find(Coll, Selector, Projector, Skip),
+            Documents =
+                if
+                    Limit =:= undefined ->
+                        mongo_cursor:rest(Cursor);
+                    Limit >= 0 ->
+                        mongo_cursor:take(Limit, Cursor)
+                end,
             Results = [{bsondoc:at('_id', Doc), Doc} || Doc <- Documents],
             mongo_cursor:close(Cursor),
             Results
@@ -86,9 +107,14 @@ find_one(ServerName, Coll, Selector) ->
 -spec find_one(server_name(), collection(), selector(), projector()) ->
     {ok, document()} | {error, reason()}.
 find_one(ServerName, Coll, Selector, Projector) ->
+    find_one(ServerName, Coll, Selector, Projector, 0).
+
+-spec find_one(server_name(), collection(), selector(), projector(), skip()) ->
+    {ok, document()} | {error, reason()}.
+find_one(ServerName, Coll, Selector, Projector, Skip) ->
     mongo_do(ServerName, safe, master,
         fun() ->
-            case mongo:find_one(Coll, Selector, Projector) of
+            case mongo:find_one(Coll, Selector, Projector, Skip) of
                 {} ->
                     {error, no_entry};
                 {BsonDoc} ->

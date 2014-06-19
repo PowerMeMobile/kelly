@@ -24,6 +24,10 @@ init() ->
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = to, mandatory = true, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
+        #param{name = skip, mandatory = true, repeated = false, type = integer},
+        #param{name = limit, mandatory = true, repeated = false, type = integer},
+        #param{name = order_by, mandatory = true, repeated = false, type = binary},
+        #param{name = order_direction, mandatory = true, repeated = false, type = binary},
         #param{name = customer_id, mandatory = false, repeated = false, type = binary},
         #param{name = recipient, mandatory = false, repeated = false, type = binary},
         #param{name = status, mandatory = false, repeated = false, type = binary}

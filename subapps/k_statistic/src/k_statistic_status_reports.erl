@@ -2,8 +2,8 @@
 
 -export([
     get_mt_msg_status_report/4,
-    get_aggregated_statuses_report/2,
-    get_msgs_by_status_report/3
+    get_aggregated_statuses_report/3,
+    get_msgs_by_status_report/4
 ]).
 
 -include_lib("k_storage/include/msg_info.hrl").
@@ -41,9 +41,9 @@ get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
             Error
     end.
 
--spec get_aggregated_statuses_report(timestamp(), timestamp()) ->
+-spec get_aggregated_statuses_report(timestamp(), timestamp(), undefined | customer_id()) ->
     {ok, report()} | {error, reason()}.
-get_aggregated_statuses_report(From, To) ->
+get_aggregated_statuses_report(From, To, CustomerId) ->
     MtMapF =
 <<"
     function() {
@@ -62,19 +62,26 @@ get_aggregated_statuses_report(From, To) ->
         return Array.sum(values);
     };
 ">>,
+    Query =
+        case CustomerId of
+            undefined ->
+                {'rqt', {'$gte', From, '$lt', To}};
+            CustomerId ->
+                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerId}
+        end,
     MtCommand = {
-        'mapreduce' , <<"mt_messages">>,
-        'query' , { 'rqt' , { '$gte' , From, '$lt' , To } },
-        'map' , MtMapF,
-        'reduce' , ReduceF,
-        'out' , { 'inline' , 1 }
+        'mapreduce', <<"mt_messages">>,
+        'query'    , Query,
+        'map'      , MtMapF,
+        'reduce'   , ReduceF,
+        'out'      , {'inline', 1}
     },
     MoCommand = {
-        'mapreduce' , <<"mo_messages">>,
-        'query' , { 'rqt' , { '$gte' , From, '$lt' , To } },
-        'map' , MoMapF,
-        'reduce' , ReduceF,
-        'out' , { 'inline' , 1 }
+        'mapreduce', <<"mo_messages">>,
+        'query'    , Query,
+        'map'      , MoMapF,
+        'reduce'   , ReduceF,
+        'out'      , {'inline', 1}
     },
     {ok, MtDocs} = shifted_storage:command(MtCommand),
     {ok, MoDocs} = shifted_storage:command(MoCommand),
@@ -86,7 +93,22 @@ get_aggregated_statuses_report(From, To) ->
     {ok, Results}.
 
 merge(Pairs) ->
-    dict:to_list(merge(Pairs, dict:new())).
+    Dict = dict:from_list([
+        {received, 0},
+        {pending, 0},
+        {sent, 0},
+        {failed, 0},
+        {enroute, 0},
+        {delivered, 0},
+        {expired, 0},
+        {deleted, 0},
+        {undeliverable, 0},
+        {accepted, 0},
+        {unknown, 0},
+        {rejected, 0},
+        {unrecognized, 0}
+    ]),
+    dict:to_list(merge(Pairs, Dict)).
 
 merge([], Dict) ->
     Dict;
@@ -94,31 +116,33 @@ merge([{Key, Value}|Pairs], Dict) ->
     NewDict = dict:update_counter(Key, Value, Dict),
     merge(Pairs, NewDict).
 
--spec get_msgs_by_status_report(timestamp(), timestamp(), status()) ->
+-spec get_msgs_by_status_report(timestamp(), timestamp(), undefined | customer_id(), status()) ->
     {ok, report()} | {error, reason()}.
-get_msgs_by_status_report(From, To, received) ->
-    Selector = {
-        'rqt' , {
-            '$gte' , From,
-            '$lt'  , To
-        }
-    },
+get_msgs_by_status_report(From, To, CustomerId, received) ->
+    Selector =
+        case CustomerId of
+            undefined ->
+                {'rqt', {'$gte', From, '$lt', To}};
+            CustomerId ->
+                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerId}
+        end,
     get_raw_report(mo_messages, Selector);
 
-get_msgs_by_status_report(From, To, Status) when
+get_msgs_by_status_report(From, To, CustomerId, Status) when
     Status == pending;
     Status == sent; Status == failed;
     Status == enroute; Status == delivered; Status == expired;
     Status == deleted; Status == undeliverable; Status == accepted;
     Status == unknown; Status == rejected; Status == unrecognized
 ->
-    Selector = {
-        'rqt' , {
-            '$gte' , From,
-            '$lt' , To
-        },
-        's' , bsondoc:atom_to_binary(Status)
-    },
+    StatusBin = bsondoc:atom_to_binary(Status),
+    Selector =
+        case CustomerId of
+            undefined ->
+                {'rqt', {'$gte', From, '$lt', To}, 's', StatusBin};
+            CustomerId ->
+                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerId, 's', StatusBin}
+        end,
     get_raw_report(mt_messages, Selector).
 
 %% ===================================================================
