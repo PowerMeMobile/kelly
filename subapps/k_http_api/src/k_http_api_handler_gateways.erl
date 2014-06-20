@@ -160,11 +160,14 @@ prepare(Entry = #gateway{}) ->
 
 prepare([], Acc) ->
     {ok, Acc};
-prepare([Gtw = #gateway{connections = Conns} | Rest], Acc) ->
+prepare([Gtw = #gateway{connections = Conns, settings = Setts} | Rest], Acc) ->
     %% convert connections records to proplists
     ConnFun = ?record_to_proplist(connection),
     ConnPlists = [ConnFun(ConnRec) || ConnRec <- Conns],
+    %% convert settings records to proplists
+    SettFun = ?record_to_proplist(setting),
+    SettPlists = [SettFun(SettRec) || SettRec <- Setts],
     %% convert gateway record to proplist
     GatewayFun = ?record_to_proplist(gateway),
-    Plist = GatewayFun(Gtw#gateway{connections = ConnPlists}),
+    Plist = GatewayFun(Gtw#gateway{connections = ConnPlists, settings = SettPlists}),
     prepare(Rest, [Plist | Acc]).

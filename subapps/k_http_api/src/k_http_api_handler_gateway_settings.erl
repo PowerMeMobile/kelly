@@ -27,14 +27,14 @@
         case Mandatory of
             true ->
                 #param{
-                    name = id,
+                    name = name,
                     mandatory = true,
                     repeated = false,
                     type = binary
                 };
             false ->
                 #param{
-                    name = id,
+                    name = name,
                     mandatory = false,
                     repeated = false,
                     type = binary
@@ -78,12 +78,12 @@ init() ->
         read = Read,
         update = Update,
         delete = Delete,
-        route = "/gateways/:gateway_id/settings/[:setting_id]"
+        route = "/gateways/:gateway_id/settings/[:name]"
     }}.
 
 read(Params) ->
     ?log_debug("Read gtw settings (params: ~p)", [Params]),
-    SettingID = ?gv(id, Params),
+    SettingID = ?gv(name, Params),
     case SettingID of
         undefined -> read_all(?gv(gateway_id, Params));
         _ -> read_id(?gv(gateway_id, Params), SettingID)
@@ -109,7 +109,7 @@ update(Params) ->
 
 delete(Params) ->
     GtwID = ?gv(gateway_id, Params),
-    SettingID = ?gv(id, Params),
+    SettingID = ?gv(name, Params),
     case k_storage_gateways:get_gateway(GtwID) of
         {ok, Gtw = #gateway{settings = Settings}} ->
             NewSettings = lists:keydelete(SettingID, #setting.name, Settings),
@@ -132,7 +132,7 @@ read_all(GatewayID) ->
         {ok, #gateway{settings = Settings}} ->
             {ok, StsPropList} = prepare_settings(Settings),
             ?log_debug("StsPropList: ~p", [StsPropList]),
-            {http_code, 200, {settings, StsPropList}};
+            {http_code, 200, StsPropList};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
@@ -154,12 +154,12 @@ read_id(GatewayID, StsName) ->
     end.
 
 update_setting(validate, Gtw, Params) ->
-    case validate(?gv(id, Params), ?gv(value, Params)) of
-        error -> {exception, 'svc0001', [?gv(id, Params)]};
+    case validate(?gv(name, Params), ?gv(value, Params)) of
+        error -> {exception, 'svc0001', [?gv(name, Params)]};
         _ -> update_setting(update, Gtw, Params)
     end;
 update_setting(update, Gtw, Params) ->
-    SettingID = ?gv(id, Params),
+    SettingID = ?gv(name, Params),
     GtwID = ?gv(gateway_id, Params),
     #gateway{settings = Settings} = Gtw,
     case get_setting(SettingID, Settings) of
@@ -182,12 +182,12 @@ get_setting(StsName, StsList) ->
     lists:keyfind(StsName, #setting.name, StsList).
 
 create_setting(validate, Gtw, Params) ->
-    case validate(?gv(id, Params), ?gv(value, Params)) of
-        error -> {exception, 'svc0001', [?gv(id, Params)]};
+    case validate(?gv(name, Params), ?gv(value, Params)) of
+        error -> {exception, 'svc0001', [?gv(name, Params)]};
         _ -> create_setting(is_exist, Gtw, Params)
     end;
 create_setting(is_exist, GTW = #gateway{settings = Settings}, Params) ->
-    SettingID = ?gv(id, Params),
+    SettingID = ?gv(name, Params),
     case get_setting(SettingID, Settings) of
         #setting{} ->
             ?log_debug("Setting [~p] already exist", [SettingID]),
@@ -196,7 +196,7 @@ create_setting(is_exist, GTW = #gateway{settings = Settings}, Params) ->
             create_setting(create, GTW, Params)
     end;
 create_setting(create, GTW, Params) ->
-    Name = ?gv(id, Params),
+    Name = ?gv(name, Params),
     Value = ?gv(value, Params),
     Setting = #setting{
         name = Name,
