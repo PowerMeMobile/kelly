@@ -34,15 +34,18 @@ process(<<"BindRequest">>, ReqBin) ->
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}} ->
                     {ok, Networks, Providers} = build_networks_and_providers(Customer),
-                    {ok, Response} = build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers),
+                    {ok, Response} = build_auth_response(<<"BindResponse">>,
+                        ReqId, Customer, Networks, Providers),
                     ?log_debug("Auth allowed", []),
                     encode_response(<<"BindResponse">>, Response);
                 {deny, Reason} ->
-                    {ok, Response} = build_error_response(<<"BindResponse">>, ReqId, {deny, Reason}),
+                    {ok, Response} = build_error_response(<<"BindResponse">>,
+                        ReqId, {deny, Reason}),
                     ?log_notice("Auth denied: ~p", [Reason]),
                     encode_response(<<"BindResponse">>, Response);
                 {error, Reason} ->
-                    {ok, Response} = build_error_response(<<"BindResponse">>, ReqId, {error, Reason}),
+                    {ok, Response} = build_error_response(<<"BindResponse">>,
+                        ReqId, {error, Reason}),
                     ?log_error("Auth error: ~p", [Reason]),
                     encode_response(<<"BindResponse">>, Response)
             end;
@@ -62,15 +65,18 @@ process(<<"OneAPIAuthReq">>, ReqBin) ->
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}} ->
                     {ok, Networks, Providers} = build_networks_and_providers(Customer),
-                    {ok, Response} = build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers),
+                    {ok, Response} = build_auth_response(<<"OneAPIAuthResp">>,
+                        ReqId, Customer, Networks, Providers),
                     ?log_debug("Auth allowed", []),
                     encode_response(<<"OneAPIAuthResp">>, Response);
                 {deny, Reason} ->
-                    {ok, Response} = build_error_response(<<"OneAPIAuthResp">>, ReqId, {deny, Reason}),
+                    {ok, Response} = build_error_response(<<"OneAPIAuthResp">>,
+                        ReqId, {deny, Reason}),
                     ?log_notice("Auth denied: ~p", [Reason]),
                     encode_response(<<"OneAPIAuthResp">>, Response);
                 {error, Reason} ->
-                    {ok, Response} = build_error_response(<<"OneAPIAuthResp">>, ReqId, {error, Reason}),
+                    {ok, Response} = build_error_response(<<"OneAPIAuthResp">>,
+                        ReqId, {error, Reason}),
                     ?log_error("Auth error: ~p", [Reason]),
                     encode_response(<<"OneAPIAuthResp">>, Response)
             end;
