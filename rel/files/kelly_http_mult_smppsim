@@ -24,7 +24,8 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/96a46498-dc38-11e3-8541-00269e42f
 #
 # Providers
 #
-curl -s -D - -X 'PUT' 127.0.0.1:8080/providers/0a89542c-5270-11e1-bf27-001d0947ec73 -d 'name=SMPPSim%20MTS'; echo; echo
+
+curl -s -D - -X 'POST' 127.0.0.1:8080/providers -d 'id=aa3d1a66-fb7f-11e3-b7a0-00269e42f7a5&name=SMPPSim%20MTS&description=&gateway_id=804e3d4a-dc38-11e3-90ee-00269e42f7a5&bulk_gateway_id=804e3d4a-dc38-11e3-90ee-00269e42f7a5&receipts_supported=true&sms_add_points=0.0'; echo; echo
 
 curl -s -D - -X 'POST' 127.0.0.1:8080/providers -d 'id=103fc6bc-dc39-11e3-859e-00269e42f7a5&name=SMPPSim2%20Velcom&description=&gateway_id=804e3d4a-dc38-11e3-90ee-00269e42f7a5&bulk_gateway_id=804e3d4a-dc38-11e3-90ee-00269e42f7a5&receipts_supported=true&sms_add_points=0.0'; echo; echo
 
@@ -33,8 +34,8 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/providers -d 'id=2277349a-dc39-11e3-9202-0
 #
 # Networks
 #
-curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/6dd0af45-7cdf-41aa-954b-cc368fe1968e -d 'provider_id=103fc6bc-dc39-11e3-859e-00269e42f7a5'; echo; echo
+curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/0456837f-e874-4b05-8e89-95ae20b897d2 -d 'provider_id=aa3d1a66-fb7f-11e3-b7a0-00269e42f7a5'; echo; echo
 
-curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/0456837f-e874-4b05-8e89-95ae20b897d2 -d 'provider_id=0a89542c-5270-11e1-bf27-001d0947ec73'; echo; echo
+curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/6dd0af45-7cdf-41aa-954b-cc368fe1968e -d 'provider_id=103fc6bc-dc39-11e3-859e-00269e42f7a5'; echo; echo
 
 curl -s -D - -X 'PUT' 127.0.0.1:8080/networks/793e7b47-b248-4c86-a26f-eadfc44f84e2 -d 'provider_id=2277349a-dc39-11e3-9202-00269e42f7a5'; echo; echo
