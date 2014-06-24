@@ -177,55 +177,19 @@ check_credit_limit(Customer) ->
 
 build_networks_and_providers(Customer) ->
     NetworkMapId = Customer#customer.network_map_id,
+    DefaultProviderId = Customer#customer.default_provider_id,
 
     case k_storage_network_maps:get_network_map(NetworkMapId) of
         {ok, #network_map{network_ids = NetworkIds}} ->
             {NetworksDTO, ProvidersDTO} = lists:foldl(fun(NetworkId, {Ns, Ps})->
                 case k_storage_networks:get_network(NetworkId) of
                     {ok, Network} ->
-                        #network{
-                            country_code = CC,
-                            number_len = NL,
-                            prefixes = Pref,
-                            provider_id = ProviderId,
-                            is_home = IsHome,
-                            sms_points = SmsPoints,
-                            sms_mult_points = SmsMultPoints
-                        } = Network,
-                        NetworkDTO = #network_dto{
-                            id = NetworkId,
-                            country_code = CC,
-                            %% now number_len in db without CC length or zero
-                            number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
-                            prefixes = Pref,
-                            provider_id = ProviderId,
-                            is_home = IsHome,
-                            sms_points = SmsPoints,
-                            sms_mult_points = SmsMultPoints
-                        },
+                        NetworkDTO = network_to_dto(Network),
+                        ProviderId = Network#network.provider_id,
                         case k_storage_providers:get_provider(ProviderId) of
                             {ok, Provider} ->
-                                #provider{
-                                    gateway_id = GatewayId,
-                                    bulk_gateway_id = BulkGatewayId,
-                                    receipts_supported = RS,
-                                    sms_add_points = SmsAddPoints
-                                } = Provider,
-                                ProviderDTO = #provider_dto{
-                                    id = ProviderId,
-                                    gateway_id = GatewayId,
-                                    bulk_gateway_id = BulkGatewayId,
-                                    receipts_supported = RS,
-                                    sms_add_points = SmsAddPoints
-                                },
-
-                                %% check for Providers duplications.
-                                case lists:member(ProviderDTO, Ps) of
-                                    true ->
-                                        {[NetworkDTO | Ns], Ps};
-                                    false ->
-                                        {[NetworkDTO | Ns], [ProviderDTO | Ps]}
-                                end;
+                                ProviderDTO = provider_to_dto(Provider),
+                                {[NetworkDTO | Ns], insert_if_not_member(ProviderDTO, Ps)};
                             {error, Error} ->
                                 ?log_error("Get provider id: ~p from network id: ~p from map id: ~p failed with: ~p",
                                     [ProviderId, NetworkId, NetworkMapId, Error]),
@@ -237,7 +201,21 @@ build_networks_and_providers(Customer) ->
                         {Ns, Ps}
                 end
             end, {[], []}, NetworkIds),
-            {ok, NetworksDTO, ProvidersDTO};
+            %% add default provider to providers list.
+            case DefaultProviderId of
+                undefined ->
+                    {ok, NetworksDTO, ProvidersDTO};
+                _ ->
+                    case k_storage_providers:get_provider(DefaultProviderId) of
+                        {ok, DefaultProvider} ->
+                            DefaultProviderDTO = provider_to_dto(DefaultProvider),
+                            {ok, NetworksDTO, insert_if_not_member(DefaultProviderDTO, ProvidersDTO)};
+                        {error, Error} ->
+                            ?log_error("Get default provider id: ~p from customer id: ~p failed with: ~p",
+                                [DefaultProviderId, Customer#customer.customer_uuid, Error]),
+                            {ok, NetworksDTO, ProvidersDTO}
+                    end
+            end;
         {error, Error} ->
             ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
             {ok, [], []}
@@ -359,4 +337,49 @@ default_source(Originators) ->
             undefined;
         [Address | _] ->
             Address
+    end.
+
+network_to_dto(Network) ->
+    #network{
+        id = Id,
+        country_code = CC,
+        number_len = NL,
+        prefixes = Pref,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
+    } = Network,
+    #network_dto{
+        id = Id,
+        country_code = CC,
+        %% now number_len in db without CC length or zero
+        number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
+        prefixes = Pref,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
+    }.
+
+provider_to_dto(Provider) ->
+    #provider{
+        id = Id,
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = RS,
+        sms_add_points = SmsAddPoints
+    } = Provider,
+    #provider_dto{
+        id = Id,
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = RS,
+        sms_add_points = SmsAddPoints
+    }.
+
+insert_if_not_member(P, Ps) ->
+    case lists:member(P, Ps) of
+        true -> Ps;
+        false -> [P | Ps]
     end.
