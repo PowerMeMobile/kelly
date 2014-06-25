@@ -68,7 +68,7 @@ gtwRPS OBJECT-TYPE
     ACCESS read-write
     STATUS mandatory
     DESCRIPTION
-        "Gateway's maximum Requests Per Second."
+        "Gateway's maximum Requests Per Second (per connection)."
     ::= { gatewaysEntry 3 }
 
 gtwStatus OBJECT-TYPE
@@ -153,7 +153,7 @@ ConnectionsEntry ::= SEQUENCE {
     cnnAddr IpAddress,
     cnnPort INTEGER (0..65535),
     cnnSystemId DisplayString (SIZE (0..16)),
-    cnnPassword DisplayString (SIZE (0..3)),
+    cnnPassword DisplayString (SIZE (0..9)),
     cnnSystemType DisplayString (SIZE (0..13)),
     cnnAddrTon INTEGER (0..6),
     cnnAddrNpi INTEGER (0..14),
