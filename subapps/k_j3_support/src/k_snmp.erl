@@ -22,7 +22,9 @@
     start_link/0,
     get_column_val/2,
     set_row/3,
+    set_row/1,
     del_row/2,
+    del_row/1,
 
     set_customer/3,
     delete_customer/1,
@@ -82,12 +84,12 @@ get_column_val(ColumnName, Index) ->
 
 -spec set_row(snmp_column_name(), snmp_index(), snmp_value_list()) -> ok.
 set_row(TableName, Index, ValueList) ->
-    Task = #task{function = fun set_row/1, args = {TableName, Index, ValueList}},
+    Task = #task{function = fun ?MODULE:set_row/1, args = {TableName, Index, ValueList}},
     process_task(Task).
 
 -spec del_row(snmp_column_name(), snmp_index()) -> ok.
 del_row(TableName, Index)->
-    Task = #task{function = fun del_row/1, args = {TableName, Index}},
+    Task = #task{function = fun ?MODULE:del_row/1, args = {TableName, Index}},
     process_task(Task).
 
 -spec set_customer(binary(), integer(), integer()) -> ok.
@@ -171,11 +173,11 @@ ready(process_queue, State = #state{time = Time}) ->
     case next() of
     {ok, #task{id = Id, function = Fun, args = Args}} ->
         case Fun(Args) of
-            {ok, ok} ->
+            ok ->
                 ack(Id),
                 process_queue(),
                 {next_state, ready, State};
-            _Error ->
+            {error, _Reason} ->
                 start_timer(Time),
                 {next_state, sleep, State}
         end;
@@ -236,6 +238,7 @@ process_task(Task) ->
     save_task(Task),
     process_queue().
 
+-spec set_row(tuple()) -> ok | {error, term()}.
 set_row({TableName, Index, ValueList}) ->
     case is_exist(TableName, Index) of
         exist ->
@@ -245,9 +248,11 @@ set_row({TableName, Index, ValueList}) ->
         incorrectState ->
             recreate(TableName, Index, ValueList);
         Unexpected ->
-            ?log_warn("Not expected value: ~p", [Unexpected])
+            ?log_warn("Not expected value: ~p", [Unexpected]),
+            Unexpected
     end.
 
+-spec del_row(tuple()) -> ok | {error, term()}.
 del_row({TableName, Index}) ->
     case TableName of
         gtw ->
@@ -261,7 +266,6 @@ del_row({TableName, Index}) ->
         _Any ->
             {error, noSuchTable}
     end.
-
 
 recreate(TableName, Index, ValueList) ->
     del_row({TableName, Index}),
@@ -284,17 +288,20 @@ create(TableName, Index, ValueList) ->
 update(Index, ValueList) ->
     set(Index, ValueList).
 
-set(Index, ValueList) ->
-    set(Index, ValueList, _InitResult = {ok, init}).
-
-set(_Index, _ValueList = [], _LastResult = {ok, _}) ->
-    {ok, ok};
-set(Index, [{ColumnName, Value} | RestValueList], _LastResult = {ok, _}) ->
+set(_Index, []) ->
+    ok;
+set(Index, [{ColumnName, Value} | ValueList]) ->
     {ok, [OID]} = snmpm:name_to_oid(ColumnName),
-    Result = snmpm:sync_set(?USER, ?TARGET, [{OID ++ Index, Value}]),
-    set(Index, RestValueList, parse_snmp_result(Result));
-set(_Index, _ValueList, ErrorResult) ->
-    {error, ErrorResult}.
+    RowResult = snmpm:sync_set(?USER, ?TARGET, [{OID ++ Index, Value}]),
+    Result = parse_snmp_result(RowResult),
+    case Result of
+        {ok, _} ->
+            set(Index, ValueList);
+        {error, Reason} ->
+            ?log_error("Set index: ~p column: ~p value: ~p failed with: ~p",
+                [Index, ColumnName, Value, Reason]),
+            {error, Reason}
+    end.
 
 is_exist(TableName, Index)->
     {ok, ColumnName} = status_column_name(TableName),
