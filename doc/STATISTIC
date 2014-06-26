@@ -15,22 +15,22 @@ Default is `json'.
 REST call:
 GET /message_status/MSG_ID/client/CLIENT_TYPE/customer/CUSTOMER_ID/user/USER_ID
 Where
-	CLIENT_TYPE - client type
-	MSG_ID - input message id
-	CUSTOMER_ID - customer uuid
-	USER_ID - user id
+    CLIENT_TYPE - client type
+    MSG_ID - input message id
+    CUSTOMER_ID - customer uuid
+    USER_ID - user id
 
 Example:
 http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73/user/user2
 
 Result:
 <object>
-	<msg_id>516d37d31426045fec04d71a</msg_id>
-	<client_type>funnel</client_type>
-	<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
-	<user_id>user2</user_id>
-	<in_msg_id>59</in_msg_id>
-	<status>delivered</status>
+    <msg_id>516d37d31426045fec04d71a</msg_id>
+    <client_type>funnel</client_type>
+    <customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+    <user_id>user2</user_id>
+    <in_msg_id>59</in_msg_id>
+    <status>delivered</status>
 </object>
 
 
@@ -42,25 +42,25 @@ Result:
 REST call:
 GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID]
 Where
-	YYYY - year
-	MM - month
-	DD - day
-	hh - hours
-	mm - minutes
-	ss - seconds (optional)
-	CUSTOMER_ID - customer uuid (optional)
+    YYYY - year
+    MM - month
+    DD - day
+    hh - hours
+    mm - minutes
+    ss - seconds (optional)
+    CUSTOMER_ID - customer uuid (optional)
 
 Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&customer_id=feda5822-5271-11e1-bd27-001d0947ec73
 
 Result:
 <object>
-	<accepted>5</accepted>
-	<delivered>177</delivered>
-	<received>100</received>
-	<rejected>7</rejected>
-	<sent>500</sent>
-	<undeliverable>11</undeliverable>
+    <accepted>5</accepted>
+    <delivered>177</delivered>
+    <received>100</received>
+    <rejected>7</rejected>
+    <sent>500</sent>
+    <undeliverable>11</undeliverable>
 </object>
 
 
@@ -72,49 +72,49 @@ Result:
 REST call:
 GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&status=STATUS[&customer_id=CUSTOMER_ID]
 Where
-	STATUS - mt: pending (request status)
-		   	 	 sent, failed (response status)
-				 accepted, deleted, delivered, expired, rejected, undeliverable, unknown (delivery status)
-		     mo: received
-	YYYY - year
-	MM - month
-	DD - day
-	hh - hours
-	mm - minutes
-	ss - seconds (optional)
-	CUSTOMER_ID - customer uuid (optional)
+    STATUS - mt: pending (request status)
+                     sent, failed (response status)
+                 accepted, deleted, delivered, expired, rejected, undeliverable, unknown (delivery status)
+             mo: received
+    YYYY - year
+    MM - month
+    DD - day
+    hh - hours
+    mm - minutes
+    ss - seconds (optional)
+    CUSTOMER_ID - customer uuid (optional)
 
 Example:
 http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted&customer_id=feda5822-5271-11e1-bd27-001d0947ec73
 
 Result:
 <object>
-	<item>
-		<msg_id>516d37d31426045fec04d71a</msg_id>
-		<client_type>funnel</client_type>
-		<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
-		<user_id>user1</user_id>
-		<in_msg_id>416</in_msg_id>
-		<gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
-		<out_msg_id>17564</out_msg_id>
-		<type>regular</type>
-		<encoding>default</encoding>
-		<body>Hello</body>
-		<src_addr>
-			<addr>375296660001</addr>
-			<ton>1</ton>
-			<npi>1</npi>
-		</src_addr>
-		<dst_addr>
-			<addr>375292474326</addr>
-			<ton>1</ton>
-			<npi>1</npi>
-		</dst_addr>
-		<reg_dlr>false</reg_dlr>
-		<req_time>2013-01-01T00:14:08</req_time>
-		<status>accepted</status>
-		<status_update_time>2013-01-01T00:14:10</status_update_time>
-	</item>
+    <item>
+        <msg_id>516d37d31426045fec04d71a</msg_id>
+        <client_type>funnel</client_type>
+        <customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+        <user_id>user1</user_id>
+        <in_msg_id>416</in_msg_id>
+        <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+        <out_msg_id>17564</out_msg_id>
+        <type>regular</type>
+        <encoding>default</encoding>
+        <body>Hello</body>
+        <src_addr>
+            <addr>375296660001</addr>
+            <ton>1</ton>
+            <npi>1</npi>
+        </src_addr>
+        <dst_addr>
+            <addr>375292474326</addr>
+            <ton>1</ton>
+            <npi>1</npi>
+        </dst_addr>
+        <reg_dlr>false</reg_dlr>
+        <req_time>2013-01-01T00:14:08</req_time>
+        <status>accepted</status>
+        <status_update_time>2013-01-01T00:14:10</status_update_time>
+    </item>
 </object>
 
 
@@ -130,57 +130,57 @@ Result:
 REST call:
 GET /report/messages/details?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&slice_length=LEN
 Where
-	YYYY - year
-	MM - month
-	DD - day
-	hh - hours
-	mm - minutes
-	ss - seconds (optional)
-	LEN - Slice length - seconds, default is 60, possible prefixes: S - seconds, M - minutes, H - hours, D - days
+    YYYY - year
+    MM - month
+    DD - day
+    hh - hours
+    mm - minutes
+    ss - seconds (optional)
+    LEN - Slice length - seconds, default is 60, possible prefixes: S - seconds, M - minutes, H - hours, D - days
 
 Example:
 http://localhost:8080/report/messages/details?from=2012-05-20T00:00&to=2012-05-25T00:00&slice_length=M60
 
 Result:
 <object>
-	<outgoing>
-		<total>100</total>
-		<gateways>
-			<item>
-				<gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
-				<gateway_name>test_gtw</gateway_name>
-				<total>100</total>
-				<slices>
-					<item>
-						<from>2012-07-19T13:00:00</from>
-						<to>2012-07-19T14:00:00</to>
-						<total>100</total>
-						<avg>0.3</avg>
-						<peak>28.0</peak>
-					</item>
-				</slices>
-			</item>
-		</gateways>
-	</outgoing>
-	<incoming>
-		<total>100</total>
-		<gateways>
-			<item>
-				<gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
-				<gateway_name>test_gtw</gateway_name>
-				<total>100</total>
-				<slices>
-					<item>
-						<from>2012-07-19T13:00:00</from>
-						<to>2012-07-19T14:00:00</to>
-						<total>100</total>
-						<avg>0.3</avg>
-						<peak>15.0</peak>
-					</item>
-				</slices>
-			</item>
-		</gateways>
-	</incoming>
+    <outgoing>
+        <total>100</total>
+        <gateways>
+            <item>
+                <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+                <gateway_name>test_gtw</gateway_name>
+                <total>100</total>
+                <slices>
+                    <item>
+                        <from>2012-07-19T13:00:00</from>
+                        <to>2012-07-19T14:00:00</to>
+                        <total>100</total>
+                        <avg>0.3</avg>
+                        <peak>28.0</peak>
+                    </item>
+                </slices>
+            </item>
+        </gateways>
+    </outgoing>
+    <incoming>
+        <total>100</total>
+        <gateways>
+            <item>
+                <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+                <gateway_name>test_gtw</gateway_name>
+                <total>100</total>
+                <slices>
+                    <item>
+                        <from>2012-07-19T13:00:00</from>
+                        <to>2012-07-19T14:00:00</to>
+                        <total>100</total>
+                        <avg>0.3</avg>
+                        <peak>15.0</peak>
+                    </item>
+                </slices>
+            </item>
+        </gateways>
+    </incoming>
 </object>
 
 
@@ -192,36 +192,30 @@ Result:
 REST call:
 GET /report/mt_aggr?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&customer_id=CUSTOMER_IDgroup_by=GROUP_BY
 Where
-	YYYY - year
-	MM - month
-	DD - day
-	hh - hours
-	mm - minutes
-	ss - seconds (optional)
-	CUSTOMER_ID
-	GROUP_BY - m - monthly, d - daily, h - hourly
+    YYYY - year
+    MM - month
+    DD - day
+    hh - hours
+    mm - minutes
+    ss - seconds (optional)
+    CUSTOMER_ID
+    GROUP_BY - m - monthly, d - daily, h - hourly
 
 Example:
 http://localhost:8080/report/mt_aggr?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_id=493b3678-9dc8-11e2-8cce-00269e42f7a5&group_by=h
 
 Result:
 <object>
-	<item>
-		<year>2013</year>
-		<month>1</month>
-		<day>1</day>
-		<hour>18</hour>
-		<customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
-		<number>753800</number>
-	</item>
-	<item>
-		<year>2013</year>
-		<month>1</month>
-		<day>1</day>
-		<hour>19</hour>
-		<customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
-		<number>246200</number>
-	</item>
+    <item>
+        <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
+        <number>753800</number>
+        <date>2013-01-01T18:00:00</date>
+    </item>
+    <item>
+        <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
+        <number>246200</number>
+        <date>2013-01-01T19:00:00</date>
+    </item>
 </object>
 
 Problems:
@@ -238,35 +232,35 @@ http://localhost:8080/report/mt_msg?msg_id=53885ca25f351586c19125ae
 
 Result:
 <object>
-  <item>
-    <msg_id>53885ca25f351586c19125ae</msg_id>
-    <client_type>funnel</client_type>
-    <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
-    <user_id>user</user_id>
-    <in_msg_id>7592</in_msg_id>
-    <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
-    <out_msg_id>126979</out_msg_id>
-    <type>regular</type>
-    <part_info>undefined</part_info>
-    <encoding>default</encoding>
-    <body>Hello</body>
-    <src_addr>
-      <addr>375296660002</addr>
-      <ton>1</ton>
-      <npi>1</npi>
-    </src_addr>
-    <dst_addr>
-      <addr>375293000000</addr>
-      <ton>1</ton>
-      <npi>1</npi>
-    </dst_addr>
-    <reg_dlr>false</reg_dlr>
-    <esm_class>0</esm_class>
-    <validity_period>000003000000000R</validity_period>
-    <req_time>2014-05-30T10:25:38</req_time>
-    <status>sent</status>
-    <status_update_time>2014-05-30T10:25:38</status_update_time>
-  </item>
+    <item>
+        <msg_id>53885ca25f351586c19125ae</msg_id>
+        <client_type>funnel</client_type>
+        <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
+        <user_id>user</user_id>
+        <in_msg_id>7592</in_msg_id>
+        <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+        <out_msg_id>126979</out_msg_id>
+        <type>regular</type>
+        <part_info>undefined</part_info>
+        <encoding>default</encoding>
+        <body>Hello</body>
+        <src_addr>
+            <addr>375296660002</addr>
+          <ton>1</ton>
+          <npi>1</npi>
+        </src_addr>
+        <dst_addr>
+            <addr>375293000000</addr>
+            <ton>1</ton>
+            <npi>1</npi>
+        </dst_addr>
+        <reg_dlr>false</reg_dlr>
+        <esm_class>0</esm_class>
+        <validity_period>000003000000000R</validity_period>
+        <req_time>2014-05-30T10:25:38</req_time>
+        <status>sent</status>
+        <status_update_time>2014-05-30T10:25:38</status_update_time>
+    </item>
 </object>
 
 #
@@ -276,15 +270,15 @@ Result:
 REST call:
 GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID][&recipient=RECIPIENT][&status=STATUS]&skip=SKIP&limit=LIMIT&order_by=ORDER_BY&order_direction=ORDER_DIRECTION
 Where
-	YYYY - year
-	MM - month
-	DD - day
-	hh - hours
-	mm - minutes
-	ss - seconds (optional)
-	CUSTOMER_ID - customer uuid (optional)
-	RECIPIENT - destination address (optional)
-	STATUS - message status (optional)
+    YYYY - year
+    MM - month
+    DD - day
+    hh - hours
+    mm - minutes
+    ss - seconds (optional)
+    CUSTOMER_ID - customer uuid (optional)
+    RECIPIENT - destination address (optional)
+    STATUS - message status (optional)
     SKIP - how many to skip
     LIMIT - how many to take
     ORDER_BY - field to order by
@@ -296,32 +290,32 @@ http://localhost:8080/report/mt?from=2013-01-01T00:00&to=2013-05-31T23:00&custom
 
 Result:
 <object>
-	<item>
-		<msg_id>516d37d51426045fec04d730</msg_id>
-		<client_type>funnel</client_type>
-		<customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
-		<user_id>user</user_id>
-		<in_msg_id>44</in_msg_id>
-		<gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
-		<out_msg_id>16852298</out_msg_id>
-		<type>regular</type>
-		<encoding>default</encoding>
-		<body>Hello</body>
-		<src_addr>
-			<addr>375296660001</addr>
-			<ton>1</ton>
-			<npi>1</npi>
-		</src_addr>
-		<dst_addr>
-			<addr>375292474326</addr>
-			<ton>1</ton>
-			<npi>1</npi>
-		</dst_addr>
-		<reg_dlr>true</reg_dlr>
-		<req_time>2013-01-01T21:33:11</req_time>
-		<status>delivered</status>
-		<status_update_time>2013-01-01T00:14:10</status_update_time>
-	</item>
+    <item>
+        <msg_id>516d37d51426045fec04d730</msg_id>
+        <client_type>funnel</client_type>
+        <customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+        <user_id>user</user_id>
+        <in_msg_id>44</in_msg_id>
+        <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
+        <out_msg_id>16852298</out_msg_id>
+        <type>regular</type>
+        <encoding>default</encoding>
+        <body>Hello</body>
+        <src_addr>
+            <addr>375296660001</addr>
+            <ton>1</ton>
+            <npi>1</npi>
+        </src_addr>
+        <dst_addr>
+            <addr>375292474326</addr>
+            <ton>1</ton>
+            <npi>1</npi>
+        </dst_addr>
+        <reg_dlr>true</reg_dlr>
+        <req_time>2013-01-01T21:33:11</req_time>
+        <status>delivered</status>
+        <status_update_time>2013-01-01T00:14:10</status_update_time>
+    </item>
 </object>
 
 
@@ -339,13 +333,13 @@ Result:
 REST call:
 GET /report/messages/ReportType?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]
 Where
-	ReportType - report type: customers - customer's networks, networks - network's customers
-	YYYY - year
-	MM - month
-	DD - day
-	hh - hours
-	mm - minutes
-	ss - seconds (optional)
+    ReportType - report type: customers - customer's networks, networks - network's customers
+    YYYY - year
+    MM - month
+    DD - day
+    hh - hours
+    mm - minutes
+    ss - seconds (optional)
 
 Example:
 http://localhost:8080/report/messages/customers?from=2012-05-20T00:00&to=2012-05-25T00:00
@@ -405,13 +399,13 @@ http://localhost:8080/report/uplink
 
 Result:
 <gateways>
-	<item>
-		<id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
-		<name>test_gtw</name>
-		<status>1</status>
-		<max_rps>1000</max_rps>
-		<actual_rps>N/A</actual_rps>
-	</item>
+    <item>
+        <id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</id>
+        <name>test_gtw</name>
+        <status>1</status>
+        <max_rps>1000</max_rps>
+        <actual_rps>N/A</actual_rps>
+    </item>
 </gateways>
 
 
@@ -428,15 +422,15 @@ http://localhost:8080/report/downlink
 
 Result:
 <connections>
-	<item>
-		<id>7185a36c-ccea-4437-aba7-c86c23d4b888</id>
-		<remote_ip>127.0.0.1</remote_ip>
-		<customer_id>test-sys-id</customer_id>
-		<user_id>user</user_id>
-		<connected_at>120704112550</connected_at>
-		<type>transceiver</type>
-		<msgs_received>200</msgs_received>
-		<msgs_sent>0</msgs_sent>
-		<errors/>
-	</item>
+    <item>
+        <id>7185a36c-ccea-4437-aba7-c86c23d4b888</id>
+        <remote_ip>127.0.0.1</remote_ip>
+        <customer_id>test-sys-id</customer_id>
+        <user_id>user</user_id>
+        <connected_at>120704112550</connected_at>
+        <type>transceiver</type>
+        <msgs_received>200</msgs_received>
+        <msgs_sent>0</msgs_sent>
+        <errors/>
+    </item>
 </connections>

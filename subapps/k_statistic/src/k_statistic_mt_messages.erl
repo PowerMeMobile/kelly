@@ -80,7 +80,7 @@ build_aggr_report(Params) ->
     ]},
     {ok, Docs} = shifted_storage:command(Command),
     SortedDocs = lists:sort(Docs),
-    [bson:fields(Doc) || Doc <- SortedDocs].
+    [build_mt_aggr_report_response(Doc) || Doc <- SortedDocs].
 
 -spec build_aggr_recipient_report() -> {ok, [tuple()]}.
 build_aggr_recipient_report() ->
@@ -157,7 +157,6 @@ project(monthly) ->
         'customer_id' , <<"$_id.customer_id">>,
         'number' , <<"$sum">> } }.
 
-
 build_mt_report_response(Doc) ->
     MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
     Type = get_type(MsgInfo#msg_info.type),
@@ -189,6 +188,16 @@ build_mt_report_response(Doc) ->
         {status, MsgInfo#msg_info.status},
         {status_update_time, StatusISO}
     ].
+
+build_mt_aggr_report_response(Doc) ->
+    Y = bsondoc:at(year, Doc),
+    M = bsondoc:at(month, Doc),
+    D = bsondoc:at(day, Doc, 1),
+    H = bsondoc:at(hour, Doc, 0),
+    Date = ac_datetime:datetime_to_iso8601({{Y,M,D},{H,0,0}}),
+    Doc2 = bson:exclude([year, month, day, hour], Doc),
+    Doc3 = bson:update(date, Date, Doc2),
+    bson:fields(Doc3).
 
 addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
     [

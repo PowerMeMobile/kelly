@@ -2,6 +2,7 @@
 
 -export([
     at/2,
+    at/3,
     atom_to_binary/1,
     binary_to_atom/1
 ]).
@@ -35,6 +36,13 @@
 at(Label, Document) ->
     case bson:lookup(Label, Document) of
         {} -> undefined;
+        {Value} -> Value
+    end.
+
+-spec at(bson:label(), bson:document(), value()) -> value().
+at(Label, Document, Default) ->
+    case bson:lookup(Label, Document) of
+        {} -> Default;
         {Value} -> Value
     end.
 
