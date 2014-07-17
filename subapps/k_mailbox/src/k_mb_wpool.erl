@@ -111,10 +111,11 @@ handle_child_terminated(Reason, _Task = {process, Item}, _Child, State = #state{
     case k_mb_postponed_queue:postpone(Item) of
         {postponed, Seconds} ->
             ?log_error("Item processing terminated. It will be resend "
-            "after ~p sec. Reason: ~p", [Seconds, Reason]),
+                "after ~p sec. Reason: ~p", [Seconds, Reason]),
             {noreply, State#state{}};
         {error, reached_max} ->
-            ?log_error("Item reached max number of attempts. Discard message. Reason: ~p", [Reason]),
+            ?log_error("Item reached max number of attempts. "
+                "Discard message. Reason: ~p", [Reason]),
             {noreply, State#state{}};
         Error ->
             ?log_error("Got unexpected error: ~p. Terminating.", [Error]),
@@ -128,10 +129,11 @@ handle_child_terminated(Reason, _Task = {process, Item}, _Child, State = #state{
 process(Item) ->
     case k_mb_subscription_mgr:get_suitable_subscription(Item) of
         {ok, Subscription} ->
-            ?log_debug("Found suitable subscription [~p]", [Subscription]),
+            ?log_debug("Found suitable subscription: ~p", [Subscription]),
             send_item(Item, Subscription);
         undefined ->
-            ?log_debug("Suitable subscription NOT FOUND. Waiting for suitable subscription", []),
+            ?log_debug("Suitable subscription NOT FOUND. "
+                "Waiting for suitable subscription", []),
             mark_as_pending(Item)
     end.
 
@@ -156,7 +158,7 @@ mark_as_pending(_Item = #k_mb_funnel_receipt{}) ->
 
 send_item(Item, Subscription) ->
     {ok, ItemID, QName, Binary} = build_dto(Item, Subscription),
-    ?log_debug("Send item [~p] to queue [~p]", [ItemID, QName]),
+    ?log_debug("Send item: ~p to queue: ~p", [ItemID, QName]),
     ContentType =
         case Item of
             #k_mb_incoming_sms{} -> <<"OutgoingBatch">>;
@@ -169,7 +171,7 @@ send_item(Item, Subscription) ->
             Timestamp = ac_datetime:utc_timestamp(),
             k_mb_db:save_delivery_status(Item, delivered, Timestamp),
             k_mb_db:delete_item(Item),
-            ?log_debug("Item successfully delivered [~p]", [ItemID]);
+            ?log_debug("Item successfully delivered: ~p", [ItemID]);
         {error, timeout} ->
             postpone_item(Item, timeout)
     end.
@@ -178,10 +180,10 @@ postpone_item(Item, Error) ->
     case k_mb_postponed_queue:postpone(Item) of
         {postponed, Seconds} ->
             ?log_error("Item processing terminated. It will be resend "
-            "after ~p sec. Last error: ~p", [Seconds, Error]);
+                "after ~p sec. Reason: ~p", [Seconds, Error]);
         {error, reached_max} ->
             ?log_error("Item reached max number of attempts. "
-            "Discard message. Last error: ~p", [Error]),
+                "Discard message. Reason: ~p", [Error]),
             Timestamp = ac_datetime:utc_timestamp(),
             k_mb_db:save_delivery_status(Item, reached_max, Timestamp)
     end.

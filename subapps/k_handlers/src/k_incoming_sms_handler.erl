@@ -47,25 +47,24 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
     part_index = _PartIndex,
     timestamp = UTCString
 }) ->
-    ?log_debug("Got incoming sms request:~p ", [IncSmsRequest]),
+    ?log_debug("Got incoming sms request: ~p ", [IncSmsRequest]),
 
     ItemId = uuid:unparse(uuid:generate_time()),
     Timestamp = ac_datetime:utc_string_to_timestamp(UTCString),
 
     %% try to determine customer id and user id,
-    %% this will return either valid customer id or `undefined'.
+    %% this will return
+    %% {customer_id, user_id} | {customer_id, undefined} | {undefined, undefined}.
     %% i think it makes sense to store even partly filled message.
-    CustomerId =
+    {CustomerId, UserId} =
         case k_addr2cust:resolve(DestAddr) of
-            {ok, CustId, UserId} ->
-                ?log_debug("Got incoming message for [cust:~p; user: ~p] (~p)",
-                    [CustId, UserId, DestAddr] ),
-
-                %% register it to further sending.
+            {ok, CID, UID} ->
+                ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
+                    [DestAddr, CID, UID]),
                 Item = #k_mb_incoming_sms{
                     id = ItemId,
-                    customer_id = CustId,
-                    user_id = UserId,
+                    customer_id = CID,
+                    user_id = UID,
                     source_addr = SourceAddr,
                     dest_addr = DestAddr,
                     received  = Timestamp,
@@ -73,22 +72,18 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
                     encoding = DataCoding
                 },
                 k_mailbox:register_incoming_item(Item),
-                ?log_debug("Incoming message registered [item:~p]", [ItemId]),
-                %% return valid customer.
-                CustId;
-        Error ->
-            ?log_debug("Address resolution failed with: ~p", [Error]),
-            ?log_debug("Could not resolve incoming message to ~p", [DestAddr]),
-            %% return `undefined' customer.
-            undefined
-    end,
-    %% build OutputId.
-    OutputId = {GatewayId, ItemId},
-    %% build msg_info out of available data.
+                ?log_debug("Incoming message registered with id: ~p", [ItemId]),
+                {CID, UID};
+            Error ->
+                ?log_debug("Address resolution failed with: ~p", [Error]),
+                ?log_debug("Couldn't resolve incoming message coming to: ~p", [DestAddr]),
+                {undefined, undefined}
+        end,
     MsgInfo = #msg_info{
         msg_id = ItemId,
         gateway_id = GatewayId,
         customer_id = CustomerId,
+        user_id = UserId,
         type = regular,
         encoding = DataCoding,
         body = MessageBody,
@@ -97,7 +92,5 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
         reg_dlr = false,
         req_time = Timestamp
     },
-    %% store it.
     ok = k_dynamic_storage:set_mo_msg_info(MsgInfo),
-    ?log_debug("Incoming message stored: out:~p", [OutputId]),
     {ok, []}.
