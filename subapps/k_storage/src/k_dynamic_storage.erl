@@ -157,6 +157,7 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
     DstAddr = MsgInfo#msg_info.dst_addr,
     RegDlr = MsgInfo#msg_info.reg_dlr,
     ReqTime = MsgInfo#msg_info.req_time,
+    Status = MsgInfo#msg_info.status,
 
     Selector = {
         '_id', MsgId
@@ -172,7 +173,8 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
             'sa' , k_storage_utils:addr_to_doc(SrcAddr),
             'da' , k_storage_utils:addr_to_doc(DstAddr),
             'rd' , RegDlr,
-            'rqt', ReqTime
+            'rqt', ReqTime,
+            's'  , bsondoc:atom_to_binary(Status)
         }
     },
     {ok, StorageMode} = k_storage_manager:get_storage_mode(),

@@ -90,7 +90,8 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
         src_addr = SourceAddr,
         dst_addr = DestAddr,
         reg_dlr = false,
-        req_time = Timestamp
+        req_time = Timestamp,
+        status = new
     },
     ok = k_dynamic_storage:set_mo_msg_info(MsgInfo),
     {ok, []}.

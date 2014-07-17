@@ -71,7 +71,9 @@ ensure_dynamic_storage_indexes(ServerName) ->
     ok = mongodb_storage:ensure_index(ServerName, mt_messages,
         {key, {rqt, 1, ci, 1}}),
     ok = mongodb_storage:ensure_index(ServerName, mo_messages,
-        {key, {rqt, 1, ci, 1, ui, 1}}).
+        {key, {rqt, 1}}),
+    ok = mongodb_storage:ensure_index(ServerName, mo_messages,
+        {key, {ci, 1, ui, 1, s, 1}}).
 
 -spec new_spec_state(plist()) -> spec_state().
 new_spec_state(Props) ->
