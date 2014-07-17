@@ -33,12 +33,26 @@ status({_ID, MsgDoc}) ->
         <<"xxxxxxxxxx">> ->
             %% the most probable case when this happens is
             %% when the sms request hasn't yet been processed,
-            %% possible due to an error in it.
+            %% possibly due to an error in it.
             #addr{addr = <<"unknown">>, ton = 5, npi = 0};
         AddrDoc ->
             k_storage_utils:doc_to_addr(AddrDoc)
     end,
+    Status = bson:at(s, MsgDoc),
     #k1api_sms_status_dto{
         address = Address,
-        status = bson:at(s, MsgDoc)
+        status = Status,
+        timestamp = ac_datetime:timestamp_to_unixepoch(
+            timestamp(Status, MsgDoc))
     }.
+
+timestamp(<<"pending">>, MsgDoc) ->
+    bson:at(rqt, MsgDoc);
+timestamp(<<"submitted">>, MsgDoc) ->
+    bson:at(rqt, MsgDoc);
+timestamp(<<"sent">>, MsgDoc) ->
+    bson:at(rpt, MsgDoc);
+timestamp(<<"failed">>, MsgDoc) ->
+    bson:at(rpt, MsgDoc);
+timestamp(_, MsgDoc) ->
+    bson:at(dt, MsgDoc).
