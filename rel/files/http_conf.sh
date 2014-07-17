@@ -105,7 +105,7 @@ post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/users" 'id=user&password=pa
 # Soap
 
 # postpaid customer
-post "customers" 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=soap-postpaid&name=soap-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
+post "customers" 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=3&name=soap-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
 
 # postpaid originators
 post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=8cb7aa6e-f2d4-11e3-9a73-00269e42f7a5&address=999,6,0&description=&is_default=true&state=approved'
@@ -114,7 +114,7 @@ post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=8cb7aa6e-f
 post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
 
 # prepaid customer
-post "customers" 'customer_uuid=f9251298-381e-49c4-a60d-ff51e66c4f1c&customer_id=soap-prepaid&name=soap-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
+post "customers" 'customer_uuid=f9251298-381e-49c4-a60d-ff51e66c4f1c&customer_id=4&name=soap-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
 
 # prepaid originators
 post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators" 'id=5220e2fa-c794-4387-ad92-29d4243a6e29&address=999,6,0&description=&is_default=true&state=approved'

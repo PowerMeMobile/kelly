@@ -110,7 +110,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/16f87550-1794-11e2-ade6-00269e42
 #
 
 # postpaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=soap-postpaid&name=soap-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=3&name=soap-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'; echo; echo
 
 # postpaid originators
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/c173786e-63ce-11e2-8740-001d0947ec73/originators -d 'id=8cb7aa6e-f2d4-11e3-9a73-00269e42f7a5&address=999,6,0&description=&is_default=true&state=approved'; echo; echo
@@ -119,7 +119,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/c173786e-63ce-11e2-8740-001d0947
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/c173786e-63ce-11e2-8740-001d0947ec73/users -d 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'; echo; echo
 
 # prepaid customer
-curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=f9251298-381e-49c4-a60d-ff51e66c4f1c&customer_id=soap-prepaid&name=soap-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/customers -d 'customer_uuid=f9251298-381e-49c4-a60d-ff51e66c4f1c&customer_id=4&name=soap-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'; echo; echo
 
 # prepaid originators
 curl -s -D - -X 'POST' 127.0.0.1:8080/customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators -d 'id=5220e2fa-c794-4387-ad92-29d4243a6e29&address=999,6,0&description=&is_default=true&state=approved'; echo; echo
