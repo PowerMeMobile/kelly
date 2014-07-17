@@ -149,6 +149,7 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
     MsgId = MsgInfo#msg_info.msg_id,
     GatewayId = MsgInfo#msg_info.gateway_id,
     CustomerId = MsgInfo#msg_info.customer_id,
+    UserId = MsgInfo#msg_info.user_id,
     Type = MsgInfo#msg_info.type,
     Encoding = MsgInfo#msg_info.encoding,
     MessageBody = MsgInfo#msg_info.body,
@@ -164,6 +165,7 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
         '$set' , {
             'gi' , GatewayId,
             'ci' , CustomerId,
+            'ui' , UserId,
             't'  , bsondoc:atom_to_binary(Type),
             'e'  , k_storage_utils:encoding_to_binary(Encoding),
             'b'  , MessageBody,
