@@ -197,3 +197,5 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660003,1,1&cust
 curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660004,1,1&customer=16f87550-1794-11e2-ade6-00269e42f7a5&user=undefined'; echo; echo
 # soap postpaid
 curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660005,1,1&customer=c173786e-63ce-11e2-8740-001d0947ec73&user=undefined'; echo; echo
+# mm postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660006,1,1&customer=8032706a-b4ec-11e3-b3d7-00269e42f7a5&user=undefined'; echo; echo

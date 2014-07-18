@@ -57,21 +57,47 @@ process(CustomerId, UserId, list_all, _) ->
             Error
     end;
 process(CustomerId, UserId, list_new, _) ->
-    {ok, {}};
+    Selector = {
+        'customer_id', CustomerId,
+        'user_id'    , UserId
+        %% state =:= new
+    },
+    case mongodb_storage:find(static_storage, mb_incoming_sms, Selector) of
+        {ok, []} ->
+            Selector2 = {
+                'customer_id', CustomerId
+            },
+            case mongodb_storage:find(static_storage, mb_incoming_sms, Selector2) of
+                {ok, Docs} ->
+                    {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+                Error ->
+                    Error
+            end;
+        Error ->
+            Error
+    end;
 process(CustomerId, UserId, fetch_all, _) ->
-    {ok, {}};
+    {ok, {error, <<"Not implemented">>}};
 process(CustomerId, UserId, fetch_new, _) ->
-    {ok, {}};
-process(CustomerId, UserId, fetch_id, _MessageIds) ->
-    {ok, {}};
+    {ok, {error, <<"Not implemented">>}};
+process(_CustomerId, _UserId, fetch_id, MessageIds) ->
+    Selector = {
+        '_id', {'$in', [MessageIds]}
+    },
+    case mongodb_storage:find(static_storage, mb_incoming_sms, Selector) of
+        {ok, Docs} ->
+            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+        Error ->
+            Error
+    end;
 process(CustomerId, UserId, kill_all, _) ->
-    {ok, {}};
+    {ok, {error, <<"Not implemented">>}};
 process(CustomerId, UserId, kill_old, _) ->
-    {ok, {}};
+    {ok, {error, <<"Not implemented">>}};
 process(CustomerId, UserId, kill_id, _MessageIds) ->
-    {ok, {}};
+    {ok, {error, <<"Not implemented">>}};
 process(CustomerId, UserId, _, _) ->
-    {ok, {}}.
+    {ok, {error, <<"Not implemented">>}}.
 
 doc2msg(Doc) ->
     #k1api_process_inbox_response_message_dto{
