@@ -22,8 +22,8 @@
 init() ->
     Read = [
         #param{name = msisdn, mandatory = false, repeated = false, type = {custom, fun decode_addr/1}},
-        #param{name = customer, mandatory = false, repeated = false, type = binary},
-        #param{name = user, mandatory = true, repeated = false, type = binary}
+        #param{name = customer, mandatory = true, repeated = false, type = binary},
+        #param{name = user, mandatory = false, repeated = false, type = {custom, fun decode_user/1}}
     ],
     Delete = [
         #param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}}
@@ -31,7 +31,7 @@ init() ->
     Create = [
         #param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_addr/1}},
         #param{name = customer, mandatory = true, repeated = false, type = binary},
-        #param{name = user, mandatory = true, repeated = false, type = binary}
+        #param{name = user, mandatory = false, repeated = false, type = {custom, fun decode_user/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -43,15 +43,17 @@ init() ->
 
 read(Params) ->
     case ?gv(msisdn, Params) of
-        undefined -> get_customer_user_msisdns(Params);
-        Msisdn -> get_msisdn(Msisdn)
+        undefined ->
+            get_customer_user_msisdns(Params);
+        Msisdn ->
+            get_msisdn(Msisdn)
     end.
 
 get_customer_user_msisdns(Params) ->
     Customer = ?gv(customer, Params),
     User = ?gv(user, Params),
-    {ok, MsisdnsList} = k_addr2cust:available_addresses(Customer, User),
-    Response = prepare_msisdns(Customer, User, MsisdnsList),
+    {ok, Msisdns} = k_addr2cust:available_addresses(Customer, User),
+    Response = prepare_msisdns(Customer, User, Msisdns),
     {ok, Response}.
 
 get_msisdn(Msisdn) ->
@@ -88,20 +90,15 @@ delete(Params) ->
 %% ===================================================================
 
 prepare(CustomerID, UserID, Msisdn) ->
-    [{msisdn, [
-        {addr, Msisdn#addr.addr},
-        {ton, Msisdn#addr.ton},
-        {npi, Msisdn#addr.npi}
-    ]},
-    {customer, CustomerID},
-    {user, UserID}].
+    [{msisdn, msisdn2addr(Msisdn)},
+     {customer, CustomerID},
+     {user, UserID}].
 
 prepare_msisdns(CustomerID, UserID, Msisdns) ->
-    [{msisdns, [[{addr, Msisdn#addr.addr},
-                {ton, Msisdn#addr.ton},
-                {npi, Msisdn#addr.npi}] || Msisdn <- Msisdns]},
-    {customer, CustomerID},
-    {user, UserID}].
+    Addrs = [msisdn2addr(Msisdn) || Msisdn <- Msisdns],
+    [{msisdns, Addrs},
+     {customer, CustomerID},
+     {user, UserID}].
 
 decode_addr(AddrBin) ->
     AddrString = binary_to_list(AddrBin),
@@ -111,3 +108,13 @@ decode_addr(AddrBin) ->
         ton = list_to_integer(Ton),
         npi = list_to_integer(Npi)
     }.
+
+decode_user(<<"undefined">>) ->
+    undefined;
+decode_user(Bin) ->
+    Bin.
+
+msisdn2addr(Msisdn) ->
+    [{addr, Msisdn#addr.addr},
+     {ton, Msisdn#addr.ton},
+     {npi, Msisdn#addr.npi}].
