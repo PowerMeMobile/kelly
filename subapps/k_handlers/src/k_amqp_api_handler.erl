@@ -235,6 +235,29 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"UnsubscribeSmsReceiptsReq">> ->
             {ReqCT, <<>>}
     end;
 
+process(ReqCT, ReqBin) when ReqCT =:= <<"ProcessInboxReq">> ->
+    case adto:decode(#k1api_process_inbox_request_dto{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got process inbox request: ~p", [ReqDTO]),
+            case k_inbox_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built process inbox response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"ProcessInboxResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Process inbox response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Process inbox request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Process inbox request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
 process(ReqCT, ReqBin) ->
     ?log_error("Got unknown api request: ~p ~p", [ReqCT, ReqBin]),
     {ReqCT, <<>>}.
