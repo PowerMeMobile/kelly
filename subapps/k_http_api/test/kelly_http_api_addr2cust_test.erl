@@ -43,8 +43,9 @@ create_res() ->
     %%     {<<"ton">>, 1},
     %%     {<<"npi">>, 1}
     %% ]},
-    %% Query2 = lists:keyreplace(msisdn, 1, Query, Msisdn2),
-    ?assert_json_values(Query, Resp).
+    User2 = {user, undefined},
+    Query2 = lists:keyreplace(user, 1, Query, User2),
+    ?assert_json_values(Query2, Resp).
 
 delete_res() ->
     delete_res(res_id()).
