@@ -43,7 +43,7 @@ create_res() ->
     %%     {<<"ton">>, 1},
     %%     {<<"npi">>, 1}
     %% ]},
-    User2 = {user, undefined},
+    User2 = {user, null},
     Query2 = lists:keyreplace(user, 1, Query, User2),
     ?assert_json_values(Query2, Resp).
 
