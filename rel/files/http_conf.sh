@@ -109,6 +109,7 @@ post "customers" 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id
 
 # postpaid originators
 post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=8cb7aa6e-f2d4-11e3-9a73-00269e42f7a5&address=999,6,0&description=&is_default=true&state=approved'
+post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=e1783f42-11b9-11e4-9166-0015588e6deb&address=SMS,5,0&description=&is_default=false&state=approved'
 
 # postpaid users
 post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
@@ -118,6 +119,7 @@ post "customers" 'customer_uuid=f9251298-381e-49c4-a60d-ff51e66c4f1c&customer_id
 
 # prepaid originators
 post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators" 'id=5220e2fa-c794-4387-ad92-29d4243a6e29&address=999,6,0&description=&is_default=true&state=approved'
+post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators" 'id=f67fe174-11b9-11e4-a395-0015588e6deb&address=SMS,5,0&description=&is_default=false&state=approved'
 
 # prepaid users
 post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/users" 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
