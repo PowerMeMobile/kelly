@@ -22,15 +22,14 @@ process(ReqDTO) ->
     CustomerId  = ReqDTO#k1api_request_credit_request_dto.customer_id,
     CreditRequested = ReqDTO#k1api_request_credit_request_dto.credit,
 
-    case k_storage_customers:get_customer_by_id(CustomerId) of
+    case k_storage_customers:get_customer_by_uuid(CustomerId) of
         {ok, Customer} ->
-            CustomerUuid = Customer#customer.customer_uuid,
             Credit = Customer#customer.credit,
             CreditLimit = Customer#customer.credit_limit,
             {Result, CreditLeft} = request_credit(Credit, CreditLimit, CreditRequested),
             case Result of
                 allowed ->
-                    ok = k_storage_customers:reduce_credit(CustomerUuid, CreditRequested);
+                    ok = k_storage_customers:reduce_credit(CustomerId, CreditRequested);
                 _ ->
                     nop
             end,
