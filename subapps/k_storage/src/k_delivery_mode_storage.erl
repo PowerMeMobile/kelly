@@ -35,7 +35,7 @@ set_mt_dlr_info_and_get_msg_info(Selector, Modifier) ->
 		'new', true
 	},
 	case mongodb_storage:command(k_prev_dynamic_storage, Command) of
-		{ok, {value, Doc, {updatedExisting, true, n, 1}, ok, _}} ->
+		{ok, {value, Doc, lastErrorObject, {updatedExisting, true, n, 1}, ok, _}} ->
 			{ok, Doc};
 		{ok, {value, undefined, ok, _}} ->
 			case mongodb_storage:command(k_curr_dynamic_storage, Command) of
