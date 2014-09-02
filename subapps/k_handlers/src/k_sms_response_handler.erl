@@ -33,10 +33,48 @@ process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
         fun k_dynamic_storage:set_mt_resp_info/1, RespInfos, ok, {error, '_'}
     ) of
         ok ->
-            {ok, []};
+            case ac_utils:safe_foreach(
+                fun check_failed_responses/1, RespInfos, ok, {error, '_'}
+            ) of
+                ok ->
+                    {ok, []};
+                {error, req_info_unavailable} ->
+                    %% don't waste resources trying to requeue multiple times
+                    %% sleep for 10 secs before requeuing again.
+                    timer:sleep(10000),
+                    {error, not_enough_data_to_proceed};
+                Error ->
+                    Error
+            end;
         Error ->
             Error
     end.
+
+check_failed_responses(RespInfo) when RespInfo#resp_info.resp_status =:= failed ->
+    ReqId = RespInfo#resp_info.req_id,
+    InMsgId = RespInfo#resp_info.in_msg_id,
+    Selector = {
+        ri , ReqId,
+        imi, InMsgId
+    },
+    {ok, Doc} = shifted_storage:find_one(mt_messages, Selector, {}),
+    MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
+    case MsgInfo#msg_info.req_time of
+        {0,0,0} ->
+            %% response came before request. it happens sometimes.
+            {error, req_info_unavailable};
+        _ ->
+            case MsgInfo#msg_info.reg_dlr of
+                false ->
+                    ok;
+                true ->
+                    RespTime = MsgInfo#msg_info.resp_time,
+                    MsgInfo2 = MsgInfo#msg_info{dlr_time = RespTime, status = rejected},
+                    k_receipt_batch_handler:register_delivery_receipt(MsgInfo2)
+            end
+    end;
+check_failed_responses(_RespInfo) ->
+    ok.
 
 -spec sms_response_to_resp_info_list(#just_sms_response_dto{}) -> [#resp_info{}].
 sms_response_to_resp_info_list(SmsResponse) ->
@@ -77,5 +115,4 @@ convert(SmsResponse, SmsStatus) ->
     }.
 
 fix_status(success) -> sent;
-fix_status(failure) -> failed;
-fix_status(Status)  -> Status.
+fix_status(failure) -> failed.

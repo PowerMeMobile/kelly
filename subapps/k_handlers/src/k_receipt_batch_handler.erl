@@ -1,6 +1,7 @@
 -module(k_receipt_batch_handler).
 
 -export([process/1]).
+-export([register_delivery_receipt/1]).
 
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
@@ -83,12 +84,15 @@ traverse_delivery_receipts(GatewayId, DlrTime, [Receipt | Receipts]) ->
 process_delivery_receipt(MsgInfo) ->
     register_delivery_receipt(MsgInfo).
 
+%% The function is called from k_sms_response_handler
+%% if a submit error is detected and a delivery receipt is requested.
+-spec register_delivery_receipt(#msg_info{}) -> ok.
 register_delivery_receipt(#msg_info{client_type = ClientType})
     when ClientType =:= mm orelse ClientType =:= soap ->
     %% no need to register receipts.
     ok;
 register_delivery_receipt(MsgInfo) ->
-    {ok, Item} = build_receipt_item(MsgInfo),
+    Item = build_receipt_item(MsgInfo),
     ok = k_mailbox:register_incoming_item(Item).
 
 build_receipt_item(#msg_info{
@@ -102,7 +106,7 @@ build_receipt_item(#msg_info{
     dlr_time = _DlrTime
 }) ->
     ItemId = uuid:unparse(uuid:generate_time()),
-    Item = #k_mb_k1api_receipt{
+    #k_mb_k1api_receipt{
         id = ItemId,
         customer_id = CustomerId,
         user_id = UserId,
@@ -110,8 +114,7 @@ build_receipt_item(#msg_info{
         dest_addr = DstAddr,
         input_message_id = InMsgId,
         message_state = Status
-    },
-    {ok, Item};
+    };
 build_receipt_item(#msg_info{
     client_type = funnel,
     customer_id = CustomerId,
@@ -123,7 +126,7 @@ build_receipt_item(#msg_info{
     dlr_time = DlrTime
 }) ->
     ItemId = uuid:unparse(uuid:generate_time()),
-    Item = #k_mb_funnel_receipt{
+    #k_mb_funnel_receipt{
         id = ItemId,
         customer_id = CustomerId,
         user_id = UserId,
@@ -133,5 +136,4 @@ build_receipt_item(#msg_info{
         submit_date = DlrTime,
         done_date = DlrTime,
         message_state = Status
-     },
-    {ok, Item}.
+    }.
