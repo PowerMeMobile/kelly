@@ -81,6 +81,7 @@ create(Params) ->
         {ok, Customer = #customer{}} ->
             create_user(Customer, Params);
         {error, no_entry} ->
+            ?log_warn("Customer not found: ~p", [CustomerUuid]),
             {exception, 'svc0003'};
         Error ->
             ?log_error("Unexpected error: ~p", [Error]),
@@ -93,6 +94,7 @@ read(Params) ->
         {ok, Customer = #customer{}} ->
             get_customer_user(Customer, ?gv(id, Params));
         {error, no_entry} ->
+            ?log_warn("Customer not found: ~p", [CustomerUuid]),
             {exception, 'svc0003'};
         Error ->
             ?log_error("Unexpected error: ~p", [Error]),
@@ -105,6 +107,7 @@ update(Params) ->
         {ok, Customer = #customer{}} ->
             update_user(Customer, Params);
         {error, no_entry} ->
+            ?log_warn("Customer not found: ~p", [CustomerUuid]),
             {exception, 'svc0003'};
         Error ->
             ?log_error("Unexpected error: ~p", [Error]),
@@ -116,7 +119,7 @@ delete(Params) ->
     UserId = ?gv(id, Params),
     case k_storage_customers:del_customer_user(CustomerUuid, UserId) of
         {error, no_entry} ->
-            ?log_warn("Customer [~p] not found", [CustomerUuid]),
+            ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
             {exception, 'svc0003'};
         ok ->
             {http_code, 204};
@@ -220,6 +223,8 @@ update_user(Customer, Params) ->
             ?log_debug("User: ~p", [Plist]),
             {ok, Plist};
         {error, no_entry} ->
+            CustomerUuid = ?gv(customer_uuid, Params),
+            ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
             {exception, 'svc0003'};
         Error ->
             ?log_error("Unexpected error: ~p", [Error]),
@@ -238,6 +243,8 @@ get_customer_user(Customer, UserId) ->
             ?log_debug("User: ~p", [Plist]),
             {ok, Plist};
         {error, no_entry} ->
+            CustomerUuid = Customer#customer.customer_uuid,
+            ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
             {exception, 'svc0003'};
         Error ->
             ?log_error("Unexpected error: ~p", [Error]),

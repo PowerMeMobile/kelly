@@ -15,6 +15,10 @@
 -include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_storage/include/customer.hrl").
 
+%% ===================================================================
+%% Callback Functions
+%% ===================================================================
+
 init() ->
     Read = [
         #param{name = customer_uuid, mandatory = false, repeated = false, type = binary}
@@ -144,7 +148,7 @@ delete(Params) ->
     {http_code, 204}.
 
 %% ===================================================================
-%% Local Functions Definitions
+%% Internal
 %% ===================================================================
 
 update_customer(Customer, Params) ->

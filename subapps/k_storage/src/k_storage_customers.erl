@@ -281,13 +281,10 @@ find(Key, Pos, List) ->
             {ok, Item}
     end.
 
+check_undefined(<<>>) ->
+    undefined;
 check_undefined(Value) ->
-    case Value of
-        <<>> ->
-            undefined;
-        _ ->
-            Value
-    end.
+    Value.
 
 features_to_docs(undefined) ->
     [];

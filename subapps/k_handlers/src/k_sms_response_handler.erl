@@ -79,8 +79,7 @@ check_failed_responses(_RespInfo) ->
 -spec sms_response_to_resp_info_list(#just_sms_response_dto{}) -> [#resp_info{}].
 sms_response_to_resp_info_list(SmsResponse) ->
     Statuses = SmsResponse#just_sms_response_dto.statuses,
-    Fun = fun(S) -> convert(SmsResponse, S) end,
-    [Fun(S) || S <- Statuses].
+    [convert(SmsResponse, S) || S <- Statuses].
 
 -spec convert(#just_sms_response_dto{}, #just_sms_status_dto{}) -> #resp_info{}.
 convert(SmsResponse, SmsStatus) ->
