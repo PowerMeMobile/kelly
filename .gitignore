@@ -12,4 +12,7 @@ subapps/k_common/src/JustAsn.erl
 subapps/k_common/include/k1api_pb.hrl
 subapps/*/.eunit
 subapps/*/priv/*.so
+test/__pycache__/
+test/env/
+test/*.pyc
 *TAGS

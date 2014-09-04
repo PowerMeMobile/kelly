@@ -15,6 +15,12 @@
 -type user_state() :: active | blocked | deactivated.
 -type customer_state() :: active | blocked | deactivated.
 
+-record(feature, {
+    name :: binary(),
+    value :: binary()
+}).
+-type feature() :: #feature{}.
+
 -record(originator, {
     id                   :: originator_id(),
     address              :: addr(),
@@ -27,6 +33,7 @@
     id                    :: user_id(),
     password              :: binary(),
     connection_types      :: [connection_type()],
+    features = []         :: [feature()],
     mobile_phone = <<"">> :: binary(),
     first_name   = <<"">> :: binary(),
     last_name    = <<"">> :: binary(),

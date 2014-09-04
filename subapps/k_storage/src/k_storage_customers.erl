@@ -46,6 +46,7 @@ set_customer(CustomerUuid, Customer) ->
             'password', U#user.password,
             'connection_types',
                 [bsondoc:atom_to_binary(Type) || Type <- U#user.connection_types],
+            'features'    , features_to_docs(U#user.features),
             'mobile_phone', U#user.mobile_phone,
             'first_name'  , U#user.first_name,
             'last_name'   , U#user.last_name,
@@ -216,6 +217,7 @@ doc_to_record(Doc) ->
             password = bsondoc:at(password, UserDoc),
             connection_types =
                 [bsondoc:binary_to_atom(Type) || Type <- bsondoc:at(connection_types, UserDoc)],
+            features = docs_to_features(bsondoc:at(features, UserDoc)),
             mobile_phone = bsondoc:at(mobile_phone, UserDoc),
             first_name = bsondoc:at(first_name, UserDoc),
             last_name = bsondoc:at(last_name, UserDoc),
@@ -286,3 +288,13 @@ check_undefined(Value) ->
         _ ->
             Value
     end.
+
+features_to_docs(undefined) ->
+    [];
+features_to_docs(Features) ->
+    [{'name', N, 'value', V} || #feature{name = N, value = V} <- Features].
+
+docs_to_features(undefined) ->
+    [];
+docs_to_features(Docs) ->
+    [#feature{name = bsondoc:at(name, D), value = bsondoc:at(value, D)} || D <- Docs].

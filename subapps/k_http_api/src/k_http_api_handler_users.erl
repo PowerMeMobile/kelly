@@ -125,22 +125,30 @@ delete(Params) ->
             {http_code, 500}
     end.
 
+%% ===================================================================
+%% Internal & API
+%% ===================================================================
+
 -spec prepare_users(#user{}) -> {ok, [{atom(), term()}]}.
-prepare_users(User = #user{}) ->
+prepare_users(User = #user{features = Features}) ->
+    {ok, FeaturesPlists} = k_http_api_handler_users_features:prepare_features(Features),
     Fun = ?record_to_proplist(user),
-    Plist = Fun(User),
+    Plist = Fun(
+        User#user{features = FeaturesPlists}
+    ),
     proplists:delete(password, Plist);
 prepare_users(Users) when is_list(Users) ->
     {ok, [prepare_users(User) || User <- Users]}.
 
 %% ===================================================================
-%% Local Functions
+%% Internal
 %% ===================================================================
 
 create_user(Customer, Params) ->
     UserId = ?gv(id, Params),
     case k_storage_customers:get_customer_user(Customer, UserId) of
         {ok, #user{}} ->
+            ?log_error("User already exists: ~p", [UserId]),
             {exception, 'svc0004'};
         {error, no_entry} ->
             Password = ?gv(password, Params),

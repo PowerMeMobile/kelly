@@ -91,6 +91,7 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_networks,
         k_http_api_handler_network_maps,
         k_http_api_handler_users,
+        k_http_api_handler_users_features,
         k_http_api_handler_originators,
         k_http_api_handler_customers,
         k_http_api_handler_blacklist,
