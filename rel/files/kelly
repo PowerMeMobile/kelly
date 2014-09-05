@@ -157,7 +157,7 @@ case "$1" in
             console)        BOOTFILE=$SCRIPT ;;
             console_clean)  BOOTFILE=start_clean ;;
             develop)
-                BOOTFILE=develop
+                BOOTFILE=$SCRIPT
                 DEV_HOOK="-run alley_develop init" ;;
         esac
         # Setup beam-required vars
