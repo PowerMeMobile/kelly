@@ -34,8 +34,9 @@ process(<<"BindRequest">>, ReqBin) ->
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}} ->
                     {ok, Networks, Providers} = build_networks_and_providers(Customer),
+                    Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(<<"BindResponse">>,
-                        ReqId, Customer, Networks, Providers),
+                        ReqId, Customer, Networks, Providers, Features),
                     ?log_debug("Auth allowed", []),
                     encode_response(<<"BindResponse">>, Response);
                 {deny, Reason} ->
@@ -65,8 +66,9 @@ process(<<"OneAPIAuthReq">>, ReqBin) ->
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}} ->
                     {ok, Networks, Providers} = build_networks_and_providers(Customer),
+                    Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(<<"OneAPIAuthResp">>,
-                        ReqId, Customer, Networks, Providers),
+                        ReqId, Customer, Networks, Providers, Features),
                     ?log_debug("Auth allowed", []),
                     encode_response(<<"OneAPIAuthResp">>, Response);
                 {deny, Reason} ->
@@ -227,7 +229,7 @@ build_networks_and_providers(Customer) ->
             {ok, [], []}
     end.
 
-build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers) ->
+build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers, Features) ->
     #customer{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
@@ -243,8 +245,8 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers) ->
     } = Customer,
 
     CustomerDTO = #funnel_auth_response_customer_dto{
-        id = CustomerId,
         uuid = CustomerUuid,
+        id = CustomerId,
         priority = Prio,
         rps = RPS,
         allowed_sources = allowed_sources(Originators),
@@ -256,7 +258,8 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers) ->
         no_retry = NR,
         default_validity = DV,
         max_validity = MV,
-        pay_type = PayType
+        pay_type = PayType,
+        features = [feature_to_dto(F) || F <- Features]
     },
     ResponseDTO = #funnel_auth_response_dto{
         connection_id = ReqId,
@@ -264,11 +267,10 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, Networks, Providers) ->
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO};
-build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers) ->
+build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers, Features) ->
     #customer{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
-        priority = _Prio,
         originators = Originators,
         default_provider_id = DP,
         receipts_allowed = RA,
@@ -281,7 +283,6 @@ build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers) 
     CustomerDTO = #k1api_auth_response_customer_dto{
         uuid = CustomerUuid,
         id = CustomerId,
-        pay_type = PayType,
         allowed_sources = allowed_sources(Originators),
         default_source = default_source(Originators),
         networks = Networks,
@@ -290,7 +291,9 @@ build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, Networks, Providers) 
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = MV,
-        max_validity = MV
+        max_validity = MV,
+        pay_type = PayType,
+        features = [feature_to_dto(F) || F <- Features]
     },
 
     ResponseDTO = #k1api_auth_response_dto{
@@ -389,3 +392,17 @@ insert_if_not_member(P, Ps) ->
         true -> Ps;
         false -> [P | Ps]
     end.
+
+get_features(UserId, #customer{users = Users}) ->
+    User = lists:keyfind(UserId, #user.id, Users),
+    User#user.features.
+
+feature_to_dto(Feature) ->
+    #feature{
+        name = Name,
+        value = Value
+    } = Feature,
+    #feature_dto{
+        name = Name,
+        value = Value
+    }.
