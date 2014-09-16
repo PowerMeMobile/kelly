@@ -49,12 +49,24 @@ process_receipt_batch(ReceiptBatch) ->
     case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
         ok ->
             {ok, []};
-        %% abnormal case, sms response isn't handled yet.
         {error, no_entry} ->
-            %% don't waste resources trying to requeue multiple times
-            %% sleep for 10 secs before requeuing again.
-            timer:sleep(10000),
-            {error, not_enough_data_to_proceed};
+            %% req/resp aren't handled yet or
+            %% receipt can't be handled at all.
+            %% don't waste resources trying to requeue multiple times,
+            %% because it doesn't work if a wrong receipt is received.
+            %% wait for a while, try once more and if it fails, then skip it.
+            ?log_debug("Not enough data to process receipt. Wait, then try once more", []),
+            {ok, Timeout} = application:get_env(k_handlers, receipt_retry_timeout),
+            timer:sleep(Timeout),
+            case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
+                ok ->
+                    {ok, []};
+                {error, no_entry} ->
+                    ?log_warn("Bad receipt: ~p", [ReceiptBatch]),
+                    {ok, []};
+                Error ->
+                    Error
+            end;
         Error ->
             Error
     end.

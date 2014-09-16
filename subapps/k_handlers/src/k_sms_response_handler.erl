@@ -39,9 +39,10 @@ process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
                 ok ->
                     {ok, []};
                 {error, req_info_unavailable} ->
-                    %% don't waste resources trying to requeue multiple times
-                    %% sleep for 10 secs before requeuing again.
-                    timer:sleep(10000),
+                    %% req isn't handled yet.
+                    %% wait for a while, then requeue it.
+                    {ok, Timeout} = application:get_env(k_handlers, receipt_retry_timeout),
+                    timer:sleep(Timeout),
                     {error, not_enough_data_to_proceed};
                 Error ->
                     Error
