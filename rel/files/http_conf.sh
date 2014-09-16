@@ -34,7 +34,7 @@ post gateways "id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=SMPPSim&rps=10000"
 #
 post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=1&host=127.0.0.1&port=8001&bind_type=transmitter&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="
 
-post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=2&host=127.0.0.1&port=8001&bind_type=receiver&system_id=smppclient2&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="
+post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=2&host=127.0.0.1&port=8001&bind_type=receiver&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="
 
 #
 # Providers
