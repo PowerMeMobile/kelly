@@ -115,6 +115,7 @@ build_receipt_item(#msg_info{
     src_addr = SrcAddr,
     dst_addr = DstAddr,
     status = Status,
+    req_time = _ReqTime,
     dlr_time = _DlrTime
 }) ->
     ItemId = uuid:unparse(uuid:generate_time()),
@@ -135,6 +136,7 @@ build_receipt_item(#msg_info{
     src_addr = SrcAddr,
     dst_addr = DstAddr,
     status = Status,
+    req_time = ReqTime,
     dlr_time = DlrTime
 }) ->
     ItemId = uuid:unparse(uuid:generate_time()),
@@ -145,7 +147,7 @@ build_receipt_item(#msg_info{
         source_addr = SrcAddr,
         dest_addr = DstAddr,
         input_message_id = InMsgId,
-        submit_date = DlrTime,
+        submit_date = ReqTime,
         done_date = DlrTime,
         message_state = Status
     }.
