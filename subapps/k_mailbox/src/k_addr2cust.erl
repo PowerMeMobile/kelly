@@ -10,15 +10,13 @@
 -include("application.hrl").
 -include("address.hrl").
 
--define(msisdnsColl, mb_msisdns).
-
 -spec resolve(addr()) -> {ok, customer_id(), user_id()} |
                          {error, addr_not_used}.
 resolve(Address = #addr{}) ->
     Selector = {
         'address' , k_storage_utils:addr_to_doc(Address)
     },
-    case mongodb_storage:find(static_storage, ?msisdnsColl, Selector) of
+    case mongodb_storage:find(static_storage, mb_msisdns, Selector) of
         {ok, []} -> {error, addr_not_used};
         {ok, [{_, Doc}]} ->
             CustID = bsondoc:at(customer_id, Doc),
@@ -35,7 +33,7 @@ link(Address = #addr{}, CustID, UserID) ->
     },
     case resolve(Address) of
         {error, addr_not_used} ->
-            {ok, _ID} = mongodb_storage:insert(static_storage, ?msisdnsColl, Modifier),
+            {ok, _ID} = mongodb_storage:insert(static_storage, mb_msisdns, Modifier),
             ok;
         _ -> {error, addr_in_use}
     end.
@@ -45,7 +43,7 @@ unlink(Address = #addr{}) ->
     Selector = {
         'address' , k_storage_utils:addr_to_doc(Address)
     },
-    ok = mongodb_storage:delete(static_storage, ?msisdnsColl, Selector).
+    ok = mongodb_storage:delete(static_storage, mb_msisdns, Selector).
 
 -spec available_addresses(customer_id(), user_id()) ->
     {ok, [addr()]}.
@@ -54,7 +52,7 @@ available_addresses(CustID, UserID) ->
         'customer_id' , CustID,
         'user_id'     , UserID
     },
-    {ok, Docs} = mongodb_storage:find(static_storage, ?msisdnsColl, Selector),
+    {ok, Docs} = mongodb_storage:find(static_storage, mb_msisdns, Selector),
     AddrDocs = [bsondoc:at(address, Doc) || {_, Doc} <- Docs],
     Items = [k_storage_utils:doc_to_addr(Doc) || Doc <- AddrDocs],
     {ok, Items}.

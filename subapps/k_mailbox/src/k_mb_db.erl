@@ -29,14 +29,6 @@
     link_input_id_to_sub_id/2
 ]).
 
--define(funnelReceiptsColl, mb_funnel_receipts).
--define(incomingSmsColl, mb_incoming_sms).
--define(inputIdToSubIdColl, mb_k1api_input_id_to_sub_id).
--define(k1apiReceiptsColl, mb_k1api_receipts).
--define(k1apiReceiptSubColl, mb_k1api_receipt_subs).
--define(pendingItemsColl, mb_pending_items).
--define(subscriptionsColl, mb_subscriptions).
-
 -type input_sms_id() ::
     {CustomerID::binary(), UserID::binary(), ClientType::atom(), InMsgID::binary()}.
 
@@ -60,7 +52,7 @@ save(#k_mb_k1api_receipt_sub{} = Sub) ->
             'created_at'    , Sub#k_mb_k1api_receipt_sub.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, ?k1apiReceiptSubColl, Selector, Modifier);
+    ok = mongodb_storage:upsert(static_storage, mb_k1api_receipt_subs, Selector, Modifier);
 save(#k_mb_incoming_sms{} = Sms) ->
     Selector = {
         '_id' , Sms#k_mb_incoming_sms.id
@@ -78,7 +70,7 @@ save(#k_mb_incoming_sms{} = Sms) ->
             'created_at' , Sms#k_mb_incoming_sms.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, ?incomingSmsColl, Selector, Modifier);
+    ok = mongodb_storage:upsert(static_storage, mb_incoming_sms, Selector, Modifier);
 save(#k_mb_k1api_receipt{} = R) ->
     Selector = {
         '_id' , R#k_mb_k1api_receipt.id
@@ -95,7 +87,7 @@ save(#k_mb_k1api_receipt{} = R) ->
             'created_at'       , R#k_mb_k1api_receipt.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, ?k1apiReceiptsColl, Selector, Modifier);
+    ok = mongodb_storage:upsert(static_storage, mb_k1api_receipts, Selector, Modifier);
 save(#k_mb_funnel_receipt{} = R) ->
     Selector = {
         '_id' , R#k_mb_funnel_receipt.id
@@ -114,7 +106,7 @@ save(#k_mb_funnel_receipt{} = R) ->
             'created_at'       , R#k_mb_funnel_receipt.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, ?funnelReceiptsColl, Selector, Modifier).
+    ok = mongodb_storage:upsert(static_storage, mb_funnel_receipts, Selector, Modifier).
 
 -spec save_sub(tuple()) -> ok.
 save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
@@ -133,7 +125,7 @@ save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
             'created_at'    , Sub#k_mb_k1api_receipt_sub.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, ?subscriptionsColl, Selector, Modifier);
+    ok = mongodb_storage:upsert(static_storage, mb_subscriptions, Selector, Modifier);
 save_sub(#k_mb_k1api_incoming_sms_sub{} = Sub) ->
     Selector = {
         '_id' , Sub#k_mb_k1api_incoming_sms_sub.id
@@ -152,7 +144,7 @@ save_sub(#k_mb_k1api_incoming_sms_sub{} = Sub) ->
             'created_at'    , Sub#k_mb_k1api_incoming_sms_sub.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, ?subscriptionsColl, Selector, Modifier);
+    ok = mongodb_storage:upsert(static_storage, mb_subscriptions, Selector, Modifier);
 save_sub(#k_mb_funnel_sub{} = Sub) ->
     Selector = {
         '_id' , Sub#k_mb_funnel_sub.id
@@ -167,7 +159,7 @@ save_sub(#k_mb_funnel_sub{} = Sub) ->
             'created_at'  , Sub#k_mb_funnel_sub.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, ?subscriptionsColl, Selector, Modifier).
+    ok = mongodb_storage:upsert(static_storage, mb_subscriptions, Selector, Modifier).
 
 -spec save_delivery_status(k_mb_item(), atom(), os:timestamp()) -> ok.
 save_delivery_status(#k_mb_funnel_receipt{
@@ -189,28 +181,28 @@ save_delivery_status(#k_mb_incoming_sms{
 
 -spec delete_subscription(SubscriptionID::binary()) -> ok.
 delete_subscription(SubscriptionID) ->
-    ok = mongodb_storage:delete(static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}).
+    ok = mongodb_storage:delete(static_storage, mb_subscriptions, {'_id' , SubscriptionID}).
 
 -spec delete_item(k_mb_item()) -> ok.
 delete_item(Item = #k_mb_funnel_receipt{}) ->
     Selector = {'_id', Item#k_mb_funnel_receipt.id},
-    ok = mongodb_storage:delete(static_storage, ?funnelReceiptsColl, Selector);
+    ok = mongodb_storage:delete(static_storage, mb_funnel_receipts, Selector);
 delete_item(Item = #k_mb_k1api_receipt{}) ->
     Selector = {
         '_id'         , Item#k_mb_k1api_receipt.id,
         'customer_id' , Item#k_mb_k1api_receipt.customer_id,
         'user_id'     , Item#k_mb_k1api_receipt.user_id
     },
-    ok = mongodb_storage:delete(static_storage, ?k1apiReceiptsColl, Selector),
-    ok = mongodb_storage:delete(static_storage, ?pendingItemsColl, Selector);
+    ok = mongodb_storage:delete(static_storage, mb_k1api_receipts, Selector),
+    ok = mongodb_storage:delete(static_storage, mb_pending_items, Selector);
 delete_item(Item = #k_mb_incoming_sms{}) ->
     Selector = {
         '_id'         , Item#k_mb_incoming_sms.id,
         'customer_id' , Item#k_mb_incoming_sms.customer_id,
         'user_id'     , Item#k_mb_incoming_sms.user_id
     },
-    ok = mongodb_storage:delete(static_storage, ?incomingSmsColl, Selector),
-    ok = mongodb_storage:delete(static_storage, ?pendingItemsColl, Selector).
+    ok = mongodb_storage:delete(static_storage, mb_incoming_sms, Selector),
+    ok = mongodb_storage:delete(static_storage, mb_pending_items, Selector).
 
 -spec get_funnel_receipts(binary(), binary()) -> {ok, [{k_mb_funnel_receipt, ID::binary()}]}.
 get_funnel_receipts(CustomerID, UserID) ->
@@ -218,17 +210,17 @@ get_funnel_receipts(CustomerID, UserID) ->
         customer_id, CustomerID,
         user_id, UserID
     },
-    {ok, FunnelReceiptDocs} = mongodb_storage:find(static_storage, ?funnelReceiptsColl, Selector, {'_id' , 1}),
+    {ok, FunnelReceiptDocs} = mongodb_storage:find(static_storage, mb_funnel_receipts, Selector, {'_id' , 1}),
     FunnelReceipts = [{k_mb_funnel_receipt, RID} || {RID, _} <- FunnelReceiptDocs],
     {ok, FunnelReceipts}.
 
 -spec get_items() -> {ok, [binary()]}.
 get_items() ->
-    {ok, FunnelReceiptDocs} = mongodb_storage:find(static_storage, ?funnelReceiptsColl, {}, {'_id' , 1}),
+    {ok, FunnelReceiptDocs} = mongodb_storage:find(static_storage, mb_funnel_receipts, {}, {'_id' , 1}),
     FunnelReceiptIds = [RID || {RID, _} <- FunnelReceiptDocs],
-    {ok, K1apiReceiptDocs} = mongodb_storage:find(static_storage, ?k1apiReceiptsColl, {}, {'_id' , 1}),
+    {ok, K1apiReceiptDocs} = mongodb_storage:find(static_storage, mb_k1api_receipts, {}, {'_id' , 1}),
     K1APIReceiptIds = [RID || {RID, _} <- K1apiReceiptDocs],
-    {ok, IncomingSmsDocs} = mongodb_storage:find(static_storage, ?incomingSmsColl, {}, {'_id' , 1}),
+    {ok, IncomingSmsDocs} = mongodb_storage:find(static_storage, mb_incoming_sms, {}, {'_id' , 1}),
     IncomingSmsIds = [ISID || {ISID, _} <- IncomingSmsDocs],
     {ok, [  {k_mb_funnel_receipt, FunnelReceiptIds},
             {k_mb_k1api_receipt, K1APIReceiptIds},
@@ -236,7 +228,7 @@ get_items() ->
 
 -spec get_item(ItemType::atom(), ItemID::binary()) -> Item::tuple().
 get_item(k_mb_k1api_receipt, ID) ->
-    {ok, [{_, Doc}]} = mongodb_storage:find(static_storage, ?k1apiReceiptsColl, {'_id' , ID}),
+    {ok, [{_, Doc}]} = mongodb_storage:find(static_storage, mb_k1api_receipts, {'_id' , ID}),
     {ok, #k_mb_k1api_receipt{
         id = ID,
         customer_id = bsondoc:at(customer_id, Doc),
@@ -249,7 +241,7 @@ get_item(k_mb_k1api_receipt, ID) ->
         created_at = bsondoc:at(created_at, Doc)
     }};
 get_item(k_mb_funnel_receipt, ID) ->
-    case mongodb_storage:find(static_storage, ?funnelReceiptsColl, {'_id' , ID}) of
+    case mongodb_storage:find(static_storage, mb_funnel_receipts, {'_id' , ID}) of
         {ok, [{_, Doc}]} ->
             {ok, #k_mb_funnel_receipt{
                 id = ID,
@@ -267,7 +259,7 @@ get_item(k_mb_funnel_receipt, ID) ->
         _ -> no_record
     end;
 get_item(k_mb_incoming_sms, ID) ->
-    {ok, [{_, Doc}]} = mongodb_storage:find(static_storage, ?incomingSmsColl, {'_id' , ID}),
+    {ok, [{_, Doc}]} = mongodb_storage:find(static_storage, mb_incoming_sms, {'_id' , ID}),
     {ok, #k_mb_incoming_sms{
         id = ID,
         customer_id = bsondoc:at(customer_id, Doc),
@@ -294,7 +286,7 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
         'client_type' , <<"oneapi">>,
         'input_id'    , MessageID
     },
-    case mongodb_storage:find(static_storage, ?inputIdToSubIdColl, Selector) of
+    case mongodb_storage:find(static_storage, mb_k1api_input_id_to_sub_id, Selector) of
         {ok, []} ->
             ?log_warn("k1api InputID undefined", []),
             undefined;
@@ -302,7 +294,7 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
             ?log_debug("Doc: ~p", [Doc]),
             SubID = bsondoc:at(subscription_id, Doc),
             ?log_debug("SubID: ~p", [SubID]),
-            {ok, [{_, SubDoc}]} = mongodb_storage:find(static_storage, ?k1apiReceiptSubColl, {'_id' , SubID}),
+            {ok, [{_, SubDoc}]} = mongodb_storage:find(static_storage, mb_k1api_receipt_subs, {'_id' , SubID}),
             Sub = #k_mb_k1api_receipt_sub{
                 id = SubID,
                 customer_id = bsondoc:at(customer_id, SubDoc),
@@ -320,7 +312,7 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
 -spec get_subscription(SubscriptionID::binary()) ->
     {ok, k_mb_subscription()}.
 get_subscription(SubscriptionID) ->
-    {ok, [{_, Doc}]} = mongodb_storage:find(static_storage, ?subscriptionsColl, {'_id' , SubscriptionID}),
+    {ok, [{_, Doc}]} = mongodb_storage:find(static_storage, mb_subscriptions, {'_id' , SubscriptionID}),
     {ok, get_subscription(bsondoc:binary_to_atom(bsondoc:at(type, Doc)), SubscriptionID, Doc)}.
 
 get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
@@ -360,13 +352,13 @@ get_subscription(k_mb_funnel_sub, ID, Doc) ->
 -spec get_funnel_subscriptions() -> {ok, [#k_mb_funnel_sub{}]}.
 get_funnel_subscriptions() ->
     {ok, Docs} =
-        mongodb_storage:find(static_storage, ?subscriptionsColl, {'type' , <<"k_mb_funnel_sub">>}),
+        mongodb_storage:find(static_storage, mb_subscriptions, {'type' , <<"k_mb_funnel_sub">>}),
     Subs = [get_subscription(k_mb_funnel_sub, ID, Doc) || {ID, Doc} <- Docs],
     {ok, Subs}.
 
 -spec get_subscription_ids() -> {ok, [binary()]}.
 get_subscription_ids() ->
-    {ok, Docs} = mongodb_storage:find(static_storage, ?subscriptionsColl, {}, {'_id', 1}),
+    {ok, Docs} = mongodb_storage:find(static_storage, mb_subscriptions, {}, {'_id', 1}),
     IDs = [ID || {ID, _} <- Docs],
     {ok, IDs}.
 
@@ -380,7 +372,7 @@ set_pending(ItemType, ItemID, CustomerID, UserID) ->
             'user_id'     , UserID
         }
     },
-    ok = mongodb_storage:upsert(static_storage, ?pendingItemsColl, Selector, Modifier).
+    ok = mongodb_storage:upsert(static_storage, mb_pending_items, Selector, Modifier).
 
 -spec get_pending(CustomerID::binary(), UserID::binary()) ->
     {ok, []} | {ok, [{ItemType::atom(), ItemID::binary()}]}.
@@ -389,7 +381,7 @@ get_pending(CustomerID, UserID) ->
         'customer_id' , CustomerID,
         'user_id'     , UserID
     },
-    {ok, Docs} = mongodb_storage:find(static_storage, ?pendingItemsColl, Selector),
+    {ok, Docs} = mongodb_storage:find(static_storage, mb_pending_items, Selector),
     Items = [{bsondoc:binary_to_atom(bsondoc:at(type, Doc)), ID} || {ID, Doc} <- Docs],
     {ok, Items}.
 
@@ -401,7 +393,7 @@ get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
         'user_id'     , UserID,
         'dest_addr'   , k_storage_utils:addr_to_doc(DestinationAddr)
     },
-    {ok, ISDocs} = mongodb_storage:find(static_storage, ?incomingSmsColl, Selector),
+    {ok, ISDocs} = mongodb_storage:find(static_storage, mb_incoming_sms, Selector),
     AllItems =
     [#k_mb_incoming_sms{
         id = ID,
@@ -428,7 +420,7 @@ link_input_id_to_sub_id({CID, UID, oneapi, InMsgID}, SubscriptionID) ->
         'input_id'        , InMsgID,
         'subscription_id' , SubscriptionID
     },
-    {ok, _ID} = mongodb_storage:insert(static_storage, ?inputIdToSubIdColl, Modifier),
+    {ok, _ID} = mongodb_storage:insert(static_storage, mb_k1api_input_id_to_sub_id, Modifier),
     ok.
 
 %% ===================================================================
