@@ -158,15 +158,11 @@ get_suitable_subscription(Item = #k_mb_incoming_sms{}, Subscriptions) ->
 get_suitable_subscription(#k_mb_k1api_receipt{source_addr = SourceAddr}, Subscriptions) ->
     ?log_debug("Subscriptions: ~p", [Subscriptions]),
     ?log_debug("SourceAddr: ~p", [SourceAddr]),
-    Fun =
-        fun(#k_mb_k1api_receipt_sub{dest_addr = Addr}) when Addr =:= SourceAddr ->
-                true;
-            (_) ->
-                false
-        end,
-    case ac_lists:findwith(Fun, Subscriptions) of
-        false -> undefined;
-        {value, Subscription} -> {ok, Subscription}
+    case lists:keyfind(SourceAddr, #k_mb_k1api_receipt_sub.source_addr, Subscriptions) of
+        false ->
+            undefined;
+        Subscription ->
+            {ok, Subscription}
     end;
 get_suitable_subscription(_, _) ->
     undefined.

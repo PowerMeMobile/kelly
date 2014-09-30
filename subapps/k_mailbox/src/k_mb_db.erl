@@ -43,13 +43,14 @@ save(#k_mb_k1api_receipt_sub{} = Sub) ->
     },
     Modifier = {
         '$set' , {
-            'customer_id'   , Sub#k_mb_k1api_receipt_sub.customer_id,
-            'user_id'       , Sub#k_mb_k1api_receipt_sub.user_id,
-            'queue_name'    , Sub#k_mb_k1api_receipt_sub.queue_name,
-            'dest_addr'     , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.dest_addr),
-            'notify_url'    , Sub#k_mb_k1api_receipt_sub.notify_url,
-            'callback_data' , Sub#k_mb_k1api_receipt_sub.callback_data,
-            'created_at'    , Sub#k_mb_k1api_receipt_sub.created_at
+            'customer_id'  , Sub#k_mb_k1api_receipt_sub.customer_id,
+            'user_id'      , Sub#k_mb_k1api_receipt_sub.user_id,
+            'queue_name'   , Sub#k_mb_k1api_receipt_sub.queue_name,
+            'source_addr'  , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.source_addr),
+            'client_correlator', Sub#k_mb_k1api_receipt_sub.client_correlator,
+            'notify_url'   , Sub#k_mb_k1api_receipt_sub.notify_url,
+            'callback_data', Sub#k_mb_k1api_receipt_sub.callback_data,
+            'created_at'   , Sub#k_mb_k1api_receipt_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(static_storage, mb_k1api_receipt_subs, Selector, Modifier);
@@ -115,14 +116,15 @@ save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
     },
     Modifier = {
         '$set' , {
-            'type'          , bsondoc:atom_to_binary(k_mb_k1api_receipt_sub),
-            'customer_id'   , Sub#k_mb_k1api_receipt_sub.customer_id,
-            'user_id'       , Sub#k_mb_k1api_receipt_sub.user_id,
-            'queue_name'    , Sub#k_mb_k1api_receipt_sub.queue_name,
-            'dest_addr'     , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.dest_addr),
-            'notify_url'    , Sub#k_mb_k1api_receipt_sub.notify_url,
-            'callback_data' , Sub#k_mb_k1api_receipt_sub.callback_data,
-            'created_at'    , Sub#k_mb_k1api_receipt_sub.created_at
+            'type'         , bsondoc:atom_to_binary(k_mb_k1api_receipt_sub),
+            'customer_id'  , Sub#k_mb_k1api_receipt_sub.customer_id,
+            'user_id'      , Sub#k_mb_k1api_receipt_sub.user_id,
+            'queue_name'   , Sub#k_mb_k1api_receipt_sub.queue_name,
+            'source_addr'  , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.source_addr),
+            'client_correlator', Sub#k_mb_k1api_receipt_sub.client_correlator,
+            'notify_url'   , Sub#k_mb_k1api_receipt_sub.notify_url,
+            'callback_data', Sub#k_mb_k1api_receipt_sub.callback_data,
+            'created_at'   , Sub#k_mb_k1api_receipt_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(static_storage, mb_subscriptions, Selector, Modifier);
@@ -300,7 +302,8 @@ get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
                 customer_id = bsondoc:at(customer_id, SubDoc),
                 user_id = bsondoc:at(user_id, SubDoc),
                 queue_name = bsondoc:at(queue_name, SubDoc),
-                dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, SubDoc)),
+                source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, SubDoc)),
+                client_correlator = bsondoc:at(client_correlator, SubDoc),
                 notify_url = bsondoc:at(notify_url, SubDoc),
                 callback_data = bsondoc:at(callback_data, SubDoc),
                 created_at = bsondoc:at(created_at, SubDoc)
@@ -321,7 +324,8 @@ get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
         customer_id = bsondoc:at(customer_id, Doc),
         user_id = bsondoc:at(user_id, Doc),
         queue_name = bsondoc:at(queue_name, Doc),
-        dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+        source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
+        client_correlator = bsondoc:at(client_correlator, Doc),
         notify_url = bsondoc:at(notify_url, Doc),
         callback_data = bsondoc:at(callback_data, Doc),
         created_at = bsondoc:at(created_at, Doc)

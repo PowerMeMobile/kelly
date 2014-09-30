@@ -38,6 +38,14 @@ unregister_subscription(SubscriptionID, CustomerID, UserID) ->
     k_mb_subscription_mgr:unregister(SubscriptionID, CustomerID, UserID).
 
 -spec register_incoming_item(Item::k_mb_item()) -> ok.
+register_incoming_item(Item = #k_mb_k1api_receipt{}) ->
+    case k_mb_db:get_subscription_for_k1api_receipt(Item) of
+        undefined ->
+            ok;
+        {ok, #k_mb_k1api_receipt_sub{}} ->
+            k_mb_db:save(Item),
+            k_mb_wpool:process_incoming_item(Item)
+    end;
 register_incoming_item(Item) ->
     k_mb_db:save(Item),
     k_mb_wpool:process_incoming_item(Item).

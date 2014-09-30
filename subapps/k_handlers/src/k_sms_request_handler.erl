@@ -47,7 +47,7 @@ process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
     case ClientType of
         oneapi ->
             InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
-            process_k1api_req(SmsReq, InMsgIds);
+            process_oneapi_req(SmsReq, InMsgIds);
         _ ->
             nop
     end,
@@ -220,9 +220,9 @@ get_param_by_name(Name, Params, Default) ->
             Value
     end.
 
-process_k1api_req(#just_sms_request_dto{
+process_oneapi_req(#just_sms_request_dto{
     client_type = oneapi,
-    id = _RequestId,
+    id = _ReqId,
     customer_id = CustomerId,
     user_id = UserId,
     params = Params,
@@ -234,14 +234,19 @@ process_k1api_req(#just_sms_request_dto{
     CallbackData = get_param_by_name(<<"oneapi_callback_data">>, Params, undefined),
     ?log_debug("ClientCorrelator: ~p NotifyURL: ~p CallbackData: ~p",
         [ClientCorrelator, NotifyURL, CallbackData]),
-    {ok, SubId} = create_k1api_receipt_subscription(CustomerId, UserId, SourceAddr,
-        ClientCorrelator, NotifyURL, CallbackData),
-    ok = link_input_id_to_sub_id(InputMessageIds, SubId);
-process_k1api_req(_, _) ->
+    case create_oneapi_receipt_subscription(CustomerId, UserId, SourceAddr,
+            ClientCorrelator, NotifyURL, CallbackData) of
+        {ok, SubId} ->
+            ok = link_input_id_to_sub_id(InputMessageIds, SubId);
+        nop ->
+            ok
+    end;
+process_oneapi_req(_, _) ->
     ok.
 
-create_k1api_receipt_subscription(_, _, _, _ClientCorrelator, undefined, _) -> undefined;
-create_k1api_receipt_subscription(CustomerId, UserId, DestAddr, _ClientCorrelator, NotifyURL, CallbackData) ->
+create_oneapi_receipt_subscription(_, _, _, _ClientCorrelator, undefined, _) -> nop;
+create_oneapi_receipt_subscription(CustomerId, UserId, SourceAddr,
+        ClientCorrelator, NotifyURL, CallbackData) ->
     {ok, QName} = application:get_env(k_handlers, oneapi_incoming_sms_queue),
     SubId = uuid:unparse(uuid:generate_time()),
     Sub = #k_mb_k1api_receipt_sub{
@@ -249,7 +254,8 @@ create_k1api_receipt_subscription(CustomerId, UserId, DestAddr, _ClientCorrelato
         customer_id = CustomerId,
         user_id = UserId,
         queue_name = QName,
-        dest_addr = DestAddr,
+        source_addr = SourceAddr,
+        client_correlator = ClientCorrelator,
         notify_url = NotifyURL,
         callback_data = CallbackData,
         created_at = ac_datetime:utc_timestamp()
@@ -257,7 +263,6 @@ create_k1api_receipt_subscription(CustomerId, UserId, DestAddr, _ClientCorrelato
     ok = k_mailbox:register_sms_req_receipts_subscription(Sub),
     {ok, SubId}.
 
-link_input_id_to_sub_id(_, undefined) -> ok;
 link_input_id_to_sub_id([], _SubId) -> ok;
 link_input_id_to_sub_id([InputId | RestIds], SubId) ->
     ok = k_mb_db:link_input_id_to_sub_id(InputId, SubId),

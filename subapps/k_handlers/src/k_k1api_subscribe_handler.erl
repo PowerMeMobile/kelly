@@ -115,9 +115,9 @@ process_subscription(Req, SubRequest = #k1api_subscribe_sms_receipts_request_dto
         id = ID,
         customer_id = CustomerID,
         user_id = _UserID,
-        url = URL,
-        dest_addr = DestAddr,
-        callback_data = Callback
+        url = NotifyURL,
+        dest_addr = SourceAddr,  %% TODO: HERE MUST BE source_addr
+        callback_data = CallbackData
     } = SubRequest,
     {ok, QName} = application:get_env(k_handlers, oneapi_receipt_sms_queue),
     Subscription = #k_mb_k1api_receipt_sub{
@@ -125,9 +125,9 @@ process_subscription(Req, SubRequest = #k1api_subscribe_sms_receipts_request_dto
         customer_id = CustomerID,
         user_id = <<"undefined">>,
         queue_name = QName,
-        dest_addr = DestAddr,
-        notify_url = URL,
-        callback_data = Callback,
+        source_addr = SourceAddr,
+        notify_url = NotifyURL,
+        callback_data = CallbackData,
         created_at = ac_datetime:utc_timestamp()
     },
     k_mailbox:register_subscription(Subscription),

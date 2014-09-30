@@ -98,7 +98,8 @@
     customer_id     :: binary(),
     user_id         :: binary(),
     queue_name      :: binary(),
-    dest_addr       :: addr(),
+    source_addr     :: addr(),
+    client_correlator :: binary(),
     notify_url      :: binary(),
     callback_data   :: binary(),
     created_at      :: erlang:timestamp()
