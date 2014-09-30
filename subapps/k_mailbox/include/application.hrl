@@ -4,14 +4,6 @@
 -include_lib("k_storage/include/customer.hrl").
 
 -define(APP, k_mailbox).
--define(msisdnsColl, mb_msisdns).
--define(funnelReceiptsColl, mb_funnel_receipts).
--define(incomingSmsColl, mb_incoming_sms).
--define(inputIdToSubIdColl, mb_k1api_input_id_to_sub_id).
--define(k1apiReceiptsColl, mb_k1api_receipts).
--define(k1apiReceiptSubColl, mb_k1api_receipt_subs).
--define(pendingItemsColl, mb_pending_items).
--define(subscriptionsColl, mb_subscriptions).
 
 %% ===================================================================
 %% Pending Items

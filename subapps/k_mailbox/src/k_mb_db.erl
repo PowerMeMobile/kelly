@@ -29,6 +29,14 @@
     link_input_id_to_sub_id/2
 ]).
 
+-define(funnelReceiptsColl, mb_funnel_receipts).
+-define(incomingSmsColl, mb_incoming_sms).
+-define(inputIdToSubIdColl, mb_k1api_input_id_to_sub_id).
+-define(k1apiReceiptsColl, mb_k1api_receipts).
+-define(k1apiReceiptSubColl, mb_k1api_receipt_subs).
+-define(pendingItemsColl, mb_pending_items).
+-define(subscriptionsColl, mb_subscriptions).
+
 -type input_sms_id() ::
     {CustomerID::binary(), UserID::binary(), ClientType::atom(), InMsgID::binary()}.
 

@@ -10,6 +10,8 @@
 -include("application.hrl").
 -include("address.hrl").
 
+-define(msisdnsColl, mb_msisdns).
+
 -spec resolve(addr()) -> {ok, customer_id(), user_id()} |
                          {error, addr_not_used}.
 resolve(Address = #addr{}) ->
