@@ -134,12 +134,13 @@ code_change(_OldVsn, State, _Extra) ->
 
 process_pending_items(Sub = #k_mb_funnel_sub{}) ->
     {CustomerID, UserID} = get_customer_user(Sub),
-    {ok, Items} = k_mb_db:get_funnel_receipts(CustomerID, UserID),
-    [k_mb_wpool:process_incoming_item(Item) || Item <- Items];
+    {ok, Pendings} = k_mb_db:get_pending(CustomerID, UserID),
+    {ok, Receipts} = k_mb_db:get_funnel_receipts(CustomerID, UserID),
+    [k_mb_wpool:process_incoming_item(Item) || Item <- Pendings ++ Receipts];
 process_pending_items(Subscription) ->
     {CustomerID, UserID} = get_customer_user(Subscription),
-    {ok, ItemIDs} = k_mb_db:get_pending(CustomerID, UserID),
-    lists:foreach(fun k_mb_wpool:process_incoming_item/1, ItemIDs).
+    {ok, Pendings} = k_mb_db:get_pending(CustomerID, UserID),
+    [k_mb_wpool:process_incoming_item(Item) || Item <- Pendings].
 
 process_get_suitable_sub_req(Item) ->
     Key = get_customer_user(Item), %% Key::{customer_id(), user_id()}
