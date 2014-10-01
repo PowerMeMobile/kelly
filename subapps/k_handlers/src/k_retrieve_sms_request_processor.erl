@@ -37,15 +37,15 @@ build_response(ReqId, IncomingSms, Total) ->
         fun(PendingItem) ->
             #k_mb_incoming_sms{
                 id = ItemID,
-                source_addr = SourceAddr,
+                src_addr = SrcAddr,
                 received = Time,
-                message_body = Message
+                body = Body
             } = PendingItem,
             #k1api_retrieved_sms_dto{
                 datetime = Time,
-                sender_addr = SourceAddr,
+                sender_addr = SrcAddr,
                 message_id = ItemID,
-                message = Message
+                message = Body
             }
         end, IncomingSms),
     RespDTO = #k1api_retrieve_sms_response_dto{

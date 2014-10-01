@@ -155,10 +155,10 @@ get_suitable_subscription(#k_mb_funnel_receipt{}, Subscriptions) ->
 get_suitable_subscription(Item = #k_mb_incoming_sms{}, Subscriptions) ->
     SuitableSubs = [Sub || Sub <- Subscriptions, is_suitable_for_incoming_sms(Item, Sub)],
     resolve_subscription_priority(SuitableSubs);
-get_suitable_subscription(#k_mb_k1api_receipt{source_addr = SourceAddr}, Subscriptions) ->
+get_suitable_subscription(#k_mb_k1api_receipt{src_addr = SrcAddr}, Subscriptions) ->
     ?log_debug("Subscriptions: ~p", [Subscriptions]),
-    ?log_debug("SourceAddr: ~p", [SourceAddr]),
-    case lists:keyfind(SourceAddr, #k_mb_k1api_receipt_sub.source_addr, Subscriptions) of
+    ?log_debug("SrcAddr: ~p", [SrcAddr]),
+    case lists:keyfind(SrcAddr, #k_mb_k1api_receipt_sub.src_addr, Subscriptions) of
         false ->
             undefined;
         Subscription ->
@@ -170,14 +170,14 @@ get_suitable_subscription(_, _) ->
 is_suitable_for_incoming_sms(_Item, #k_mb_funnel_sub{}) ->
     true;
 is_suitable_for_incoming_sms(Item, Sub = #k_mb_k1api_incoming_sms_sub{}) when
-    Sub#k_mb_k1api_incoming_sms_sub.dest_addr =:= Item#k_mb_incoming_sms.dest_addr
+    Sub#k_mb_k1api_incoming_sms_sub.dst_addr =:= Item#k_mb_incoming_sms.dst_addr
     andalso Sub#k_mb_k1api_incoming_sms_sub.criteria =:= undefined ->
     true;
 is_suitable_for_incoming_sms(Item, Sub = #k_mb_k1api_incoming_sms_sub{}) when
-    Sub#k_mb_k1api_incoming_sms_sub.dest_addr =:= Item#k_mb_incoming_sms.dest_addr ->
+    Sub#k_mb_k1api_incoming_sms_sub.dst_addr =:= Item#k_mb_incoming_sms.dst_addr ->
     Criteria = Sub#k_mb_k1api_incoming_sms_sub.criteria,
-    MessageBody = Item#k_mb_incoming_sms.message_body,
-    case bstr:prefix(MessageBody, Criteria) of
+    Body = Item#k_mb_incoming_sms.body,
+    case bstr:prefix(Body, Criteria) of
         true -> true;
         false -> false
     end;

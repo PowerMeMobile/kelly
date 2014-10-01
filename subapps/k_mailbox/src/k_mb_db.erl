@@ -24,13 +24,8 @@
     set_pending/4,
     get_pending/2,
 
-    get_incoming_sms/4,
-
-    link_input_id_to_sub_id/2
+    get_incoming_sms/4
 ]).
-
--type input_sms_id() ::
-    {CustomerID::binary(), UserID::binary(), ClientType::atom(), InMsgID::binary()}.
 
 %% ===================================================================
 %% API
@@ -39,72 +34,78 @@
 -spec save(tuple()) -> ok.
 save(#k_mb_k1api_receipt_sub{} = Sub) ->
     Selector = {
-        '_id' , Sub#k_mb_k1api_receipt_sub.id
+        '_id', Sub#k_mb_k1api_receipt_sub.id
     },
     Modifier = {
-        '$set' , {
-            'customer_id'  , Sub#k_mb_k1api_receipt_sub.customer_id,
-            'user_id'      , Sub#k_mb_k1api_receipt_sub.user_id,
-            'queue_name'   , Sub#k_mb_k1api_receipt_sub.queue_name,
-            'source_addr'  , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.source_addr),
+        '$set', {
+            'customer_id'      , Sub#k_mb_k1api_receipt_sub.customer_id,
+            'user_id'          , Sub#k_mb_k1api_receipt_sub.user_id,
+            'queue_name'       , Sub#k_mb_k1api_receipt_sub.queue_name,
+            'src_addr'         , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.src_addr),
             'client_correlator', Sub#k_mb_k1api_receipt_sub.client_correlator,
-            'notify_url'   , Sub#k_mb_k1api_receipt_sub.notify_url,
-            'callback_data', Sub#k_mb_k1api_receipt_sub.callback_data,
-            'created_at'   , Sub#k_mb_k1api_receipt_sub.created_at
+            'notify_url'       , Sub#k_mb_k1api_receipt_sub.notify_url,
+            'callback_data'    , Sub#k_mb_k1api_receipt_sub.callback_data,
+            'req_id'           , Sub#k_mb_k1api_receipt_sub.req_id,
+            'in_msg_ids'       , Sub#k_mb_k1api_receipt_sub.in_msg_ids,
+            'created_at'       , Sub#k_mb_k1api_receipt_sub.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, mb_k1api_receipt_subs, Selector, Modifier);
+    ok = mongodb_storage:upsert(static_storage, mb_oneapi_receipt_subs, Selector, Modifier);
 save(#k_mb_incoming_sms{} = Sms) ->
     Selector = {
-        '_id' , Sms#k_mb_incoming_sms.id
+        '_id', Sms#k_mb_incoming_sms.id
     },
     Modifier = {
-        '$set' , {
-            'customer_id' , Sms#k_mb_incoming_sms.customer_id,
-            'user_id' , Sms#k_mb_incoming_sms.user_id,
-            'source_addr' , k_storage_utils:addr_to_doc(Sms#k_mb_incoming_sms.source_addr),
-            'dest_addr' , k_storage_utils:addr_to_doc(Sms#k_mb_incoming_sms.dest_addr),
-            'received' , Sms#k_mb_incoming_sms.received,
-            'message_body' , Sms#k_mb_incoming_sms.message_body,
-            'encoding' , bsondoc:atom_to_binary(Sms#k_mb_incoming_sms.encoding),
-            'delivery_attempt' , Sms#k_mb_incoming_sms.delivery_attempt,
-            'created_at' , Sms#k_mb_incoming_sms.created_at
+        '$set', {
+            'customer_id'     , Sms#k_mb_incoming_sms.customer_id,
+            'user_id'         , Sms#k_mb_incoming_sms.user_id,
+            'src_addr'        , k_storage_utils:addr_to_doc(Sms#k_mb_incoming_sms.src_addr),
+            'dst_addr'        , k_storage_utils:addr_to_doc(Sms#k_mb_incoming_sms.dst_addr),
+            'received'        , Sms#k_mb_incoming_sms.received,
+            'body'            , Sms#k_mb_incoming_sms.body,
+            'encoding'        , bsondoc:atom_to_binary(Sms#k_mb_incoming_sms.encoding),
+            'delivery_attempt', Sms#k_mb_incoming_sms.delivery_attempt,
+            'created_at'      , Sms#k_mb_incoming_sms.created_at
         }
     },
     ok = mongodb_storage:upsert(static_storage, mb_incoming_sms, Selector, Modifier);
 save(#k_mb_k1api_receipt{} = R) ->
     Selector = {
-        '_id' , R#k_mb_k1api_receipt.id
+        '_id', R#k_mb_k1api_receipt.id
     },
     Modifier = {
-        '$set' , {
-            'customer_id'      , R#k_mb_k1api_receipt.customer_id,
-            'user_id'          , R#k_mb_k1api_receipt.user_id,
-            'source_addr'      , k_storage_utils:addr_to_doc(R#k_mb_k1api_receipt.source_addr),
-            'dest_addr'        , k_storage_utils:addr_to_doc(R#k_mb_k1api_receipt.dest_addr),
-            'input_message_id' , R#k_mb_k1api_receipt.input_message_id,
-            'message_state'    , bsondoc:atom_to_binary(R#k_mb_k1api_receipt.message_state),
-            'delivery_attempt' , R#k_mb_k1api_receipt.delivery_attempt,
-            'created_at'       , R#k_mb_k1api_receipt.created_at
+        '$set', {
+            'customer_id'     , R#k_mb_k1api_receipt.customer_id,
+            'user_id'         , R#k_mb_k1api_receipt.user_id,
+            'src_addr'        , k_storage_utils:addr_to_doc(R#k_mb_k1api_receipt.src_addr),
+            'dst_addr'        , k_storage_utils:addr_to_doc(R#k_mb_k1api_receipt.dst_addr),
+            'req_id'          , R#k_mb_k1api_receipt.req_id,
+            'in_msg_id'       , R#k_mb_k1api_receipt.in_msg_id,
+            'submit_date'     , R#k_mb_k1api_receipt.submit_date,
+            'done_date'       , R#k_mb_k1api_receipt.done_date,
+            'status'          , bsondoc:atom_to_binary(R#k_mb_k1api_receipt.status),
+            'delivery_attempt', R#k_mb_k1api_receipt.delivery_attempt,
+            'created_at'      , R#k_mb_k1api_receipt.created_at
         }
     },
-    ok = mongodb_storage:upsert(static_storage, mb_k1api_receipts, Selector, Modifier);
+    ok = mongodb_storage:upsert(static_storage, mb_oneapi_receipts, Selector, Modifier);
 save(#k_mb_funnel_receipt{} = R) ->
     Selector = {
-        '_id' , R#k_mb_funnel_receipt.id
+        '_id', R#k_mb_funnel_receipt.id
     },
     Modifier = {
-        '$set' , {
-            'customer_id'      , R#k_mb_funnel_receipt.customer_id,
-            'user_id'          , R#k_mb_funnel_receipt.user_id,
-            'source_addr'      , k_storage_utils:addr_to_doc(R#k_mb_funnel_receipt.source_addr),
-            'dest_addr'        , k_storage_utils:addr_to_doc(R#k_mb_funnel_receipt.dest_addr),
-            'input_message_id' , R#k_mb_funnel_receipt.input_message_id,
-            'submit_date'      , R#k_mb_funnel_receipt.submit_date,
-            'done_date'        , R#k_mb_funnel_receipt.done_date,
-            'message_state'    , bsondoc:atom_to_binary(R#k_mb_funnel_receipt.message_state),
-            'delivery_attempt' , R#k_mb_funnel_receipt.delivery_attempt,
-            'created_at'       , R#k_mb_funnel_receipt.created_at
+        '$set', {
+            'customer_id'     , R#k_mb_funnel_receipt.customer_id,
+            'user_id'         , R#k_mb_funnel_receipt.user_id,
+            'src_addr'        , k_storage_utils:addr_to_doc(R#k_mb_funnel_receipt.src_addr),
+            'dst_addr'        , k_storage_utils:addr_to_doc(R#k_mb_funnel_receipt.dst_addr),
+            'req_id'          , R#k_mb_funnel_receipt.req_id,
+            'in_msg_id'       , R#k_mb_funnel_receipt.in_msg_id,
+            'submit_date'     , R#k_mb_funnel_receipt.submit_date,
+            'done_date'       , R#k_mb_funnel_receipt.done_date,
+            'status'          , bsondoc:atom_to_binary(R#k_mb_funnel_receipt.status),
+            'delivery_attempt', R#k_mb_funnel_receipt.delivery_attempt,
+            'created_at'      , R#k_mb_funnel_receipt.created_at
         }
     },
     ok = mongodb_storage:upsert(static_storage, mb_funnel_receipts, Selector, Modifier).
@@ -112,70 +113,68 @@ save(#k_mb_funnel_receipt{} = R) ->
 -spec save_sub(tuple()) -> ok.
 save_sub(#k_mb_k1api_receipt_sub{} = Sub) ->
     Selector = {
-        '_id' , Sub#k_mb_k1api_receipt_sub.id
+        '_id', Sub#k_mb_k1api_receipt_sub.id
     },
     Modifier = {
-        '$set' , {
-            'type'         , bsondoc:atom_to_binary(k_mb_k1api_receipt_sub),
-            'customer_id'  , Sub#k_mb_k1api_receipt_sub.customer_id,
-            'user_id'      , Sub#k_mb_k1api_receipt_sub.user_id,
-            'queue_name'   , Sub#k_mb_k1api_receipt_sub.queue_name,
-            'source_addr'  , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.source_addr),
+        '$set', {
+            'type'             , bsondoc:atom_to_binary(k_mb_k1api_receipt_sub),
+            'customer_id'      , Sub#k_mb_k1api_receipt_sub.customer_id,
+            'user_id'          , Sub#k_mb_k1api_receipt_sub.user_id,
+            'queue_name'       , Sub#k_mb_k1api_receipt_sub.queue_name,
+            'src_addr'         , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_receipt_sub.src_addr),
             'client_correlator', Sub#k_mb_k1api_receipt_sub.client_correlator,
-            'notify_url'   , Sub#k_mb_k1api_receipt_sub.notify_url,
-            'callback_data', Sub#k_mb_k1api_receipt_sub.callback_data,
-            'created_at'   , Sub#k_mb_k1api_receipt_sub.created_at
+            'notify_url'       , Sub#k_mb_k1api_receipt_sub.notify_url,
+            'callback_data'    , Sub#k_mb_k1api_receipt_sub.callback_data,
+            'created_at'       , Sub#k_mb_k1api_receipt_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(static_storage, mb_subscriptions, Selector, Modifier);
 save_sub(#k_mb_k1api_incoming_sms_sub{} = Sub) ->
     Selector = {
-        '_id' , Sub#k_mb_k1api_incoming_sms_sub.id
+        '_id', Sub#k_mb_k1api_incoming_sms_sub.id
     },
     Modifier = {
-        '$set' , {
-            'type'          , bsondoc:atom_to_binary(k_mb_k1api_incoming_sms_sub),
-            'customer_id'   , Sub#k_mb_k1api_incoming_sms_sub.customer_id,
-            'user_id'       , Sub#k_mb_k1api_incoming_sms_sub.user_id,
-            'priority'      , Sub#k_mb_k1api_incoming_sms_sub.priority,
-            'queue_name'    , Sub#k_mb_k1api_incoming_sms_sub.queue_name,
-            'dest_addr'     , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_incoming_sms_sub.dest_addr),
-            'notify_url'    , Sub#k_mb_k1api_incoming_sms_sub.notify_url,
-            'criteria'      , Sub#k_mb_k1api_incoming_sms_sub.criteria,
-            'callback_data' , Sub#k_mb_k1api_incoming_sms_sub.callback_data,
-            'created_at'    , Sub#k_mb_k1api_incoming_sms_sub.created_at
+        '$set', {
+            'type'         , bsondoc:atom_to_binary(k_mb_k1api_incoming_sms_sub),
+            'customer_id'  , Sub#k_mb_k1api_incoming_sms_sub.customer_id,
+            'user_id'      , Sub#k_mb_k1api_incoming_sms_sub.user_id,
+            'priority'     , Sub#k_mb_k1api_incoming_sms_sub.priority,
+            'queue_name'   , Sub#k_mb_k1api_incoming_sms_sub.queue_name,
+            'dst_addr'     , k_storage_utils:addr_to_doc(Sub#k_mb_k1api_incoming_sms_sub.dst_addr),
+            'notify_url'   , Sub#k_mb_k1api_incoming_sms_sub.notify_url,
+            'criteria'     , Sub#k_mb_k1api_incoming_sms_sub.criteria,
+            'callback_data', Sub#k_mb_k1api_incoming_sms_sub.callback_data,
+            'created_at'   , Sub#k_mb_k1api_incoming_sms_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(static_storage, mb_subscriptions, Selector, Modifier);
 save_sub(#k_mb_funnel_sub{} = Sub) ->
     Selector = {
-        '_id' , Sub#k_mb_funnel_sub.id
+        '_id', Sub#k_mb_funnel_sub.id
     },
     Modifier = {
-        '$set' , {
-            'type'        , bsondoc:atom_to_binary(k_mb_funnel_sub),
-            'customer_id' , Sub#k_mb_funnel_sub.customer_id,
-            'user_id'     , Sub#k_mb_funnel_sub.user_id,
-            'priority'    , Sub#k_mb_funnel_sub.priority,
-            'queue_name'  , Sub#k_mb_funnel_sub.queue_name,
-            'created_at'  , Sub#k_mb_funnel_sub.created_at
+        '$set', {
+            'type'       , bsondoc:atom_to_binary(k_mb_funnel_sub),
+            'customer_id', Sub#k_mb_funnel_sub.customer_id,
+            'user_id'    , Sub#k_mb_funnel_sub.user_id,
+            'priority'   , Sub#k_mb_funnel_sub.priority,
+            'queue_name' , Sub#k_mb_funnel_sub.queue_name,
+            'created_at' , Sub#k_mb_funnel_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(static_storage, mb_subscriptions, Selector, Modifier).
 
 -spec save_delivery_status(k_mb_item(), atom(), os:timestamp()) -> ok.
 save_delivery_status(#k_mb_funnel_receipt{
-    customer_id = CustomerId,
-    user_id = UserId,
-    input_message_id = InMsgId
+    req_id = ReqId,
+    in_msg_id = InMsgId
 }, Status, Timestamp) ->
-    ok = k_dynamic_storage:set_mt_downlink_dlr_status(CustomerId, UserId, funnel, InMsgId, Status, Timestamp);
+    ok = k_dynamic_storage:set_mt_downlink_dlr_status(ReqId, InMsgId, Status, Timestamp);
 save_delivery_status(#k_mb_k1api_receipt{
-    customer_id = CustomerId,
-    user_id = UserId,
-    input_message_id = InMsgId
+    req_id = ReqId,
+    in_msg_id = InMsgId
 }, Status, Timestamp) ->
-    ok = k_dynamic_storage:set_mt_downlink_dlr_status(CustomerId, UserId, oneapi, InMsgId, Status, Timestamp);
+    ok = k_dynamic_storage:set_mt_downlink_dlr_status(ReqId, InMsgId, Status, Timestamp);
 save_delivery_status(#k_mb_incoming_sms{
     id = Id
 }, Status, Timestamp) ->
@@ -190,19 +189,21 @@ delete_item(Item = #k_mb_funnel_receipt{}) ->
     Selector = {'_id', Item#k_mb_funnel_receipt.id},
     ok = mongodb_storage:delete(static_storage, mb_funnel_receipts, Selector);
 delete_item(Item = #k_mb_k1api_receipt{}) ->
-    Selector = {
-        '_id'         , Item#k_mb_k1api_receipt.id,
-        'customer_id' , Item#k_mb_k1api_receipt.customer_id,
-        'user_id'     , Item#k_mb_k1api_receipt.user_id
+    Selector = {'_id', Item#k_mb_k1api_receipt.id},
+    ok = mongodb_storage:delete(static_storage, mb_oneapi_receipts, Selector),
+    ok = mongodb_storage:delete(static_storage, mb_pending_items, Selector),
+    Selector2 = {
+        'req_id', Item#k_mb_k1api_receipt.req_id,
+        'in_msg_ids', Item#k_mb_k1api_receipt.in_msg_id
     },
-    ok = mongodb_storage:delete(static_storage, mb_k1api_receipts, Selector),
-    ok = mongodb_storage:delete(static_storage, mb_pending_items, Selector);
+    Modifier2 = {
+        '$pull', {'in_msg_ids', Item#k_mb_k1api_receipt.in_msg_id}
+    },
+    ok = mongodb_storage:upsert(static_storage, mb_oneapi_receipt_subs, Selector2, Modifier2),
+    Selector3 = {'in_msg_ids', []},
+    ok = mongodb_storage:delete(static_storage, mb_oneapi_receipt_subs, Selector3);
 delete_item(Item = #k_mb_incoming_sms{}) ->
-    Selector = {
-        '_id'         , Item#k_mb_incoming_sms.id,
-        'customer_id' , Item#k_mb_incoming_sms.customer_id,
-        'user_id'     , Item#k_mb_incoming_sms.user_id
-    },
+    Selector = {'_id', Item#k_mb_incoming_sms.id},
     ok = mongodb_storage:delete(static_storage, mb_incoming_sms, Selector),
     ok = mongodb_storage:delete(static_storage, mb_pending_items, Selector).
 
@@ -220,25 +221,28 @@ get_funnel_receipts(CustomerID, UserID) ->
 get_items() ->
     {ok, FunnelReceiptDocs} = mongodb_storage:find(static_storage, mb_funnel_receipts, {}, {'_id' , 1}),
     FunnelReceiptIds = [RID || {RID, _} <- FunnelReceiptDocs],
-    {ok, K1apiReceiptDocs} = mongodb_storage:find(static_storage, mb_k1api_receipts, {}, {'_id' , 1}),
+    {ok, K1apiReceiptDocs} = mongodb_storage:find(static_storage, mb_oneapi_receipts, {}, {'_id' , 1}),
     K1APIReceiptIds = [RID || {RID, _} <- K1apiReceiptDocs],
     {ok, IncomingSmsDocs} = mongodb_storage:find(static_storage, mb_incoming_sms, {}, {'_id' , 1}),
     IncomingSmsIds = [ISID || {ISID, _} <- IncomingSmsDocs],
-    {ok, [  {k_mb_funnel_receipt, FunnelReceiptIds},
-            {k_mb_k1api_receipt, K1APIReceiptIds},
-            {k_mb_incoming_sms, IncomingSmsIds} ]}.
+    {ok, [{k_mb_funnel_receipt, FunnelReceiptIds},
+          {k_mb_k1api_receipt, K1APIReceiptIds},
+          {k_mb_incoming_sms, IncomingSmsIds}]}.
 
 -spec get_item(ItemType::atom(), ItemID::binary()) -> Item::tuple().
 get_item(k_mb_k1api_receipt, ID) ->
-    {ok, [{_, Doc}]} = mongodb_storage:find(static_storage, mb_k1api_receipts, {'_id' , ID}),
+    {ok, [{_, Doc}]} = mongodb_storage:find(static_storage, mb_oneapi_receipts, {'_id' , ID}),
     {ok, #k_mb_k1api_receipt{
         id = ID,
         customer_id = bsondoc:at(customer_id, Doc),
         user_id = bsondoc:at(user_id, Doc),
-        source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
-        dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
-        input_message_id = bsondoc:at(input_message_id, Doc),
-        message_state = bsondoc:binary_to_atom(bsondoc:at(message_state, Doc)),
+        src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
+        dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
+        req_id = bsondoc:at(req_id, Doc),
+        in_msg_id = bsondoc:at(in_msg_id, Doc),
+        submit_date = bsondoc:at(submit_date, Doc),
+        done_date = bsondoc:at(done_date, Doc),
+        status = bsondoc:binary_to_atom(bsondoc:at(status, Doc)),
         delivery_attempt = bsondoc:at(delivery_attempt, Doc),
         created_at = bsondoc:at(created_at, Doc)
     }};
@@ -249,12 +253,13 @@ get_item(k_mb_funnel_receipt, ID) ->
                 id = ID,
                 customer_id = bsondoc:at(customer_id, Doc),
                 user_id = bsondoc:at(user_id, Doc),
-                source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
-                dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
-                input_message_id = bsondoc:at(input_message_id, Doc),
+                src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
+                dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
+                req_id = bsondoc:at(req_id, Doc),
+                in_msg_id = bsondoc:at(in_msg_id, Doc),
                 submit_date = bsondoc:at(submit_date, Doc),
                 done_date = bsondoc:at(done_date, Doc),
-                message_state = bsondoc:binary_to_atom(bsondoc:at(message_state, Doc)),
+                status = bsondoc:binary_to_atom(bsondoc:at(status, Doc)),
                 delivery_attempt = bsondoc:at(delivery_attempt, Doc),
                 created_at = bsondoc:at(created_at, Doc)
             }};
@@ -266,10 +271,10 @@ get_item(k_mb_incoming_sms, ID) ->
         id = ID,
         customer_id = bsondoc:at(customer_id, Doc),
         user_id = bsondoc:at(user_id, Doc),
-        source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
-        dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+        src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
+        dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
         received = bsondoc:at(received, Doc),
-        message_body = bsondoc:at(message_body, Doc),
+        body = bsondoc:at(body, Doc),
         encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
         delivery_attempt = bsondoc:at(delivery_attempt, Doc),
         created_at = bsondoc:at(created_at, Doc)
@@ -278,37 +283,33 @@ get_item(k_mb_incoming_sms, ID) ->
 -spec get_subscription_for_k1api_receipt(Receipt::#k_mb_k1api_receipt{}) ->
     undefined |
     {ok, k_mb_subscription()}.
-get_subscription_for_k1api_receipt(Receipt = #k_mb_k1api_receipt{}) ->
-    MessageID = Receipt#k_mb_k1api_receipt.input_message_id,
-    CustomerID = Receipt#k_mb_k1api_receipt.customer_id,
-    InputID = {CustomerID, <<"oneapi">>, MessageID},
-    ?log_debug("InputID: ~p", [InputID]),
+get_subscription_for_k1api_receipt(R = #k_mb_k1api_receipt{}) ->
+    ReqId = R#k_mb_k1api_receipt.req_id,
+    InMsgId = R#k_mb_k1api_receipt.in_msg_id,
     Selector = {
-        'customer_id' , CustomerID,
-        'client_type' , <<"oneapi">>,
-        'input_id'    , MessageID
+        'req_id'   , ReqId,
+        'in_msg_ids', InMsgId
     },
-    case mongodb_storage:find(static_storage, mb_k1api_input_id_to_sub_id, Selector) of
+    case mongodb_storage:find(static_storage, mb_oneapi_receipt_subs, Selector) of
+    %case mongodb_storage:find(static_storage, mb_oneapi_input_id_to_sub_id, Selector) of
         {ok, []} ->
-            ?log_warn("k1api InputID undefined", []),
+            ?log_warn("OneAPI InputId undefined", []),
             undefined;
-        {ok, [{_, Doc} | _]} ->
-            ?log_debug("Doc: ~p", [Doc]),
-            SubID = bsondoc:at(subscription_id, Doc),
-            ?log_debug("SubID: ~p", [SubID]),
-            {ok, [{_, SubDoc}]} = mongodb_storage:find(static_storage, mb_k1api_receipt_subs, {'_id' , SubID}),
+        {ok, [{_, SubDoc} | _]} ->
             Sub = #k_mb_k1api_receipt_sub{
-                id = SubID,
+                id = bsondoc:at('_id', SubDoc),
                 customer_id = bsondoc:at(customer_id, SubDoc),
                 user_id = bsondoc:at(user_id, SubDoc),
                 queue_name = bsondoc:at(queue_name, SubDoc),
-                source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, SubDoc)),
+                src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, SubDoc)),
                 client_correlator = bsondoc:at(client_correlator, SubDoc),
                 notify_url = bsondoc:at(notify_url, SubDoc),
                 callback_data = bsondoc:at(callback_data, SubDoc),
+                req_id = bsondoc:at(req_id, SubDoc),
+                in_msg_ids = bsondoc:at(in_msg_ids, SubDoc),
                 created_at = bsondoc:at(created_at, SubDoc)
             },
-            ?log_debug("FOUND suitable subscription: ~p", [Sub]),
+            ?log_debug("Found suitable subscription: ~p", [Sub]),
             {ok, Sub}
     end.
 
@@ -324,7 +325,7 @@ get_subscription(k_mb_k1api_receipt_sub, ID, Doc) ->
         customer_id = bsondoc:at(customer_id, Doc),
         user_id = bsondoc:at(user_id, Doc),
         queue_name = bsondoc:at(queue_name, Doc),
-        source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
+        src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
         client_correlator = bsondoc:at(client_correlator, Doc),
         notify_url = bsondoc:at(notify_url, Doc),
         callback_data = bsondoc:at(callback_data, Doc),
@@ -337,7 +338,7 @@ get_subscription(k_mb_k1api_incoming_sms_sub, ID, Doc) ->
         user_id = bsondoc:at(user_id, Doc),
         priority = bsondoc:at(priority, Doc),
         queue_name = bsondoc:at(queue_name, Doc),
-        dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+        dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
         notify_url = bsondoc:at(notify_url, Doc),
         criteria = bsondoc:at(criteria, Doc),
         callback_data = bsondoc:at(callback_data, Doc),
@@ -370,10 +371,10 @@ get_subscription_ids() ->
 set_pending(ItemType, ItemID, CustomerID, UserID) ->
     Selector = {'_id' , ItemID},
     Modifier = {
-        '$set' , {
-            'type'        , bsondoc:atom_to_binary(ItemType),
-            'customer_id' , CustomerID,
-            'user_id'     , UserID
+        '$set', {
+            'type'       , bsondoc:atom_to_binary(ItemType),
+            'customer_id', CustomerID,
+            'user_id'    , UserID
         }
     },
     ok = mongodb_storage:upsert(static_storage, mb_pending_items, Selector, Modifier).
@@ -382,8 +383,8 @@ set_pending(ItemType, ItemID, CustomerID, UserID) ->
     {ok, []} | {ok, [{ItemType::atom(), ItemID::binary()}]}.
 get_pending(CustomerID, UserID) ->
     Selector = {
-        'customer_id' , CustomerID,
-        'user_id'     , UserID
+        'customer_id', CustomerID,
+        'user_id'    , UserID
     },
     {ok, Docs} = mongodb_storage:find(static_storage, mb_pending_items, Selector),
     Items = [{bsondoc:binary_to_atom(bsondoc:at(type, Doc)), ID} || {ID, Doc} <- Docs],
@@ -391,11 +392,11 @@ get_pending(CustomerID, UserID) ->
 
 -spec get_incoming_sms(binary(), binary(), addr(), integer() | undefined) ->
     {ok, [#k_mb_incoming_sms{}], Total::integer()}.
-get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
+get_incoming_sms(CustomerID, UserID, DstAddr, Limit) ->
     Selector = {
-        'customer_id' , CustomerID,
-        'user_id'     , UserID,
-        'dest_addr'   , k_storage_utils:addr_to_doc(DestinationAddr)
+        'customer_id', CustomerID,
+        'user_id'    , UserID,
+        'dst_addr'  , k_storage_utils:addr_to_doc(DstAddr)
     },
     {ok, ISDocs} = mongodb_storage:find(static_storage, mb_incoming_sms, Selector),
     AllItems =
@@ -403,10 +404,10 @@ get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
         id = ID,
         customer_id = bsondoc:at(customer_id, Doc),
         user_id = bsondoc:at(user_id, Doc),
-        source_addr = k_storage_utils:doc_to_addr(bsondoc:at(source_addr, Doc)),
-        dest_addr = k_storage_utils:doc_to_addr(bsondoc:at(dest_addr, Doc)),
+        src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
+        dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
         received = bsondoc:at(received, Doc),
-        message_body = bsondoc:at(message_body, Doc),
+        body = bsondoc:at(body, Doc),
         encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
         delivery_attempt = bsondoc:at(delivery_attempt, Doc),
         created_at = bsondoc:at(created_at, Doc)
@@ -414,18 +415,6 @@ get_incoming_sms(CustomerID, UserID, DestinationAddr, Limit) ->
     Total = length(AllItems),
     Items = first(AllItems, Limit),
     {ok, Items, Total}.
-
--spec link_input_id_to_sub_id(input_sms_id(), binary()) -> ok.
-link_input_id_to_sub_id({CID, UID, oneapi, InMsgID}, SubscriptionID) ->
-    Modifier = {
-        'customer_id'     , CID,
-        'user_id'         , UID,
-        'client_type'     , bsondoc:atom_to_binary(oneapi),
-        'input_id'        , InMsgID,
-        'subscription_id' , SubscriptionID
-    },
-    {ok, _ID} = mongodb_storage:insert(static_storage, mb_k1api_input_id_to_sub_id, Modifier),
-    ok.
 
 %% ===================================================================
 %% Internal

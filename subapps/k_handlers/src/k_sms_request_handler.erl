@@ -222,31 +222,32 @@ get_param_by_name(Name, Params, Default) ->
 
 process_oneapi_req(#just_sms_request_dto{
     client_type = oneapi,
-    id = _ReqId,
+    id = ReqId,
     customer_id = CustomerId,
     user_id = UserId,
     params = Params,
-    source_addr = SourceAddr
+    source_addr = SrcAddr
 }, InMsgIds) ->
-    InputMessageIds = [{CustomerId, UserId, oneapi, InMsgId} || InMsgId <- InMsgIds],
     ClientCorrelator = get_param_by_name(<<"oneapi_client_correlator">>, Params, undefined),
     NotifyURL = get_param_by_name(<<"oneapi_notify_url">>, Params, undefined),
     CallbackData = get_param_by_name(<<"oneapi_callback_data">>, Params, undefined),
     ?log_debug("ClientCorrelator: ~p NotifyURL: ~p CallbackData: ~p",
         [ClientCorrelator, NotifyURL, CallbackData]),
-    case create_oneapi_receipt_subscription(CustomerId, UserId, SourceAddr,
-            ClientCorrelator, NotifyURL, CallbackData) of
+    case create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
+            ClientCorrelator, NotifyURL, CallbackData, ReqId, InMsgIds) of
         {ok, SubId} ->
-            ok = link_input_id_to_sub_id(InputMessageIds, SubId);
+            ?log_debug("Create receipt subscription: ~p", [SubId]),
+            ok;
         nop ->
+            ?log_debug("Receipt subscription didn't requested", []),
             ok
     end;
 process_oneapi_req(_, _) ->
     ok.
 
-create_oneapi_receipt_subscription(_, _, _, _ClientCorrelator, undefined, _) -> nop;
-create_oneapi_receipt_subscription(CustomerId, UserId, SourceAddr,
-        ClientCorrelator, NotifyURL, CallbackData) ->
+create_oneapi_receipt_subscription(_, _, _, _ClientCorrelator, undefined, _, _, _) -> nop;
+create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
+        ClientCorrelator, NotifyURL, CallbackData, ReqId, InMsgIds) ->
     {ok, QName} = application:get_env(k_handlers, oneapi_incoming_sms_queue),
     SubId = uuid:unparse(uuid:generate_time()),
     Sub = #k_mb_k1api_receipt_sub{
@@ -254,19 +255,16 @@ create_oneapi_receipt_subscription(CustomerId, UserId, SourceAddr,
         customer_id = CustomerId,
         user_id = UserId,
         queue_name = QName,
-        source_addr = SourceAddr,
+        src_addr = SrcAddr,
         client_correlator = ClientCorrelator,
         notify_url = NotifyURL,
         callback_data = CallbackData,
+        req_id = ReqId,
+        in_msg_ids = InMsgIds,
         created_at = ac_datetime:utc_timestamp()
     },
     ok = k_mailbox:register_sms_req_receipts_subscription(Sub),
     {ok, SubId}.
-
-link_input_id_to_sub_id([], _SubId) -> ok;
-link_input_id_to_sub_id([InputId | RestIds], SubId) ->
-    ok = k_mb_db:link_input_id_to_sub_id(InputId, SubId),
-    link_input_id_to_sub_id(RestIds, SubId).
 
 %% ===================================================================
 %% Message splitting logic from Just

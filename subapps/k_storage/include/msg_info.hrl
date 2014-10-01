@@ -87,6 +87,7 @@
     customer_id :: customer_uuid(),
     user_id :: user_id(),
     client_type :: client_type(),
+    req_id :: req_id(),
     in_msg_id :: in_msg_id(),
     gateway_id :: gateway_id(),
     out_msg_id :: out_msg_id(),

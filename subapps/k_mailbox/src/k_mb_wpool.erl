@@ -165,8 +165,7 @@ send_item(Item, Subscription) ->
             #k_mb_k1api_receipt{} -> <<"ReceiptBatch">>;
             #k_mb_funnel_receipt{} -> <<"ReceiptBatch">>
         end,
-    Result = k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType),
-    case Result of
+    case k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType) of
         {ok, delivered} ->
             Timestamp = ac_datetime:utc_timestamp(),
             k_mb_db:save_delivery_status(Item, delivered, Timestamp),
@@ -191,23 +190,23 @@ postpone_item(Item, Error) ->
 build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
     #k_mb_funnel_receipt{
         id = ItemID,
-        source_addr = SourceAddr,
-        dest_addr = DestAddr,
-        input_message_id = InputMsgId,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
+        in_msg_id = InMsgId,
         submit_date = SubmitDate,
         done_date = DoneDate,
-        message_state = MessageState
+        status = Status
      } = Item,
     #k_mb_funnel_sub{
         queue_name = QName
     } = Sub,
     Receipt = #funnel_delivery_receipt_container_dto{
-        message_id = InputMsgId,
+        message_id = InMsgId,
         submit_date = ac_datetime:timestamp_to_utc_string(SubmitDate),
         done_date = ac_datetime:timestamp_to_utc_string(DoneDate),
-        message_state = MessageState,
-        source = SourceAddr,
-        dest = DestAddr
+        message_state = Status,
+        source = SrcAddr,
+        dest = DstAddr
     },
     DTO = #funnel_delivery_receipt_dto{
         id = ItemID,
@@ -218,19 +217,19 @@ build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
 build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_funnel_sub{}) ->
     #k_mb_incoming_sms{
         id = ItemID,
-        source_addr = SourceAddr,
-        dest_addr = DestAddr,
-        message_body = Message,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
+        body = Body,
         encoding = Encoding
     } = Item,
     #k_mb_funnel_sub{
         queue_name = QName
     } = Sub,
     Msg = #funnel_incoming_sms_message_dto{
-        source = SourceAddr,
-        dest = DestAddr,
+        source = SrcAddr,
+        dest = DstAddr,
         data_coding = Encoding,
-        message = Message
+        message = Body
     },
     Batch = #funnel_incoming_sms_dto{
         id = ItemID,
@@ -241,32 +240,32 @@ build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_funnel_sub{}) ->
 build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_k1api_incoming_sms_sub{}) ->
     #k_mb_incoming_sms{
         id = ItemID,
-        source_addr = SourceAddr,
-        dest_addr = DestAddr,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
         received = Received,
-        message_body = Message
+        body = Body
     } = Item,
     #k_mb_k1api_incoming_sms_sub{
         queue_name = QName,
-        notify_url = URL,
+        notify_url = NotifyURL,
         callback_data = CallbackData
     } = Sub,
     DTO = #k1api_sms_notification_request_dto{
         callback_data = CallbackData,
         datetime = Received,
-        dest_addr = DestAddr,
+        dest_addr = DstAddr,
         message_id = ItemID,
-        message = Message,
-        sender_addr = SourceAddr,
-        notify_url = URL
+        message = Body,
+        sender_addr = SrcAddr,
+        notify_url = NotifyURL
     },
     {ok, Bin} = adto:encode(DTO),
     {ok, ItemID, QName, Bin};
 build_dto(Item = #k_mb_k1api_receipt{}, Sub = #k_mb_k1api_receipt_sub{}) ->
     #k_mb_k1api_receipt{
         id = ItemID,
-        dest_addr = DestAddr,
-        message_state = MessageState
+        dst_addr = DstAddr,
+        status = Status
     } = Item,
     #k_mb_k1api_receipt_sub{
         queue_name = QName,
@@ -275,8 +274,8 @@ build_dto(Item = #k_mb_k1api_receipt{}, Sub = #k_mb_k1api_receipt_sub{}) ->
     } = Sub,
     DTO = #k1api_sms_delivery_receipt_notification_dto{
         id = ItemID,
-        dest_addr = DestAddr,
-        status = MessageState,
+        dest_addr = DstAddr,
+        status = Status,
         callback_data = CallbackData,
         url = NotifyURL
      },

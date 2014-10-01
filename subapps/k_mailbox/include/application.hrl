@@ -2,6 +2,7 @@
 -define(k_mailbox_application_hrl, included).
 
 -include_lib("k_storage/include/customer.hrl").
+-include_lib("k_storage/include/msg_info.hrl").
 
 -define(APP, k_mailbox).
 
@@ -30,25 +31,14 @@
     ucs2 |
     integer().
 
--type message_state() ::
-    enroute |
-    delivered |
-    expired |
-    deleted |
-    undeliverable |
-    accepted |
-    unknown |
-    rejected |
-    unrecognized.
-
 -record(k_mb_incoming_sms, {
     id                   :: binary(),
     customer_id          :: binary(),
     user_id              :: binary(),
-    source_addr          :: addr(),
-    dest_addr            :: addr(),
+    src_addr             :: addr(),
+    dst_addr             :: addr(),
     received             :: erlang:timestamp(), %% k1api retrieve sms request
-    message_body         :: binary(),
+    body                 :: binary(),
     encoding             :: incoming_sms_encoding(),
 
     delivery_attempt = 1 :: integer(),
@@ -59,26 +49,29 @@
     id                   :: binary(),
     customer_id          :: binary(),
     user_id              :: binary(),
-    source_addr          :: addr(),
-    dest_addr            :: addr(),
-    input_message_id     :: binary(), % format?
-    message_state        :: message_state(),
+    src_addr             :: addr(),
+    dst_addr             :: addr(),
+    req_id               :: binary(),
+    in_msg_id            :: binary(),
+    submit_date          :: erlang:timestamp(),
+    done_date            :: erlang:timestamp(),
+    status               :: status(),
 
     delivery_attempt = 1 :: integer(),
     created_at           :: erlang:timestamp()
 }).
 
-
 -record(k_mb_funnel_receipt, {
     id                   :: binary(),
     customer_id          :: binary(),
     user_id              :: binary(),
-    source_addr          :: addr(),
-    dest_addr            :: addr(),
-    input_message_id     :: binary(),
+    src_addr          :: addr(),
+    dst_addr            :: addr(),
+    req_id               :: binary(),
+    in_msg_id            :: binary(),
     submit_date          :: erlang:timestamp(),
     done_date            :: erlang:timestamp(),
-    message_state        :: message_state(),
+    status               :: status(),
 
     delivery_attempt = 1 :: integer(),
     created_at           :: erlang:timestamp()
@@ -98,10 +91,12 @@
     customer_id     :: binary(),
     user_id         :: binary(),
     queue_name      :: binary(),
-    source_addr     :: addr(),
+    src_addr        :: addr(),
     client_correlator :: binary(),
     notify_url      :: binary(),
     callback_data   :: binary(),
+    req_id          :: req_id(),
+    in_msg_ids      :: [in_msg_id()],
     created_at      :: erlang:timestamp()
 }).
 
@@ -111,7 +106,7 @@
     user_id         :: binary(),
     priority        :: integer(),
     queue_name      :: binary(),
-    dest_addr       :: addr(),
+    dst_addr        :: addr(),
     notify_url      :: binary(),
     criteria        :: binary(),
     callback_data   :: binary(),

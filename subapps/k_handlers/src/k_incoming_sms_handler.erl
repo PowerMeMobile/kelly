@@ -38,9 +38,9 @@ process(CT, Message) ->
 
 process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
     gateway_id = GatewayId,
-    source = SourceAddr,
-    dest = DestAddr,
-    message = MessageBody,
+    source = SrcAddr,
+    dest = DstAddr,
+    message = Body,
     data_coding = DataCoding,
     parts_ref_num = _PartsRefNum,
     parts_count = _PartsCount,
@@ -57,18 +57,18 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
     %% {customer_id, user_id} | {customer_id, undefined} | {undefined, undefined}.
     %% i think it makes sense to store even partly filled message.
     {CustomerId, UserId} =
-        case k_addr2cust:resolve(DestAddr) of
+        case k_addr2cust:resolve(DstAddr) of
             {ok, CID, UID} ->
                 ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
-                    [DestAddr, CID, UID]),
+                    [DstAddr, CID, UID]),
                 Item = #k_mb_incoming_sms{
                     id = ItemId,
                     customer_id = CID,
                     user_id = UID,
-                    source_addr = SourceAddr,
-                    dest_addr = DestAddr,
+                    src_addr = SrcAddr,
+                    dst_addr = DstAddr,
                     received  = Timestamp,
-                    message_body = MessageBody,
+                    body = Body,
                     encoding = DataCoding
                 },
                 k_mailbox:register_incoming_item(Item),
@@ -76,7 +76,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
                 {CID, UID};
             Error ->
                 ?log_debug("Address resolution failed with: ~p", [Error]),
-                ?log_debug("Couldn't resolve incoming message coming to: ~p", [DestAddr]),
+                ?log_debug("Couldn't resolve incoming message coming to: ~p", [DstAddr]),
                 {undefined, undefined}
         end,
     MsgInfo = #msg_info{
@@ -86,9 +86,9 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
         user_id = UserId,
         type = regular,
         encoding = DataCoding,
-        body = MessageBody,
-        src_addr = SourceAddr,
-        dst_addr = DestAddr,
+        body = Body,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
         reg_dlr = false,
         req_time = Timestamp,
         status = new

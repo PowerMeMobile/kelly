@@ -4,7 +4,7 @@
     set_mt_req_info/1,
     set_mt_resp_info/1,
     set_mt_dlr_info_and_get_msg_info/1,
-    set_mt_downlink_dlr_status/6,
+    set_mt_downlink_dlr_status/4,
 
     set_mo_msg_info/1,
     set_mo_downlink_dlr_status/3
@@ -127,12 +127,10 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
             Error
     end.
 
--spec set_mt_downlink_dlr_status(customer_id(), user_id(), client_type(), in_msg_id(), atom(), timestamp()) -> ok.
-set_mt_downlink_dlr_status(CustomerId, UserId, ClientType, InMsgId, Status, Timestamp) ->
+-spec set_mt_downlink_dlr_status(req_id(), in_msg_id(), atom(), timestamp()) -> ok.
+set_mt_downlink_dlr_status(ReqId, InMsgId, Status, Timestamp) ->
     Selector = {
-        'ci' , CustomerId,
-        'ui' , UserId,
-        'ct' , bsondoc:atom_to_binary(ClientType),
+        'ri' , ReqId,
         'imi', InMsgId
     },
     Modifier = {

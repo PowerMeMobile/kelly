@@ -111,27 +111,32 @@ build_receipt_item(#msg_info{
     client_type = oneapi,
     customer_id = CustomerId,
     user_id = UserId,
+    req_id = ReqId,
     in_msg_id = InMsgId,
     src_addr = SrcAddr,
     dst_addr = DstAddr,
     status = Status,
-    req_time = _ReqTime,
-    dlr_time = _DlrTime
+    req_time = ReqTime,
+    dlr_time = DlrTime
 }) ->
     ItemId = uuid:unparse(uuid:generate_time()),
     #k_mb_k1api_receipt{
         id = ItemId,
         customer_id = CustomerId,
         user_id = UserId,
-        source_addr = SrcAddr,
-        dest_addr = DstAddr,
-        input_message_id = InMsgId,
-        message_state = Status
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
+        req_id = ReqId,
+        in_msg_id = InMsgId,
+        submit_date = ReqTime,
+        done_date = DlrTime,
+        status = Status
     };
 build_receipt_item(#msg_info{
     client_type = funnel,
     customer_id = CustomerId,
     user_id = UserId,
+    req_id = ReqId,
     in_msg_id = InMsgId,
     src_addr = SrcAddr,
     dst_addr = DstAddr,
@@ -144,10 +149,11 @@ build_receipt_item(#msg_info{
         id = ItemId,
         customer_id = CustomerId,
         user_id = UserId,
-        source_addr = SrcAddr,
-        dest_addr = DstAddr,
-        input_message_id = InMsgId,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
+        req_id = ReqId,
+        in_msg_id = InMsgId,
         submit_date = ReqTime,
         done_date = DlrTime,
-        message_state = Status
+        status = Status
     }.

@@ -67,6 +67,7 @@ doc_to_mt_msg_info(Doc) ->
         client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
         customer_id = bsondoc:at(ci, Doc),
         user_id = bsondoc:at(ui, Doc),
+        req_id = bsondoc:at(ri, Doc),
         in_msg_id = bsondoc:at(imi, Doc),
         gateway_id = bsondoc:at(gi, Doc),
         out_msg_id = bsondoc:at(omi, Doc),
