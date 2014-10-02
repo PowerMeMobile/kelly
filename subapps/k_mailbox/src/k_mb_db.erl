@@ -291,9 +291,7 @@ get_subscription_for_k1api_receipt(R = #k_mb_k1api_receipt{}) ->
         'in_msg_ids', InMsgId
     },
     case mongodb_storage:find(static_storage, mb_oneapi_receipt_subs, Selector) of
-    %case mongodb_storage:find(static_storage, mb_oneapi_input_id_to_sub_id, Selector) of
         {ok, []} ->
-            ?log_warn("OneAPI InputId undefined", []),
             undefined;
         {ok, [{_, SubDoc} | _]} ->
             Sub = #k_mb_k1api_receipt_sub{
@@ -309,7 +307,6 @@ get_subscription_for_k1api_receipt(R = #k_mb_k1api_receipt{}) ->
                 in_msg_ids = bsondoc:at(in_msg_ids, SubDoc),
                 created_at = bsondoc:at(created_at, SubDoc)
             },
-            ?log_debug("Found suitable subscription: ~p", [Sub]),
             {ok, Sub}
     end.
 
