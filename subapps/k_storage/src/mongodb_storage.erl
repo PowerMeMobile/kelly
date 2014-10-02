@@ -14,6 +14,7 @@
     find_one/3,
     find_one/4,
     find_one/5,
+    update/4,
     insert/3,
     upsert/4,
     delete/3,
@@ -120,6 +121,15 @@ find_one(ServerName, Coll, Selector, Projector, Skip) ->
                 {BsonDoc} ->
                     BsonDoc
             end
+        end
+    ).
+
+-spec update(server_name(), collection(), selector(), modifier()) ->
+    ok | {error, reason()}.
+update(ServerName, Coll, Selector, Modifier) ->
+    mongo_do(ServerName, safe, master,
+        fun() ->
+            mongo:modify(Coll, Selector, Modifier)
         end
     ).
 

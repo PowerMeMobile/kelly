@@ -1,8 +1,8 @@
-%% @TODO Removing expired items & k1api receipt subscriptions
 %% @TODO Removing successfully retrieved to k1api sms messages
 -module(k_mailbox).
 
 -include("application.hrl").
+-include_lib("alley_common/include/logging.hrl").
 
 %% ===================================================================
 %% API Functions Exports
@@ -41,6 +41,7 @@ unregister_subscription(SubscriptionID, CustomerID, UserID) ->
 register_incoming_item(Item = #k_mb_k1api_receipt{}) ->
     case k_mb_db:get_subscription_for_k1api_receipt(Item) of
         undefined ->
+            ?log_debug("Suitable subscription NOT FOUND", []),
             ok;
         {ok, #k_mb_k1api_receipt_sub{}} ->
             k_mb_db:save(Item),

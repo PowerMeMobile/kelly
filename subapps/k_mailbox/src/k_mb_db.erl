@@ -199,7 +199,7 @@ delete_item(Item = #k_mb_k1api_receipt{}) ->
     Modifier2 = {
         '$pull', {'in_msg_ids', Item#k_mb_k1api_receipt.in_msg_id}
     },
-    ok = mongodb_storage:upsert(static_storage, mb_oneapi_receipt_subs, Selector2, Modifier2),
+    ok = mongodb_storage:update(static_storage, mb_oneapi_receipt_subs, Selector2, Modifier2),
     Selector3 = {'in_msg_ids', []},
     ok = mongodb_storage:delete(static_storage, mb_oneapi_receipt_subs, Selector3);
 delete_item(Item = #k_mb_incoming_sms{}) ->
@@ -287,12 +287,37 @@ get_subscription_for_k1api_receipt(R = #k_mb_k1api_receipt{}) ->
     ReqId = R#k_mb_k1api_receipt.req_id,
     InMsgId = R#k_mb_k1api_receipt.in_msg_id,
     Selector = {
-        'req_id'   , ReqId,
+        'req_id'    , ReqId,
         'in_msg_ids', InMsgId
     },
     case mongodb_storage:find(static_storage, mb_oneapi_receipt_subs, Selector) of
         {ok, []} ->
-            undefined;
+            CustomerId = R#k_mb_k1api_receipt.customer_id,
+            UserId = R#k_mb_k1api_receipt.user_id,
+            Selector2 = {
+                'customer_id', CustomerId,
+                'user_id'    , UserId,
+                'type'       , bsondoc:atom_to_binary(k_mb_k1api_receipt_sub)
+            },
+            case mongodb_storage:find(static_storage, mb_subscriptions, Selector2) of
+                {ok, []} ->
+                    undefined;
+                {ok, [{_, SubDoc} | _]} ->
+                    Sub = #k_mb_k1api_receipt_sub{
+                        id = bsondoc:at('_id', SubDoc),
+                        customer_id = bsondoc:at(customer_id, SubDoc),
+                        user_id = bsondoc:at(user_id, SubDoc),
+                        queue_name = bsondoc:at(queue_name, SubDoc),
+                        src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, SubDoc)),
+                        client_correlator = bsondoc:at(client_correlator, SubDoc),
+                        notify_url = bsondoc:at(notify_url, SubDoc),
+                        callback_data = bsondoc:at(callback_data, SubDoc),
+                        req_id = bsondoc:at(req_id, SubDoc),
+                        in_msg_ids = bsondoc:at(in_msg_ids, SubDoc),
+                        created_at = bsondoc:at(created_at, SubDoc)
+                    },
+                    {ok, Sub}
+            end;
         {ok, [{_, SubDoc} | _]} ->
             Sub = #k_mb_k1api_receipt_sub{
                 id = bsondoc:at('_id', SubDoc),
@@ -353,8 +378,9 @@ get_subscription(k_mb_funnel_sub, ID, Doc) ->
 
 -spec get_funnel_subscriptions() -> {ok, [#k_mb_funnel_sub{}]}.
 get_funnel_subscriptions() ->
+    Selector = {'type' , bsondoc:atom_to_binary(k_mb_funnel_sub)},
     {ok, Docs} =
-        mongodb_storage:find(static_storage, mb_subscriptions, {'type' , <<"k_mb_funnel_sub">>}),
+        mongodb_storage:find(static_storage, mb_subscriptions, Selector),
     Subs = [get_subscription(k_mb_funnel_sub, ID, Doc) || {ID, Doc} <- Docs],
     {ok, Subs}.
 
