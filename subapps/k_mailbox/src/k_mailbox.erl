@@ -1,4 +1,3 @@
-%% @TODO Removing successfully retrieved to k1api sms messages
 -module(k_mailbox).
 
 -include("application.hrl").
@@ -14,7 +13,8 @@
     unregister_subscription/3,
     register_incoming_item/1,
     get_incoming_sms/4,
-    process_funnel_down_event/0
+    process_funnel_down_event/0,
+    delete_item/1
 ]).
 
 %% ===================================================================
@@ -41,7 +41,8 @@ unregister_subscription(SubscriptionID, CustomerID, UserID) ->
 register_incoming_item(Item = #k_mb_k1api_receipt{}) ->
     case k_mb_db:get_subscription_for_k1api_receipt(Item) of
         undefined ->
-            ?log_debug("Suitable subscription NOT FOUND", []),
+            ?log_debug("Suitable subscription NOT FOUND. "
+                "Don't register OneAPI receipt", []),
             ok;
         {ok, #k_mb_k1api_receipt_sub{}} ->
             k_mb_db:save(Item),
@@ -60,6 +61,6 @@ get_incoming_sms(CustomerID, UserID, DestAddr, Limit) ->
 process_funnel_down_event() ->
     k_mb_subscription_mgr:process_funnel_down_event().
 
-%% ===================================================================
-%% Internal
-%% ===================================================================
+-spec delete_item(k_mb_item()) -> ok.
+delete_item(Item) ->
+    k_mb_db:delete_item(Item).

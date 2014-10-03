@@ -18,10 +18,11 @@ process(ReqDTO) ->
     UserId     = ReqDTO#k1api_retrieve_sms_request_dto.user_id,
     DestAddr   = ReqDTO#k1api_retrieve_sms_request_dto.dest_addr,
     BatchSize  = ReqDTO#k1api_retrieve_sms_request_dto.batch_size,
-    %UserId = <<"undefined">>,
     case k_mailbox:get_incoming_sms(CustomerId, UserId, DestAddr, BatchSize) of
-        {ok, IncomingSms, Total} ->
-            build_response(ReqId, IncomingSms, Total);
+        {ok, Messages, Pending} ->
+            {ok, Response} = build_response(ReqId, Messages, Pending),
+            delete_retrieved(Messages),
+            {ok, Response};
         Error ->
             Error
     end.
@@ -30,27 +31,28 @@ process(ReqDTO) ->
 %% Interal
 %% ===================================================================
 
-build_response(ReqId, IncomingSms, Total) ->
-    ?log_debug("RequestId: ~p, IncomingSms: ~p, Total: ~p",
-        [ReqId, IncomingSms, Total]),
+build_response(ReqId, Messages, Pending) ->
     MessagesDTO = lists:map(
-        fun(PendingItem) ->
+        fun(Message) ->
             #k_mb_incoming_sms{
                 id = ItemID,
                 src_addr = SrcAddr,
                 received = Time,
                 body = Body
-            } = PendingItem,
+            } = Message,
             #k1api_retrieved_sms_dto{
                 datetime = Time,
                 sender_addr = SrcAddr,
                 message_id = ItemID,
                 message = Body
             }
-        end, IncomingSms),
+        end, Messages),
     RespDTO = #k1api_retrieve_sms_response_dto{
         id = ReqId,
         messages = MessagesDTO,
-        total = Total
+        total = Pending
     },
     {ok, RespDTO}.
+
+delete_retrieved(Messages) ->
+    [k_mailbox:delete_item(M) || M <- Messages].

@@ -419,37 +419,31 @@ get_incoming_sms(CustomerID, UserID, DstAddr, Limit) ->
     Selector = {
         'customer_id', CustomerID,
         'user_id'    , UserID,
-        'dst_addr'  , k_storage_utils:addr_to_doc(DstAddr)
+        'dst_addr'   , k_storage_utils:addr_to_doc(DstAddr)
     },
-    {ok, ISDocs} = mongodb_storage:find(static_storage, mb_incoming_sms, Selector),
+    {ok, Docs} = mongodb_storage:find(static_storage, mb_incoming_sms, Selector),
     AllItems =
-    [#k_mb_incoming_sms{
-        id = ID,
-        customer_id = bsondoc:at(customer_id, Doc),
-        user_id = bsondoc:at(user_id, Doc),
-        src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
-        dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
-        received = bsondoc:at(received, Doc),
-        body = bsondoc:at(body, Doc),
-        encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
-        delivery_attempt = bsondoc:at(delivery_attempt, Doc),
-        created_at = bsondoc:at(created_at, Doc)
-    } || {ID, Doc} <- ISDocs],
-    Total = length(AllItems),
-    Items = first(AllItems, Limit),
-    {ok, Items, Total}.
+        [#k_mb_incoming_sms{
+            id = bsondoc:at('_id', Doc),
+            customer_id = bsondoc:at(customer_id, Doc),
+            user_id = bsondoc:at(user_id, Doc),
+            src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
+            dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
+            received = bsondoc:at(received, Doc),
+            body = bsondoc:at(body, Doc),
+            encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
+            delivery_attempt = bsondoc:at(delivery_attempt, Doc),
+            created_at = bsondoc:at(created_at, Doc)
+        } || {_, Doc} <- Docs],
+    Items = head(Limit, AllItems),
+    Pending = length(AllItems) - length(Items),
+    {ok, Items, Pending}.
 
 %% ===================================================================
 %% Internal
 %% ===================================================================
 
-first(Limit, undefined) ->
-    first(Limit, 100);
-first(List, Limit) ->
-    first(List, Limit, []).
-first([], _Counter, Acc) ->
-    lists:reverse(Acc);
-first(_List, 0, Acc) ->
-    lists:reverse(Acc);
-first([Elem | Rest], Counter, Acc) ->
-    first(Rest, Counter - 1, [Elem | Acc]).
+head(undefined, List) ->
+    head(100, List);
+head(N, List) ->
+    lists:sublist(List, N).
