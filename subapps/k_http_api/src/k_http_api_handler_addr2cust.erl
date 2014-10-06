@@ -13,7 +13,7 @@
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
--include_lib("k_mailbox/include/address.hrl").
+-include_lib("k_storage/include/mailbox.hrl").
 
 %% ===================================================================
 %% Callback Functions
@@ -52,12 +52,12 @@ read(Params) ->
 get_customer_user_msisdns(Params) ->
     Customer = ?gv(customer, Params),
     User = ?gv(user, Params),
-    {ok, Msisdns} = k_addr2cust:available_addresses(Customer, User),
+    {ok, Msisdns} = k_storage_customers:addr2cust_available_addresses(Customer, User),
     Response = prepare_msisdns(Customer, User, Msisdns),
     {ok, Response}.
 
 get_msisdn(Msisdn) ->
-    case k_addr2cust:resolve(Msisdn) of
+    case k_storage_customers:addr2cust_resolve(Msisdn) of
         {error, addr_not_used} ->
             {exception, 'svc0003'};
         {ok, CustomerID, UserID} ->
@@ -69,7 +69,7 @@ create(Params) ->
     Msisdn = ?gv(msisdn, Params),
     CustomerID = ?gv(customer, Params),
     UserID = ?gv(user, Params),
-    case k_addr2cust:link(Msisdn, CustomerID, UserID) of
+    case k_storage_customers:addr2cust_link(Msisdn, CustomerID, UserID) of
         ok ->
             Response = prepare(CustomerID, UserID, Msisdn),
             {http_code, 201, Response};
@@ -82,7 +82,7 @@ update(_Params) ->
 
 delete(Params) ->
     Msisdn = ?gv(msisdn, Params),
-    k_addr2cust:unlink(Msisdn),
+    k_storage_customers:addr2cust_unlink(Msisdn),
     {http_code, 204}.
 
 %% ===================================================================

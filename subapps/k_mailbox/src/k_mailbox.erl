@@ -1,6 +1,6 @@
 -module(k_mailbox).
 
--include("application.hrl").
+-include_lib("k_storage/include/mailbox.hrl").
 -include_lib("alley_common/include/logging.hrl").
 
 %% ===================================================================
@@ -27,7 +27,7 @@ register_subscription(Subscription) ->
 
 -spec register_sms_req_receipts_subscription(Subscription::#k_mb_k1api_receipt_sub{}) -> ok.
 register_sms_req_receipts_subscription(Subscription = #k_mb_k1api_receipt_sub{}) ->
-    k_mb_db:save(Subscription).
+    k_storage_mailbox:save(Subscription).
 
 -spec unregister_subscription(
     SubscriptionID::binary(),
@@ -39,23 +39,23 @@ unregister_subscription(SubscriptionID, CustomerID, UserID) ->
 
 -spec register_incoming_item(Item::k_mb_item()) -> ok.
 register_incoming_item(Item = #k_mb_k1api_receipt{}) ->
-    case k_mb_db:get_subscription_for_k1api_receipt(Item) of
+    case k_storage_mailbox:get_subscription_for_k1api_receipt(Item) of
         undefined ->
             ?log_debug("Suitable subscription NOT FOUND. "
                 "Don't register OneAPI receipt", []),
             ok;
         {ok, #k_mb_k1api_receipt_sub{}} ->
-            k_mb_db:save(Item),
+            k_storage_mailbox:save(Item),
             k_mb_wpool:process_incoming_item(Item)
     end;
 register_incoming_item(Item) ->
-    k_mb_db:save(Item),
+    k_storage_mailbox:save(Item),
     k_mb_wpool:process_incoming_item(Item).
 
 -spec get_incoming_sms(binary(), binary(), addr(), undefined | integer()) ->
     {ok, [#k_mb_incoming_sms{}], Total::integer()}.
 get_incoming_sms(CustomerID, UserID, DestAddr, Limit) ->
-    k_mb_db:get_incoming_sms(CustomerID, UserID, DestAddr, Limit).
+    k_storage_mailbox:get_incoming_sms(CustomerID, UserID, DestAddr, Limit).
 
 -spec process_funnel_down_event() -> ok.
 process_funnel_down_event() ->
@@ -63,4 +63,4 @@ process_funnel_down_event() ->
 
 -spec delete_item(k_mb_item()) -> ok.
 delete_item(Item) ->
-    k_mb_db:delete_item(Item).
+    k_storage_mailbox:delete_item(Item).

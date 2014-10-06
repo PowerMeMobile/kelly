@@ -5,8 +5,7 @@
 -include("amqp_worker_reply.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("alley_common/include/logging.hrl").
--include_lib("k_mailbox/include/address.hrl").
--include_lib("k_mailbox/include/application.hrl").
+-include_lib("k_storage/include/mailbox.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
 
 %% ===================================================================
@@ -57,7 +56,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
     %% {customer_id, user_id} | {customer_id, undefined} | {undefined, undefined}.
     %% i think it makes sense to store even partly filled message.
     {CustomerId, UserId} =
-        case k_addr2cust:resolve(DstAddr) of
+        case k_storage_customers:addr2cust_resolve(DstAddr) of
             {ok, CID, UID} ->
                 ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
                     [DstAddr, CID, UID]),

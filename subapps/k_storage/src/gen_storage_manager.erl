@@ -89,14 +89,17 @@ init([SpecModule]) ->
     %% initialize static storage.
     ok = start_static_storage(SpecModule),
 
-    CurrTime = ac_datetime:utc_datetime(),
+    %% initialize mailbox storage.
+    ok = start_mailbox_storage(SpecModule),
 
+    %% initialize dynamic storage.
     {ok, NewState} =
          case read_storage_state(SpecModule) of
             {ok, State} ->
                 %% a good place to correct the state.
                 {ok, State};
             {error, no_entry} ->
+                CurrTime = ac_datetime:utc_datetime(),
                 make_storage_state(SpecModule, CurrTime)
         end,
     ok = write_storage_state(SpecModule, NewState),
@@ -164,13 +167,26 @@ code_change(_OldVsn, State, _Extra) ->
 %% ===================================================================
 
 start_static_storage(SpecModule) ->
-    {ok, StaticProps} = application:get_env(?APP, static_storage),
+    Name = static_storage,
 
-    {ok, Pid} = gen_storage_manager_sup:start_child([{server_name, static_storage} | StaticProps]),
-    true = register(static_storage, Pid),
-    ?log_debug("~p registered as ~p", [Pid, static_storage]),
+    {ok, StaticProps} = application:get_env(?APP, Name),
 
-    ok = SpecModule:ensure_static_storage_indexes(static_storage).
+    {ok, Pid} = gen_storage_manager_sup:start_child([{server_name, Name} | StaticProps]),
+    true = register(Name, Pid),
+    ?log_debug("~p registered as ~p", [Pid, Name]),
+
+    ok = SpecModule:ensure_static_storage_indexes(Name).
+
+start_mailbox_storage(SpecModule) ->
+    Name = mailbox_storage,
+
+    {ok, StaticProps} = application:get_env(?APP, Name),
+
+    {ok, Pid} = gen_storage_manager_sup:start_child([{server_name, Name} | StaticProps]),
+    true = register(Name, Pid),
+    ?log_debug("~p registered as ~p", [Pid, Name]),
+
+    ok = SpecModule:ensure_mailbox_storage_indexes(Name).
 
 start_dynamic_storage(SpecModule, 'RegularMode') ->
     ok = start_curr_dynamic_storage(SpecModule);

@@ -10,7 +10,9 @@
 %% gen_storage_manager callbacks
 -export([
     ensure_static_storage_indexes/1,
+    ensure_mailbox_storage_indexes/1,
     ensure_dynamic_storage_indexes/1,
+
     next_mode_event/5,
     new_spec_state/1,
     decode_spec_state/1,
@@ -59,6 +61,10 @@ get_storage_mode() ->
 ensure_static_storage_indexes(ServerName) ->
     ok = mongodb_storage:ensure_index(ServerName, customers,
         {key, {customer_id, 1}}).
+
+-spec ensure_mailbox_storage_indexes(server_name()) -> ok.
+ensure_mailbox_storage_indexes(_ServerName) ->
+    ok.
 
 -spec ensure_dynamic_storage_indexes(server_name()) -> ok.
 ensure_dynamic_storage_indexes(ServerName) ->

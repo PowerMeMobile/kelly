@@ -2,7 +2,7 @@
 
 -behaviour(gen_wp).
 
--include("application.hrl").
+-include_lib("k_storage/include/mailbox.hrl").
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("gen_wp/include/gen_wp_spec.hrl").
@@ -50,7 +50,7 @@ process_incoming_item(Item) ->
 
 init([]) ->
     ?log_debug("Started", []),
-    {ok, ItemSets} = k_mb_db:get_items(),
+    {ok, ItemSets} = k_storage_mailbox:get_items(),
     Process =
         fun({ItemType, ItemIDs}) ->
             lists:foreach(
@@ -89,7 +89,7 @@ handle_fork_cast(_Arg, {process_item, {ItemType, ItemID}}, _WP) when
     ItemType == k_mb_k1api_receipt orelse
     ItemType == k_mb_funnel_receipt ->
 
-    case k_mb_db:get_item(ItemType, ItemID) of
+    case k_storage_mailbox:get_item(ItemType, ItemID) of
         {ok, Item} -> process(Item);
         no_record -> ok
     end,
@@ -144,7 +144,7 @@ mark_as_pending(Item = #k_mb_incoming_sms{}) ->
         customer_id = CustomerID,
         user_id = UserID
     } = Item,
-    k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID);
+    k_storage_mailbox:set_pending(ItemType, ItemID, CustomerID, UserID);
 mark_as_pending(Item = #k_mb_k1api_receipt{}) ->
     ItemType = k_mb_k1api_receipt,
     #k_mb_k1api_receipt{
@@ -152,7 +152,7 @@ mark_as_pending(Item = #k_mb_k1api_receipt{}) ->
         customer_id = CustomerID,
         user_id = UserID
     } = Item,
-    k_mb_db:set_pending(ItemType, ItemID, CustomerID, UserID);
+    k_storage_mailbox:set_pending(ItemType, ItemID, CustomerID, UserID);
 mark_as_pending(_Item = #k_mb_funnel_receipt{}) ->
     ok.
 
@@ -168,8 +168,8 @@ send_item(Item, Subscription) ->
     case k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType) of
         {ok, delivered} ->
             Timestamp = ac_datetime:utc_timestamp(),
-            k_mb_db:save_delivery_status(Item, delivered, Timestamp),
-            k_mb_db:delete_item(Item),
+            k_storage_mailbox:save_delivery_status(Item, delivered, Timestamp),
+            k_storage_mailbox:delete_item(Item),
             ?log_debug("Item successfully delivered: ~p", [ItemID]);
         {error, timeout} ->
             postpone_item(Item, timeout)
@@ -184,7 +184,7 @@ postpone_item(Item, Error) ->
             ?log_error("Item reached max number of attempts. "
                 "Discard message. Reason: ~p", [Error]),
             Timestamp = ac_datetime:utc_timestamp(),
-            k_mb_db:save_delivery_status(Item, reached_max, Timestamp)
+            k_storage_mailbox:save_delivery_status(Item, reached_max, Timestamp)
     end.
 
 build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->

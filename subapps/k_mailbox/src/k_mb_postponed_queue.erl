@@ -3,6 +3,7 @@
 -behaviour(gen_server).
 
 -include("application.hrl").
+-include_lib("k_storage/include/mailbox.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/gen_server_spec.hrl").
 

@@ -6,7 +6,7 @@
 
 -behaviour(gen_server).
 
--include("application.hrl").
+-include_lib("k_storage/include/mailbox.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/gen_server_spec.hrl").
 
@@ -47,7 +47,7 @@ start_link() ->
 
 -spec register(Subscription::k_mb_subscription()) -> ok.
 register(Subscription) ->
-    ok = k_mb_db:save_sub(Subscription),
+    ok = k_storage_mailbox:save_sub(Subscription),
     gen_server:cast(?MODULE, {reg_sub, Subscription}).
 
 -spec unregister(
@@ -56,13 +56,13 @@ register(Subscription) ->
     UserID::user_id()
 ) -> ok.
 unregister(SubscriptionID, CustomerID, UserID) ->
-    ok = k_mb_db:delete_subscription(SubscriptionID),
+    ok = k_storage_mailbox:delete_subscription(SubscriptionID),
     gen_server:cast(?MODULE, {unreg_sub, SubscriptionID, CustomerID, UserID}).
 
 -spec get_suitable_subscription(k_mb_item()) ->
     {ok, k_mb_subscription()} | undefined.
 get_suitable_subscription(Item = #k_mb_k1api_receipt{}) ->
-    case k_mb_db:get_subscription_for_k1api_receipt(Item) of
+    case k_storage_mailbox:get_subscription_for_k1api_receipt(Item) of
         undefined ->
             process_get_suitable_sub_req(Item);
         {ok, Subscription = #k_mb_k1api_receipt_sub{}} ->
@@ -73,7 +73,7 @@ get_suitable_subscription(Item) ->
 
 -spec process_funnel_down_event() -> ok.
 process_funnel_down_event() ->
-    {ok, Subs} = k_mb_db:get_funnel_subscriptions(),
+    {ok, Subs} = k_storage_mailbox:get_funnel_subscriptions(),
     Fun = fun(Sub) ->
         ?MODULE:unregister(
             Sub#k_mb_funnel_sub.id,
@@ -89,9 +89,9 @@ process_funnel_down_event() ->
 
 init([]) ->
     ?MODULE = ets:new(?MODULE, [set, named_table, {keypos, #subscriptions.key}]),
-    {ok, SubscriptionIDs} = k_mb_db:get_subscription_ids(),
+    {ok, SubscriptionIDs} = k_storage_mailbox:get_subscription_ids(),
     Insert = fun(SubscriptionID) ->
-        {ok, Subscription} = k_mb_db:get_subscription(SubscriptionID),
+        {ok, Subscription} = k_storage_mailbox:get_subscription(SubscriptionID),
         ets_insert_sub(Subscription)
     end,
     lists:foreach(Insert, SubscriptionIDs),
@@ -134,12 +134,12 @@ code_change(_OldVsn, State, _Extra) ->
 
 process_pending_items(Sub = #k_mb_funnel_sub{}) ->
     {CustomerID, UserID} = get_customer_user(Sub),
-    {ok, Pendings} = k_mb_db:get_pending(CustomerID, UserID),
-    {ok, Receipts} = k_mb_db:get_funnel_receipts(CustomerID, UserID),
+    {ok, Pendings} = k_storage_mailbox:get_pending(CustomerID, UserID),
+    {ok, Receipts} = k_storage_mailbox:get_funnel_receipts(CustomerID, UserID),
     [k_mb_wpool:process_incoming_item(Item) || Item <- Pendings ++ Receipts];
 process_pending_items(Subscription) ->
     {CustomerID, UserID} = get_customer_user(Subscription),
-    {ok, Pendings} = k_mb_db:get_pending(CustomerID, UserID),
+    {ok, Pendings} = k_storage_mailbox:get_pending(CustomerID, UserID),
     [k_mb_wpool:process_incoming_item(Item) || Item <- Pendings].
 
 process_get_suitable_sub_req(Item) ->
@@ -214,7 +214,7 @@ join_subscriptions(NewSub = #k_mb_funnel_sub{}, CurrentUserSubs) ->
     NewSubs =
     case lists:keytake(k_mb_funnel_sub, 1, CurrentUserSubs) of
         {value, ExpiredFunnelSub, PurgedSubs} ->
-            ok = k_mb_db:delete_subscription(ExpiredFunnelSub#k_mb_funnel_sub.id),
+            ok = k_storage_mailbox:delete_subscription(ExpiredFunnelSub#k_mb_funnel_sub.id),
             [NewSub] ++ PurgedSubs;
         false ->
             [NewSub] ++ CurrentUserSubs
