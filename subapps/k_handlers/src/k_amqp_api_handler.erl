@@ -143,52 +143,6 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"RequestCreditReq">> ->
             {ReqCT, <<>>}
     end;
 
-process(ReqCT, ReqBin) when ReqCT =:= <<"SubscribeIncomingSmsReq">> ->
-    case adto:decode(#k1api_subscribe_incoming_sms_request_dto{}, ReqBin) of
-        {ok, ReqDTO} ->
-            ?log_debug("Got subscribe incoming sms request: ~p", [ReqDTO]),
-            case k_subscribe_processor:process(ReqDTO) of
-                {ok, RespDTO} ->
-                    ?log_debug("Built subscribe incoming sms response: ~p", [RespDTO]),
-                    case adto:encode(RespDTO) of
-                        {ok, RespBin} ->
-                            {<<"SubscribeIncomingSmsResp">>, RespBin};
-                        {error, Error} ->
-                            ?log_error("Subscribe incoming sms response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
-                    end;
-                {error, Error} ->
-                    ?log_error("Subscribe incoming sms request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
-            end;
-        {error, Error} ->
-            ?log_error("Subscribe incoming sms request decode error: ~p", [Error]),
-            {ReqCT, <<>>}
-    end;
-
-process(ReqCT, ReqBin) when ReqCT =:= <<"UnsubscribeIncomingSmsReq">> ->
-    case adto:decode(#k1api_unsubscribe_incoming_sms_request_dto{}, ReqBin) of
-        {ok, ReqDTO} ->
-            ?log_debug("Got unsubscribe incoming sms request: ~p", [ReqDTO]),
-            case k_subscribe_processor:process(ReqDTO) of
-                {ok, RespDTO} ->
-                    ?log_debug("Built unsubscribe incoming sms response: ~p", [RespDTO]),
-                    case adto:encode(RespDTO) of
-                        {ok, RespBin} ->
-                            {<<"UnsubscribeIncomingSmsResp">>, RespBin};
-                        {error, Error} ->
-                            ?log_error("Unsubscribe incoming sms response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
-                    end;
-                {error, Error} ->
-                    ?log_error("Unsubscribe incoming sms request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
-            end;
-        {error, Error} ->
-            ?log_error("Unsubscribe incoming sms request decode error: ~p", [Error]),
-            {ReqCT, <<>>}
-    end;
-
 process(ReqCT, ReqBin) when ReqCT =:= <<"SubscribeSmsReceiptsReq">> ->
     case adto:decode(#k1api_subscribe_sms_receipts_request_dto{}, ReqBin) of
         {ok, ReqDTO} ->
@@ -232,6 +186,52 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"UnsubscribeSmsReceiptsReq">> ->
             end;
         {error, Error} ->
             ?log_error("Unsubscribe sms receipts request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
+process(ReqCT, ReqBin) when ReqCT =:= <<"SubscribeIncomingSmsReq">> ->
+    case adto:decode(#k1api_subscribe_incoming_sms_request_dto{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got subscribe incoming sms request: ~p", [ReqDTO]),
+            case k_subscribe_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built subscribe incoming sms response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"SubscribeIncomingSmsResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Subscribe incoming sms response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Subscribe incoming sms request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Subscribe incoming sms request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
+process(ReqCT, ReqBin) when ReqCT =:= <<"UnsubscribeIncomingSmsReq">> ->
+    case adto:decode(#k1api_unsubscribe_incoming_sms_request_dto{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got unsubscribe incoming sms request: ~p", [ReqDTO]),
+            case k_subscribe_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built unsubscribe incoming sms response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"UnsubscribeIncomingSmsResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Unsubscribe incoming sms response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Unsubscribe incoming sms request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Unsubscribe incoming sms request decode error: ~p", [Error]),
             {ReqCT, <<>>}
     end;
 
