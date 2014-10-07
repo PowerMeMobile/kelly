@@ -13,16 +13,17 @@
 -spec process(term()) -> {ok, term()} | {error, term()}.
 process(Request = #k1api_subscribe_sms_receipts_request_dto{}) ->
     #k1api_subscribe_sms_receipts_request_dto{
-        id = Id,
+        id = ReqId,
         customer_id = CustomerId,
         user_id = UserId,
         url = NotifyURL,
         dest_addr = SrcAddr, %% TODO: HERE MUST BE source_addr
         callback_data = CallbackData
     } = Request,
+    %% TODO: Ensure correct SrcAddr for Customer:User
     {ok, QName} = application:get_env(k_handlers, oneapi_receipt_sms_queue),
     Subscription = #k_mb_k1api_receipt_sub{
-        id = Id,
+        id = ReqId,
         customer_id = CustomerId,
         user_id = UserId,
         queue_name = QName,
@@ -33,7 +34,7 @@ process(Request = #k1api_subscribe_sms_receipts_request_dto{}) ->
     },
     k_mailbox:register_subscription(Subscription),
     Response = #k1api_subscribe_sms_receipts_response_dto{
-        id = Id
+        id = ReqId
     },
     {ok, Response};
 process(Request = #k1api_unsubscribe_sms_receipts_request_dto{}) ->
@@ -59,6 +60,7 @@ process(Request = #k1api_subscribe_incoming_sms_request_dto{}) ->
         correlator = _Correlator,
         callback_data = CallbackData
     } = Request,
+    %% TODO: Ensure correct DstAddr for Customer:User
     {ok, QName} = application:get_env(k_handlers, oneapi_incoming_sms_queue),
     Subscription = #k_mb_k1api_incoming_sms_sub{
         id = Id,

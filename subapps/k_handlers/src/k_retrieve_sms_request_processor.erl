@@ -18,6 +18,7 @@ process(ReqDTO) ->
     UserId     = ReqDTO#k1api_retrieve_sms_request_dto.user_id,
     DestAddr   = ReqDTO#k1api_retrieve_sms_request_dto.dest_addr,
     BatchSize  = ReqDTO#k1api_retrieve_sms_request_dto.batch_size,
+    %% TODO: Ensure correct DestAddr for Customer:User
     case k_mailbox:get_incoming_sms(CustomerId, UserId, DestAddr, BatchSize) of
         {ok, Messages, Pending} ->
             {ok, Response} = build_response(ReqId, Messages, Pending),
