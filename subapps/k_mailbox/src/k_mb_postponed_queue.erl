@@ -92,7 +92,7 @@ process(ItemList) ->
     lists:foreach(fun k_mb_wpool:process_incoming_item/1, ItemList).
 
 position(N) ->
-    trunc(math:pow(2, N - 2)) + 1.
+    trunc(math:pow(2, N-1)).
 
 postpone(_Item, CurrentAttempt, MaxRetry) when CurrentAttempt >= MaxRetry ->
     {error, reached_max};

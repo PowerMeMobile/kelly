@@ -41,9 +41,9 @@ get_env(Key) ->
 
 default(pool_size)                  -> 10;
 
-default(request_timeout)            -> 60000;
-default(repeat_delay)               -> 5000;
-default(max_retry)                  -> 5;
+default(request_timeout)            -> 5000;
+default(repeat_delay)               -> 1000;
+default(max_retry)                  -> 10;
 
 default(expiration_date)            -> 48; % hours
 default(purge_rate)                 -> 2; % hours
