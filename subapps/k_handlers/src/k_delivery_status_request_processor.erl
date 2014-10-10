@@ -50,6 +50,7 @@ timestamp(<<"pending">>, MsgDoc) ->
     bson:at(rqt, MsgDoc);
 timestamp(<<"submitted">>, MsgDoc) ->
     bson:at(rqt, MsgDoc);
+%% deprecated
 timestamp(<<"sent">>, MsgDoc) ->
     bson:at(rpt, MsgDoc);
 timestamp(<<"failed">>, MsgDoc) ->

@@ -6,7 +6,7 @@
 -include_lib("alley_dto/include/adto_types.hrl").
 
 -type resp_status() ::
-    sent
+    submitted
   | failed.
 
 -type dlr_status() ::

@@ -96,7 +96,7 @@ merge(Pairs) ->
     Dict = dict:from_list([
         {received, 0},
         {pending, 0},
-        {sent, 0},
+        {submitted, 0},
         {failed, 0},
         {enroute, 0},
         {delivered, 0},
@@ -130,7 +130,7 @@ get_msgs_by_status_report(From, To, CustomerId, received) ->
 
 get_msgs_by_status_report(From, To, CustomerId, Status) when
     Status == pending;
-    Status == sent; Status == failed;
+    Status == submitted; Status == failed;
     Status == enroute; Status == delivered; Status == expired;
     Status == deleted; Status == undeliverable; Status == accepted;
     Status == unknown; Status == rejected; Status == unrecognized

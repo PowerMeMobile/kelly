@@ -204,7 +204,7 @@ build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
         message_id = InMsgId,
         submit_date = ac_datetime:timestamp_to_utc_string(SubmitDate),
         done_date = ac_datetime:timestamp_to_utc_string(DoneDate),
-        message_state = Status,
+        message_state = status(Status),
         source = SrcAddr,
         dest = DstAddr
     },
@@ -275,9 +275,14 @@ build_dto(Item = #k_mb_k1api_receipt{}, Sub = #k_mb_k1api_receipt_sub{}) ->
     DTO = #k1api_sms_delivery_receipt_notification_dto{
         id = ItemID,
         dest_addr = DstAddr,
-        status = Status,
+        status = status(Status),
         callback_data = CallbackData,
         url = NotifyURL
      },
     {ok, Bin} = adto:encode(DTO),
     {ok, ItemID, QName, Bin}.
+
+status(Status) when is_atom(Status) ->
+    atom_to_binary(Status, utf8);
+status(Status) when is_binary(Status) ->
+    Status.

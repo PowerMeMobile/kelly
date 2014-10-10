@@ -114,5 +114,5 @@ convert(SmsResponse, SmsStatus) ->
         resp_error_code = ErrorCode
     }.
 
-fix_status(success) -> sent;
+fix_status(success) -> submitted;
 fix_status(failure) -> failed.
