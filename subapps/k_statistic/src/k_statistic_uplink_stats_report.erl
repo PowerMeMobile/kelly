@@ -20,9 +20,7 @@ get_report() ->
                 k_statistic_uplink_stats_report_helper:get_gtws_throughput(),
             Counters =
                 lists:flatten(lists:reverse([Slice#'Slice'.counters || Slice <- Slices])),
-            {ok, GtwPropLists} = prepare_gtws(Counters, GtwList),
-            Report = {gateways, GtwPropLists},
-            {ok, Report};
+            {ok, _GtwPropLists} = prepare_gtws(Counters, GtwList);
         {error, Error} ->
             {error, Error}
     end.

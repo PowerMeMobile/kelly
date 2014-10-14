@@ -66,9 +66,7 @@ get_report() ->
     %% close channel and connection.
     rmql:channel_close(Channel),
 
-    {ok, ConnectionPropLists} = prepare_conns(Connections),
-    Report = {connections, ConnectionPropLists},
-    {ok, Report}.
+    {ok, _ConnectionPropLists} = prepare_conns(Connections).
 
 %% ===================================================================
 %% Internal
