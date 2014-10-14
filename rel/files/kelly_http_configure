@@ -12,37 +12,56 @@
 #
 # Gateways
 #
-curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=SMPPSim&rps=10000'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=smppsim&rps=10000'; echo; echo
 
 # set gateway's settings
 #curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings -d 'name=log_smpp_pdus&value=true'
 #curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings -d 'name=default_encoding&value=latin1'
+#curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings -d 'name=default_bitness&value=7'
+#curl -s -D - -X 'DELETE' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings/default_encoding
+
+curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=b4040248-abca-4dca-a9d4-987894753975&name=smppsink&rps=10000'; echo; echo
 
 #
-# Connections (SMPPSim)
+# Connections
 #
+
+# smppsim
 curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections -d "id=1&host=127.0.0.1&port=8001&bind_type=transmitter&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="; echo; echo
 
 curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections -d "id=2&host=127.0.0.1&port=8001&bind_type=receiver&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="; echo; echo
 
+# smppsink
+curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/b4040248-abca-4dca-a9d4-987894753975/connections -d "id=1&host=127.0.0.1&port=8002&bind_type=transceiver&system_id=smppclient1&password=password&system_type=smpp&addr_ton=1&addr_npi=1&addr_range="; echo; echo
+
 #
 # Providers
 #
-curl -s -D - -X 'POST' 127.0.0.1:8080/providers -d 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=SMPPSim%20Provider&description=&gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&bulk_gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&receipts_supported=true&sms_add_points=0.0'; echo; echo
+
+# smppsim
+curl -s -D - -X 'POST' 127.0.0.1:8080/providers -d 'id=0a89542c-5270-11e1-bf27-001d0947ec73&name=smppsim&description=&gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&bulk_gateway_id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&receipts_supported=true&sms_add_points=0.0'; echo; echo
+
+# smppsink
+curl -s -D - -X 'POST' 127.0.0.1:8080/providers -d 'id=25081bd8-15c7-4956-ad96-d52334ea028a&name=smppsink&description=&gateway_id=b4040248-abca-4dca-a9d4-987894753975&bulk_gateway_id=b4040248-abca-4dca-a9d4-987894753975&receipts_supported=true&sms_add_points=0.0'; echo; echo
 
 #
 # Networks
 #
+
+# smppsim
 curl -s -D - -X 'POST' 127.0.0.1:8080/networks -d 'id=6dd0af45-7cdf-41aa-954b-cc368fe1968e&name=Velcom%20Mobile%20Digital%20Comm.&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=291;293;296;299;44&gmt_diff=%2B3&dst=&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=true&sms_points=1.0&sms_mult_points=1.0'; echo; echo
 
 curl -s -D - -X 'POST' 127.0.0.1:8080/networks -d 'id=0456837f-e874-4b05-8e89-95ae20b897d2&name=Mobile%20Telesystems&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=292;295;297;298;33&gmt_diff=%2B3&dst=&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=false&sms_points=2.0&sms_mult_points=1.0'; echo; echo
 
 curl -s -D - -X 'POST' 127.0.0.1:8080/networks -d 'id=793e7b47-b248-4c86-a26f-eadfc44f84e2&name=Life&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=251;252;253;254;255;256;257;258;259&gmt_diff=%2B3&dst=&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=false&sms_points=3.0&sms_mult_points=1.0'; echo; echo
 
+# smppsink
+curl -s -D - -X 'POST' 127.0.0.1:8080/networks -d 'id=3ef3529f-7d37-4285-9259-8d78101c8f14&name=Sink&country=Sink&hex_code=&country_code=999&number_len=9&prefixes=296&gmt_diff=&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=false&sms_points=1.0&sms_mult_points=1.0'; echo; echo
+
 #
 # Network maps
 #
-curl -s -D - -X 'POST' 127.0.0.1:8080/network_maps -d 'id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=0456837f-e874-4b05-8e89-95ae20b897d2;6dd0af45-7cdf-41aa-954b-cc368fe1968e;793e7b47-b248-4c86-a26f-eadfc44f84e2'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/network_maps -d 'id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=0456837f-e874-4b05-8e89-95ae20b897d2;6dd0af45-7cdf-41aa-954b-cc368fe1968e;793e7b47-b248-4c86-a26f-eadfc44f84e2;3ef3529f-7d37-4285-9259-8d78101c8f14'; echo; echo
 
 
 #
@@ -169,8 +188,8 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660002,1,1&cust
 # oneapi postpaid
 curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660003,1,1&customer=a3ddc34a-1793-11e2-9602-00269e42f7a5&user=user'; echo; echo
 # oneapi prepaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660004,1,1&customer=16f87550-1794-11e2-ade6-00269e42f7a5&user=postpaid'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660004,1,1&customer=16f87550-1794-11e2-ade6-00269e42f7a5&user=user'; echo; echo
 # soap postpaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660005,1,1&customer=c173786e-63ce-11e2-8740-001d0947ec73&user=undefined'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660005,1,1&customer=c173786e-63ce-11e2-8740-001d0947ec73&user=user'; echo; echo
 # mm postpaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660006,1,1&customer=8032706a-b4ec-11e3-b3d7-00269e42f7a5&user=undefined'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660007,1,1&customer=8032706a-b4ec-11e3-b3d7-00269e42f7a5&user=user'; echo; echo
