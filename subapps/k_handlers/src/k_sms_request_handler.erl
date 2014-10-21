@@ -228,13 +228,11 @@ process_oneapi_req(#just_sms_request_dto{
     params = Params,
     source_addr = SrcAddr
 }, InMsgIds) ->
-    ClientCorrelator = get_param_by_name(<<"oneapi_client_correlator">>, Params, undefined),
     NotifyURL = get_param_by_name(<<"oneapi_notify_url">>, Params, undefined),
     CallbackData = get_param_by_name(<<"oneapi_callback_data">>, Params, undefined),
-    ?log_debug("ClientCorrelator: ~p NotifyURL: ~p CallbackData: ~p",
-        [ClientCorrelator, NotifyURL, CallbackData]),
+    ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
     case create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
-            ClientCorrelator, NotifyURL, CallbackData, ReqId, InMsgIds) of
+            NotifyURL, CallbackData, ReqId, InMsgIds) of
         {ok, SubId} ->
             ?log_debug("Create receipt subscription: ~p", [SubId]),
             ok;
@@ -245,9 +243,9 @@ process_oneapi_req(#just_sms_request_dto{
 process_oneapi_req(_, _) ->
     ok.
 
-create_oneapi_receipt_subscription(_, _, _, _ClientCorrelator, undefined, _, _, _) -> nop;
+create_oneapi_receipt_subscription(_, _, _, undefined, _, _, _) -> nop;
 create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
-        ClientCorrelator, NotifyURL, CallbackData, ReqId, InMsgIds) ->
+        NotifyURL, CallbackData, ReqId, InMsgIds) ->
     {ok, QName} = application:get_env(k_handlers, oneapi_incoming_sms_queue),
     SubId = uuid:unparse(uuid:generate_time()),
     Sub = #k_mb_k1api_receipt_sub{
@@ -256,7 +254,6 @@ create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
         user_id = UserId,
         queue_name = QName,
         src_addr = SrcAddr,
-        client_correlator = ClientCorrelator,
         notify_url = NotifyURL,
         callback_data = CallbackData,
         req_id = ReqId,
