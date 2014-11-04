@@ -74,9 +74,17 @@ update(Params) ->
 
 delete(Params) ->
     Uuid = ?gv(id, Params),
-    k_snmp:delete_gateway(Uuid),
-    ok = k_storage_gateways:del_gateway(Uuid),
-    {http_code, 204}.
+    case k_storage_gateways:get_gateway(Uuid) of
+        {ok, #gateway{connections = Cs, settings = Ss}} ->
+            %% delete everything related to the gateway that has set via API.
+            [ok = k_snmp:delete_connection(Uuid, C#connection.id) || C <- Cs],
+            [ok = k_snmp:delete_setting(Uuid, S#setting.name) || S <- Ss],
+            ok = k_snmp:delete_gateway(Uuid),
+            ok = k_storage_gateways:del_gateway(Uuid),
+            {http_code, 204};
+        {error, no_entry} ->
+            {http_code, 204}
+    end.
 
 %% ===================================================================
 %% Local Functions
