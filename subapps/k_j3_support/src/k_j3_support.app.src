@@ -1,6 +1,6 @@
 {application, k_j3_support, [
     {description, ""},
-    {vsn, "1"},
+    {vsn, git},
     {registered, []},
     {applications, [
         kernel,
