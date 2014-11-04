@@ -12,7 +12,7 @@
 #
 # Gateways
 #
-curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=smppsim&rps=10000'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=smppsim&rps=1000'; echo; echo
 
 # set gateway's settings
 #curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings -d 'name=log_smpp_pdus&value=true'
@@ -20,7 +20,7 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=7dc235d0-c938-4b66-8f8c-c9
 #curl -s -D - -X 'POST' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings -d 'name=default_bitness&value=7'
 #curl -s -D - -X 'DELETE' 127.0.0.1:8080/gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings/default_encoding
 
-curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=b4040248-abca-4dca-a9d4-987894753975&name=smppsink&rps=10000'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/gateways -d 'id=b4040248-abca-4dca-a9d4-987894753975&name=smppsink&rps=1000'; echo; echo
 
 #
 # Connections

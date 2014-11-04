@@ -24,12 +24,12 @@ post() {
 # Gateways
 #
 
-post gateways "id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=smppsim&rps=10000"
+post gateways "id=7dc235d0-c938-4b66-8f8c-c9037c7eace7&name=smppsim&rps=1000"
 
 # set gateway's settings
 #post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/settings" "name=log_smpp_pdus&value=true"
 
-post gateways "id=b4040248-abca-4dca-a9d4-987894753975&name=smppsink&rps=10000"
+post gateways "id=b4040248-abca-4dca-a9d4-987894753975&name=smppsink&rps=1000"
 
 #
 # Connections
