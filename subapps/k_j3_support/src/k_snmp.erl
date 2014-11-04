@@ -118,7 +118,7 @@ delete_gateway(ID) when is_binary(ID) ->
 -spec set_connection(binary(), #connection{}) -> ok.
 set_connection(GtwID, Conn = #connection{}) when is_binary(GtwID) ->
     set_row(cnn, binary_to_list(GtwID) ++ [Conn#connection.id], [
-        {cnnAddr, convert_to_snmp_ip(Conn#connection.host)},
+        {cnnAddr, binary_to_list(Conn#connection.host)},
         {cnnPort, Conn#connection.port},
         {cnnType, bind_type_to_integer(Conn#connection.bind_type)},
         {cnnSystemId, binary_to_list(Conn#connection.system_id)},
@@ -293,8 +293,7 @@ set(_Index, []) ->
 set(Index, [{ColumnName, Value} | ValueList]) ->
     {ok, [OID]} = snmpm:name_to_oid(ColumnName),
     RowResult = snmpm:sync_set(?USER, ?TARGET, [{OID ++ Index, Value}]),
-    Result = parse_snmp_result(RowResult),
-    case Result of
+    case parse_snmp_result(RowResult) of
         {ok, _} ->
             set(Index, ValueList);
         {error, Reason} ->
@@ -305,8 +304,7 @@ set(Index, [{ColumnName, Value} | ValueList]) ->
 
 is_exist(TableName, Index)->
     {ok, ColumnName} = status_column_name(TableName),
-    GetResult = get_column_val(ColumnName, Index),
-    case GetResult of
+    case get_column_val(ColumnName, Index) of
         {ok, ?active} -> exist;
         {ok, Some} when is_integer(Some) -> incorrectState;
         {error, {timeout, T}} -> {error, {timeout, T}};
@@ -333,16 +331,13 @@ parse_snmp_result(Result) ->
                 AnyValue->
                     {ok, AnyValue}
             end;
-        {ok, {ErState, _ErInd, _Varbind}, _Remaining} ->
+        {ok, {ErState, ErInd, Varbind}, _Remaining} ->
+            ?log_error("ErState: ~p, ErInd: ~p, Varbind: ~p",
+                [ErState, ErInd, Varbind]),
             {error, ErState};
         {error, Reason} ->
             {error, Reason}
     end.
-
-%% convert "127.0.0.1" to [127,0,0,1]
-convert_to_snmp_ip(Addr) when is_binary(Addr) ->
-    Tokens = string:tokens(binary_to_list(Addr), "."),
-    [list_to_integer(Token) || Token <- Tokens].
 
 bind_type_to_integer(transmitter) -> 1;
 bind_type_to_integer(receiver)    -> 2;
