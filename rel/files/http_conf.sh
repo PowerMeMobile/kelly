@@ -36,12 +36,12 @@ post gateways "id=b4040248-abca-4dca-a9d4-987894753975&name=smppsink&rps=1000"
 #
 
 # smppsim
-post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=1&host=127.0.0.1&port=8001&bind_type=transmitter&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="
+post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=1&host=127.0.0.1&port=8001&bind_type=transmitter&system_id=smppclient1&password=password&system_type=smpp&addr_ton=1&addr_npi=1&addr_range="
 
-post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=2&host=127.0.0.1&port=8001&bind_type=receiver&system_id=smppclient1&password=password&system_type=SMPP&addr_ton=1&addr_npi=1&addr_range="
+post "gateways/7dc235d0-c938-4b66-8f8c-c9037c7eace7/connections" "id=2&host=127.0.0.1&port=8001&bind_type=receiver&system_id=smppclient1&password=password&system_type=smpp&addr_ton=1&addr_npi=1&addr_range="
 
 # smppsink
-post "gateways/b4040248-abca-4dca-a9d4-987894753975/connections" "id=1&host=127.0.0.1&port=8002&bind_type=transceiver&system_id=smppclient1&password=password&system_type=smpp&addr_ton=1&addr_npi=1&addr_range="
+post "gateways/b4040248-abca-4dca-a9d4-987894753975/connections" "id=1&host=localhost&port=8002&bind_type=transceiver&system_id=smppclient1&password=password&system_type=smpp&addr_ton=1&addr_npi=1&addr_range="
 
 #
 # Providers
