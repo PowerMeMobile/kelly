@@ -150,7 +150,7 @@ case "$1" in
         exec $ERTS_PATH/to_erl $PIPE_DIR
         ;;
 
-    console|develop|console_clean)
+    console|console_clean|develop)
         # .boot file typically just $SCRIPT (ie, the app name)
         # however, for debugging, sometimes start_clean.boot is useful:
         case "$1" in
@@ -192,14 +192,11 @@ case "$1" in
 
         shift
         APP_NODE=`grep -e '-[s]*name' $RUNNER_BASE_DIR/releases/$APP_VSN/vm.args | awk '{print $2}'`
-        echo $APP_NODE
-        echo $ENTOP_NODE_ARG
-        echo $COOKIE_ARG
         $ERTS_PATH/erl -noinput -hidden +A 20 +Bc -eval "entop:start('${APP_NODE}')" $ENTOP_NODE_ARG $COOKIE_ARG $@
         ;;
 
     *)
-        echo "Usage: $SCRIPT {start|stop|restart|reboot|ping|console|develop|top|console_clean|attach}"
+        echo "Usage: $SCRIPT {start|stop|restart|reboot|ping|attach|console|console_clean|develop|top}"
         exit 1
         ;;
 esac
