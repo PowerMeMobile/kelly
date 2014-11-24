@@ -112,7 +112,7 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
         %% the `sent' status is deprecated
         %% upon removing the `sent' status
         %% simply replace with
-        %% {s,<<"submitted">>}
+        %% s,<<"submitted">>
         '$or', [{s,<<"sent">>}, {s,<<"submitted">>}]
     },
     Sort = {

@@ -49,7 +49,7 @@ status({_ID, MsgDoc}) ->
 timestamp(<<"pending">>, MsgDoc) ->
     bson:at(rqt, MsgDoc);
 timestamp(<<"submitted">>, MsgDoc) ->
-    bson:at(rqt, MsgDoc);
+    bson:at(rpt, MsgDoc);
 %% deprecated
 timestamp(<<"sent">>, MsgDoc) ->
     bson:at(rpt, MsgDoc);
