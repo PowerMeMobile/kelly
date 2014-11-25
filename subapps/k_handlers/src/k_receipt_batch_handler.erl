@@ -29,51 +29,58 @@ process(Req) ->
 process(<<"ReceiptBatch">>, Message) ->
     case adto:decode(#just_delivery_receipt_dto{}, Message) of
         {ok, ReceiptBatch} ->
-            process_receipt_batch(ReceiptBatch);
-        Error ->
-            Error
-    end;
-
-process(ContentType, Message) ->
-    ?log_warn("Got unexpected message of type ~p: ~p", [ContentType, Message]),
-    {ok, []}.
-
--spec process_receipt_batch(#just_delivery_receipt_dto{}) ->
-    {ok, [#worker_reply{}]} | {error, any()}.
-process_receipt_batch(ReceiptBatch) ->
-    ?log_debug("Got delivery receipt: ~p", [ReceiptBatch]),
-    GatewayId = ReceiptBatch#just_delivery_receipt_dto.gateway_id,
-    Receipts = ReceiptBatch#just_delivery_receipt_dto.receipts,
-    UTCString = ReceiptBatch#just_delivery_receipt_dto.timestamp,
-    DlrTime = ac_datetime:utc_string_to_timestamp(UTCString),
-    case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
-        ok ->
-            {ok, []};
-        {error, no_entry} ->
-            %% req/resp aren't handled yet or
-            %% receipt can't be handled at all.
-            %% don't waste resources trying to requeue multiple times,
-            %% because it doesn't work if a wrong receipt is received.
-            %% wait for a while, try once more and if it fails, then skip it.
-            ?log_debug("Not enough data to process receipt. Wait, then try once more", []),
-            {ok, Timeout} = application:get_env(k_handlers, receipt_retry_timeout),
-            timer:sleep(Timeout),
-            case traverse_delivery_receipts(GatewayId, DlrTime, Receipts) of
+            ?log_debug("Got receipt batch: ~p", [ReceiptBatch]),
+            %% it's quite possible that req/resp aren't handled yet or
+            %% the receipt can't be handled at all. don't waste resources
+            %% trying to requeue multiple times, because it doesn't work
+            %% if a wrong receipt is received. at the same time, under load
+            %% it's possible that req/resp stored into db after some time.
+            %% wait and try a number of times, and if it fails, then skip it.
+            {ok, Timeouts} =
+                application:get_env(k_handlers, receipt_retry_timeouts),
+            case process_batch_with_timeouts(ReceiptBatch, Timeouts) of
                 ok ->
                     {ok, []};
                 {error, no_entry} ->
-                    ?log_warn("Bad receipt: ~p", [ReceiptBatch]),
+                    ?log_warn("Bad receipt batch: ~p", [ReceiptBatch]),
                     {ok, []};
                 Error ->
                     Error
             end;
         Error ->
             Error
+    end;
+process(ContentType, Message) ->
+    ?log_warn("Got unexpected message of type ~p: ~p", [ContentType, Message]),
+    {ok, []}.
+
+process_batch_with_timeouts(_ReceiptBatch, []) ->
+    {error, no_entry};
+process_batch_with_timeouts(ReceiptBatch, [Timeout | Timeouts]) ->
+    ?log_debug("Waiting ~p ms before processing receipt batch: ~p",
+        [Timeout, ReceiptBatch]),
+    timer:sleep(Timeout),
+
+    case process_batch(ReceiptBatch) of
+        ok ->
+            ?log_debug("Processed receipt batch: ~p", [ReceiptBatch]),
+            ok;
+        {error, no_entry} ->
+            ?log_debug("Not enough data to receipt batch: ~p",
+                [ReceiptBatch]),
+            process_batch_with_timeouts(ReceiptBatch, Timeouts)
     end.
 
-traverse_delivery_receipts(_GatewayId, _DlrTime, []) ->
+process_batch(ReceiptBatch) ->
+    GatewayId = ReceiptBatch#just_delivery_receipt_dto.gateway_id,
+    Receipts = ReceiptBatch#just_delivery_receipt_dto.receipts,
+    UTCString = ReceiptBatch#just_delivery_receipt_dto.timestamp,
+    DlrTime = ac_datetime:utc_string_to_timestamp(UTCString),
+    traverse_receipts(GatewayId, DlrTime, Receipts).
+
+traverse_receipts(_GatewayId, _DlrTime, []) ->
     ok;
-traverse_delivery_receipts(GatewayId, DlrTime, [Receipt | Receipts]) ->
+traverse_receipts(GatewayId, DlrTime, [Receipt | Receipts]) ->
     OutMsgId = Receipt#just_receipt_dto.message_id,
     DlrStatus = Receipt#just_receipt_dto.message_state,
     %% note that this is one-shot call. it tries to store #dlr_info{}
@@ -86,15 +93,11 @@ traverse_delivery_receipts(GatewayId, DlrTime, [Receipt | Receipts]) ->
     },
     case k_dynamic_storage:set_mt_dlr_info_and_get_msg_info(DlrInfo) of
         {ok, MsgInfo} ->
-            ok = process_delivery_receipt(MsgInfo),
-            %% process the rest receipts.
-            traverse_delivery_receipts(GatewayId, DlrTime, Receipts);
+            ok = register_delivery_receipt(MsgInfo),
+            traverse_receipts(GatewayId, DlrTime, Receipts);
         Error ->
             Error
     end.
-
-process_delivery_receipt(MsgInfo) ->
-    register_delivery_receipt(MsgInfo).
 
 %% The function is called from k_sms_response_handler
 %% if a submit error is detected and a delivery receipt is requested.

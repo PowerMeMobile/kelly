@@ -41,7 +41,8 @@ process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
                 {error, req_info_unavailable} ->
                     %% req isn't handled yet.
                     %% wait for a while, then requeue it.
-                    {ok, Timeout} = application:get_env(k_handlers, receipt_retry_timeout),
+                    {ok, Timeout} =
+                        application:get_env(k_handlers, response_retry_timeout),
                     timer:sleep(Timeout),
                     {error, not_enough_data_to_proceed};
                 Error ->
