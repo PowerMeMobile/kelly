@@ -13,17 +13,21 @@
 
 -spec process(k_amqp_req:req()) -> {ok, [#worker_reply{}]} | {error, any()}.
 process(Req) ->
+    {ok, ContentType} = k_amqp_req:content_type(Req),
     {ok, Payload} = k_amqp_req:payload(Req),
-    case adto:decode(#just_sms_response_dto{}, Payload) of
+    process(ContentType, Payload).
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
+
+process(<<"SmsResponse">>, Message) ->
+    case adto:decode(#just_sms_response_dto{}, Message) of
         {ok, SmsResponse} ->
             process_sms_response(SmsResponse);
         Error ->
             Error
     end.
-
-%% ===================================================================
-%% Internal
-%% ===================================================================
 
 -spec process_sms_response(#just_sms_response_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
