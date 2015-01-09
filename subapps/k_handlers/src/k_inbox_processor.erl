@@ -76,9 +76,9 @@ process(CustomerId, UserId, list_new, _) ->
         Error ->
             Error
     end;
-process(CustomerId, UserId, fetch_all, _) ->
+process(_CustomerId, _UserId, fetch_all, _) ->
     {ok, {error, <<"Not implemented">>}};
-process(CustomerId, UserId, fetch_new, _) ->
+process(_CustomerId, _UserId, fetch_new, _) ->
     {ok, {error, <<"Not implemented">>}};
 process(_CustomerId, _UserId, fetch_id, MessageIds) ->
     Selector = {
@@ -90,13 +90,13 @@ process(_CustomerId, _UserId, fetch_id, MessageIds) ->
         Error ->
             Error
     end;
-process(CustomerId, UserId, kill_all, _) ->
+process(_CustomerId, _UserId, kill_all, _) ->
     {ok, {error, <<"Not implemented">>}};
-process(CustomerId, UserId, kill_old, _) ->
+process(_CustomerId, _UserId, kill_old, _) ->
     {ok, {error, <<"Not implemented">>}};
-process(CustomerId, UserId, kill_id, _MessageIds) ->
-    {ok, {error, <<"Not implemented">>}};
-process(CustomerId, UserId, _, _) ->
+process(_CustomerId, _UserId, kill_id, _MessageIds) ->
+    {ok, {error, <<"_Not implemented">>}};
+process(_CustomerId, _UserId, _, _) ->
     {ok, {error, <<"Not implemented">>}}.
 
 doc2msg(Doc) ->
