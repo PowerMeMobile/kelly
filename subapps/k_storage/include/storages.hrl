@@ -2,8 +2,8 @@
 -define(storages_hrl, included).
 
 -type error()   :: term().
--type uuid()    :: binary().
 
 -include_lib("alley_dto/include/addr.hrl").
+-include_lib("alley_dto/include/common_types.hrl").
 
 -endif.

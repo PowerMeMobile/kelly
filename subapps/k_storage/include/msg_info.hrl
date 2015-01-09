@@ -3,7 +3,6 @@
 
 -include("storages.hrl").
 -include("customer.hrl").
--include_lib("alley_dto/include/adto_types.hrl").
 
 -type resp_status() ::
     submitted
@@ -36,7 +35,6 @@
 -type msg_type() :: regular | {part, #part_info{}}.
 -type in_msg_id() :: binary().
 -type out_msg_id() :: binary().
--type client_type() :: client_type_dto().
 -type encoding() :: atom() | integer().
 -type src_addr() :: #addr{}.
 -type dst_addr() :: #addr{}.
