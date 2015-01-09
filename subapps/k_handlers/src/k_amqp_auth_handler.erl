@@ -221,15 +221,13 @@ build_networks_and_providers(Customer) ->
 
     case k_storage_network_maps:get_network_map(NetworkMapId) of
         {ok, #network_map{network_ids = NetworkIds}} ->
-            {NetworksDTO, ProvidersDTO} = lists:foldl(fun(NetworkId, {Ns, Ps})->
+            {Networks, Providers} = lists:foldl(fun(NetworkId, {Ns, Ps})->
                 case k_storage_networks:get_network(NetworkId) of
                     {ok, Network} ->
-                        NetworkDTO = network_to_dto(Network),
                         ProviderId = Network#network.provider_id,
                         case k_storage_providers:get_provider(ProviderId) of
                             {ok, Provider} ->
-                                ProviderDTO = provider_to_dto(Provider),
-                                {[NetworkDTO | Ns], insert_if_not_member(ProviderDTO, Ps)};
+                                {[Network | Ns], insert_if_not_member(Provider, Ps)};
                             {error, Error} ->
                                 ?log_error("Get provider id: ~p from network id: ~p from map id: ~p failed with: ~p",
                                     [ProviderId, NetworkId, NetworkMapId, Error]),
@@ -244,16 +242,15 @@ build_networks_and_providers(Customer) ->
             %% add default provider to providers list.
             case DefaultProviderId of
                 undefined ->
-                    {ok, NetworksDTO, ProvidersDTO};
+                    {ok, Networks, Providers};
                 _ ->
                     case k_storage_providers:get_provider(DefaultProviderId) of
                         {ok, DefaultProvider} ->
-                            DefaultProviderDTO = provider_to_dto(DefaultProvider),
-                            {ok, NetworksDTO, insert_if_not_member(DefaultProviderDTO, ProvidersDTO)};
+                            {ok, Networks, insert_if_not_member(DefaultProvider, Providers)};
                         {error, Error} ->
                             ?log_error("Get default provider id: ~p from customer id: ~p failed with: ~p",
                                 [DefaultProviderId, Customer#customer.customer_uuid, Error]),
-                            {ok, NetworksDTO, ProvidersDTO}
+                            {ok, Networks, Providers}
                     end
             end;
         {error, Error} ->
@@ -283,8 +280,8 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Prov
         rps = RPS,
         allowed_sources = allowed_sources(Originators),
         default_source = default_source(Originators),
-        networks = Networks,
-        providers = Providers,
+        networks = [network_to_dto(N) || N <- Networks],
+        providers = [provider_to_dto(P) || P <- Providers],
         default_provider_id = DP,
         receipts_allowed = RA,
         no_retry = NR,
@@ -317,8 +314,8 @@ build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, _UserId, Networks, Pr
         id = CustomerId,
         allowed_sources = allowed_sources(Originators),
         default_source = default_source(Originators),
-        networks = Networks,
-        providers = Providers,
+        networks = [network_to_dto(N) || N <- Networks],
+        providers = [provider_to_dto(P) || P <- Providers],
         default_provider_id = DP,
         receipts_allowed = RA,
         no_retry = NR,
@@ -357,14 +354,14 @@ build_auth_response(<<"AuthRespV1">>, ReqId, Customer, UserId, Networks, Provide
         credit = Credit + CreditLimit,
         allowed_sources = allowed_sources(Originators),
         default_source = default_source(Originators),
-        networks = Networks,
-        providers = Providers,
+        networks = [network_to_v1(N) || N <- Networks],
+        providers = [provider_to_v1(P) || P <- Providers],
         default_provider_id = DP,
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = MV,
         max_validity = MV,
-        features = [feature_to_dto(F) || F <- Features]
+        features = [feature_to_v1(F) || F <- Features]
     },
 
     ResponseDTO = #auth_resp_v1{
@@ -462,6 +459,29 @@ network_to_dto(Network) ->
         sms_mult_points = SmsMultPoints
     }.
 
+network_to_v1(Network) ->
+    #network{
+        id = Id,
+        country_code = CC,
+        number_len = NL,
+        prefixes = Pref,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
+    } = Network,
+    #network_v1{
+        id = Id,
+        country_code = CC,
+        %% now number_len in db without CC length or zero
+        number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
+        prefixes = Pref,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
+    }.
+
 provider_to_dto(Provider) ->
     #provider{
         id = Id,
@@ -471,6 +491,22 @@ provider_to_dto(Provider) ->
         sms_add_points = SmsAddPoints
     } = Provider,
     #provider_dto{
+        id = Id,
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = RS,
+        sms_add_points = SmsAddPoints
+    }.
+
+provider_to_v1(Provider) ->
+    #provider{
+        id = Id,
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = RS,
+        sms_add_points = SmsAddPoints
+    } = Provider,
+    #provider_v1{
         id = Id,
         gateway_id = GatewayId,
         bulk_gateway_id = BulkGatewayId,
@@ -494,6 +530,16 @@ feature_to_dto(Feature) ->
         value = Value
     } = Feature,
     #feature_dto{
+        name = Name,
+        value = Value
+    }.
+
+feature_to_v1(Feature) ->
+    #feature{
+        name = Name,
+        value = Value
+    } = Feature,
+    #feature_v1{
         name = Name,
         value = Value
     }.
