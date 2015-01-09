@@ -37,11 +37,12 @@ process(ReqDTO = #sms_status_req_v1{}) ->
     end.
 
 %% ===================================================================
-%% Interal
+%% Internal
 %% ===================================================================
 
-status_k1api({_ID, MsgDoc}) ->
-    Address = case bson:at(da, MsgDoc) of
+status_k1api({_Id, MsgDoc}) ->
+    Address =
+        case bson:at(da, MsgDoc) of
         <<"xxxxxxxxxx">> ->
             %% the most probable case when this happens is
             %% when the sms request hasn't yet been processed,
@@ -58,16 +59,17 @@ status_k1api({_ID, MsgDoc}) ->
             timestamp(Status, MsgDoc))
     }.
 
-status_v1({_ID, MsgDoc}) ->
-    Address = case bson:at(da, MsgDoc) of
-        <<"xxxxxxxxxx">> ->
-            %% the most probable case when this happens is
-            %% when the sms request hasn't yet been processed,
-            %% possibly due to an error in it.
-            #addr{addr = <<"unknown">>, ton = 5, npi = 0};
-        AddrDoc ->
-            k_storage_utils:doc_to_addr(AddrDoc)
-    end,
+status_v1({_Id, MsgDoc}) ->
+    Address =
+        case bson:at(da, MsgDoc) of
+            <<"xxxxxxxxxx">> ->
+                %% the most probable case when this happens is
+                %% when the sms request hasn't yet been processed,
+                %% possibly due to an error in it.
+                #addr{addr = <<"unknown">>, ton = 5, npi = 0};
+            AddrDoc ->
+                k_storage_utils:doc_to_addr(AddrDoc)
+        end,
     Status = bson:at(s, MsgDoc),
     #sms_status_v1{
         address = Address,

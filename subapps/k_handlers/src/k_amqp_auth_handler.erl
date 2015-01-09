@@ -344,13 +344,17 @@ build_auth_response(<<"AuthRespV1">>, ReqId, Customer, UserId, Networks, Provide
         no_retry = NR,
         default_validity = _DV,
         max_validity = MV,
-        pay_type = PayType
+        pay_type = PayType,
+        credit = Credit,
+        credit_limit = CreditLimit
     } = Customer,
 
     CustomerDTO = #auth_customer_v1{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         user_id = UserId,
+        pay_type = PayType,
+        credit = Credit + CreditLimit,
         allowed_sources = allowed_sources(Originators),
         default_source = default_source(Originators),
         networks = Networks,
@@ -360,9 +364,7 @@ build_auth_response(<<"AuthRespV1">>, ReqId, Customer, UserId, Networks, Provide
         no_retry = NR,
         default_validity = MV,
         max_validity = MV,
-        pay_type = PayType,
         features = [feature_to_dto(F) || F <- Features]
-        %%, credits
     },
 
     ResponseDTO = #auth_resp_v1{
