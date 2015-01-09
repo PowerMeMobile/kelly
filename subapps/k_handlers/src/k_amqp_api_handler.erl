@@ -97,6 +97,29 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"DeliveryStatusReq">> ->
             {ReqCT, <<>>}
     end;
 
+process(ReqCT, ReqBin) when ReqCT =:= <<"SmsStatusReqV1">> ->
+    case adto:decode(#sms_status_req_v1{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got delivery status request: ~p", [ReqDTO]),
+            case k_delivery_status_request_processor:process(ReqDTO) of
+                {ok, #sms_status_resp_v1{} = RespDTO} ->
+                    ?log_debug("Built delivery status response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"SmsStatusRespV1">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Delivery status response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Delivery status request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Delivery status request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
 process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReq">> ->
     case adto:decode(#k1api_retrieve_sms_request_dto{}, ReqBin) of
         {ok, ReqDTO} ->
