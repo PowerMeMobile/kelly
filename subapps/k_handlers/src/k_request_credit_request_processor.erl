@@ -84,11 +84,11 @@ check_credit(Credit, CreditLimit, CreditRequested) ->
 
 -ifdef(TEST).
 
-request_credit_test_() -> [
-    ?_assertEqual({allowed, 8}, request_credit(10,  0,  2)),
-    ?_assertEqual({allowed, 0}, request_credit(10,  0, 10)),
-    ?_assertEqual({denied, 10}, request_credit(10,  0, 12)),
-    ?_assertEqual({allowed, 8}, request_credit( 0, 10,  2))
+check_credit_test_() -> [
+    ?_assertEqual({allowed, 8}, check_credit(10,  0,  2)),
+    ?_assertEqual({allowed, 0}, check_credit(10,  0, 10)),
+    ?_assertEqual({denied, 10}, check_credit(10,  0, 12)),
+    ?_assertEqual({allowed, 8}, check_credit( 0, 10,  2))
 ].
 
 -endif.
