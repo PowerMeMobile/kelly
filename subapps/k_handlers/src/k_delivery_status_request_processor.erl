@@ -9,8 +9,8 @@
 %% API
 %% ===================================================================
 
--spec process(#k1api_sms_delivery_status_request_dto{}) ->
-    {ok, #k1api_sms_delivery_status_response_dto{}} | {error, term()}.
+-spec process(record()) ->
+    {ok, record()} | {error, term()}.
 process(ReqDTO = #k1api_sms_delivery_status_request_dto{}) ->
     ReqId    = ReqDTO#k1api_sms_delivery_status_request_dto.id,
     SmsReqId = ReqDTO#k1api_sms_delivery_status_request_dto.sms_request_id,

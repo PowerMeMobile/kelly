@@ -15,26 +15,31 @@
 %% API
 %% ===================================================================
 
--spec process(#k1api_request_credit_request_dto{}) ->
-    {ok, #k1api_request_credit_response_dto{}} | {error, term()}.
-process(ReqDTO) ->
+-spec process(record()) -> {ok, record()} | {error, term()}.
+process(ReqDTO = #k1api_request_credit_request_dto{}) ->
     ReqId       = ReqDTO#k1api_request_credit_request_dto.id,
     CustomerId  = ReqDTO#k1api_request_credit_request_dto.customer_id,
     CreditRequested = ReqDTO#k1api_request_credit_request_dto.credit,
 
-    case k_storage_customers:get_customer_by_uuid(CustomerId) of
-        {ok, Customer} ->
-            Credit = Customer#customer.credit,
-            CreditLimit = Customer#customer.credit_limit,
-            {Result, CreditLeft} = request_credit(Credit, CreditLimit, CreditRequested),
-            case Result of
-                allowed ->
-                    ok = k_storage_customers:reduce_credit(CustomerId, CreditRequested);
-                _ ->
-                    nop
-            end,
+    case request_credit(CustomerId, CreditRequested) of
+        {ok, Result, CreditLeft} ->
             {ok, #k1api_request_credit_response_dto{
                 id = ReqId,
+                result = Result,
+                credit_left = CreditLeft
+            }};
+        Error ->
+            Error
+    end;
+process(ReqDTO = #credit_req_v1{}) ->
+    ReqId       = ReqDTO#credit_req_v1.req_id,
+    CustomerId  = ReqDTO#credit_req_v1.customer_id,
+    CreditRequested = ReqDTO#credit_req_v1.credit,
+
+    case request_credit(CustomerId, CreditRequested) of
+        {ok, Result, CreditLeft} ->
+            {ok, #credit_resp_v1{
+                req_id = ReqId,
                 result = Result,
                 credit_left = CreditLeft
             }};
@@ -46,7 +51,24 @@ process(ReqDTO) ->
 %% Internal
 %% ===================================================================
 
-request_credit(Credit, CreditLimit, CreditRequested) ->
+request_credit(CustomerId, CreditRequested) ->
+    case k_storage_customers:get_customer_by_uuid(CustomerId) of
+        {ok, Customer} ->
+            Credit = Customer#customer.credit,
+            CreditLimit = Customer#customer.credit_limit,
+            {Result, CreditLeft} = check_credit(Credit, CreditLimit, CreditRequested),
+            case Result of
+                allowed ->
+                    ok = k_storage_customers:reduce_credit(CustomerId, CreditRequested);
+                _ ->
+                    nop
+            end,
+            {ok, Result, CreditLeft};
+        Error ->
+            Error
+    end.
+
+check_credit(Credit, CreditLimit, CreditRequested) ->
     Credit2 = Credit - CreditRequested,
     CreditLeft = Credit2 + CreditLimit,
     case CreditLeft < 0 of
