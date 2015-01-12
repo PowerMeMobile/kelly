@@ -12,13 +12,13 @@
 %% API
 %% ===================================================================
 
--spec process(#k1api_coverage_request_dto{}) ->
-    {ok, #k1api_coverage_response_dto{}} | {error, term()}.
-process(ReqDTO) ->
-    ReqId      = ReqDTO#k1api_coverage_request_dto.id,
-    CustomerId = ReqDTO#k1api_coverage_request_dto.customer_id,
-    _UserId    = ReqDTO#k1api_coverage_request_dto.user_id,
-    _Version   = ReqDTO#k1api_coverage_request_dto.version,
+-spec process(record()) -> {ok, record()} | {error, term()}.
+process(Req = #k1api_coverage_request_dto{}) ->
+    ReqId      = Req#k1api_coverage_request_dto.id,
+    CustomerId = Req#k1api_coverage_request_dto.customer_id,
+    _UserId    = Req#k1api_coverage_request_dto.user_id,
+    _Version   = Req#k1api_coverage_request_dto.version,
+
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
             NetworkMapId = Customer#customer.network_map_id,
@@ -34,6 +34,35 @@ process(ReqDTO) ->
                         id = ReqId,
                         networks = NetworksDTO,
                         providers = ProvidersDTO,
+                        default_provider_id = DefaultProviderId
+                    }};
+                {error, Error} ->
+                    ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
+                    {error, Error}
+            end;
+        {error, Error} ->
+            ?log_error("Get customer id: ~p failed with: ~p", [CustomerId, Error]),
+            {error, Error}
+    end;
+process(Req = #coverage_req_v1{}) ->
+    ReqId      = Req#coverage_req_v1.req_id,
+    CustomerId = Req#coverage_req_v1.customer_id,
+
+    case k_storage_customers:get_customer_by_id(CustomerId) of
+        {ok, Customer} ->
+            NetworkMapId = Customer#customer.network_map_id,
+            case k_storage_network_maps:get_network_map(NetworkMapId) of
+                {ok, NetworkMap} ->
+                    NetworkIds = NetworkMap#network_map.network_ids,
+                    Networks = get_networks(NetworkIds),
+                    Providers = get_providers(Networks),
+                    Networks2 = [network_to_v1(N) || N <- Networks],
+                    Providers2 = [provider_to_v1(P) || P <- Providers],
+                    DefaultProviderId = Customer#customer.default_provider_id,
+                    {ok, #coverage_resp_v1{
+                        req_id = ReqId,
+                        networks = Networks2,
+                        providers = Providers2,
                         default_provider_id = DefaultProviderId
                     }};
                 {error, Error} ->
@@ -108,6 +137,36 @@ network_to_dto(Network) ->
         sms_mult_points = SmsMultPoints
     }.
 
+network_to_v1(Network) ->
+    #network{
+        id = Id,
+        name = Name,
+        country_code = CountryCode,
+        number_len = NumberLen,
+        prefixes = Prefixes,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        country = Country,
+        gmt_diff = GMTDiff,
+        dst = DST,
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
+    } = Network,
+    #network_v1{
+        id = Id,
+        name = Name,
+        country_code = CountryCode,
+        number_len = NumberLen,
+        prefixes = Prefixes,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        country = Country,
+        gmt_diff = GMTDiff,
+        dst = DST,
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
+    }.
+
 provider_to_dto(Provider) ->
     #provider{
         id = Id,
@@ -117,6 +176,22 @@ provider_to_dto(Provider) ->
         sms_add_points = SmsAddPoints
     } = Provider,
     #provider_dto{
+        id = Id,
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = ReceiptsSupported,
+        sms_add_points = SmsAddPoints
+    }.
+
+provider_to_v1(Provider) ->
+    #provider{
+        id = Id,
+        gateway_id = GatewayId,
+        bulk_gateway_id = BulkGatewayId,
+        receipts_supported = ReceiptsSupported,
+        sms_add_points = SmsAddPoints
+    } = Provider,
+    #provider_v1{
         id = Id,
         gateway_id = GatewayId,
         bulk_gateway_id = BulkGatewayId,

@@ -51,6 +51,29 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReq">> ->
             {ReqCT, <<>>}
     end;
 
+process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReqV1">> ->
+    case adto:decode(#coverage_req_v1{}, ReqBin) of
+        {ok, Req} ->
+            ?log_debug("Got coverage request: ~p", [Req]),
+            case k_coverage_request_processor:process(Req) of
+                {ok, Resp} ->
+                    ?log_debug("Built coverage response: ~p", [Resp]),
+                    case adto:encode(Resp) of
+                        {ok, RespBin} ->
+                            {<<"CoverageRespV1">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Coverage response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Coverage request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Coverage request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
 process(ReqCT, ReqBin) when ReqCT =:= <<"BlacklistReq">> ->
     case adto:decode(#k1api_blacklist_request_dto{}, ReqBin) of
         {ok, ReqDTO} ->
@@ -61,6 +84,29 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"BlacklistReq">> ->
                     case adto:encode(RespDTO) of
                         {ok, RespBin} ->
                             {<<"BlacklistResp">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Blacklist response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Blacklist request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Blacklist request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
+process(ReqCT, ReqBin) when ReqCT =:= <<"BlacklistReqV1">> ->
+    case adto:decode(#blacklist_req_v1{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got blacklist request: ~p", [ReqDTO]),
+            case k_blacklist_request_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built blacklist response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"BlacklistRespV1">>, RespBin};
                         {error, Error} ->
                             ?log_error("Blacklist response decode error: ~p", [Error]),
                             {ReqCT, <<>>}
