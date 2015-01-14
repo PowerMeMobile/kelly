@@ -22,9 +22,9 @@ USER_ID = 'user'
 BAD_CUSTOMER_ID = 'bad_customer'
 BAD_USER_ID = 'bad_user'
 
-BASE_URL = 'http://'+HOST+':'+PORT+'/customers/'+CUSTOMER_ID+'/users/'+ USER_ID+'/features'
-BAD_CUSTOMER_URL = 'http://'+HOST+':'+PORT+'/customers/'+BAD_CUSTOMER_ID+'/users/'+ USER_ID+'/features'
-BAD_USER_URL = 'http://'+HOST+':'+PORT+'/customers/'+CUSTOMER_ID+'/users/'+ BAD_USER_ID+'/features'
+BASE_URL = 'http://'+HOST+':'+PORT+'/customers/'+CUSTOMER_ID+'/users/'+USER_ID+'/features'
+BAD_CUSTOMER_URL = 'http://'+HOST+':'+PORT+'/customers/'+BAD_CUSTOMER_ID+'/users/'+USER_ID+'/features'
+BAD_USER_URL = 'http://'+HOST+':'+PORT+'/customers/'+CUSTOMER_ID+'/users/'+BAD_USER_ID+'/features'
 
 @pytest.fixture(scope="function")
 def http(request):
