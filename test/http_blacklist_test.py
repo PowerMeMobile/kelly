@@ -25,10 +25,7 @@ def http(request):
 
     def fin():
         print ("finalizing...")
-        req = http.get(BASE_URL)
-        if req.status_code == 200:
-            for data in req.json():
-                http.delete(BASE_URL+'/'+data['id'])
+        http.delete(BASE_URL+'/'+ENTRY_ID)
 
     request.addfinalizer(fin)
     return http
@@ -53,7 +50,7 @@ def test_read_succ(http):
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
 
-    req = http.get(BASE_URL + '/' + ENTRY_ID)
+    req = http.get(BASE_URL+'/'+ENTRY_ID)
     assert req.status_code == 200
     json = req.json()
     json = req.json()
@@ -71,8 +68,8 @@ def test_update_entry_1_succ(http):
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
 
-    req = http.put(BASE_URL + '/' + ENTRY_ID, data={'dst_addr':'375296000003,1,1',
-                                                    'src_addr':''})
+    req = http.put(BASE_URL+'/'+ENTRY_ID, data={'dst_addr':'375296000003,1,1',
+                                                'src_addr':''})
     assert req.status_code == 200
     json = req.json()
     assert json['id'] == ENTRY_ID
@@ -89,7 +86,7 @@ def test_update_entry_2_succ(http):
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
 
-    req = http.put(BASE_URL + '/' + ENTRY_ID, data={'dst_addr':'375296000004,1,1'})
+    req = http.put(BASE_URL+'/'+ ENTRY_ID, data={'dst_addr':'375296000004,1,1'})
     assert req.status_code == 200
     json = req.json()
     assert json['id'] == ENTRY_ID
@@ -106,5 +103,5 @@ def test_delete_succ(http):
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
 
-    req = http.delete(BASE_URL + '/' + ENTRY_ID)
+    req = http.delete(BASE_URL+'/'+ENTRY_ID)
     assert req.status_code == 204
