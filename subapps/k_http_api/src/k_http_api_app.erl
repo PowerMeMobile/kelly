@@ -94,6 +94,7 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_users_features,
         k_http_api_handler_originators,
         k_http_api_handler_customers,
+        k_http_api_handler_customers_credit,
         k_http_api_handler_blacklist,
         k_http_api_handler_addr2cust,
         k_http_api_handler_just,

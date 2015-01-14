@@ -13,7 +13,8 @@
     get_customer_originator/2,
     set_customer_originator/2,
     del_customer_originator/2,
-    reduce_credit/2
+
+    change_credit/2
 ]).
 
 %% Deprecated addr2cust API
@@ -188,14 +189,27 @@ del_customer_originator(CustomerUuid, OriginatorId) ->
             Error
     end.
 
--spec reduce_credit(customer_uuid(), float()) -> ok | {error, term()}.
-reduce_credit(CustomerUuid, Credit) ->
-    Modifier = {
-        '$inc', {
-            'credit', -Credit
-        }
+-spec change_credit(customer_uuid(), float()) ->
+    {ok, float()} | {error, term()}.
+change_credit(CustomerUuid, Amount) ->
+    Command = {
+        'findandmodify', <<"customers">>,
+        'query' , {'_id', CustomerUuid},
+        'update', {'$inc', {'credit', Amount}},
+        'fields', {'credit', 1},
+        'new'   , true
     },
-    mongodb_storage:upsert(static_storage, customers, {'_id', CustomerUuid}, Modifier).
+    case mongodb_storage:command(static_storage, Command) of
+        {ok, Result} ->
+            case bsondoc:at(value, Result) of
+                undefined ->
+                    {error, no_entry};
+                Value ->
+                    {ok, bsondoc:at(credit, Value)}
+            end;
+        {error, Error} ->
+            {error, Error}
+    end.
 
 %% ===================================================================
 %% Internals

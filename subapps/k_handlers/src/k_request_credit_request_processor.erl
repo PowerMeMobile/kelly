@@ -56,10 +56,12 @@ request_credit(CustomerId, CreditRequested) ->
         {ok, Customer} ->
             Credit = Customer#customer.credit,
             CreditLimit = Customer#customer.credit_limit,
-            {Result, CreditLeft} = check_credit(Credit, CreditLimit, CreditRequested),
+            {Result, CreditLeft} = check_credit(
+                Credit, CreditLimit, CreditRequested),
             case Result of
                 allowed ->
-                    ok = k_storage_customers:reduce_credit(CustomerId, CreditRequested);
+                    {ok, _NewCredit} = k_storage_customers:change_credit(
+                        CustomerId, -1.0*CreditRequested);
                 _ ->
                     nop
             end,
