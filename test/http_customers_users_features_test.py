@@ -2,8 +2,8 @@
 # https://gist.github.com/ten0s/125f708b185daeab184a
 
 # $ . env/bin/activate
-# $ py.test http_features_test.py
-# $ py.test http_features_test.py -k test_bad_customer_fail
+# $ py.test http_customers_users_features_test.py
+# $ py.test http_customers_users_features_test.py -k test_bad_customer_fail
 # $ py.test --pdb
 # $ py.test -v
 
@@ -16,7 +16,7 @@ import requests
 
 HOST = 'localhost'
 PORT = '8080'
-CUSTOMER_ID = 'feda5822-5271-11e1-bd27-001d0947ec73'
+CUSTOMER_ID = '493b3678-9dc8-11e2-8cce-00269e42f7a5'
 USER_ID = 'user'
 
 BAD_CUSTOMER_ID = 'bad_customer'
