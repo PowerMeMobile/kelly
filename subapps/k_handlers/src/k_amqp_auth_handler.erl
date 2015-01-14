@@ -93,9 +93,9 @@ process(<<"AuthReqV1">>, ReqBin) ->
             CustomerId = AuthReq#auth_req_v1.customer_id,
             UserId     = AuthReq#auth_req_v1.user_id,
             Password   = AuthReq#auth_req_v1.password,
-            ConnType   = AuthReq#auth_req_v1.connection_type,
+            Interface  = AuthReq#auth_req_v1.interface,
             ReqId      = AuthReq#auth_req_v1.req_id,
-            case authenticate(CustomerId, UserId, Password, ConnType) of
+            case authenticate(CustomerId, UserId, Password, Interface) of
                 {allow, Customer = #customer{}} ->
                     {ok, Networks, Providers} = build_networks_and_providers(Customer),
                     Features = get_features(UserId, Customer),
@@ -132,7 +132,7 @@ process(ContentType, ReqBin) ->
     {deny, blocked} |
     {deny, deactivated} |
     {deny, credit_limit_exceeded}.
-authenticate(CustomerId, UserId, Password, ConnType) ->
+authenticate(CustomerId, UserId, Password, Interface) ->
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
             ?log_debug("Customer found: ~p", [Customer]),
@@ -145,7 +145,7 @@ authenticate(CustomerId, UserId, Password, ConnType) ->
                                 allow ->
                                     case check_state(User#user.state) of
                                         allow ->
-                                            case check_conn_type(ConnType, User#user.connection_types) of
+                                            case check_interface(Interface, User#user.connection_types) of
                                                 allow ->
                                                     case check_credit_limit(Customer) of
                                                         allow ->
@@ -190,8 +190,8 @@ check_password(Passw, PasswHash) ->
             {deny, password}
     end.
 
-check_conn_type(ConnType, ConnTypes) ->
-    case lists:member(ConnType, ConnTypes) of
+check_interface(Interface, Interfaces) ->
+    case lists:member(Interface, Interfaces) of
         true ->
             allow;
         false ->
