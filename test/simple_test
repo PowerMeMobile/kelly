@@ -35,6 +35,8 @@ fi
 echo Start tests
 ./rebar eunit skip_deps=true
 TESTS_RESULT=$?
+py.test test/*.py
+PYTEST_RESULT=$?
 
 echo Stop node
 $KELLY_BIN stop

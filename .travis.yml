@@ -8,7 +8,7 @@ notifications:
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq uuid-dev
- - sudo pip install pytest requests
+ - sudo apt-get install -qq pytest requests
 services:
   - mongodb
   - rabbitmq
