@@ -59,8 +59,8 @@ api-test:
 	@./rebar skip_deps=true eunit suites=kelly_http_api_blacklist_test
 	@./rebar skip_deps=true eunit suites=kelly_http_api_addr2cust_test
 
-simple-test: generate
-	@./test/simple_test
+test: generate
+	@./test/test
 
 tags:
 	@find . -name "*.[e,h]rl" -print | etags -

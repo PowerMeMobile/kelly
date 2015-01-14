@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# This script is a simple test for kelly
-# It tests the following functionality:
+# This script tests the following functionality:
 # 1. Start kelly node
 # 2. Configure kelly via http rest api
-# 3. Test http api with `make api-test`
+# 3. Test http api with using both eunit and py.test
 # 4. Stop kelly node
 
 echo PWD: $(pwd)
@@ -34,9 +33,9 @@ fi
 
 echo Start tests
 ./rebar eunit skip_deps=true
-TESTS_RESULT=$?
-py.test test/*.py
-PYTEST_RESULT=$?
+EUNIT_RES=$?
+py.test -v test/*.py
+PYTEST_RES=$?
 
 echo Stop node
 $KELLY_BIN stop
@@ -45,10 +44,10 @@ echo -n Wait 5 sec for kelly node stop...
 sleep 5
 echo OK
 
-if [[ "0" == "$TESTS_RESULT" ]]; then
+if [[ ${EUNIT_RES} == 0 && ${PYTEST_RES} == 0 ]]; then
     echo Success
+    exit 0
 else
     echo Failure
+    exit 1
 fi
-
-exit $TESTS_RESULT
