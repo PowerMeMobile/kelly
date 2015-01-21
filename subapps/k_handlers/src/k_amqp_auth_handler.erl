@@ -23,6 +23,7 @@ start_link() ->
 
 -spec process(binary(), binary()) -> {binary(), binary()} | {ok, []}.
 process(<<"BindRequest">>, ReqBin) ->
+    RespCT = <<"BindResponse">>,
     case adto:decode(#funnel_auth_request_dto{}, ReqBin) of
         {ok, AuthReq} ->
             ?log_debug("Got auth request: ~p", [AuthReq]),
@@ -35,26 +36,27 @@ process(<<"BindRequest">>, ReqBin) ->
                 {allow, Customer = #customer{}} ->
                     {ok, Networks, Providers} = build_networks_and_providers(Customer),
                     Features = get_features(UserId, Customer),
-                    {ok, Response} = build_auth_response(<<"BindResponse">>,
+                    {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
                     ?log_debug("Auth allowed", []),
-                    encode_response(<<"BindResponse">>, Response);
+                    encode_response(RespCT, Response);
                 {deny, Reason} ->
-                    {ok, Response} = build_error_response(<<"BindResponse">>,
+                    {ok, Response} = build_error_response(RespCT,
                         ReqId, {deny, Reason}),
                     ?log_notice("Auth denied: ~p", [Reason]),
-                    encode_response(<<"BindResponse">>, Response);
+                    encode_response(RespCT, Response);
                 {error, Reason} ->
-                    {ok, Response} = build_error_response(<<"BindResponse">>,
+                    {ok, Response} = build_error_response(RespCT,
                         ReqId, {error, Reason}),
                     ?log_error("Auth error: ~p", [Reason]),
-                    encode_response(<<"BindResponse">>, Response)
+                    encode_response(RespCT, Response)
             end;
         {error, Error} ->
             ?log_error("Auth request decode error: ~p", [Error]),
-            {ok, []}
+            noreply
     end;
 process(<<"OneAPIAuthReq">>, ReqBin) ->
+    RespCT = <<"OneAPIAuthResp">>,
     case adto:decode(#k1api_auth_request_dto{}, ReqBin) of
         {ok, AuthReq} ->
             ?log_debug("Got auth request: ~p", [AuthReq]),
@@ -67,26 +69,27 @@ process(<<"OneAPIAuthReq">>, ReqBin) ->
                 {allow, Customer = #customer{}} ->
                     {ok, Networks, Providers} = build_networks_and_providers(Customer),
                     Features = get_features(UserId, Customer),
-                    {ok, Response} = build_auth_response(<<"OneAPIAuthResp">>,
+                    {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
                     ?log_debug("Auth allowed", []),
-                    encode_response(<<"OneAPIAuthResp">>, Response);
+                    encode_response(RespCT, Response);
                 {deny, Reason} ->
-                    {ok, Response} = build_error_response(<<"OneAPIAuthResp">>,
+                    {ok, Response} = build_error_response(RespCT,
                         ReqId, {deny, Reason}),
                     ?log_notice("Auth denied: ~p", [Reason]),
-                    encode_response(<<"OneAPIAuthResp">>, Response);
+                    encode_response(RespCT, Response);
                 {error, Reason} ->
-                    {ok, Response} = build_error_response(<<"OneAPIAuthResp">>,
+                    {ok, Response} = build_error_response(RespCT,
                         ReqId, {error, Reason}),
                     ?log_error("Auth error: ~p", [Reason]),
-                    encode_response(<<"OneAPIAuthResp">>, Response)
+                    encode_response(RespCT, Response)
             end;
         {error, Error} ->
             ?log_error("Auth request decode error: ~p", [Error]),
-            {ok, []}
+            noreply
     end;
 process(<<"AuthReqV1">>, ReqBin) ->
+    RespCT = <<"AuthRespV1">>,
     case adto:decode(#auth_req_v1{}, ReqBin) of
         {ok, AuthReq} ->
             ?log_debug("Got auth request: ~p", [AuthReq]),
@@ -99,28 +102,28 @@ process(<<"AuthReqV1">>, ReqBin) ->
                 {allow, Customer = #customer{}} ->
                     {ok, Networks, Providers} = build_networks_and_providers(Customer),
                     Features = get_features(UserId, Customer),
-                    {ok, Response} = build_auth_response(<<"AuthRespV1">>,
+                    {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
                     ?log_debug("Auth allowed", []),
-                    encode_response(<<"AuthRespV1">>, Response);
+                    encode_response(RespCT, Response);
                 {deny, Reason} ->
-                    {ok, Response} = build_error_response(<<"AuthRespV1">>,
+                    {ok, Response} = build_error_response(RespCT,
                         ReqId, {deny, Reason}),
                     ?log_notice("Auth denied: ~p", [Reason]),
-                    encode_response(<<"AuthRespV1">>, Response);
+                    encode_response(RespCT, Response);
                 {error, Reason} ->
-                    {ok, Response} = build_error_response(<<"AuthRespV1">>,
+                    {ok, Response} = build_error_response(RespCT,
                         ReqId, {error, Reason}),
                     ?log_error("Auth error: ~p", [Reason]),
-                    encode_response(<<"AuthRespV1">>, Response)
+                    encode_response(RespCT, Response)
             end;
         {error, Error} ->
             ?log_error("Auth request decode error: ~p", [Error]),
-            {ok, []}
+            noreply
     end;
 process(ContentType, ReqBin) ->
     ?log_error("Got unknown auth request: ~p ~p", [ContentType, ReqBin]),
-    {ok, []}.
+    noreply.
 
 -spec authenticate(customer_uuid(), user_id(), binary(), atom()) ->
     {allow, #customer{}} |
@@ -421,7 +424,7 @@ encode_response(ContentType, Response) ->
             {ContentType, RespBin};
         {error, Error} ->
             ?log_error("Unexpected auth response encode error: ~p", [Error]),
-            {ok, []}
+            noreply
     end.
 
 allowed_sources(Originators) ->
