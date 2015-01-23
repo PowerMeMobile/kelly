@@ -35,20 +35,23 @@ process(Req) ->
 %% Internal
 %% ===================================================================
 
-process(<<"SmsRequest">>, Message) ->
-    case adto:decode(#just_sms_request_dto{}, Message) of
+process(<<"SmsRequest">>, ReqBin) ->
+    case adto:decode(#just_sms_request_dto{}, ReqBin) of
         {ok, SmsReq} ->
             process_sms_request(SmsReq);
         Error ->
             Error
     end;
-process(<<"OneAPISmsRequest">>, Message) ->
-    case adto:decode(#just_sms_request_dto{}, Message) of
+process(<<"OneAPISmsRequest">>, ReqBin) ->
+    case adto:decode(#just_sms_request_dto{}, ReqBin) of
         {ok, SmsReq} ->
             process_sms_request(SmsReq);
         Error ->
             Error
-    end.
+    end;
+process(ReqCT, ReqBin) ->
+    ?log_error("Got unknown sms request: ~p ~p", [ReqCT, ReqBin]),
+    {ok, []}.
 
 -spec process_sms_request(#just_sms_request_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
 process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->

@@ -21,18 +21,21 @@ process(Req) ->
 %% Internal
 %% ===================================================================
 
-process(<<"SmsResponse">>, Message) ->
-    case adto:decode(#just_sms_response_dto{}, Message) of
-        {ok, SmsResponse} ->
-            process_sms_response(SmsResponse);
+process(<<"SmsResponse">>, ReqBin) ->
+    case adto:decode(#just_sms_response_dto{}, ReqBin) of
+        {ok, SmsResp} ->
+            process_sms_response(SmsResp);
         Error ->
             Error
-    end.
+    end;
+process(ReqCT, ReqBin) ->
+    ?log_error("Got unknown sms response: ~p ~p", [ReqCT, ReqBin]),
+    {ok, []}.
 
 -spec process_sms_response(#just_sms_response_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
-process_sms_response(SmsResponse = #just_sms_response_dto{}) ->
-    ?log_debug("Got sms response: ~p", [SmsResponse]),
-    RespInfos = sms_response_to_resp_info_list(SmsResponse),
+process_sms_response(SmsResp = #just_sms_response_dto{}) ->
+    ?log_debug("Got sms response: ~p", [SmsResp]),
+    RespInfos = sms_response_to_resp_info_list(SmsResp),
     case ac_utils:safe_foreach(
         fun k_dynamic_storage:set_mt_resp_info/1, RespInfos, ok, {error, '_'}
     ) of

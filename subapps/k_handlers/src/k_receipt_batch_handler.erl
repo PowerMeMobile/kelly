@@ -26,8 +26,8 @@ process(Req) ->
 
 -spec process(binary(), binary()) ->
     {ok, [#worker_reply{}]} | {error, any()}.
-process(<<"ReceiptBatch">>, Message) ->
-    case adto:decode(#just_delivery_receipt_dto{}, Message) of
+process(<<"ReceiptBatch">>, ReqBin) ->
+    case adto:decode(#just_delivery_receipt_dto{}, ReqBin) of
         {ok, ReceiptBatch} ->
             ?log_debug("Got receipt batch: ~p", [ReceiptBatch]),
             %% it's quite possible that req/resp aren't handled yet or
@@ -50,8 +50,8 @@ process(<<"ReceiptBatch">>, Message) ->
         Error ->
             Error
     end;
-process(ContentType, Message) ->
-    ?log_warn("Got unexpected message of type ~p: ~p", [ContentType, Message]),
+process(ReqCT, ReqBin) ->
+    ?log_error("Got unknown receipt batch ~p: ~p", [ReqCT, ReqBin]),
     {ok, []}.
 
 process_batch_with_timeouts(_ReceiptBatch, []) ->
