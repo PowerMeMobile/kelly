@@ -42,6 +42,13 @@ process(<<"SmsRequest">>, ReqBin) ->
         Error ->
             Error
     end;
+process(<<"SmsRequest2">>, ReqBin) ->
+    case adto:decode(#just_sms_request_dto{}, ReqBin) of
+        {ok, SmsReq} ->
+            process_sms_request(SmsReq);
+        Error ->
+            Error
+    end;
 process(<<"OneAPISmsRequest">>, ReqBin) ->
     case adto:decode(#just_sms_request_dto{}, ReqBin) of
         {ok, SmsReq} ->
