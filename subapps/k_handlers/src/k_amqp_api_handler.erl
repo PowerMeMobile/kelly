@@ -189,6 +189,29 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReq">> ->
             {ReqCT, <<>>}
     end;
 
+process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReqV1">> ->
+    case adto:decode(#retrieve_sms_req_v1{}, ReqBin) of
+        {ok, ReqDTO} ->
+            ?log_debug("Got retrieve sms request: ~p", [ReqDTO]),
+            case k_retrieve_sms_request_processor:process(ReqDTO) of
+                {ok, RespDTO} ->
+                    ?log_debug("Built retrieve sms response: ~p", [RespDTO]),
+                    case adto:encode(RespDTO) of
+                        {ok, RespBin} ->
+                            {<<"RetrieveSmsRespV1">>, RespBin};
+                        {error, Error} ->
+                            ?log_error("Retrieve sms response decode error: ~p", [Error]),
+                            {ReqCT, <<>>}
+                    end;
+                {error, Error} ->
+                    ?log_error("Retrieve sms request process error: ~p", [Error]),
+                    {ReqCT, <<>>}
+            end;
+        {error, Error} ->
+            ?log_error("Retrieve sms request decode error: ~p", [Error]),
+            {ReqCT, <<>>}
+    end;
+
 process(ReqCT, ReqBin) when ReqCT =:= <<"RequestCreditReq">> ->
     case adto:decode(#k1api_request_credit_request_dto{}, ReqBin) of
         {ok, ReqDTO} ->
