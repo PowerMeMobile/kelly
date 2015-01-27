@@ -26,7 +26,7 @@ process(Req = #k1api_blacklist_request_dto{}) ->
         Error ->
             Error
     end;
-process(Req) ->
+process(Req = #blacklist_req_v1{}) ->
     ReqId = Req#blacklist_req_v1.req_id,
 
     case k_storage_blacklist:get_blacklist_entries() of
