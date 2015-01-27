@@ -81,33 +81,43 @@ process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
             Error
     end.
 
--spec sms_request_to_req_info_list(#just_sms_request_dto{}, erlang:timestamp()) -> [#req_info{}].
+-spec sms_request_to_req_info_list(#just_sms_request_dto{}, erlang:timestamp())
+    -> [#req_info{}].
 sms_request_to_req_info_list(SmsReq, ReqTime) ->
     #just_sms_request_dto{
         type = Type,
         dest_addrs = {Type, DstAddrs},
-        message_ids = MsgIds
+        message_ids = MsgIds,
+        network_ids = NetIds,
+        prices = Prices
     } = SmsReq,
-    Pairs = lists:zip(DstAddrs, MsgIds),
-    build_req_infos(SmsReq, ReqTime, Pairs).
+    Quarts =
+        case {NetIds, Prices} of
+            {[], []} ->
+                Undefs = lists:duplicate(length(DstAddrs), undefined),
+                ac_lists:zip4(DstAddrs, MsgIds, Undefs, Undefs);
+            {NetIds, Prices} ->
+                ac_lists:zip4(DstAddrs, MsgIds, NetIds, Prices)
+        end,
+    build_req_infos(SmsReq, ReqTime, Quarts).
 
 build_req_infos(SmsReq, ReqTime, Pairs) ->
     build_req_infos(SmsReq, ReqTime, Pairs, []).
 
 build_req_infos(_, _, [], Acc) ->
     lists:reverse(Acc);
-build_req_infos(SmsReq, ReqTime, [{DstAddr, MsgId}|Pairs], Acc) ->
+build_req_infos(SmsReq, ReqTime, [{DstAddr,MsgId,NetId,Price}|Quarts], Acc) ->
     Type = SmsReq#just_sms_request_dto.type,
     ReqInfo =
         case request_type(Type, MsgId) of
             short ->
-                [build_short_req_info(SmsReq, ReqTime, DstAddr, MsgId)];
+                [build_short_req_info(SmsReq, ReqTime, DstAddr, MsgId, NetId, Price)];
             {long, MsgIds} ->
-                lists:reverse(build_long_req_infos(SmsReq, ReqTime, DstAddr, MsgIds));
+                lists:reverse(build_long_req_infos(SmsReq, ReqTime, DstAddr, MsgIds, NetId, Price));
             part ->
-                [build_part_req_info(SmsReq, ReqTime, DstAddr, MsgId)]
+                [build_part_req_info(SmsReq, ReqTime, DstAddr, MsgId, NetId, Price)]
         end,
-    build_req_infos(SmsReq, ReqTime, Pairs, ReqInfo ++ Acc).
+    build_req_infos(SmsReq, ReqTime, Quarts, ReqInfo ++ Acc).
 
 build_short_req_info(#just_sms_request_dto{
     id = ReqId,
@@ -120,7 +130,7 @@ build_short_req_info(#just_sms_request_dto{
     encoding = Encoding,
     params = Params,
     source_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId) ->
+}, ReqTime, DstAddr, InMsgId, NetId, Price) ->
     RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
     EsmClass = get_param_by_name(<<"esm_class">>, Params, 0),
     ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
@@ -139,7 +149,9 @@ build_short_req_info(#just_sms_request_dto{
         reg_dlr = RegDlr,
         esm_class = EsmClass,
         val_period = ValPeriod,
-        req_time = ReqTime
+        req_time = ReqTime,
+        network_id = NetId,
+        price = Price
     }.
 
 build_part_req_info(#just_sms_request_dto{
@@ -153,7 +165,7 @@ build_part_req_info(#just_sms_request_dto{
     encoding = Encoding,
     params = Params,
     source_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId) ->
+}, ReqTime, DstAddr, InMsgId, NetId, Price) ->
     PartRefNum = DstAddr#addr.ref_num,
     PartRefNum = get_param_by_name(<<"sar_msg_ref_num">>, Params, undefined),
     PartSeqNum = get_param_by_name(<<"sar_segment_seqnum">>, Params, undefined),
@@ -177,10 +189,12 @@ build_part_req_info(#just_sms_request_dto{
         reg_dlr = RegDlr,
         esm_class = EsmClass,
         val_period = ValPeriod,
-        req_time = ReqTime
+        req_time = ReqTime,
+        network_id = NetId,
+        price = Price
     }.
 
-build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds) ->
+build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price) ->
     Body = SmsReq#just_sms_request_dto.message,
     Encoding = SmsReq#just_sms_request_dto.encoding,
     Params = SmsReq#just_sms_request_dto.params,
@@ -193,7 +207,8 @@ build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds) ->
     BodyParts = split_msg(EncodedBody, Bitness, PortAddressing),
     [
         build_long_part_req_info(
-            SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal
+            SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal,
+            NetId, Price
         ) || {InMsgId, BodyPart, PartSeqNum} <- lists:zip3(InMsgIds, BodyParts, PartSeqNums)
     ].
 
@@ -206,7 +221,7 @@ build_long_part_req_info(#just_sms_request_dto{
     encoding = Encoding,
     params = Params,
     source_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal) ->
+}, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal, NetId, Price) ->
     RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
     EsmClass = get_param_by_name(<<"esm_class">>, Params, 0),
     ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
@@ -229,7 +244,9 @@ build_long_part_req_info(#just_sms_request_dto{
         reg_dlr = RegDlr,
         esm_class = EsmClass,
         val_period = ValPeriod,
-        req_time = ReqTime
+        req_time = ReqTime,
+        network_id = NetId,
+        price = Price
     }.
 
 -spec get_param_by_name(binary(), [#just_sms_request_param_dto{}], term()) -> term().
@@ -446,7 +463,9 @@ sms_request_to_req_info_list_regular_short_batch_test() ->
             #addr{addr = <<"1">>},
             #addr{addr = <<"2">>}
         ]},
-        message_ids = [<<"1">>, <<"2">>]
+        message_ids = [<<"1">>, <<"2">>],
+        network_ids = [<<"NID1">>, <<"NID2">>],
+        prices = [1.0, 2.0]
     },
     Expected = [
         #req_info{
@@ -464,7 +483,9 @@ sms_request_to_req_info_list_regular_short_batch_test() ->
            reg_dlr = false,
            esm_class = 3,
            val_period = <<"000003000000000R">>,
-           req_time = ReqTime
+           req_time = ReqTime,
+           network_id = <<"NID1">>,
+           price = 1.0
         },
         #req_info{
            req_id = RID,
@@ -481,7 +502,9 @@ sms_request_to_req_info_list_regular_short_batch_test() ->
            reg_dlr = false,
            esm_class = 3,
            val_period = <<"000003000000000R">>,
-           req_time = ReqTime
+           req_time = ReqTime,
+           network_id = <<"NID2">>,
+           price = 2.0
         }
     ],
     ?assertEqual(Expected, sms_request_to_req_info_list(SmsReq, ReqTime)).
@@ -555,7 +578,9 @@ sms_request_to_req_info_list_part_test() ->
         dest_addrs = {part,[
             #addr{addr = <<"1">>, ref_num = 249}
         ]},
-        message_ids = [<<"1">>]
+        message_ids = [<<"1">>],
+        network_ids = [<<"NID1">>],
+        prices = [1.0]
     },
     Expected = [
         #req_info{
@@ -573,7 +598,9 @@ sms_request_to_req_info_list_part_test() ->
             reg_dlr = false,
             esm_class = 0,
             val_period = <<"000003000000000R">>,
-            req_time = ReqTime
+            req_time = ReqTime,
+            network_id = <<"NID1">>,
+            price = 1.0
         }
     ],
     Actual = sms_request_to_req_info_list(SmsReq, ReqTime),
@@ -632,7 +659,9 @@ sms_request_to_req_info_list_multipart_test() ->
         dest_addrs = {regular,[
             #addr{addr = <<"1">>}
         ]},
-        message_ids = [<<"1:2:3">>]
+        message_ids = [<<"1:2:3">>],
+        network_ids = [<<"NID1">>],
+        prices = [1.0]
     },
     Expected = [
         #req_info{
@@ -650,7 +679,9 @@ sms_request_to_req_info_list_multipart_test() ->
             reg_dlr = false,
             esm_class = 0,
             val_period = <<"000003000000000R">>,
-            req_time = ReqTime
+            req_time = ReqTime,
+            network_id = <<"NID1">>,
+            price = 1.0
         },
         #req_info{
             req_id = RID,
@@ -667,7 +698,9 @@ sms_request_to_req_info_list_multipart_test() ->
             reg_dlr = false,
             esm_class = 0,
             val_period = <<"000003000000000R">>,
-            req_time = ReqTime
+            req_time = ReqTime,
+            network_id = <<"NID1">>,
+            price = 1.0
         },
         #req_info{
             req_id = RID,
@@ -684,7 +717,9 @@ sms_request_to_req_info_list_multipart_test() ->
             reg_dlr = false,
             esm_class = 0,
             val_period = <<"000003000000000R">>,
-            req_time = ReqTime
+            req_time = ReqTime,
+            network_id = <<"NID1">>,
+            price = 1.0
         }
     ],
     Actual = sms_request_to_req_info_list(SmsReq, ReqTime),

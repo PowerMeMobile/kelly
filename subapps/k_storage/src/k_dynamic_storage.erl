@@ -13,6 +13,7 @@
 -include("msg_info.hrl").
 -include("customer.hrl").
 
+%-define(TEST, 1).
 -ifdef(TEST).
    -include_lib("eunit/include/eunit.hrl").
 -endif.
@@ -214,7 +215,9 @@ set_mt_req_info_modifier(#req_info{
     reg_dlr = RegDlr,
     esm_class = EsmClass,
     val_period = ValPeriod,
-    req_time = ReqTime
+    req_time = ReqTime,
+    network_id = NetId,
+    price = Price
 }) when Type =:= regular ->
     {
         '$setOnInsert', {
@@ -223,7 +226,27 @@ set_mt_req_info_modifier(#req_info{
             'rpt', ?UNKNOWN_TIME,
             'dt' , ?UNKNOWN_TIME
         },
-        '$set', {
+        '$set',
+    if NetId =/= undefined ->
+        {
+            'ci' , CustomerId,
+            'ui' , UserId,
+            'ct' , bsondoc:atom_to_binary(ClientType),
+            'gi' , GatewayId,
+            't'  , bsondoc:atom_to_binary(Type),
+            'e'  , k_storage_utils:encoding_to_binary(Encoding),
+            'b'  , Body,
+            'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+            'da' , k_storage_utils:addr_to_doc(DstAddr),
+            'rd' , RegDlr,
+            'ec' , EsmClass,
+            'vp' , ValPeriod,
+            'rqt', ReqTime,
+            'ni' , NetId,
+            'p'  , Price
+        };
+        true ->
+        {
             'ci' , CustomerId,
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
@@ -238,6 +261,7 @@ set_mt_req_info_modifier(#req_info{
             'vp' , ValPeriod,
             'rqt', ReqTime
         }
+    end
     };
 set_mt_req_info_modifier(#req_info{
     customer_id = CustomerId,
@@ -252,7 +276,9 @@ set_mt_req_info_modifier(#req_info{
     reg_dlr = RegDlr,
     esm_class = EsmClass,
     val_period = ValPeriod,
-    req_time = ReqTime
+    req_time = ReqTime,
+    network_id = NetId,
+    price = Price
 }) when Type =:= part ->
     {
         '$setOnInsert', {
@@ -261,7 +287,32 @@ set_mt_req_info_modifier(#req_info{
             'rpt', ?UNKNOWN_TIME,
             'dt' , ?UNKNOWN_TIME
         },
-        '$set', {
+        '$set',
+    if NetId =/= undefined ->
+        {
+            'ci' , CustomerId,
+            'ui' , UserId,
+            'ct' , bsondoc:atom_to_binary(ClientType),
+            'gi' , GatewayId,
+            't'  , {
+                'n' , bsondoc:atom_to_binary(Type),
+                'r' , PartRef,
+                's' , PartSeq,
+                't' , PartsTotal
+            },
+            'e'  , k_storage_utils:encoding_to_binary(Encoding),
+            'b'  , Body,
+            'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+            'da' , k_storage_utils:addr_to_doc(DstAddr),
+            'rd' , RegDlr,
+            'ec' , EsmClass,
+            'vp' , ValPeriod,
+            'rqt', ReqTime,
+            'ni' , NetId,
+            'p'  , Price
+        };
+        true ->
+        {
             'ci' , CustomerId,
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
@@ -281,6 +332,7 @@ set_mt_req_info_modifier(#req_info{
             'vp' , ValPeriod,
             'rqt', ReqTime
         }
+    end
     }.
 
 %% ===================================================================
@@ -289,7 +341,7 @@ set_mt_req_info_modifier(#req_info{
 
 -ifdef(TEST).
 
-set_mt_req_info_modifier_regular_test() ->
+set_mt_req_info_modifier_regular_undef_network_id_test() ->
     RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
     GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
     CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
@@ -319,7 +371,9 @@ set_mt_req_info_modifier_regular_test() ->
             reg_dlr = RegDlr,
             esm_class = EsmClass,
             val_period = ValPeriod,
-            req_time = ReqTime
+            req_time = ReqTime,
+            network_id = undefined,
+            price = undefined
     },
     Modifier = set_mt_req_info_modifier(ReqInfo),
     Expected = {
@@ -345,9 +399,75 @@ set_mt_req_info_modifier_regular_test() ->
             'rqt', ReqTime
         }
     },
+    %?debugFmt("~p~n", [Expected]),
+    %?debugFmt("~p~n", [Modifier]),
     ?assertEqual(Expected, Modifier).
 
-set_mt_req_info_modifier_part_test() ->
+set_mt_req_info_modifier_regular_test() ->
+    RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
+    GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
+    CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
+    UID = <<"user">>,
+    CT = funnel,
+    Body = <<"Hello">>,
+    Type = regular,
+    Encoding = default,
+    SrcAddr = #addr{},
+    DstAddr = #addr{},
+    RegDlr = false,
+    EsmClass = 0,
+    ValPeriod = <<"000003000000000R">>,
+    ReqTime = {0,0,0},
+    NID = <<"390a8f74-a60e-11e4-a113-28d2445f2979">>,
+    Price = 1.0,
+    ReqInfo = #req_info{
+            req_id = RID,
+            customer_id = CID,
+            user_id = UID,
+            client_type = CT,
+            in_msg_id = <<"3">>,
+            gateway_id = GID,
+            type = Type,
+            encoding = Encoding,
+            body = Body,
+            src_addr = SrcAddr,
+            dst_addr = DstAddr,
+            reg_dlr = RegDlr,
+            esm_class = EsmClass,
+            val_period = ValPeriod,
+            req_time = ReqTime,
+            network_id = NID,
+            price = Price
+    },
+    Modifier = set_mt_req_info_modifier(ReqInfo),
+    Expected = {
+        '$setOnInsert', {
+            's'  , <<"pending">>,
+            'omi', ?UNKNOWN_ID,
+            'rpt', ?UNKNOWN_TIME,
+            'dt' , ?UNKNOWN_TIME
+        },
+        '$set', {
+            'ci' , CID,
+            'ui' , UID,
+            'ct' , bsondoc:atom_to_binary(CT),
+            'gi' , GID,
+            't'  , bsondoc:atom_to_binary(Type),
+            'e'  , k_storage_utils:encoding_to_binary(Encoding),
+            'b'  , Body,
+            'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+            'da' , k_storage_utils:addr_to_doc(DstAddr),
+            'rd' , RegDlr,
+            'ec' , EsmClass,
+            'vp' , ValPeriod,
+            'rqt', ReqTime,
+            'ni' , NID,
+            'p'  , Price
+        }
+    },
+    ?assertEqual(Expected, Modifier).
+
+set_mt_req_info_modifier_part_unfed_network_id_test() ->
     RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
     GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
     CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
@@ -380,7 +500,9 @@ set_mt_req_info_modifier_part_test() ->
             reg_dlr = RegDlr,
             esm_class = EsmClass,
             val_period = ValPeriod,
-            req_time = ReqTime
+            req_time = ReqTime,
+            network_id = undefined,
+            price = undefined
     },
     Modifier = set_mt_req_info_modifier(ReqInfo),
     Expected = {
@@ -409,6 +531,78 @@ set_mt_req_info_modifier_part_test() ->
             'ec' , EsmClass,
             'vp' , ValPeriod,
             'rqt', ReqTime
+        }
+    },
+    ?assertEqual(Expected, Modifier).
+
+set_mt_req_info_modifier_part_test() ->
+    RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
+    GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
+    CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
+    UID = <<"user">>,
+    CT = funnel,
+    Body = <<"Hello">>,
+    Type = part,
+    Encoding = default,
+    PartRef = 249,
+    PartSeq = 3,
+    PartsTotal = 3,
+    SrcAddr = #addr{},
+    DstAddr = #addr{},
+    RegDlr = false,
+    EsmClass = 0,
+    ValPeriod = <<"000003000000000R">>,
+    ReqTime = {0,0,0},
+    NID = <<"390a8f74-a60e-11e4-a113-28d2445f2979">>,
+    Price = 1.0,
+    ReqInfo = #req_info{
+            req_id = RID,
+            customer_id = CID,
+            user_id = UID,
+            client_type = CT,
+            in_msg_id = <<"3">>,
+            gateway_id = GID,
+            type = {part, #part_info{ref = PartRef, seq = PartSeq, total = PartsTotal}},
+            encoding = Encoding,
+            body = Body,
+            src_addr = SrcAddr,
+            dst_addr = DstAddr,
+            reg_dlr = RegDlr,
+            esm_class = EsmClass,
+            val_period = ValPeriod,
+            req_time = ReqTime,
+            network_id = NID,
+            price = Price
+    },
+    Modifier = set_mt_req_info_modifier(ReqInfo),
+    Expected = {
+        '$setOnInsert', {
+            's'  , <<"pending">>,
+            'omi', ?UNKNOWN_ID,
+            'rpt', ?UNKNOWN_TIME,
+            'dt' , ?UNKNOWN_TIME
+        },
+        '$set', {
+            'ci' , CID,
+            'ui' , UID,
+            'ct' , bsondoc:atom_to_binary(CT),
+            'gi' , GID,
+            't'  , {
+                'n' , bsondoc:atom_to_binary(Type),
+                'r' , PartRef,
+                's' , PartSeq,
+                't' , PartsTotal
+            },
+            'e'  , k_storage_utils:encoding_to_binary(Encoding),
+            'b'  , Body,
+            'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+            'da' , k_storage_utils:addr_to_doc(DstAddr),
+            'rd' , RegDlr,
+            'ec' , EsmClass,
+            'vp' , ValPeriod,
+            'rqt', ReqTime,
+            'ni' , NID,
+            'p'  , Price
         }
     },
     ?assertEqual(Expected, Modifier).

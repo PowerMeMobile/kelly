@@ -58,7 +58,9 @@
     reg_dlr :: boolean(),
     esm_class  :: esm_class(),
     val_period :: val_period(),
-    req_time :: timestamp()
+    req_time :: timestamp(),
+    network_id :: network_id(),
+    price :: float()
 }).
 
 -record(resp_info, {
@@ -100,7 +102,9 @@
     status :: status(),
     req_time :: timestamp(),
     resp_time :: timestamp(),
-    dlr_time :: timestamp()
+    dlr_time :: timestamp(),
+    network_id :: network_id(),
+    price :: float()
 }).
 
 -endif. % msg_info_hrl
