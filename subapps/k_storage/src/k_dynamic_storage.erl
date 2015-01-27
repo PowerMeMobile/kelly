@@ -467,7 +467,7 @@ set_mt_req_info_modifier_regular_test() ->
     },
     ?assertEqual(Expected, Modifier).
 
-set_mt_req_info_modifier_part_unfed_network_id_test() ->
+set_mt_req_info_modifier_part_undef_network_id_test() ->
     RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
     GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
     CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
