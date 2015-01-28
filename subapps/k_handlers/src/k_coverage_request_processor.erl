@@ -27,14 +27,29 @@ process(Req = #k1api_coverage_request_dto{}) ->
                     NetworkIds = NetworkMap#network_map.network_ids,
                     Networks = get_networks(NetworkIds),
                     Providers = get_providers(Networks),
+                    DefProvId = Customer#customer.default_provider_id,
+                    Providers2 =
+                        case DefProvId of
+                            undefined ->
+                                Providers;
+                            _ ->
+                                case k_storage_providers:get_provider(DefProvId) of
+                                    {ok, DefaultProvider} ->
+                                        insert_if_not_member(DefaultProvider, Providers);
+                                    {error, Error} ->
+                                        ?log_error("Get default provider id: ~p from customer id: ~p failed with: ~p",
+                                            [DefProvId, Customer#customer.customer_uuid, Error]),
+                                        %% TODO: this will fail on client on price calculation.
+                                        Providers
+                                end
+                        end,
                     NetworksDTO = [network_to_dto(N) || N <- Networks],
-                    ProvidersDTO = [provider_to_dto(P) || P <- Providers],
-                    DefaultProviderId = Customer#customer.default_provider_id,
+                    ProvidersDTO = [provider_to_dto(P) || P <- Providers2],
                     {ok, #k1api_coverage_response_dto{
                         id = ReqId,
                         networks = NetworksDTO,
                         providers = ProvidersDTO,
-                        default_provider_id = DefaultProviderId
+                        default_provider_id = DefProvId
                     }};
                 {error, Error} ->
                     ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
@@ -56,14 +71,29 @@ process(Req = #coverage_req_v1{}) ->
                     NetworkIds = NetworkMap#network_map.network_ids,
                     Networks = get_networks(NetworkIds),
                     Providers = get_providers(Networks),
-                    Networks2 = [network_to_v1(N) || N <- Networks],
-                    Providers2 = [provider_to_v1(P) || P <- Providers],
-                    DefaultProviderId = Customer#customer.default_provider_id,
+                    DefProvId = Customer#customer.default_provider_id,
+                    Providers2 =
+                        case DefProvId of
+                            undefined ->
+                                Providers;
+                            _ ->
+                                case k_storage_providers:get_provider(DefProvId) of
+                                    {ok, DefaultProvider} ->
+                                        insert_if_not_member(DefaultProvider, Providers);
+                                    {error, Error} ->
+                                        ?log_error("Get default provider id: ~p from customer id: ~p failed with: ~p",
+                                            [DefProvId, Customer#customer.customer_uuid, Error]),
+                                        %% TODO: this will fail on client on price calculation.
+                                        Providers
+                                end
+                        end,
+                    NetworksV1 = [network_to_v1(N) || N <- Networks],
+                    ProvidersV1 = [provider_to_v1(P) || P <- Providers2],
                     {ok, #coverage_resp_v1{
                         req_id = ReqId,
-                        networks = Networks2,
-                        providers = Providers2,
-                        default_provider_id = DefaultProviderId
+                        networks = NetworksV1,
+                        providers = ProvidersV1,
+                        default_provider_id = DefProvId
                     }};
                 {error, Error} ->
                     ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
@@ -105,6 +135,12 @@ get_providers([ProvId | ProvIds], Acc) ->
         {error, Error} ->
             ?log_error("Get provider id: ~p failed with: ~p", [ProvId, Error]),
             get_providers(ProvIds, Acc)
+    end.
+
+insert_if_not_member(P, Ps) ->
+    case lists:member(P, Ps) of
+        true -> Ps;
+        false -> [P | Ps]
     end.
 
 network_to_dto(Network) ->

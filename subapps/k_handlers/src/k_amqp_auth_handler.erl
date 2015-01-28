@@ -220,7 +220,7 @@ check_credit_limit(Customer) ->
 
 build_networks_and_providers(Customer) ->
     NetworkMapId = Customer#customer.network_map_id,
-    DefaultProviderId = Customer#customer.default_provider_id,
+    DefProvId = Customer#customer.default_provider_id,
 
     case k_storage_network_maps:get_network_map(NetworkMapId) of
         {ok, #network_map{network_ids = NetworkIds}} ->
@@ -243,16 +243,17 @@ build_networks_and_providers(Customer) ->
                 end
             end, {[], []}, NetworkIds),
             %% add default provider to providers list.
-            case DefaultProviderId of
+            case DefProvId of
                 undefined ->
                     {ok, Networks, Providers};
                 _ ->
-                    case k_storage_providers:get_provider(DefaultProviderId) of
+                    case k_storage_providers:get_provider(DefProvId) of
                         {ok, DefaultProvider} ->
                             {ok, Networks, insert_if_not_member(DefaultProvider, Providers)};
                         {error, Error} ->
                             ?log_error("Get default provider id: ~p from customer id: ~p failed with: ~p",
-                                [DefaultProviderId, Customer#customer.customer_uuid, Error]),
+                                [DefProvId, Customer#customer.customer_uuid, Error]),
+                            %% TODO: this will fail on client on price calculation.
                             {ok, Networks, Providers}
                     end
             end;
