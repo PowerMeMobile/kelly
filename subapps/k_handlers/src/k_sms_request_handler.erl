@@ -167,7 +167,14 @@ build_part_req_info(#just_sms_request_dto{
     source_addr = SrcAddr
 }, ReqTime, DstAddr, InMsgId, NetId, Price) ->
     PartRefNum = DstAddr#addr.ref_num,
-    PartRefNum = get_param_by_name(<<"sar_msg_ref_num">>, Params, undefined),
+    %%
+    %% This sending breaks the matching below because there might be two dest addrs with
+    %% ref_nums not equal to sar_msg_ref_num. I have no idea who (Kelly or Funnel) should
+    %% and how to handle such a situation as it's very artifical. But code MUST NOT crash.
+    %% The sending will be split to 4 part messages each with its own dest_addr.
+    %% smppload -s375296660001 -d375296543:3 -b"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" -D -c2 -vv
+    %% PartRefNum = get_param_by_name(<<"sar_msg_ref_num">>, Params, undefined),
+    %%
     PartSeqNum = get_param_by_name(<<"sar_segment_seqnum">>, Params, undefined),
     PartsTotal = get_param_by_name(<<"sar_total_segments">>, Params, undefined),
 
