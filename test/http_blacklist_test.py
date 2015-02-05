@@ -44,6 +44,16 @@ def test_create_entry_succ(http):
     assert json['src_addr']['ton'] == 5
     assert json['src_addr']['npi'] == 0
 
+def test_create_entry_wo_src_addr_succ(http):
+    req = http.post(BASE_URL, data={'id':ENTRY_ID,
+                                    'dst_addr':'375296000001,1,1'})
+    assert req.status_code == 201
+    json = req.json()
+    assert json['id'] == ENTRY_ID
+    assert json['dst_addr']['addr'] == '375296000001'
+    assert json['dst_addr']['ton'] == 1
+    assert json['dst_addr']['npi'] == 1
+
 def test_read_succ(http):
     req = http.post(BASE_URL, data={'id':ENTRY_ID,
                                     'dst_addr':'375296000001,1,1',
