@@ -189,6 +189,7 @@ update_customer(Customer, Params) ->
         state = NewState
     },
 
+    k_snmp:set_customer(CustomerUuid, NewRps, NewPriority),
     ok = k_storage_customers:set_customer(CustomerUuid, NewCustomer),
     {ok, [Plist]} = prepare(NewCustomer),
     ?log_debug("Customer: ~p", [Plist]),
