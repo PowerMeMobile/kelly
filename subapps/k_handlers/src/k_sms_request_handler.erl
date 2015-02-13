@@ -29,46 +29,65 @@
 process(Req) ->
     {ok, ContentType} = k_amqp_req:content_type(Req),
     {ok, Payload} = k_amqp_req:payload(Req),
-    process(ContentType, Payload).
+    try
+        process(ContentType, Payload)
+    catch
+        _:_ ->
+            ?log_error("Exception: ~p~n", [erlang:get_stacktrace()]),
+            {ok, []}
+    end.
 
 %% ===================================================================
 %% Internal
 %% ===================================================================
 
+%% deprecated
 process(<<"SmsRequest">>, ReqBin) ->
-    case adto:decode(#just_sms_request_dto{}, ReqBin) of
-        {ok, SmsReq} ->
-            process_sms_request(SmsReq);
-        Error ->
-            Error
-    end;
+    {ok, SmsReq} = adto:decode(#just_sms_request_dto{}, ReqBin),
+    process_sms_req(SmsReq);
 process(<<"SmsRequest2">>, ReqBin) ->
-    case adto:decode(#just_sms_request_dto{}, ReqBin) of
-        {ok, SmsReq} ->
-            process_sms_request(SmsReq);
-        Error ->
-            Error
-    end;
+    {ok, SmsReq} = adto:decode(#just_sms_request_dto{}, ReqBin),
+    process_sms_req(SmsReq);
+%% deprecated
 process(<<"OneAPISmsRequest">>, ReqBin) ->
-    case adto:decode(#just_sms_request_dto{}, ReqBin) of
-        {ok, SmsReq} ->
-            process_sms_request(SmsReq);
-        Error ->
-            Error
-    end;
+    {ok, SmsReq} = adto:decode(#just_sms_request_dto{}, ReqBin),
+    process_sms_req(SmsReq);
+process(<<"SmsReqV1">>, ReqBin) ->
+    {ok, SmsReq} = adto:decode(#sms_req_v1{}, ReqBin),
+    process_sms_req(SmsReq);
 process(ReqCT, ReqBin) ->
     ?log_error("Got unknown sms request: ~p ~p", [ReqCT, ReqBin]),
     {ok, []}.
 
--spec process_sms_request(#just_sms_request_dto{}) -> {ok, [#worker_reply{}]} | {error, any()}.
-process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
+-spec process_sms_req(#just_sms_request_dto{} | #sms_req_v1{}) ->
+    {ok, [#worker_reply{}]} | {error, any()}.
+process_sms_req(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
     ?log_debug("Got sms request: ~p", [SmsReq]),
     ReqTime = ac_datetime:utc_timestamp(),
-    ReqInfos = sms_request_to_req_info_list(SmsReq, ReqTime),
+    ReqInfos = dto_sms_req_to_req_infos(SmsReq, ReqTime),
     case ClientType of
         oneapi ->
             InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
-            process_oneapi_req(SmsReq, InMsgIds);
+            dto_process_oneapi_req(SmsReq, InMsgIds);
+        _ ->
+            nop
+    end,
+    case ac_utils:safe_foreach(
+        fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
+    ) of
+        ok ->
+            {ok, []};
+        Error ->
+            Error
+    end;
+process_sms_req(#sms_req_v1{interface = ClientType} = SmsReq) ->
+    ?log_debug("Got sms request: ~p", [SmsReq]),
+    ReqTime = ac_datetime:utc_timestamp(),
+    ReqInfos = v1_sms_req_to_req_infos(SmsReq, ReqTime),
+    case ClientType of
+        oneapi ->
+            InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
+            v1_process_oneapi_req(SmsReq, InMsgIds);
         _ ->
             nop
     end,
@@ -81,9 +100,13 @@ process_sms_request(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
             Error
     end.
 
--spec sms_request_to_req_info_list(#just_sms_request_dto{}, erlang:timestamp())
+%% ===================================================================
+%% #just_sms_request_dto{} specific
+%% ===================================================================
+
+-spec dto_sms_req_to_req_infos(#just_sms_request_dto{}, erlang:timestamp())
     -> [#req_info{}].
-sms_request_to_req_info_list(SmsReq, ReqTime) ->
+dto_sms_req_to_req_infos(SmsReq, ReqTime) ->
     #just_sms_request_dto{
         type = Type,
         dest_addrs = {Type, DstAddrs},
@@ -99,27 +122,24 @@ sms_request_to_req_info_list(SmsReq, ReqTime) ->
             {NetIds, Prices} ->
                 ac_lists:zip4(DstAddrs, MsgIds, NetIds, Prices)
         end,
-    build_req_infos(SmsReq, ReqTime, Quarts).
+    dto_build_req_infos(SmsReq, ReqTime, Quarts, []).
 
-build_req_infos(SmsReq, ReqTime, Pairs) ->
-    build_req_infos(SmsReq, ReqTime, Pairs, []).
-
-build_req_infos(_, _, [], Acc) ->
+dto_build_req_infos(_, _, [], Acc) ->
     lists:reverse(Acc);
-build_req_infos(SmsReq, ReqTime, [{DstAddr,MsgId,NetId,Price}|Quarts], Acc) ->
+dto_build_req_infos(SmsReq, ReqTime, [{DstAddr,MsgId,NetId,Price}|Quarts], Acc) ->
     Type = SmsReq#just_sms_request_dto.type,
     ReqInfo =
         case request_type(Type, MsgId) of
             short ->
-                [build_short_req_info(SmsReq, ReqTime, DstAddr, MsgId, NetId, Price)];
+                [dto_build_short_req_info(SmsReq, ReqTime, DstAddr, MsgId, NetId, Price)];
             {long, MsgIds} ->
-                lists:reverse(build_long_req_infos(SmsReq, ReqTime, DstAddr, MsgIds, NetId, Price));
+                lists:reverse(dto_build_long_req_infos(SmsReq, ReqTime, DstAddr, MsgIds, NetId, Price));
             part ->
-                [build_part_req_info(SmsReq, ReqTime, DstAddr, MsgId, NetId, Price)]
+                [dto_build_part_req_info(SmsReq, ReqTime, DstAddr, MsgId, NetId, Price)]
         end,
-    build_req_infos(SmsReq, ReqTime, Quarts, ReqInfo ++ Acc).
+    dto_build_req_infos(SmsReq, ReqTime, Quarts, ReqInfo ++ Acc).
 
-build_short_req_info(#just_sms_request_dto{
+dto_build_short_req_info(#just_sms_request_dto{
     id = ReqId,
     client_type = ClientType,
     customer_id = CustomerId,
@@ -131,9 +151,9 @@ build_short_req_info(#just_sms_request_dto{
     params = Params,
     source_addr = SrcAddr
 }, ReqTime, DstAddr, InMsgId, NetId, Price) ->
-    RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
-    EsmClass = get_param_by_name(<<"esm_class">>, Params, 0),
-    ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
+    RegDlr = dto_get_param(<<"registered_delivery">>, Params, false),
+    EsmClass = dto_get_param(<<"esm_class">>, Params, 0),
+    ValPeriod = dto_get_param(<<"validity_period">>, Params, <<"">>),
     #req_info{
         req_id = ReqId,
         customer_id = CustomerId,
@@ -154,7 +174,7 @@ build_short_req_info(#just_sms_request_dto{
         price = Price
     }.
 
-build_part_req_info(#just_sms_request_dto{
+dto_build_part_req_info(#just_sms_request_dto{
     id = ReqId,
     customer_id = CustomerId,
     user_id = UserId,
@@ -173,14 +193,14 @@ build_part_req_info(#just_sms_request_dto{
     %% and how to handle such a situation as it's very artifical. But code MUST NOT crash.
     %% The sending will be split to 4 part messages each with its own dest_addr.
     %% smppload -s375296660001 -d375296543:3 -b"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" -D -c2 -vv
-    %% PartRefNum = get_param_by_name(<<"sar_msg_ref_num">>, Params, undefined),
+    %% PartRefNum = dto_get_param(<<"sar_msg_ref_num">>, Params, undefined),
     %%
-    PartSeqNum = get_param_by_name(<<"sar_segment_seqnum">>, Params, undefined),
-    PartsTotal = get_param_by_name(<<"sar_total_segments">>, Params, undefined),
+    PartSeqNum = dto_get_param(<<"sar_segment_seqnum">>, Params, undefined),
+    PartsTotal = dto_get_param(<<"sar_total_segments">>, Params, undefined),
 
-    RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
-    EsmClass = get_param_by_name(<<"esm_class">>, Params, 0),
-    ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
+    RegDlr = dto_get_param(<<"registered_delivery">>, Params, false),
+    EsmClass = dto_get_param(<<"esm_class">>, Params, 0),
+    ValPeriod = dto_get_param(<<"validity_period">>, Params, <<"">>),
     #req_info{
         req_id = ReqId,
         customer_id = CustomerId,
@@ -201,25 +221,27 @@ build_part_req_info(#just_sms_request_dto{
         price = Price
     }.
 
-build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price) ->
+dto_build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price) ->
     Body = SmsReq#just_sms_request_dto.message,
     Encoding = SmsReq#just_sms_request_dto.encoding,
     Params = SmsReq#just_sms_request_dto.params,
     {Encoding2, _DC, Bitness} = encoding_dc_bitness(Encoding, Params, default_gateway_settings()),
     EncodedBody = encode_msg(Body, Encoding2),
-    PortAddressing = port_addressing(Params),
+    SrcPort = dto_get_param(<<"source_port">>, Params, undefined),
+    DstPort = dto_get_param(<<"destination_port">>, Params, undefined),
+    PortAddressing = port_addressing(SrcPort, DstPort),
 
     PartsTotal = length(InMsgIds),
     PartSeqNums = lists:seq(1, PartsTotal),
     BodyParts = split_msg(EncodedBody, Bitness, PortAddressing),
     [
-        build_long_part_req_info(
+        dto_build_long_part_req_info(
             SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal,
             NetId, Price
         ) || {InMsgId, BodyPart, PartSeqNum} <- lists:zip3(InMsgIds, BodyParts, PartSeqNums)
     ].
 
-build_long_part_req_info(#just_sms_request_dto{
+dto_build_long_part_req_info(#just_sms_request_dto{
     id = ReqId,
     client_type = ClientType,
     customer_id = CustomerId,
@@ -229,9 +251,9 @@ build_long_part_req_info(#just_sms_request_dto{
     params = Params,
     source_addr = SrcAddr
 }, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal, NetId, Price) ->
-    RegDlr = get_param_by_name(<<"registered_delivery">>, Params, false),
-    EsmClass = get_param_by_name(<<"esm_class">>, Params, 0),
-    ValPeriod = get_param_by_name(<<"validity_period">>, Params, <<"">>),
+    RegDlr = dto_get_param(<<"registered_delivery">>, Params, false),
+    EsmClass = dto_get_param(<<"esm_class">>, Params, 0),
+    ValPeriod = dto_get_param(<<"validity_period">>, Params, <<"">>),
     #req_info{
         req_id = ReqId,
         customer_id = CustomerId,
@@ -256,8 +278,8 @@ build_long_part_req_info(#just_sms_request_dto{
         price = Price
     }.
 
--spec get_param_by_name(binary(), [#just_sms_request_param_dto{}], term()) -> term().
-get_param_by_name(Name, Params, Default) ->
+-spec dto_get_param(binary(), [#just_sms_request_param_dto{}], term()) -> term().
+dto_get_param(Name, Params, Default) ->
     case lists:keyfind(Name, #just_sms_request_param_dto.name, Params) of
         false ->
             Default;
@@ -265,7 +287,7 @@ get_param_by_name(Name, Params, Default) ->
             Value
     end.
 
-process_oneapi_req(#just_sms_request_dto{
+dto_process_oneapi_req(#just_sms_request_dto{
     client_type = oneapi,
     id = ReqId,
     customer_id = CustomerId,
@@ -273,8 +295,8 @@ process_oneapi_req(#just_sms_request_dto{
     params = Params,
     source_addr = SrcAddr
 }, InMsgIds) ->
-    NotifyURL = get_param_by_name(<<"oneapi_notify_url">>, Params, undefined),
-    CallbackData = get_param_by_name(<<"oneapi_callback_data">>, Params, undefined),
+    NotifyURL = dto_get_param(<<"oneapi_notify_url">>, Params, undefined),
+    CallbackData = dto_get_param(<<"oneapi_callback_data">>, Params, undefined),
     ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
     case create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
             NotifyURL, CallbackData, ReqId, InMsgIds) of
@@ -284,9 +306,199 @@ process_oneapi_req(#just_sms_request_dto{
         nop ->
             ?log_debug("Receipt subscription didn't requested", []),
             ok
-    end;
-process_oneapi_req(_, _) ->
-    ok.
+    end.
+
+%% ===================================================================
+%% #sms_req_v1{} specific
+%% ===================================================================
+
+-spec v1_sms_req_to_req_infos(#sms_req_v1{}, erlang:timestamp())
+    -> [#req_info{}].
+v1_sms_req_to_req_infos(SmsReq, ReqTime) ->
+    #sms_req_v1{
+        dst_addrs = DstAddrs,
+        in_msg_ids = InMsgIds,
+        %%
+        encodings = Encodings,
+        messages = Messages,
+        paramss = Paramss,
+        net_ids = NetIds,
+        prices = Prices
+    } = SmsReq,
+    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Messages, Encodings, Paramss, []).
+
+v1_build_req_infos(_, _, [], [], [], [], [], [], [], Acc) ->
+    lists:reverse(Acc);
+v1_build_req_infos(SmsReq, ReqTime,
+    [DstAddr|DstAddrs], [InMsgId|InMsgIds], [NetId|NetIds], [Price|Prices],
+    [Msg|Msgs], [Encoding|Encodings], [Params|Paramss], Acc
+) ->
+    Type = SmsReq#sms_req_v1.type,
+    ReqInfo =
+        case request_type(Type, InMsgId) of
+            short ->
+                [v1_build_short_req_info(SmsReq, ReqTime, DstAddr, InMsgId, NetId, Price, Msg, Encoding, Params)];
+            {long, MsgIds} ->
+                ?log_error("Not implemented", []);
+                %lists:reverse(v1_build_long_req_infos(SmsReq, ReqTime, DstAddr, MsgIds, NetId, Price));
+            part ->
+                ?log_error("Not implemented", [])
+                %[v1_build_part_req_info(SmsReq, ReqTime, DstAddr, MsgId, NetId, Price)]
+        end,
+    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Msgs, Encodings, Paramss, ReqInfo ++ Acc).
+
+v1_build_short_req_info(#sms_req_v1{
+    req_id = ReqId,
+    interface = ClientType,
+    customer_id = CustomerId,
+    user_id = UserId,
+    gateway_id = GatewayId,
+    type = Type,
+    src_addr = SrcAddr
+}, ReqTime, DstAddr, InMsgId, NetId, Price, Body, Encoding, Params) ->
+    RegDlr = ?gv(registered_delivery, Params, false),
+    EsmClass = ?gv(esm_class, Params, 0),
+    ValPeriod = ?gv(validity_period, Params, <<"">>),
+    #req_info{
+        req_id = ReqId,
+        customer_id = CustomerId,
+        user_id = UserId,
+        client_type = ClientType,
+        in_msg_id = InMsgId,
+        gateway_id = GatewayId,
+        type = Type,
+        encoding = Encoding,
+        body = Body,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
+        reg_dlr = RegDlr,
+        esm_class = EsmClass,
+        val_period = ValPeriod,
+        req_time = ReqTime,
+        network_id = NetId,
+        price = Price
+    }.
+
+v1_build_part_req_info(#sms_req_v1{
+    req_id = ReqId,
+    customer_id = CustomerId,
+    user_id = UserId,
+    interface = ClientType,
+    gateway_id = GatewayId,
+    type = part,
+    src_addr = SrcAddr
+}, ReqTime, DstAddr, InMsgId, NetId, Price, Body, Encoding, Params) ->
+    PartRefNum = DstAddr#addr.ref_num,
+    %%
+    %% This sending breaks the matching below because there might be two dest addrs with
+    %% ref_nums not equal to sar_msg_ref_num. I have no idea who (Kelly or Funnel) should
+    %% and how to handle such a situation as it's very artifical. But code MUST NOT crash.
+    %% The sending will be split to 4 part messages each with its own dest_addr.
+    %% smppload -s375296660001 -d375296543:3 -b"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" -D -c2 -vv
+    %% PartRefNum = ?gv(sar_msg_ref_num, Params, undefined),
+    %%
+    PartSeqNum = ?gv(sar_segment_seqnum, Params, undefined),
+    PartsTotal = ?gv(sar_total_segments, Params, undefined),
+
+    RegDlr = ?gv(registered_delivery, Params, false),
+    EsmClass = ?gv(esm_class, Params, 0),
+    ValPeriod = ?gv(validity_period, Params, <<"">>),
+    #req_info{
+        req_id = ReqId,
+        customer_id = CustomerId,
+        user_id = UserId,
+        client_type = ClientType,
+        in_msg_id = InMsgId,
+        gateway_id = GatewayId,
+        type = {part, #part_info{ref = PartRefNum, seq = PartSeqNum, total = PartsTotal}},
+        encoding = Encoding,
+        body = Body,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr#addr{ref_num = undefined},
+        reg_dlr = RegDlr,
+        esm_class = EsmClass,
+        val_period = ValPeriod,
+        req_time = ReqTime,
+        network_id = NetId,
+        price = Price
+    }.
+
+v1_build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price, Body, Encoding, Params) ->
+    {Encoding2, _DC, Bitness} = encoding_dc_bitness(Encoding, Params, default_gateway_settings()),
+    EncodedBody = encode_msg(Body, Encoding2),
+    SrcPort = ?gv(source_port, Params, undefined),
+    DstPort = ?gv(destination_port, Params, undefined),
+    PortAddressing = port_addressing(SrcPort, DstPort),
+
+    PartsTotal = length(InMsgIds),
+    PartSeqNums = lists:seq(1, PartsTotal),
+    BodyParts = split_msg(EncodedBody, Bitness, PortAddressing),
+    [
+        v1_build_long_part_req_info(
+            SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal,
+            NetId, Price, Encoding, Params
+        ) || {InMsgId, BodyPart, PartSeqNum} <- lists:zip3(InMsgIds, BodyParts, PartSeqNums)
+    ].
+
+v1_build_long_part_req_info(#sms_req_v1{
+    req_id = ReqId,
+    interface = ClientType,
+    customer_id = CustomerId,
+    user_id = UserId,
+    gateway_id = GatewayId,
+    src_addr = SrcAddr
+}, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal, NetId, Price, Encoding, Params) ->
+    RegDlr = ?gv(registered_delivery, Params, false),
+    EsmClass = ?gv(esm_class, Params, 0),
+    ValPeriod = ?gv(validity_period, Params, <<"">>),
+    #req_info{
+        req_id = ReqId,
+        customer_id = CustomerId,
+        user_id = UserId,
+        client_type = ClientType,
+        in_msg_id = InMsgId,
+        gateway_id = GatewayId,
+        type = {part, #part_info{
+            ref = lists:delete(InMsgId, InMsgIds),
+            seq = PartSeqNum,
+            total = PartsTotal
+        }},
+        encoding = Encoding,
+        body = BodyPart,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
+        reg_dlr = RegDlr,
+        esm_class = EsmClass,
+        val_period = ValPeriod,
+        req_time = ReqTime,
+        network_id = NetId,
+        price = Price
+    }.
+
+v1_process_oneapi_req(#sms_req_v1{
+    req_id = ReqId,
+    interface = oneapi,
+    customer_id = CustomerId,
+    user_id = UserId,
+    paramss = Params,
+    src_addr = SrcAddr
+}, InMsgIds) ->
+    NotifyURL = ?gv(oneapi_notify_url, Params, undefined),
+    CallbackData = ?gv(oneapi_callback_data, Params, undefined),
+    ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
+    case create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
+            NotifyURL, CallbackData, ReqId, InMsgIds) of
+        {ok, SubId} ->
+            ?log_debug("Create receipt subscription: ~p", [SubId]),
+            ok;
+        nop ->
+            ?log_debug("Receipt subscription didn't requested", []),
+            ok
+    end.
+
+%% ===================================================================
+%% Generic
+%% ===================================================================
 
 create_oneapi_receipt_subscription(_, _, _, undefined, _, _, _) -> nop;
 create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
@@ -309,7 +521,7 @@ create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
     {ok, SubId}.
 
 %% ===================================================================
-%% Message splitting logic from Just
+%% Generic message splitting logic from Just
 %% ===================================================================
 
 default_gateway_settings() -> [
@@ -363,9 +575,7 @@ encode_msg(Msg, ucs2) ->
 encode_msg(Msg, other) ->
     Msg.
 
-port_addressing(Params) ->
-    DstPort = get_param_by_name(<<"destination_port">>, Params, undefined),
-    SrcPort = get_param_by_name(<<"source_port">>, Params, undefined),
+port_addressing(SrcPort, DstPort) ->
     case DstPort =/= undefined andalso SrcPort =/= undefined of
         true ->
             #port_addressing{dst_port = DstPort, src_port = SrcPort};
