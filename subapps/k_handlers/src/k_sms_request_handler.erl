@@ -626,7 +626,7 @@ split_binary(Bin, Len, Acc) ->
 
 -ifdef(TEST).
 
-sms_request_to_req_info_list_regular_short_batch_test() ->
+dto_sms_req_to_req_infos_regular_short_batch_test() ->
     RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
     GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
     CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
@@ -724,9 +724,9 @@ sms_request_to_req_info_list_regular_short_batch_test() ->
            price = 2.0
         }
     ],
-    ?assertEqual(Expected, sms_request_to_req_info_list(SmsReq, ReqTime)).
+    ?assertEqual(Expected, dto_sms_req_to_req_infos(SmsReq, ReqTime)).
 
-sms_request_to_req_info_list_part_test() ->
+dto_sms_req_to_req_infos_part_test() ->
     RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
     GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
     CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
@@ -820,10 +820,10 @@ sms_request_to_req_info_list_part_test() ->
             price = 1.0
         }
     ],
-    Actual = sms_request_to_req_info_list(SmsReq, ReqTime),
+    Actual = dto_sms_req_to_req_infos(SmsReq, ReqTime),
     ?assertEqual(Expected, Actual).
 
-sms_request_to_req_info_list_multipart_test() ->
+dto_sms_req_to_req_infos_multipart_test() ->
     RID = <<"bad506f0-b2fa-11e2-a1ef-00269e42f7a5">>,
     GID = <<"7dc235d0-c938-4b66-8f8c-c9037c7eace7">>,
     CID = <<"feda5822-5271-11e1-bd27-001d0947ec73">>,
@@ -939,7 +939,7 @@ sms_request_to_req_info_list_multipart_test() ->
             price = 1.0
         }
     ],
-    Actual = sms_request_to_req_info_list(SmsReq, ReqTime),
+    Actual = dto_sms_req_to_req_infos(SmsReq, ReqTime),
     ?assertEqual(Expected, Actual).
 
 -endif.
