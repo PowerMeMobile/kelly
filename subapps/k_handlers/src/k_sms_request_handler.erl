@@ -318,34 +318,35 @@ v1_sms_req_to_req_infos(SmsReq, ReqTime) ->
     #sms_req_v1{
         dst_addrs = DstAddrs,
         in_msg_ids = InMsgIds,
-        %%
-        encodings = Encodings,
-        messages = Messages,
-        paramss = Paramss,
+        encodings = Encs,
+        messages = Msgs,
+        params_s = ParamsS,
         net_ids = NetIds,
         prices = Prices
     } = SmsReq,
-    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Messages, Encodings, Paramss, []).
+    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Encs, Msgs, ParamsS, []).
 
 v1_build_req_infos(_, _, [], [], [], [], [], [], [], Acc) ->
     lists:reverse(Acc);
 v1_build_req_infos(SmsReq, ReqTime,
     [DstAddr|DstAddrs], [InMsgId|InMsgIds], [NetId|NetIds], [Price|Prices],
-    [Msg|Msgs], [Encoding|Encodings], [Params|Paramss], Acc
+    [Enc|Encs], [Msg|Msgs], [Params|ParamsS], Acc
 ) ->
     Type = SmsReq#sms_req_v1.type,
     ReqInfo =
         case request_type(Type, InMsgId) of
             short ->
-                [v1_build_short_req_info(SmsReq, ReqTime, DstAddr, InMsgId, NetId, Price, Msg, Encoding, Params)];
+                [v1_build_short_req_info(
+                    SmsReq, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Msg, Params)];
             {long, MsgIds} ->
-                ?log_error("Not implemented", []);
-                %lists:reverse(v1_build_long_req_infos(SmsReq, ReqTime, DstAddr, MsgIds, NetId, Price));
+                lists:reverse(
+                    v1_build_long_req_infos(
+                        SmsReq, ReqTime, DstAddr, MsgIds, NetId, Price, Enc, Msg, Params));
             part ->
-                ?log_error("Not implemented", [])
-                %[v1_build_part_req_info(SmsReq, ReqTime, DstAddr, MsgId, NetId, Price)]
+                [v1_build_part_req_info(
+                    SmsReq, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Msg, Params)]
         end,
-    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Msgs, Encodings, Paramss, ReqInfo ++ Acc).
+    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Encs, Msgs, ParamsS, ReqInfo ++ Acc).
 
 v1_build_short_req_info(#sms_req_v1{
     req_id = ReqId,
@@ -355,7 +356,7 @@ v1_build_short_req_info(#sms_req_v1{
     gateway_id = GatewayId,
     type = Type,
     src_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, NetId, Price, Body, Encoding, Params) ->
+}, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Body, Params) ->
     RegDlr = ?gv(registered_delivery, Params, false),
     EsmClass = ?gv(esm_class, Params, 0),
     ValPeriod = ?gv(validity_period, Params, <<"">>),
@@ -367,7 +368,7 @@ v1_build_short_req_info(#sms_req_v1{
         in_msg_id = InMsgId,
         gateway_id = GatewayId,
         type = Type,
-        encoding = Encoding,
+        encoding = Enc,
         body = Body,
         src_addr = SrcAddr,
         dst_addr = DstAddr,
@@ -387,7 +388,7 @@ v1_build_part_req_info(#sms_req_v1{
     gateway_id = GatewayId,
     type = part,
     src_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, NetId, Price, Body, Encoding, Params) ->
+}, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Body, Params) ->
     PartRefNum = DstAddr#addr.ref_num,
     %%
     %% This sending breaks the matching below because there might be two dest addrs with
@@ -411,7 +412,7 @@ v1_build_part_req_info(#sms_req_v1{
         in_msg_id = InMsgId,
         gateway_id = GatewayId,
         type = {part, #part_info{ref = PartRefNum, seq = PartSeqNum, total = PartsTotal}},
-        encoding = Encoding,
+        encoding = Enc,
         body = Body,
         src_addr = SrcAddr,
         dst_addr = DstAddr#addr{ref_num = undefined},
@@ -423,20 +424,20 @@ v1_build_part_req_info(#sms_req_v1{
         price = Price
     }.
 
-v1_build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price, Body, Encoding, Params) ->
-    {Encoding2, _DC, Bitness} = encoding_dc_bitness(Encoding, Params, default_gateway_settings()),
-    EncodedBody = encode_msg(Body, Encoding2),
+v1_build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price, Enc, Body, Params) ->
+    {Enc2, _DC, Bitness} = encoding_dc_bitness(Enc, Params, default_gateway_settings()),
+    EncBody = encode_msg(Body, Enc2),
     SrcPort = ?gv(source_port, Params, undefined),
     DstPort = ?gv(destination_port, Params, undefined),
-    PortAddressing = port_addressing(SrcPort, DstPort),
+    PortAddr = port_addressing(SrcPort, DstPort),
 
     PartsTotal = length(InMsgIds),
     PartSeqNums = lists:seq(1, PartsTotal),
-    BodyParts = split_msg(EncodedBody, Bitness, PortAddressing),
+    BodyParts = split_msg(EncBody, Bitness, PortAddr),
     [
         v1_build_long_part_req_info(
-            SmsReq, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal,
-            NetId, Price, Encoding, Params
+            SmsReq, ReqTime, DstAddr, InMsgId, InMsgIds, Enc, BodyPart, PartSeqNum, PartsTotal,
+            NetId, Price, Params
         ) || {InMsgId, BodyPart, PartSeqNum} <- lists:zip3(InMsgIds, BodyParts, PartSeqNums)
     ].
 
@@ -447,7 +448,7 @@ v1_build_long_part_req_info(#sms_req_v1{
     user_id = UserId,
     gateway_id = GatewayId,
     src_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, BodyPart, InMsgIds, PartSeqNum, PartsTotal, NetId, Price, Encoding, Params) ->
+}, ReqTime, DstAddr, InMsgId, InMsgIds, Enc, BodyPart, PartSeqNum, PartsTotal, NetId, Price, Params) ->
     RegDlr = ?gv(registered_delivery, Params, false),
     EsmClass = ?gv(esm_class, Params, 0),
     ValPeriod = ?gv(validity_period, Params, <<"">>),
@@ -463,7 +464,7 @@ v1_build_long_part_req_info(#sms_req_v1{
             seq = PartSeqNum,
             total = PartsTotal
         }},
-        encoding = Encoding,
+        encoding = Enc,
         body = BodyPart,
         src_addr = SrcAddr,
         dst_addr = DstAddr,
@@ -480,11 +481,11 @@ v1_process_oneapi_req(#sms_req_v1{
     interface = oneapi,
     customer_id = CustomerId,
     user_id = UserId,
-    paramss = Params,
+    params_s = ParamsS,
     src_addr = SrcAddr
 }, InMsgIds) ->
-    NotifyURL = ?gv(oneapi_notify_url, Params, undefined),
-    CallbackData = ?gv(oneapi_callback_data, Params, undefined),
+    NotifyURL = ?gv(oneapi_notify_url, hd(ParamsS), undefined),
+    CallbackData = ?gv(oneapi_callback_data, hd(ParamsS), undefined),
     ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
     case create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
             NotifyURL, CallbackData, ReqId, InMsgIds) of
