@@ -25,7 +25,7 @@ init() ->
     }}.
 
 read(_Params) ->
-    case k_statistic:uplink_report() of
+    case k_j3_support:get_throughput() of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->
