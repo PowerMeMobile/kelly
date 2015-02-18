@@ -87,5 +87,7 @@ timestamp(<<"sent">>, MsgDoc) ->
     bson:at(rpt, MsgDoc);
 timestamp(<<"failed">>, MsgDoc) ->
     bson:at(rpt, MsgDoc);
+timestamp(<<"blocked">>, MsgDoc) ->
+    bson:at(rpt, MsgDoc);
 timestamp(_, MsgDoc) ->
     bson:at(dt, MsgDoc).

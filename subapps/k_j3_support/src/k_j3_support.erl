@@ -2,9 +2,12 @@
 
 -export([
     reconfigure/0,
-    get_throughput/0
+    get_throughput/0,
+    block_request/1,
+    unblock_request/1
 ]).
 
+-include_lib("alley_dto/include/common_dto.hrl").
 -include_lib("alley_dto/include/JustAsn.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
@@ -24,7 +27,7 @@ reconfigure() ->
     [set_gtw(Gtw) || Gtw <- Gtws],
     ok.
 
--spec get_throughput() -> ok.
+-spec get_throughput() -> ok | {error, term()}.
 get_throughput() ->
     {ok, ReqBin} =
         'JustAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),
@@ -44,6 +47,39 @@ get_throughput() ->
         {error, Error} ->
             {error, Error}
     end.
+
+-spec block_request(binary()) -> ok | {error, term()}.
+block_request(ReqId) ->
+    Req = #block_req_v1{
+        req_id = uuid:unparse(uuid:generate()),
+        sms_req_id = ReqId
+    },
+    {ok, ReqBin} = adto:encode(Req),
+    case k_j3_support_rmq:rpc_call(<<"BlockReqV1">>, ReqBin) of
+        {ok, <<"BlockRespV1">>, RespBin} ->
+            {ok, Resp} = adto:decode(#block_resp_v1{}, RespBin),
+            #block_resp_v1{result = Result} = Resp,
+            Result;
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec unblock_request(binary()) -> ok | {error, term()}.
+unblock_request(ReqId) ->
+    Req = #unblock_req_v1{
+        req_id = uuid:unparse(uuid:generate()),
+        sms_req_id = ReqId
+    },
+    {ok, ReqBin} = adto:encode(Req),
+    case k_j3_support_rmq:rpc_call(<<"UnblockReqV1">>, ReqBin) of
+        {ok, <<"UnblockRespV1">>, RespBin} ->
+            {ok, Resp} = adto:decode(#unblock_resp_v1{}, RespBin),
+            #unblock_resp_v1{result = Result} = Resp,
+            Result;
+        {error, Error} ->
+            {error, Error}
+    end.
+
 %% ===================================================================
 %% Internal
 %% ===================================================================

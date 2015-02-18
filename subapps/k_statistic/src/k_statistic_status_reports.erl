@@ -98,6 +98,7 @@ merge(Pairs) ->
         {pending, 0},
         {submitted, 0},
         {failed, 0},
+        {blocked, 0},
         {enroute, 0},
         {delivered, 0},
         {expired, 0},
@@ -130,7 +131,7 @@ get_msgs_by_status_report(From, To, CustomerId, received) ->
 
 get_msgs_by_status_report(From, To, CustomerId, Status) when
     Status == pending;
-    Status == submitted; Status == failed;
+    Status == submitted; Status == failed; Status == blocked;
     Status == enroute; Status == delivered; Status == expired;
     Status == deleted; Status == undeliverable; Status == accepted;
     Status == unknown; Status == rejected; Status == unrecognized

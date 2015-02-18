@@ -6,7 +6,8 @@
 
 -type resp_status() ::
     submitted
-  | failed.
+  | failed
+  | blocked.
 
 -type dlr_status() ::
     enroute

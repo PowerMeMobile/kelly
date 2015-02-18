@@ -7,6 +7,13 @@
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
 
+%% Keep in sync with just_worker.erl
+-define(ERROR_TIMEOUT,  16#000000400).
+-define(ERROR_CLOSED,   16#000000401).
+-define(ERROR_EXPIRED,  16#000000402).
+-define(ERROR_CUSTOMER, 16#000000403).
+-define(ERROR_BLOCKED,  16#000000404).
+
 %% ===================================================================
 %% API
 %% ===================================================================
@@ -59,7 +66,9 @@ process_sms_response(SmsResp = #just_sms_response_dto{}) ->
             Error
     end.
 
-check_failed_responses(RespInfo) when RespInfo#resp_info.resp_status =:= failed ->
+check_failed_responses(RespInfo) when
+        RespInfo#resp_info.resp_status =:= failed orelse
+        RespInfo#resp_info.resp_status =:= blocked ->
     ReqId = RespInfo#resp_info.req_id,
     InMsgId = RespInfo#resp_info.in_msg_id,
     Selector = {
@@ -110,6 +119,7 @@ convert(SmsResponse, SmsStatus) ->
         error_code = ErrorCode
     } = SmsStatus,
 
+    {Status2, ErrorCode2} = fix_status(Status, ErrorCode),
     #resp_info{
         req_id = RequestId,
         customer_id = CustomerId,
@@ -118,9 +128,13 @@ convert(SmsResponse, SmsStatus) ->
         gateway_id = GatewayId,
         out_msg_id = MessageId,
         resp_time = ac_datetime:utc_string_to_timestamp(UTCString),
-        resp_status = fix_status(Status),
-        resp_error_code = ErrorCode
+        resp_status = Status2,
+        resp_error_code = ErrorCode2
     }.
 
-fix_status(success) -> submitted;
-fix_status(failure) -> failed.
+fix_status(success, undefined) ->
+    {submitted, undefined};
+fix_status(failure, ?ERROR_BLOCKED) ->
+    {blocked, undefined};
+fix_status(failure, ErrorCode) ->
+    {failed, ErrorCode}.
