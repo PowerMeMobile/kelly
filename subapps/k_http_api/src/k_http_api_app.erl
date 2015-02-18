@@ -85,7 +85,7 @@ gen_http_api_handlers_dispatch_rules() ->
     gen_http_api:compile_routes([
         %% REST API
         k_http_api_handler_gateways,
-        k_http_api_handler_gateway_settings,
+        k_http_api_handler_gateways_settings,
         k_http_api_handler_connections,
         k_http_api_handler_providers,
         k_http_api_handler_networks,

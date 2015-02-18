@@ -1,4 +1,6 @@
--module(k_http_api_handler_gateway_settings).
+%% TODO: move snmp specific logic to k_j3_support
+
+-module(k_http_api_handler_gateways_settings).
 
 -behaviour(gen_http_api).
 
