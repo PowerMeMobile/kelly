@@ -97,7 +97,7 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_customers_credit,
         k_http_api_handler_blacklist,
         k_http_api_handler_addr2cust,
-        k_http_api_handler_just,
+        k_http_api_handler_just_reconfigure,
 
         %% Statistic API
         k_http_api_handler_message_status,

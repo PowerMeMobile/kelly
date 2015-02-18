@@ -1,4 +1,4 @@
--module(k_http_api_handler_just).
+-module(k_http_api_handler_just_reconfigure).
 
 -behaviour(gen_http_api).
 
