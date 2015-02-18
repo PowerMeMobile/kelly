@@ -1,4 +1,4 @@
--module(k_http_api_handler_originators).
+-module(k_http_api_handler_customers_originators).
 
 -behaviour(gen_http_api).
 
@@ -216,4 +216,3 @@ originator_state(State) ->
         <<"approved">> -> approved;
         <<"rejected">> -> rejected
     end.
-
