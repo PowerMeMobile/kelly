@@ -55,6 +55,10 @@ process(<<"OneAPISmsRequest">>, ReqBin) ->
 process(<<"SmsReqV1">>, ReqBin) ->
     {ok, SmsReq} = adto:decode(#sms_req_v1{}, ReqBin),
     process_sms_req(SmsReq);
+process(<<"SmsReqV1z">>, ReqBinZ) ->
+    ReqBin = zlib:uncompress(ReqBinZ),
+    {ok, SmsReq} = adto:decode(#sms_req_v1{}, ReqBin),
+    process_sms_req(SmsReq);
 process(ReqCT, ReqBin) ->
     ?log_error("Got unknown sms request: ~p ~p", [ReqCT, ReqBin]),
     {ok, []}.
