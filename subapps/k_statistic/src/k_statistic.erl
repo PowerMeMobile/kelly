@@ -8,7 +8,6 @@
     get_msg_stats_report/3,
     get_detailed_msg_stats_report/3,
 
-    uplink_report/0,
     downlink_report/0
 ]).
 
@@ -56,10 +55,6 @@ get_detailed_msg_stats_report(FromDate, ToDate, SliceLength) when FromDate < ToD
     FromUnix = ac_datetime:datetime_to_unixepoch(FromDate),
     ToUnix = ac_datetime:datetime_to_unixepoch(ToDate),
     k_statistic_detailed_msg_stats_report:get_report(FromUnix, ToUnix, SliceLength).
-
--spec uplink_report() -> {ok, report()} | {error, reason()}.
-uplink_report() ->
-    k_statistic_uplink_stats_report:get_report().
 
 -spec downlink_report() -> {ok, report()} | {error, reason()}.
 downlink_report() ->

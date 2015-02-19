@@ -27,7 +27,7 @@ reconfigure() ->
     [set_gtw(Gtw) || Gtw <- Gtws],
     ok.
 
--spec get_throughput() -> ok | {error, term()}.
+-spec get_throughput() -> {ok, [{atom(), term()}]} | {error, term()}.
 get_throughput() ->
     {ok, ReqBin} =
         'JustAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),
