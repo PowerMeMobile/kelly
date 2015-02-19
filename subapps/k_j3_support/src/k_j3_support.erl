@@ -55,12 +55,13 @@ get_throughput() ->
 
 -spec block_request(binary()) -> ok | {error, term()}.
 block_request(ReqId) ->
+    {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
     Req = #block_req_v1{
         req_id = uuid:unparse(uuid:generate()),
         sms_req_id = ReqId
     },
     {ok, ReqBin} = adto:encode(Req),
-    case k_j3_support_rmq:rpc_call(<<"BlockReqV1">>, ReqBin) of
+    case k_j3_support_rmq:rpc_call(CtrlQueue, <<"BlockReqV1">>, ReqBin) of
         {ok, <<"BlockRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#block_resp_v1{}, RespBin),
             #block_resp_v1{result = Result} = Resp,
@@ -71,12 +72,13 @@ block_request(ReqId) ->
 
 -spec unblock_request(binary()) -> ok | {error, term()}.
 unblock_request(ReqId) ->
+    {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
     Req = #unblock_req_v1{
         req_id = uuid:unparse(uuid:generate()),
         sms_req_id = ReqId
     },
     {ok, ReqBin} = adto:encode(Req),
-    case k_j3_support_rmq:rpc_call(<<"UnblockReqV1">>, ReqBin) of
+    case k_j3_support_rmq:rpc_call(CtrlQueue, <<"UnblockReqV1">>, ReqBin) of
         {ok, <<"UnblockRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#unblock_resp_v1{}, RespBin),
             #unblock_resp_v1{result = Result} = Resp,
