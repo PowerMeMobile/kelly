@@ -29,9 +29,10 @@ reconfigure() ->
 
 -spec get_throughput() -> {ok, [{atom(), term()}]} | {error, term()}.
 get_throughput() ->
+    {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
     {ok, ReqBin} =
         'JustAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),
-    case k_j3_support_rmq:rpc_call(<<"ThroughputRequest">>, ReqBin) of
+    case k_j3_support_rmq:rpc_call(CtrlQueue, <<"ThroughputRequest">>, ReqBin) of
         {ok, <<"ThroughputResponse">>, RespBin} ->
             {ok, #'ThroughputResponse'{slices = Slices}} =
                 'JustAsn':decode('ThroughputResponse', RespBin),

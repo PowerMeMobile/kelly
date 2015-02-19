@@ -1,7 +1,7 @@
 -module(k_j3_support_rmq).
 
 -export([
-    rpc_call/2
+    rpc_call/3
 ]).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
@@ -10,20 +10,19 @@
 %% API
 %% ===================================================================
 
--spec rpc_call(binary(), binary()) ->
+-spec rpc_call(binary(), binary(), binary()) ->
     {ok, binary(), binary()} | {error, term()}.
-rpc_call(ReqCT, ReqPayload) ->
+rpc_call(CtrlQueue, ReqCT, ReqPayload) ->
     {ok, Chan} = rmql:channel_open(),
-    {ok, Queue} = queue_declare(Chan),
-    {ok, _ConsumerTag} = rmql:basic_consume(Chan, Queue, true),
+    {ok, ReplyToQueue} = reply_to_queue_declare(Chan),
+    {ok, _ConsumerTag} = rmql:basic_consume(Chan, ReplyToQueue, true),
     MsgId = uuid:unparse(uuid:generate()),
     Props = [
-        {reply_to, Queue},
+        {reply_to, ReplyToQueue},
         {message_id, MsgId},
         {content_type, ReqCT}
     ],
-    {ok, QName} = application:get_env(k_handlers, just_control_queue),
-    ok = rmql:basic_publish(Chan, QName, ReqPayload, Props),
+    ok = rmql:basic_publish(Chan, CtrlQueue, ReqPayload, Props),
     Response =
         receive
             {#'basic.deliver'{}, #amqp_msg{
@@ -45,7 +44,7 @@ rpc_call(ReqCT, ReqPayload) ->
 %% Internal
 %% ===================================================================
 
-queue_declare(Chan) ->
+reply_to_queue_declare(Chan) ->
     Method = #'queue.declare'{
         durable = false,
         exclusive = true,
