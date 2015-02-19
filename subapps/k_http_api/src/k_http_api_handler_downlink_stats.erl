@@ -25,7 +25,9 @@ init() ->
     }}.
 
 read(_Params) ->
-    case k_statistic:downlink_report() of
+    %% k_j3_support is not a good place for funnel stats,
+    %% but it is still better than statistic.
+    case k_j3_support:get_funnel_connections() of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->

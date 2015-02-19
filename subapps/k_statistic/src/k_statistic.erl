@@ -6,9 +6,7 @@
     get_msgs_by_status_report/4,
 
     get_msg_stats_report/3,
-    get_detailed_msg_stats_report/3,
-
-    downlink_report/0
+    get_detailed_msg_stats_report/3
 ]).
 
 -include_lib("k_storage/include/msg_info.hrl").
@@ -55,7 +53,3 @@ get_detailed_msg_stats_report(FromDate, ToDate, SliceLength) when FromDate < ToD
     FromUnix = ac_datetime:datetime_to_unixepoch(FromDate),
     ToUnix = ac_datetime:datetime_to_unixepoch(ToDate),
     k_statistic_detailed_msg_stats_report:get_report(FromUnix, ToUnix, SliceLength).
-
--spec downlink_report() -> {ok, report()} | {error, reason()}.
-downlink_report() ->
-    k_statistic_downlink_stats_report:get_report().
