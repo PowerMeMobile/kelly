@@ -238,8 +238,10 @@ prepare([Customer = #customer{} | Rest], Acc) ->
         users = Users
     } = Customer,
 
-    {ok, OriginatorPlists} = k_http_api_handler_originators:prepare_originators(Originators),
-    {ok, UserPlists} = k_http_api_handler_users:prepare_users(Users),
+    {ok, OriginatorPlists} =
+        k_http_api_handler_customers_originators:prepare_originators(Originators),
+    {ok, UserPlists} =
+        k_http_api_handler_customers_users:prepare_users(Users),
 
     %% preparation customer's record
     Fun = ?record_to_proplist(customer),

@@ -1,4 +1,4 @@
--module(k_http_api_handler_users_features).
+-module(k_http_api_handler_customers_users_features).
 
 -behaviour(gen_http_api).
 

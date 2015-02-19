@@ -1,4 +1,4 @@
--module(k_http_api_handler_users).
+-module(k_http_api_handler_customers_users).
 
 -behaviour(gen_http_api).
 
@@ -134,7 +134,8 @@ delete(Params) ->
 
 -spec prepare_users(#user{}) -> {ok, [{atom(), term()}]}.
 prepare_users(User = #user{features = Features}) ->
-    {ok, FeaturesPlists} = k_http_api_handler_users_features:prepare_features(Features),
+    {ok, FeaturesPlists} =
+        k_http_api_handler_customers_users_features:prepare_features(Features),
     Fun = ?record_to_proplist(user),
     Plist = Fun(
         User#user{features = FeaturesPlists}
