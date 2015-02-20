@@ -321,7 +321,7 @@ dto_process_oneapi_req(#just_sms_request_dto{
 v1_sms_req_to_req_infos(SmsReq, ReqTime) ->
     #sms_req_v1{
         dst_addrs = DstAddrs,
-        in_msg_ids = InMsgIds,
+        msg_ids = InMsgIds,
         encodings = Encs,
         messages = Msgs,
         params_s = ParamsS,
