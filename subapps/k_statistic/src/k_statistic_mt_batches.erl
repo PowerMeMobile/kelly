@@ -38,14 +38,16 @@ get_all(Params) ->
             )
         },
     {ok, Docs} = shifted_storage:find(mt_batches, Selector, {}, Skip, Limit),
-    [build_mt_batch_simple_response(Doc) || {_, Doc} <- Docs].
+    [build_mt_batch_simple_response(Batch) || {_, Doc} <- Docs,
+        begin Batch = k_storage_utils:doc_to_mt_batch_info(Doc), true end].
 
 -spec get_one(uuid()) -> [[{atom(), term()}]].
 get_one(ReqId) ->
     Selector = {'_id', ReqId},
     Projector = {},
     {ok, [{_, Doc}|_]} = shifted_storage:find(mt_batches, Selector, Projector),
-    Resp = build_mt_batch_simple_response(Doc),
+    Batch = k_storage_utils:doc_to_mt_batch_info(Doc),
+    Resp = build_mt_batch_simple_response(Batch),
     Selector2 = {'ri', ReqId},
     Projector2 = {
         '_id', 0,
@@ -54,7 +56,7 @@ get_one(ReqId) ->
         dt   , 1
     },
     {ok, Docs} = shifted_storage:find(mt_messages, Selector2, Projector2),
-    Statuses = build_statuses(Docs),
+    Statuses = build_statuses(Docs, Batch#batch_info.messages),
     DoneTime = get_done_time(Docs),
     Resp ++ [{statuses, Statuses}, {done_time, DoneTime}].
 
@@ -62,11 +64,22 @@ get_one(ReqId) ->
 %% Internals
 %% ===================================================================
 
-build_statuses(Docs) ->
-    merge([
+build_statuses(Docs, TotalMsgs) ->
+    Statuses = merge([
         {binary_to_existing_atom(bsondoc:at(s, Doc), latin1), 1}
         || {_, Doc} <- Docs
-    ]).
+    ]),
+    Msgs = lists:foldl(fun({_S, N}, Acc) -> N + Acc end, 0, Statuses),
+    Statuses2 =
+        case Msgs < TotalMsgs of
+            true ->
+                Pending = proplists:get_value(pending, Statuses),
+                Pending2 = Pending + TotalMsgs - Msgs,
+                [{pending, Pending2} | proplists:delete(pending, Statuses)];
+            false ->
+                Statuses
+        end,
+    [{K,V} || {K,V} <- Statuses2, V =/= 0].
 
 get_done_time(Docs) ->
     StatusTimes = [{S, done_time(S, Doc)} || {_, Doc} <-Docs,
@@ -99,7 +112,7 @@ merge(Pairs) ->
         {rejected, 0},
         {unrecognized, 0}
     ]),
-    [{K, V} || {K, V} <- dict:to_list(merge(Pairs, Dict)), V =/= 0].
+    dict:to_list(merge(Pairs, Dict)).
 
 merge([], Dict) ->
     Dict;
@@ -107,8 +120,7 @@ merge([{Key, Value}|Pairs], Dict) ->
     NewDict = dict:update_counter(Key, Value, Dict),
     merge(Pairs, NewDict).
 
-build_mt_batch_simple_response(Doc) ->
-    Batch = k_storage_utils:doc_to_mt_batch_info(Doc),
+build_mt_batch_simple_response(Batch) ->
     ReqTime  = ac_datetime:timestamp_to_datetime(Batch#batch_info.req_time),
     ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
     [
