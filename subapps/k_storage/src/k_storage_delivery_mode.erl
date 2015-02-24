@@ -6,6 +6,8 @@
     set_mt_dlr_info_and_get_msg_info/3,
     set_mt_downlink_dlr_status/2,
 
+    set_mt_batch_info/2,
+
     set_mo_msg_info/2,
     set_mo_downlink_dlr_status/2
 ]).
@@ -77,6 +79,10 @@ set_mt_downlink_dlr_status(Selector, Modifier) ->
         Error ->
             Error
     end.
+
+-spec set_mt_batch_info(selector(), modifier()) -> ok | {error, reason()}.
+set_mt_batch_info(Selector, Modifier) ->
+    mongodb_storage:upsert(curr_dynamic_storage, mt_batches, Selector, Modifier).
 
 -spec set_mo_msg_info(selector(), modifier()) -> ok | {error, reason()}.
 set_mo_msg_info(Selector, Modifier) ->

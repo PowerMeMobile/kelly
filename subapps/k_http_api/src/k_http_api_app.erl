@@ -83,7 +83,7 @@ dispatch_rules() ->
 
 gen_http_api_handlers_dispatch_rules() ->
     gen_http_api:compile_routes([
-        %% REST API
+        %% Config API
         k_http_api_handler_gateways,
         k_http_api_handler_gateways_connections,
         k_http_api_handler_gateways_settings,
@@ -97,10 +97,16 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_customers_users_features,
         k_http_api_handler_blacklist,
         k_http_api_handler_addr2cust,
+
+        %% Control API
         k_http_api_handler_just_reconfigure,
-        k_http_api_handler_batches_block,
 
         %% Statistic API
+         % keep batches details above batches
+        k_http_api_handler_batches_details,
+        k_http_api_handler_batches,
+        k_http_api_handler_batches_block,
+
         k_http_api_handler_message_status,
         k_http_api_handler_uplink_stats,
         k_http_api_handler_downlink_stats,

@@ -87,7 +87,7 @@ get_aggregated_statuses_report(From, To, CustomerId) ->
     {ok, MoDocs} = shifted_storage:command(MoCommand),
     Docs = MtDocs ++ MoDocs,
     Results = merge([
-        {list_to_existing_atom(binary_to_list(Status)), round(Hits)}
+        {binary_to_existing_atom(Status, latin1), round(Hits)}
         || {'_id', Status, value, Hits} <- Docs
      ]),
     {ok, Results}.

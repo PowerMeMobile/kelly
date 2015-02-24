@@ -6,6 +6,8 @@
     set_mt_dlr_info_and_get_msg_info/1,
     set_mt_downlink_dlr_status/4,
 
+    set_mt_batch_info/1,
+
     set_mo_msg_info/1,
     set_mo_downlink_dlr_status/3
 ]).
@@ -147,6 +149,40 @@ set_mt_downlink_dlr_status(ReqId, InMsgId, Status, Timestamp) ->
     },
     {ok, StorageMode} = k_storage_manager:get_storage_mode(),
     StorageMode:set_mt_downlink_dlr_status(Selector, Modifier).
+
+-spec set_mt_batch_info(#batch_info{}) -> ok | {error, reason()}.
+set_mt_batch_info(#batch_info{
+    req_id = ReqId,
+    customer_id = CustomerId,
+    user_id = UserId,
+    client_type = ClientType,
+    gateway_id = GatewayId,
+    src_addr = SrcAddr,
+    body = Body,
+    req_time = ReqTime,
+    recipients = Recipients,
+    messages = Messages,
+    price = Price
+}) ->
+    Selector = {
+        '_id', ReqId
+    },
+    Modifier = {
+        '$set', {
+            'ci' , CustomerId,
+            'ui' , UserId,
+            'ct' , bsondoc:atom_to_binary(ClientType),
+            'gi' , GatewayId,
+            'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+            'b'  , Body,
+            'rqt', ReqTime,
+            'rs' , Recipients,
+            'ms' , Messages,
+            'p'  , Price
+        }
+    },
+    {ok, StorageMode} = k_storage_manager:get_storage_mode(),
+    StorageMode:set_mt_batch_info(Selector, Modifier).
 
 -spec set_mo_msg_info(#msg_info{}) -> ok | {error, reason()}.
 set_mo_msg_info(MsgInfo = #msg_info{}) ->

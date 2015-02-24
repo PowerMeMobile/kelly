@@ -69,18 +69,24 @@ process_sms_req(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
     ?log_debug("Got sms request: ~p", [SmsReq]),
     ReqTime = ac_datetime:utc_timestamp(),
     ReqInfos = dto_sms_req_to_req_infos(SmsReq, ReqTime),
-    case ClientType of
-        oneapi ->
-            InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
-            dto_process_oneapi_req(SmsReq, InMsgIds);
-        _ ->
-            nop
-    end,
-    case ac_utils:safe_foreach(
-        fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
-    ) of
+    BatchInfo = dto_build_batch_info(SmsReq, ReqTime, ReqInfos),
+    case k_dynamic_storage:set_mt_batch_info(BatchInfo) of
         ok ->
-            {ok, []};
+            case ClientType of
+                oneapi ->
+                    InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
+                    dto_process_oneapi_req(SmsReq, InMsgIds);
+                _ ->
+                    nop
+            end,
+            case ac_utils:safe_foreach(
+                fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
+            ) of
+                ok ->
+                    {ok, []};
+                Error ->
+                    Error
+            end;
         Error ->
             Error
     end;
@@ -88,18 +94,24 @@ process_sms_req(#sms_req_v1{interface = ClientType} = SmsReq) ->
     ?log_debug("Got sms request: ~p", [SmsReq]),
     ReqTime = ac_datetime:utc_timestamp(),
     ReqInfos = v1_sms_req_to_req_infos(SmsReq, ReqTime),
-    case ClientType of
-        oneapi ->
-            InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
-            v1_process_oneapi_req(SmsReq, InMsgIds);
-        _ ->
-            nop
-    end,
-    case ac_utils:safe_foreach(
-        fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
-    ) of
+    BatchInfo = v1_build_batch_info(SmsReq, ReqTime, ReqInfos),
+    case k_dynamic_storage:set_mt_batch_info(BatchInfo) of
         ok ->
-            {ok, []};
+            case ClientType of
+                oneapi ->
+                    InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
+                    v1_process_oneapi_req(SmsReq, InMsgIds);
+                _ ->
+                    nop
+            end,
+            case ac_utils:safe_foreach(
+                fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
+            ) of
+                ok ->
+                    {ok, []};
+                Error ->
+                    Error
+            end;
         Error ->
             Error
     end.
@@ -312,6 +324,35 @@ dto_process_oneapi_req(#just_sms_request_dto{
             ok
     end.
 
+dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
+    #just_sms_request_dto{
+        id = ReqId,
+        customer_id = CustomerId,
+        user_id = UserId,
+        client_type = ClientType,
+        gateway_id = GatewayId,
+        source_addr = SrcAddr,
+        message = Body,
+        dest_addrs = {_Type, DstAddrs}
+    } = SmsReq,
+    Recipients = length(DstAddrs),
+    Messages = length(ReqInfos),
+    Price = lists:foldl(
+        fun(R, Acc) -> R#req_info.price + Acc end, 0, ReqInfos),
+    #batch_info{
+        req_id = ReqId,
+        customer_id = CustomerId,
+        user_id = UserId,
+        client_type = ClientType,
+        gateway_id = GatewayId,
+        src_addr = SrcAddr,
+        body = Body,
+        req_time = ReqTime,
+        recipients = Recipients,
+        messages = Messages,
+        price = Price
+    }.
+
 %% ===================================================================
 %% #sms_req_v1{} specific
 %% ===================================================================
@@ -500,6 +541,35 @@ v1_process_oneapi_req(#sms_req_v1{
             ?log_debug("Receipt subscription didn't requested", []),
             ok
     end.
+
+v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
+    #sms_req_v1{
+        req_id = ReqId,
+        customer_id = CustomerId,
+        user_id = UserId,
+        interface = ClientType,
+        gateway_id = GatewayId,
+        src_addr = SrcAddr,
+        message = Body,
+        dst_addrs = DstAddrs
+    } = SmsReq,
+    Recipients = length(DstAddrs),
+    Messages = length(ReqInfos),
+    Price = lists:foldl(
+        fun(R, Acc) -> R#req_info.price + Acc end, 0, ReqInfos),
+    #batch_info{
+        req_id = ReqId,
+        customer_id = CustomerId,
+        user_id = UserId,
+        client_type = ClientType,
+        gateway_id = GatewayId,
+        src_addr = SrcAddr,
+        body = Body,
+        req_time = ReqTime,
+        recipients = Recipients,
+        messages = Messages,
+        price = Price
+    }.
 
 %% ===================================================================
 %% Generic

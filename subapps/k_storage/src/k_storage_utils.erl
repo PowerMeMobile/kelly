@@ -5,6 +5,8 @@
     doc_to_addr/1,
 
     doc_to_mt_msg_info/1,
+    doc_to_mt_batch_info/1,
+
     doc_to_mo_msg_info/1,
 
     objectid_to_binary/1,
@@ -83,6 +85,23 @@ doc_to_mt_msg_info(Doc) ->
         req_time = bsondoc:at(rqt, Doc),
         resp_time = bsondoc:at(rpt, Doc),
         dlr_time = bsondoc:at(dt, Doc)
+    }.
+
+-spec doc_to_mt_batch_info(bson:document()) -> #batch_info{}.
+doc_to_mt_batch_info(Doc) ->
+    SrcAddrDoc = bsondoc:at(sa, Doc),
+    #batch_info{
+        req_id = bsondoc:at('_id', Doc),
+        customer_id = bsondoc:at(ci, Doc),
+        user_id = bsondoc:at(ui, Doc),
+        client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
+        gateway_id = bsondoc:at(gi, Doc),
+        src_addr = doc_to_addr(SrcAddrDoc),
+        body = bsondoc:at(b, Doc),
+        req_time = bsondoc:at(rqt, Doc),
+        recipients = bsondoc:at(rs, Doc),
+        messages = bsondoc:at(ms, Doc),
+        price = bsondoc:at(p, Doc)
     }.
 
 -spec doc_to_mo_msg_info(bson:document()) -> #msg_info{}.

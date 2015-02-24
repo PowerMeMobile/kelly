@@ -44,6 +44,23 @@
 -type esm_class() :: integer().
 -type val_period() :: binary().
 
+-record(batch_info, {
+    req_id :: req_id(),
+    customer_id :: customer_uuid(),
+    user_id :: user_id(),
+    client_type :: client_type(),
+    gateway_id :: gateway_id(),
+    body :: binary(),
+    src_addr :: src_addr(),
+    %reg_dlr :: boolean(),
+    %esm_class  :: esm_class(),
+    %val_period :: val_period(),
+    req_time :: timestamp(),
+    recipients :: pos_integer(),
+    messages :: pos_integer(),
+    price :: float()
+}).
+
 -record(req_info, {
     req_id :: req_id(),
     customer_id :: customer_uuid(),
