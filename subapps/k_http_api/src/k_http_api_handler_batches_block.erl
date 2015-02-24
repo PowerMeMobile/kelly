@@ -1,4 +1,4 @@
--module(k_http_api_handler_just_block).
+-module(k_http_api_handler_batches_block).
 
 -behaviour(gen_http_api).
 
@@ -30,7 +30,7 @@ init() ->
         read = undefined,
         update = undefined,
         delete = Delete,
-        route = "/just/block/:req_id"
+        route = "/batches/:req_id/block"
     }}.
 
 read(_Params) ->

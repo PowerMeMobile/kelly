@@ -1,4 +1,4 @@
--module(k_http_api_handler_connections).
+-module(k_http_api_handler_gateways_connections).
 
 -behaviour(gen_http_api).
 
