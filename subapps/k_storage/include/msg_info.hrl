@@ -49,7 +49,6 @@
     customer_id :: customer_uuid(),
     user_id :: user_id(),
     client_type :: client_type(),
-    gateway_id :: gateway_id(),
     body :: binary(),
     src_addr :: src_addr(),
     %reg_dlr :: boolean(),

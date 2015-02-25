@@ -330,7 +330,6 @@ dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         customer_id = CustomerId,
         user_id = UserId,
         client_type = ClientType,
-        gateway_id = GatewayId,
         source_addr = SrcAddr,
         message = Body,
         dest_addrs = {_Type, DstAddrs}
@@ -344,7 +343,6 @@ dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         customer_id = CustomerId,
         user_id = UserId,
         client_type = ClientType,
-        gateway_id = GatewayId,
         src_addr = SrcAddr,
         body = Body,
         req_time = ReqTime,
@@ -548,7 +546,6 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         customer_id = CustomerId,
         user_id = UserId,
         interface = ClientType,
-        gateway_id = GatewayId,
         src_addr = SrcAddr,
         message = Body,
         dst_addrs = DstAddrs
@@ -562,7 +559,6 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         customer_id = CustomerId,
         user_id = UserId,
         client_type = ClientType,
-        gateway_id = GatewayId,
         src_addr = SrcAddr,
         body = Body,
         req_time = ReqTime,

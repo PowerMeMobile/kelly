@@ -45,7 +45,7 @@ get_all(Params) ->
 get_one(ReqId) ->
     Selector = {'_id', ReqId},
     Projector = {},
-    {ok, [{_, Doc}|_]} = shifted_storage:find(mt_batches, Selector, Projector),
+    {ok, Doc} = shifted_storage:find_one(mt_batches, Selector, Projector),
     Batch = k_storage_utils:doc_to_mt_batch_info(Doc),
     Resp = build_mt_batch_simple_response(Batch),
     Selector2 = {'ri', ReqId},
@@ -128,7 +128,6 @@ build_mt_batch_simple_response(Batch) ->
         {customer_uuid, Batch#batch_info.customer_id},
         {user_id, Batch#batch_info.user_id},
         {client_type, Batch#batch_info.client_type},
-        {gateway_id, Batch#batch_info.gateway_id},
         {body, Batch#batch_info.body},
         {src_addr, addr_to_proplist(Batch#batch_info.src_addr)},
         {req_time, ReqISO},

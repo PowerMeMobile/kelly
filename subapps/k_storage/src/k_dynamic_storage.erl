@@ -156,7 +156,6 @@ set_mt_batch_info(#batch_info{
     customer_id = CustomerId,
     user_id = UserId,
     client_type = ClientType,
-    gateway_id = GatewayId,
     src_addr = SrcAddr,
     body = Body,
     req_time = ReqTime,
@@ -168,14 +167,15 @@ set_mt_batch_info(#batch_info{
         '_id', ReqId
     },
     Modifier = {
-        '$set', {
+        '$setOnInsert', {
             'ci' , CustomerId,
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
-            'gi' , GatewayId,
             'sa' , k_storage_utils:addr_to_doc(SrcAddr),
             'b'  , Body,
-            'rqt', ReqTime,
+            'rqt', ReqTime
+        },
+        '$inc', {
             'rs' , Recipients,
             'ms' , Messages,
             'p'  , Price
