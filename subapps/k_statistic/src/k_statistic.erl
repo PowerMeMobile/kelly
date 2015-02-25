@@ -1,7 +1,6 @@
 -module(k_statistic).
 
 -export([
-    get_mt_msg_status_report/4,
     get_aggregated_statuses_report/3,
     get_msgs_by_status_report/4,
 
@@ -18,12 +17,6 @@
 %% ===================================================================
 %% API
 %% ===================================================================
-
--spec get_mt_msg_status_report(
-    customer_id(), user_id(), client_type(), in_msg_id()
-) -> {ok, report()} | {error, reason()}.
-get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
-    k_statistic_status_reports:get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId).
 
 -spec get_aggregated_statuses_report(calendar:datetime(), calendar:datetime(), customer_id()) ->
     {ok, report()} | {error, reason()}.

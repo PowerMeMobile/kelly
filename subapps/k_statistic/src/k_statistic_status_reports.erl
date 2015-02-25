@@ -1,7 +1,6 @@
 -module(k_statistic_status_reports).
 
 -export([
-    get_mt_msg_status_report/4,
     get_aggregated_statuses_report/3,
     get_msgs_by_status_report/4
 ]).
@@ -14,32 +13,6 @@
 %% ===================================================================
 %% API
 %% ===================================================================
-
--spec get_mt_msg_status_report(
-    customer_id(), user_id(), client_type(), in_msg_id()
-) -> {ok, report()} | {error, reason()}.
-get_mt_msg_status_report(CustomerId, UserId, ClientType, InMsgId) ->
-    Selector = {
-        'ci' , CustomerId,
-        'ui' , UserId,
-        'ct' , bsondoc:atom_to_binary(ClientType),
-        'imi', InMsgId,
-        'rqt', {'$exists', true}
-    },
-    case shifted_storage:find_one(mt_messages, Selector) of
-        {ok, Doc} ->
-            MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
-            {ok, [
-                {msg_id, MsgInfo#msg_info.msg_id},
-                {client_type, ClientType},
-                {customer_id, CustomerId},
-                {user_id, UserId},
-                {in_msg_id, InMsgId},
-                {status, MsgInfo#msg_info.status}
-            ]};
-        Error ->
-            Error
-    end.
 
 -spec get_aggregated_statuses_report(timestamp(), timestamp(), undefined | customer_id()) ->
     {ok, report()} | {error, reason()}.

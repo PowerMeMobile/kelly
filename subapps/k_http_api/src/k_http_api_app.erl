@@ -107,7 +107,6 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_batches,
         k_http_api_handler_batches_block,
 
-        k_http_api_handler_message_status,
         k_http_api_handler_uplink_stats,
         k_http_api_handler_downlink_stats,
         k_http_api_handler_statuses_stats,

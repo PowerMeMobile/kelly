@@ -47,8 +47,3 @@ make_request "http://localhost:8080/report/messages/customers?from=${From}&to=${
 
 # Networks
 make_request "http://localhost:8080/report/messages/networks?from=${From}&to=${To}"
-
-#
-# Message status request.
-#
-make_request "http://localhost:8080/message_status/1/customer/feda5822-5271-11e1-bd27-001d0947ec73"

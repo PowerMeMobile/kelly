@@ -9,33 +9,6 @@ Default is `json'.
 ###
 
 #
-# Message status
-#
-
-REST call:
-GET /message_status/MSG_ID/client/CLIENT_TYPE/customer/CUSTOMER_ID/user/USER_ID
-Where
-    CLIENT_TYPE - client type
-    MSG_ID - input message id
-    CUSTOMER_ID - customer uuid
-    USER_ID - user id
-
-Example:
-http://localhost:8080/message_status/59/client/funnel/customer/feda5822-5271-11e1-bd27-001d0947ec73/user/user2
-
-Result:
-<object>
-    <msg_id>516d37d31426045fec04d71a</msg_id>
-    <client_type>funnel</client_type>
-    <customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
-    <user_id>user2</user_id>
-    <in_msg_id>59</in_msg_id>
-    <status>delivered</status>
-</object>
-
-
-
-#
 # Aggregated statuses
 #
 
