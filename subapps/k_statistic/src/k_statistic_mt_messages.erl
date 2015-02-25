@@ -57,8 +57,8 @@ build_msg_report(MsgId) ->
     Selector = {
         '_id', k_storage_utils:binary_to_objectid(MsgId)
     },
-    {ok, Docs} = shifted_storage:find(mt_messages, Selector),
-    [build_mt_report_response(Doc) || {_, Doc} <- Docs].
+    {ok, Doc} = shifted_storage:find_one(mt_messages, Selector),
+    [build_mt_report_response(Doc)].
 
 -spec build_aggr_report([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 build_aggr_report(Params) ->
