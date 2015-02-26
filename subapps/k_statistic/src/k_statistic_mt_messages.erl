@@ -50,7 +50,7 @@ build_report(Params) ->
          '$orderby', {OrderBy, OrderDirection}
         },
     {ok, Docs} = shifted_storage:find(mt_messages, Selector, {}, Skip, Limit),
-    [build_mt_report_response(Doc) || {_, Doc} <- Docs].
+    [k_statistic_utils:doc_to_mt_msg(Doc) || {_, Doc} <- Docs].
 
 -spec build_msg_report(msg_id()) -> [[{atom(), term()}]].
 build_msg_report(MsgId) ->
@@ -58,7 +58,7 @@ build_msg_report(MsgId) ->
         '_id', k_storage_utils:binary_to_objectid(MsgId)
     },
     {ok, Doc} = shifted_storage:find_one(mt_messages, Selector),
-    [build_mt_report_response(Doc)].
+    [k_statistic_utils:doc_to_mt_msg(Doc)].
 
 -spec build_aggr_report([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 build_aggr_report(Params) ->
@@ -70,36 +70,42 @@ build_aggr_report(Params) ->
         CustomerID -> CustomerID
     end,
     GroupBy = ?gv(group_by, Params),
-    Command = {'aggregate', <<"mt_messages">>, 'pipeline', [
-        {'$match', {
-            'rqt', {'$gte', From, '$lt', To},
-            'ci', CustomerSelector
-        }},
-        group(GroupBy),
-        project(GroupBy)
-    ]},
+    Command = {
+        'aggregate', <<"mt_messages">>,
+        'pipeline', [
+            {'$match', {
+                'rqt', {'$gte', From, '$lt', To},
+                'ci', CustomerSelector
+            }},
+           group(GroupBy),
+           project(GroupBy)
+        ]
+    },
     {ok, Docs} = shifted_storage:command(Command),
     SortedDocs = lists:sort(Docs),
     [build_mt_aggr_report_response(Doc) || Doc <- SortedDocs].
 
 -spec build_aggr_recipient_report() -> {ok, [tuple()]}.
 build_aggr_recipient_report() ->
-    Command = {'aggregate', <<"mt_messages">>, 'pipeline', [
-        {'$project', {
-            '_id', 0,
-            'recipient', <<"$da.a">>
-        }},
-        {'$group', {
-            '_id', <<"$recipient">>,
-            'count', {<<"$sum">>, 1}
-        }},
-        {'$sort', {'count', 1}},
-        {'$project', {
-            '_id', 0,
-            'recipient', <<"$_id">>,
-            'count', 1
-        }}
-    ]},
+    Command = {
+        'aggregate', <<"mt_messages">>,
+        'pipeline', [
+            {'$project', {
+                '_id', 0,
+                'recipient', <<"$da.a">>
+            }},
+            {'$group', {
+                '_id', <<"$recipient">>,
+                'count', {<<"$sum">>, 1}
+            }},
+            {'$sort', {'count', 1}},
+            {'$project', {
+                '_id', 0,
+                'recipient', <<"$_id">>,
+                'count', 1
+            }}
+        ]
+    },
     {ok, _Docs} = shifted_storage:command(Command).
 
 %% ===================================================================
@@ -107,87 +113,69 @@ build_aggr_recipient_report() ->
 %% ===================================================================
 
 group(hourly) ->
-    { '$group' , {
-        '_id' , {
-            'year' , { '$year' , <<"$rqt">> },
-            'month' , { '$month' , <<"$rqt">> },
-            'day' , { '$dayOfMonth' , <<"$rqt">> },
-            'hour' , { '$hour' , <<"$rqt">> },
-            'customer_id' , <<"$ci">> },
-        'sum' , { '$sum' , 1 } } };
+    {'$group', {
+        '_id', {
+            'year', {'$year', <<"$rqt">>},
+            'month', {'$month', <<"$rqt">>},
+            'day', {'$dayOfMonth', <<"$rqt">>},
+            'hour', {'$hour', <<"$rqt">>},
+            'customer_id', <<"$ci">>
+        },
+        'messages' , {'$sum', 1},
+        'revenue', {'$sum', <<"$p">>}
+    }};
 group(daily) ->
-    { '$group' , {
-        '_id' , {
-            'year' , { '$year' , <<"$rqt">> },
-            'month' , { '$month' , <<"$rqt">> },
-            'day' , { '$dayOfMonth' , <<"$rqt">> },
-            'customer_id' , <<"$ci">> },
-        'sum' , { '$sum' , 1 } } };
+    {'$group', {
+        '_id', {
+            'year', {'$year', <<"$rqt">>},
+            'month', {'$month', <<"$rqt">>},
+            'day', {'$dayOfMonth', <<"$rqt">>},
+            'customer_id', <<"$ci">>
+        },
+        'messages', {'$sum', 1},
+        'revenue', {'$sum', <<"$p">>}
+    }};
 group(monthly) ->
-    { '$group' , {
-        '_id' , {
-            'year' , { '$year' , <<"$rqt">> },
-            'month' , { '$month' , <<"$rqt">> },
-            'customer_id' , <<"$ci">> },
-        'sum' , { '$sum' , 1 } } }.
-
+    {'$group', {
+        '_id', {
+            'year', {'$year', <<"$rqt">>},
+            'month', {'$month', <<"$rqt">>},
+            'customer_id', <<"$ci">>
+        },
+        'messages', {'$sum', 1},
+        'revenue', {'$sum', <<"$p">>}
+    }}.
 
 project(hourly) ->
-    {'$project' , {
-        '_id' , 0,
-        'year' , <<"$_id.year">>,
-        'month' , <<"$_id.month">>,
-        'day' , <<"$_id.day">>,
-        'hour' , <<"$_id.hour">>,
-        'customer_id' , <<"$_id.customer_id">>,
-        'number' , <<"$sum">> } };
+    {'$project', {
+        '_id', 0,
+        'year', <<"$_id.year">>,
+        'month', <<"$_id.month">>,
+        'day', <<"$_id.day">>,
+        'hour', <<"$_id.hour">>,
+        'customer_id', <<"$_id.customer_id">>,
+        'number', <<"$messages">>,
+        'revenue', <<"$revenue">>
+    }};
 project(daily) ->
-    {'$project' , {
-        '_id' , 0,
-        'year' , <<"$_id.year">>,
-        'month' , <<"$_id.month">>,
-        'day' , <<"$_id.day">>,
-        'customer_id' , <<"$_id.customer_id">>,
-        'number' , <<"$sum">> } };
+    {'$project', {
+        '_id', 0,
+        'year', <<"$_id.year">>,
+        'month', <<"$_id.month">>,
+        'day', <<"$_id.day">>,
+        'customer_id', <<"$_id.customer_id">>,
+        'number', <<"$messages">>,
+        'revenue', <<"$revenue">>
+    }};
 project(monthly) ->
-    {'$project' , {
-        '_id' , 0,
-        'year' , <<"$_id.year">>,
-        'month' , <<"$_id.month">>,
-        'customer_id' , <<"$_id.customer_id">>,
-        'number' , <<"$sum">> } }.
-
-build_mt_report_response(Doc) ->
-    MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
-    Type = get_type(MsgInfo#msg_info.type),
-    PartInfo = get_part_info(MsgInfo#msg_info.type),
-    ReqTime  = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-    RespTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
-    DlrTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
-    StatusTime = max(ReqTime, max(RespTime, DlrTime)),
-    ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
-    StatusISO = ac_datetime:datetime_to_iso8601(StatusTime),
-    [
-        {msg_id, MsgInfo#msg_info.msg_id},
-        {client_type, MsgInfo#msg_info.client_type},
-        {customer_id, MsgInfo#msg_info.customer_id},
-        {user_id, MsgInfo#msg_info.user_id},
-        {in_msg_id, MsgInfo#msg_info.in_msg_id},
-        {gateway_id, MsgInfo#msg_info.gateway_id},
-        {out_msg_id, MsgInfo#msg_info.out_msg_id},
-        {type, Type},
-        {part_info, PartInfo},
-        {encoding, MsgInfo#msg_info.encoding},
-        {body, MsgInfo#msg_info.body},
-        {src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
-        {dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
-        {reg_dlr, MsgInfo#msg_info.reg_dlr},
-        {esm_class, MsgInfo#msg_info.esm_class},
-        {validity_period, MsgInfo#msg_info.val_period},
-        {req_time, ReqISO},
-        {status, MsgInfo#msg_info.status},
-        {status_update_time, StatusISO}
-    ].
+    {'$project', {
+        '_id', 0,
+        'year', <<"$_id.year">>,
+        'month', <<"$_id.month">>,
+        'customer_id', <<"$_id.customer_id">>,
+        'number', <<"$messages">>,
+        'revenue', <<"$revenue">>
+    }}.
 
 build_mt_aggr_report_response(Doc) ->
     Y = bsondoc:at(year, Doc),
@@ -198,37 +186,6 @@ build_mt_aggr_report_response(Doc) ->
     Doc2 = bson:exclude([year, month, day, hour], Doc),
     Doc3 = bson:update(date, Date, Doc2),
     bson:fields(Doc3).
-
-addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
-    [
-        {addr, Addr},
-        {ton, Ton},
-        {npi, Npi}
-    ];
-addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
-    [
-        {addr, Addr},
-        {ton, Ton},
-        {npi, Npi},
-        {ref_num, RefNum}
-    ].
-
-get_type(regular) ->
-    regular;
-get_type({part, #part_info{}}) ->
-    part.
-
-get_part_info(regular) ->
-    undefined;
-get_part_info({part, #part_info{
-    ref = PartRef,
-    seq = PartSeq,
-    total = TotalParts
-}}) -> [
-    {ref, PartRef},
-    {seq, PartSeq},
-    {total, TotalParts}
-].
 
 decode_order_by(<<"req_time">>) ->
     rqt;

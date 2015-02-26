@@ -87,6 +87,8 @@ Result:
         <req_time>2013-01-01T00:14:08</req_time>
         <status>accepted</status>
         <status_update_time>2013-01-01T00:14:10</status_update_time>
+        <network_id>6dd0af45-7cdf-41aa-954b-cc368fe1968e</network_id>
+        <price>1.00000000000000000000e+00</price>
     </item>
 </object>
 
@@ -182,11 +184,13 @@ Result:
     <item>
         <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
         <number>753800</number>
+        <revenue>753800.0</revenue>
         <date>2013-01-01T18:00:00</date>
     </item>
     <item>
         <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
         <number>246200</number>
+        <revenue>246200.0</revenue>
         <date>2013-01-01T19:00:00</date>
     </item>
 </object>
@@ -233,6 +237,8 @@ Result:
         <req_time>2014-05-30T10:25:38</req_time>
         <status>sent</status>
         <status_update_time>2014-05-30T10:25:38</status_update_time>
+        <network_id>6dd0af45-7cdf-41aa-954b-cc368fe1968e</network_id>
+        <price>1.00000000000000000000e+00</price>
     </item>
 </object>
 
@@ -288,6 +294,8 @@ Result:
         <req_time>2013-01-01T21:33:11</req_time>
         <status>delivered</status>
         <status_update_time>2013-01-01T00:14:10</status_update_time>
+        <network_id>6dd0af45-7cdf-41aa-954b-cc368fe1968e</network_id>
+        <price>1.00000000000000000000e+00</price>
     </item>
 </object>
 

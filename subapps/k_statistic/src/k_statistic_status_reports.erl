@@ -65,31 +65,6 @@ get_aggregated_statuses_report(From, To, CustomerId) ->
      ]),
     {ok, Results}.
 
-merge(Pairs) ->
-    Dict = dict:from_list([
-        {received, 0},
-        {pending, 0},
-        {submitted, 0},
-        {failed, 0},
-        {blocked, 0},
-        {enroute, 0},
-        {delivered, 0},
-        {expired, 0},
-        {deleted, 0},
-        {undeliverable, 0},
-        {accepted, 0},
-        {unknown, 0},
-        {rejected, 0},
-        {unrecognized, 0}
-    ]),
-    dict:to_list(merge(Pairs, Dict)).
-
-merge([], Dict) ->
-    Dict;
-merge([{Key, Value}|Pairs], Dict) ->
-    NewDict = dict:update_counter(Key, Value, Dict),
-    merge(Pairs, NewDict).
-
 -spec get_msgs_by_status_report(timestamp(), timestamp(), undefined | customer_id(), status()) ->
     {ok, report()} | {error, reason()}.
 get_msgs_by_status_report(From, To, CustomerId, received) ->
@@ -123,86 +98,40 @@ get_msgs_by_status_report(From, To, CustomerId, Status) when
 %% Internal
 %% ===================================================================
 
+merge(Pairs) ->
+    Dict = dict:from_list([
+        {received, 0},
+        {pending, 0},
+        {submitted, 0},
+        {failed, 0},
+        {blocked, 0},
+        {enroute, 0},
+        {delivered, 0},
+        {expired, 0},
+        {deleted, 0},
+        {undeliverable, 0},
+        {accepted, 0},
+        {unknown, 0},
+        {rejected, 0},
+        {unrecognized, 0}
+    ]),
+    dict:to_list(merge(Pairs, Dict)).
+
+merge([], Dict) ->
+    Dict;
+merge([{Key, Value}|Pairs], Dict) ->
+    NewDict = dict:update_counter(Key, Value, Dict),
+    merge(Pairs, NewDict).
+
 get_raw_report(Collection, Selector) ->
     case shifted_storage:find(Collection, Selector) of
         {ok, Docs} ->
-            {ok, [doc_to_message(Collection, Doc) || {_Id, Doc} <- Docs]};
+            {ok, [doc_to_msg(Collection, Doc) || {_Id, Doc} <- Docs]};
         Error ->
             Error
     end.
 
-doc_to_message(mt_messages, Doc) ->
-    MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
-    Type = transform_type(MsgInfo#msg_info.type),
-    ReqTime  = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-    RespTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.resp_time),
-    DlrTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.dlr_time),
-    StatusTime = max(ReqTime, max(RespTime, DlrTime)),
-    ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
-    StatusISO = ac_datetime:datetime_to_iso8601(StatusTime),
-    [
-        {msg_id, MsgInfo#msg_info.msg_id},
-        {client_type, MsgInfo#msg_info.client_type},
-        {customer_id, MsgInfo#msg_info.customer_id},
-        {user_id, MsgInfo#msg_info.user_id},
-        {in_msg_id, MsgInfo#msg_info.in_msg_id},
-        {gateway_id, MsgInfo#msg_info.gateway_id},
-        {out_msg_id, MsgInfo#msg_info.out_msg_id},
-        {type, Type},
-        {encoding, MsgInfo#msg_info.encoding},
-        {body, MsgInfo#msg_info.body},
-        {src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
-        {dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
-        {reg_dlr, MsgInfo#msg_info.reg_dlr},
-        {esm_class, MsgInfo#msg_info.esm_class},
-        {validity_period, MsgInfo#msg_info.val_period},
-        {req_time, ReqISO},
-        {status, MsgInfo#msg_info.status},
-        {status_update_time, StatusISO}
-    ];
-doc_to_message(mo_messages, Doc) ->
-    MsgInfo = k_storage_utils:doc_to_mo_msg_info(Doc),
-    MsgId = MsgInfo#msg_info.msg_id,
-    Datetime  = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-    ISO8601 = ac_datetime:datetime_to_iso8601(Datetime),
-    [
-        {msg_id, MsgId},
-        {customer_id, MsgInfo#msg_info.customer_id},
-        {in_msg_id, MsgInfo#msg_info.in_msg_id},
-        {gateway_id, MsgInfo#msg_info.gateway_id},
-        {out_msg_id, MsgInfo#msg_info.out_msg_id},
-        {type, MsgInfo#msg_info.type},
-        {encoding, MsgInfo#msg_info.encoding},
-        {body, MsgInfo#msg_info.body},
-        {src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
-        {dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
-        {reg_dlr, MsgInfo#msg_info.reg_dlr},
-        {req_time, ISO8601}
-    ].
-
-addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
-    [
-        {addr, Addr},
-        {ton, Ton},
-        {npi, Npi}
-    ];
-addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
-    [
-        {addr, Addr},
-        {ton, Ton},
-        {npi, Npi},
-        {ref_num, RefNum}
-    ].
-
-transform_type(regular) ->
-    regular;
-transform_type({part, #part_info{
-    ref = PartRef,
-    seq = PartSeq,
-    total = TotalParts
-}}) -> [
-    {name, part},
-    {ref, PartRef},
-    {seq, PartSeq},
-    {total, TotalParts}
-].
+doc_to_msg(mt_messages, Doc) ->
+    k_statistic_utils:doc_to_mt_msg(Doc);
+doc_to_msg(mo_messages, Doc) ->
+    k_statistic_utils:doc_to_mo_msg(Doc).

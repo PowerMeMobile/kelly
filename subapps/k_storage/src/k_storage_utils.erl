@@ -84,7 +84,9 @@ doc_to_mt_msg_info(Doc) ->
         val_period = bsondoc:at(vp, Doc),
         req_time = bsondoc:at(rqt, Doc),
         resp_time = bsondoc:at(rpt, Doc),
-        dlr_time = bsondoc:at(dt, Doc)
+        dlr_time = bsondoc:at(dt, Doc),
+        network_id = bsondoc:at(ni, Doc),
+        price = bsondoc:at(p, Doc)
     }.
 
 -spec doc_to_mt_batch_info(bson:document()) -> #batch_info{}.
