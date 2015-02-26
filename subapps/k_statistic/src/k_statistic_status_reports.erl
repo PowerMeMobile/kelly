@@ -17,24 +17,6 @@
 -spec get_aggregated_statuses_report(timestamp(), timestamp(), undefined | customer_id()) ->
     {ok, report()} | {error, reason()}.
 get_aggregated_statuses_report(From, To, CustomerId) ->
-    MtMapF =
-<<"
-    function() {
-        emit(this.s, 1);
-    };
-">>,
-    MoMapF =
-<<"
-    function() {
-        emit(\"received\", 1);
-    };
-">>,
-    ReduceF =
-<<"
-    function(key, values) {
-        return Array.sum(values);
-    };
-">>,
     Query =
         case CustomerId of
             undefined ->
@@ -43,18 +25,18 @@ get_aggregated_statuses_report(From, To, CustomerId) ->
                 {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerId}
         end,
     MtCommand = {
-        'mapreduce', <<"mt_messages">>,
-        'query'    , Query,
-        'map'      , MtMapF,
-        'reduce'   , ReduceF,
-        'out'      , {'inline', 1}
+        'aggregate', <<"mt_messages">>,
+        'pipeline' , [
+            {'$match', Query},
+            {'$group', {'_id', <<"$s">>, value, {'$sum', 1}}}
+        ]
     },
     MoCommand = {
-        'mapreduce', <<"mo_messages">>,
-        'query'    , Query,
-        'map'      , MoMapF,
-        'reduce'   , ReduceF,
-        'out'      , {'inline', 1}
+        'aggregate', <<"mo_messages">>,
+        'pipeline' , [
+            {'$match', Query},
+            {'$group', {'_id', <<"received">>, value, {'$sum', 1}}}
+        ]
     },
     {ok, MtDocs} = shifted_storage:command(MtCommand),
     {ok, MoDocs} = shifted_storage:command(MoCommand),
