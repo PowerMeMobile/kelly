@@ -30,6 +30,7 @@
 -define(UNKNOWN_ENCODING, <<"xxxxxxxxxx">>).
 -define(UNKNOWN_ID,       <<"xxxxxxxxxx">>).
 -define(UNKNOWN_INT,      0).
+-define(UNKNOWN_FLOAT,    0.0).
 -define(UNKNOWN_TIME,     {0,0,0}).
 -define(UNKNOWN_TIMEFMT,  <<"xxxxxxxxxxxxxxxx">>).
 -define(UNKNOWN_TYPE,     <<"xxxxxxxxxx">>).
@@ -81,7 +82,9 @@ set_mt_resp_info(#resp_info{
             'ec' , ?UNKNOWN_INT,
             'vp' , ?UNKNOWN_TIMEFMT,
             'rqt', ?UNKNOWN_TIME,
-            'dt' , ?UNKNOWN_TIME
+            'dt' , ?UNKNOWN_TIME,
+            'ni' , ?UNKNOWN_ID,
+            'p'  , ?UNKNOWN_FLOAT
         },
         '$set',
             case RespErrorCode of
