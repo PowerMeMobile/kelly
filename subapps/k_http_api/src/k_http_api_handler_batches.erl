@@ -26,7 +26,7 @@ init() ->
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = to, mandatory = true, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
-        #param{name = customer_id, mandatory = false, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = user_id, mandatory = false, repeated = false, type = binary},
         #param{name = skip, mandatory = true, repeated = false, type = integer},
         #param{name = limit, mandatory = true, repeated = false, type = integer}
@@ -38,14 +38,14 @@ init() ->
 
 read(Params) ->
     Report =
-        case ?gv(customer_id, Params) of
+        case ?gv(customer_uuid, Params) of
             undefined ->
                 k_statistic_mt_batches:get_all(Params);
-            CustomerId ->
-                case k_storage_customers:get_customer_by_id(CustomerId) of
-                    {ok, #customer{customer_uuid = CustomerUuid}} ->
-                        Params2 = [{customer_uuid, CustomerUuid} | Params],
-                        k_statistic_mt_batches:get_all(Params2);
+            CustomerUuid ->
+                %% don't do the report until the customer exists
+                case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
+                    {ok, #customer{}} ->
+                        k_statistic_mt_batches:get_all(Params);
                     {error, no_entry} ->
                         []
                 end

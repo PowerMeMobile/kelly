@@ -16,13 +16,13 @@
 
 -spec get_aggregated_statuses_report(timestamp(), timestamp(), undefined | customer_id()) ->
     {ok, report()} | {error, reason()}.
-get_aggregated_statuses_report(From, To, CustomerId) ->
+get_aggregated_statuses_report(From, To, CustomerUuid) ->
     Query =
-        case CustomerId of
+        case CustomerUuid of
             undefined ->
                 {'rqt', {'$gte', From, '$lt', To}};
-            CustomerId ->
-                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerId}
+            CustomerUuid ->
+                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid}
         end,
     MtCommand = {
         'aggregate', <<"mt_messages">>,
@@ -49,17 +49,17 @@ get_aggregated_statuses_report(From, To, CustomerId) ->
 
 -spec get_msgs_by_status_report(timestamp(), timestamp(), undefined | customer_id(), status()) ->
     {ok, report()} | {error, reason()}.
-get_msgs_by_status_report(From, To, CustomerId, received) ->
+get_msgs_by_status_report(From, To, CustomerUuid, received) ->
     Selector =
-        case CustomerId of
+        case CustomerUuid of
             undefined ->
                 {'rqt', {'$gte', From, '$lt', To}};
-            CustomerId ->
-                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerId}
+            CustomerUuid ->
+                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid}
         end,
     get_raw_report(mo_messages, Selector);
 
-get_msgs_by_status_report(From, To, CustomerId, Status) when
+get_msgs_by_status_report(From, To, CustomerUuid, Status) when
     Status == pending;
     Status == submitted; Status == failed; Status == blocked;
     Status == enroute; Status == delivered; Status == expired;
@@ -68,11 +68,11 @@ get_msgs_by_status_report(From, To, CustomerId, Status) when
 ->
     StatusBin = bsondoc:atom_to_binary(Status),
     Selector =
-        case CustomerId of
+        case CustomerUuid of
             undefined ->
                 {'rqt', {'$gte', From, '$lt', To}, 's', StatusBin};
-            CustomerId ->
-                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerId, 's', StatusBin}
+            CustomerUuid ->
+                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid, 's', StatusBin}
         end,
     get_raw_report(mt_messages, Selector).
 

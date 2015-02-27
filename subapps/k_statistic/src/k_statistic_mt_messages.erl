@@ -1,7 +1,7 @@
 -module(k_statistic_mt_messages).
 
 -export([
-    build_report/1,
+    build_msgs_report/1,
     build_msg_report/1,
     build_aggr_report/1
 ]).
@@ -15,25 +15,25 @@
 %% API
 %% ===================================================================
 
--spec build_report([{atom(), term()}]) -> [[{atom(), term()}]].
-build_report(Params) ->
+-spec build_msgs_report([{atom(), term()}]) -> [[{atom(), term()}]].
+build_msgs_report(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
     Skip = ?gv(skip, Params),
     Limit = ?gv(limit, Params),
     OrderBy = decode_order_by(?gv(order_by, Params)),
     OrderDirection = decode_order_direction(?gv(order_direction, Params)),
-    CustomerSelector =
-        case ?gv(customer_id, Params) of
+    CustomerSel =
+        case ?gv(customer_uuid, Params) of
             undefined -> [];
-            CustomerID -> [{'ci', CustomerID}]
+            CustomerUuid -> [{'ci', CustomerUuid}]
         end,
-    RecipientSelector =
+    RecipientSel =
         case ?gv(recipient, Params) of
             undefined -> [];
             Recipient -> [{'da.a', Recipient}]
         end,
-    StatusSelector =
+    StatusSel =
         case ?gv(status, Params) of
             undefined -> [];
             Status -> [{'s', Status}]
@@ -42,9 +42,9 @@ build_report(Params) ->
         {'$query',
             bson:document(
                 [{'rqt', {'$gte', From, '$lt', To}}] ++
-                CustomerSelector ++
-                RecipientSelector ++
-                StatusSelector
+                CustomerSel ++
+                RecipientSel ++
+                StatusSel
             ),
          '$orderby', {OrderBy, OrderDirection}
         },
@@ -63,21 +63,23 @@ build_msg_report(MsgId) ->
 build_aggr_report(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
-    CustomerSelector =
-    case ?gv(customer_id, Params) of
-        undefined -> {'$exists', 1};
-        CustomerID -> CustomerID
-    end,
+    CustomerSel =
+        case ?gv(customer_uuid, Params) of
+            undefined -> [];
+            CustomerUuid -> [{'ci', CustomerUuid}]
+        end,
     GroupBy = ?gv(group_by, Params),
     Command = {
         'aggregate', <<"mt_messages">>,
         'pipeline', [
-            {'$match', {
-                'rqt', {'$gte', From, '$lt', To},
-                'ci', CustomerSelector
-            }},
-           group(GroupBy),
-           project(GroupBy)
+            {'$match',
+                bson:document(
+                    [{'rqt', {'$gte', From, '$lt', To}}] ++
+                    CustomerSel
+                )
+            },
+            group(GroupBy),
+            project(GroupBy)
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
@@ -94,8 +96,7 @@ group(hourly) ->
             'year', {'$year', <<"$rqt">>},
             'month', {'$month', <<"$rqt">>},
             'day', {'$dayOfMonth', <<"$rqt">>},
-            'hour', {'$hour', <<"$rqt">>},
-            'customer_id', <<"$ci">>
+            'hour', {'$hour', <<"$rqt">>}
         },
         'messages' , {'$sum', 1},
         'revenue', {'$sum', <<"$p">>}
@@ -105,8 +106,7 @@ group(daily) ->
         '_id', {
             'year', {'$year', <<"$rqt">>},
             'month', {'$month', <<"$rqt">>},
-            'day', {'$dayOfMonth', <<"$rqt">>},
-            'customer_id', <<"$ci">>
+            'day', {'$dayOfMonth', <<"$rqt">>}
         },
         'messages', {'$sum', 1},
         'revenue', {'$sum', <<"$p">>}
@@ -115,8 +115,7 @@ group(monthly) ->
     {'$group', {
         '_id', {
             'year', {'$year', <<"$rqt">>},
-            'month', {'$month', <<"$rqt">>},
-            'customer_id', <<"$ci">>
+            'month', {'$month', <<"$rqt">>}
         },
         'messages', {'$sum', 1},
         'revenue', {'$sum', <<"$p">>}
@@ -129,7 +128,6 @@ project(hourly) ->
         'month', <<"$_id.month">>,
         'day', <<"$_id.day">>,
         'hour', <<"$_id.hour">>,
-        'customer_id', <<"$_id.customer_id">>,
         'number', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
@@ -139,7 +137,6 @@ project(daily) ->
         'year', <<"$_id.year">>,
         'month', <<"$_id.month">>,
         'day', <<"$_id.day">>,
-        'customer_id', <<"$_id.customer_id">>,
         'number', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
@@ -148,7 +145,6 @@ project(monthly) ->
         '_id', 0,
         'year', <<"$_id.year">>,
         'month', <<"$_id.month">>,
-        'customer_id', <<"$_id.customer_id">>,
         'number', <<"$messages">>,
         'revenue', <<"$revenue">>
     }}.

@@ -37,7 +37,9 @@ doc_to_mt_msg(Doc) ->
     [
         {msg_id, MsgInfo#msg_info.msg_id},
         {client_type, MsgInfo#msg_info.client_type},
+        %% customer_id is deprecated, force clients to use customer_uuid
         {customer_id, MsgInfo#msg_info.customer_id},
+        {customer_uuid, MsgInfo#msg_info.customer_id},
         {user_id, MsgInfo#msg_info.user_id},
         {in_msg_id, MsgInfo#msg_info.in_msg_id},
         {gateway_id, MsgInfo#msg_info.gateway_id},
@@ -66,7 +68,9 @@ doc_to_mo_msg(Doc) ->
     ISO8601 = ac_datetime:datetime_to_iso8601(Datetime),
     [
         {msg_id, MsgId},
+        %% customer_id is deprecated, force clients to use customer_uuid
         {customer_id, MsgInfo#msg_info.customer_id},
+        {customer_uuid, MsgInfo#msg_info.customer_id},
         {in_msg_id, MsgInfo#msg_info.in_msg_id},
         {gateway_id, MsgInfo#msg_info.gateway_id},
         {out_msg_id, MsgInfo#msg_info.out_msg_id},

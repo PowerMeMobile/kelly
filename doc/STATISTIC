@@ -13,7 +13,7 @@ Default is `json'.
 #
 
 REST call:
-GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID]
+GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_uuid=CUSTOMER_UUID]
 Where
     YYYY - year
     MM - month
@@ -21,10 +21,10 @@ Where
     hh - hours
     mm - minutes
     ss - seconds (optional)
-    CUSTOMER_ID - customer uuid (optional)
+    CUSTOMER_UUID - customer uuid (optional)
 
 Example:
-http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&customer_id=feda5822-5271-11e1-bd27-001d0947ec73
+http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&customer_uuid=feda5822-5271-11e1-bd27-001d0947ec73
 
 Result:
 <object>
@@ -43,10 +43,10 @@ Result:
 #
 
 REST call:
-GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&status=STATUS[&customer_id=CUSTOMER_ID]
+GET /report/statuses?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&status=STATUS[&customer_uuid=CUSTOMER_UUID]
 Where
     STATUS - mt: pending (request status)
-                     sent, failed (response status)
+                 submitted, failed, blocked (response status)
                  accepted, deleted, delivered, expired, rejected, undeliverable, unknown (delivery status)
              mo: received
     YYYY - year
@@ -55,17 +55,17 @@ Where
     hh - hours
     mm - minutes
     ss - seconds (optional)
-    CUSTOMER_ID - customer uuid (optional)
+    CUSTOMER_UUID - customer uuid (optional)
 
 Example:
-http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted&customer_id=feda5822-5271-11e1-bd27-001d0947ec73
+http://localhost:8080/report/statuses?from=2012-05-20T00:00&to=2012-05-25T00:00&status=accepted&customer_uuid=feda5822-5271-11e1-bd27-001d0947ec73
 
 Result:
 <object>
     <item>
         <msg_id>516d37d31426045fec04d71a</msg_id>
         <client_type>funnel</client_type>
-        <customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+        <customer_uuid>feda5822-5271-11e1-bd27-001d0947ec73</customer_uuid>
         <user_id>user1</user_id>
         <in_msg_id>416</in_msg_id>
         <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
@@ -165,7 +165,7 @@ Result:
 #
 
 REST call:
-GET /report/mt_aggr?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&customer_id=CUSTOMER_IDgroup_by=GROUP_BY
+GET /report/mt_aggr?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss]&customer_uuid=CUSTOMER_UUID&group_by=GROUP_BY
 Where
     YYYY - year
     MM - month
@@ -173,22 +173,20 @@ Where
     hh - hours
     mm - minutes
     ss - seconds (optional)
-    CUSTOMER_ID
+    CUSTOMER_UUID
     GROUP_BY - m - monthly, d - daily, h - hourly
 
 Example:
-http://localhost:8080/report/mt_aggr?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_id=493b3678-9dc8-11e2-8cce-00269e42f7a5&group_by=h
+http://localhost:8080/report/mt_aggr?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_uuid=493b3678-9dc8-11e2-8cce-00269e42f7a5&group_by=h
 
 Result:
 <object>
     <item>
-        <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
         <number>753800</number>
         <revenue>753800.0</revenue>
         <date>2013-01-01T18:00:00</date>
     </item>
     <item>
-        <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
         <number>246200</number>
         <revenue>246200.0</revenue>
         <date>2013-01-01T19:00:00</date>
@@ -212,7 +210,7 @@ Result:
     <item>
         <msg_id>53885ca25f351586c19125ae</msg_id>
         <client_type>funnel</client_type>
-        <customer_id>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_id>
+        <customer_uuid>493b3678-9dc8-11e2-8cce-00269e42f7a5</customer_uuid>
         <user_id>user</user_id>
         <in_msg_id>7592</in_msg_id>
         <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
@@ -247,7 +245,7 @@ Result:
 #
 
 REST call:
-GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_id=CUSTOMER_ID][&recipient=RECIPIENT][&status=STATUS]&skip=SKIP&limit=LIMIT&order_by=ORDER_BY&order_direction=ORDER_DIRECTION
+GET /report/mt?from=YYYY-MM-DDThh:mm[:ss]&to=YYYY-MM-DDThh:mm[:ss][&customer_uuid=CUSTOMER_UUID][&recipient=RECIPIENT][&status=STATUS]&skip=SKIP&limit=LIMIT&order_by=ORDER_BY&order_direction=ORDER_DIRECTION
 Where
     YYYY - year
     MM - month
@@ -255,7 +253,7 @@ Where
     hh - hours
     mm - minutes
     ss - seconds (optional)
-    CUSTOMER_ID - customer uuid (optional)
+    CUSTOMER_UUID - customer uuid (optional)
     RECIPIENT - destination address (optional)
     STATUS - message status (optional)
     SKIP - how many to skip
@@ -265,14 +263,14 @@ Where
 
 
 Example:
-http://localhost:8080/report/mt?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_id=feda5822-5271-11e1-bd27-001d0947ec73&recipient=375258298600&skip=0&limit=1&order_by=req_time&order_direction=asc
+http://localhost:8080/report/mt?from=2013-01-01T00:00&to=2013-05-31T23:00&customer_uuid=feda5822-5271-11e1-bd27-001d0947ec73&recipient=375258298600&skip=0&limit=1&order_by=req_time&order_direction=asc
 
 Result:
 <object>
     <item>
         <msg_id>516d37d51426045fec04d730</msg_id>
         <client_type>funnel</client_type>
-        <customer_id>feda5822-5271-11e1-bd27-001d0947ec73</customer_id>
+        <customer_uuid>feda5822-5271-11e1-bd27-001d0947ec73</customer_uuid>
         <user_id>user</user_id>
         <in_msg_id>44</in_msg_id>
         <gateway_id>7dc235d0-c938-4b66-8f8c-c9037c7eace7</gateway_id>
