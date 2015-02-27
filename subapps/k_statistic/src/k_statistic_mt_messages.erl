@@ -3,8 +3,7 @@
 -export([
     build_report/1,
     build_msg_report/1,
-    build_aggr_report/1,
-    build_aggr_recipient_report/0
+    build_aggr_report/1
 ]).
 
 -include_lib("alley_dto/include/adto.hrl").
@@ -84,29 +83,6 @@ build_aggr_report(Params) ->
     {ok, Docs} = shifted_storage:command(Command),
     SortedDocs = lists:sort(Docs),
     [build_mt_aggr_report_response(Doc) || Doc <- SortedDocs].
-
--spec build_aggr_recipient_report() -> {ok, [tuple()]}.
-build_aggr_recipient_report() ->
-    Command = {
-        'aggregate', <<"mt_messages">>,
-        'pipeline', [
-            {'$project', {
-                '_id', 0,
-                'recipient', <<"$da.a">>
-            }},
-            {'$group', {
-                '_id', <<"$recipient">>,
-                'count', {<<"$sum">>, 1}
-            }},
-            {'$sort', {'count', 1}},
-            {'$project', {
-                '_id', 0,
-                'recipient', <<"$_id">>,
-                'count', 1
-            }}
-        ]
-    },
-    {ok, _Docs} = shifted_storage:command(Command).
 
 %% ===================================================================
 %% Internals
