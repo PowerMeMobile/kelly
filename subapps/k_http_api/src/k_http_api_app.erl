@@ -102,16 +102,20 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_just_reconfigure,
 
         %% Statistic API
-         % keep batches details above batches
-        k_http_api_handler_batches_details,
-        k_http_api_handler_batches,
-        k_http_api_handler_batches_block,
-
         k_http_api_handler_uplink_stats,
         k_http_api_handler_downlink_stats,
         k_http_api_handler_statuses_stats,
         k_http_api_handler_msg_stats,
         k_http_api_handler_mt_msg_aggr_stats,
         k_http_api_handler_mt_msg_stats,
-        k_http_api_handler_mt_msg
+        k_http_api_handler_mt_msg,
+
+        %% API v1
+        % keep batches details above batches
+        k_http_api_v1_batches_details,
+        k_http_api_v1_batches,
+        k_http_api_v1_batches_block,
+
+        k_http_api_v1_reports_mt_aggr_summary,
+        k_http_api_v1_reports_mt_aggr_by_gateway
     ]).

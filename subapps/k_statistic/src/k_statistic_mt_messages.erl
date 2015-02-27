@@ -2,8 +2,7 @@
 
 -export([
     build_msgs_report/1,
-    build_msg_report/1,
-    build_aggr_report/1
+    build_msg_report/1
 ]).
 
 -include_lib("alley_dto/include/adto.hrl").
@@ -59,105 +58,9 @@ build_msg_report(MsgId) ->
     {ok, Doc} = shifted_storage:find_one(mt_messages, Selector),
     [k_statistic_utils:doc_to_mt_msg(Doc)].
 
--spec build_aggr_report([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
-build_aggr_report(Params) ->
-    From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
-    To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
-    CustomerSel =
-        case ?gv(customer_uuid, Params) of
-            undefined -> [];
-            CustomerUuid -> [{'ci', CustomerUuid}]
-        end,
-    GroupBy = ?gv(group_by, Params),
-    Command = {
-        'aggregate', <<"mt_messages">>,
-        'pipeline', [
-            {'$match',
-                bson:document(
-                    [{'rqt', {'$gte', From, '$lt', To}}] ++
-                    CustomerSel
-                )
-            },
-            group(GroupBy),
-            project(GroupBy)
-        ]
-    },
-    {ok, Docs} = shifted_storage:command(Command),
-    SortedDocs = lists:sort(Docs),
-    [build_mt_aggr_report_response(Doc) || Doc <- SortedDocs].
-
 %% ===================================================================
 %% Internals
 %% ===================================================================
-
-group(hourly) ->
-    {'$group', {
-        '_id', {
-            'year', {'$year', <<"$rqt">>},
-            'month', {'$month', <<"$rqt">>},
-            'day', {'$dayOfMonth', <<"$rqt">>},
-            'hour', {'$hour', <<"$rqt">>}
-        },
-        'messages' , {'$sum', 1},
-        'revenue', {'$sum', <<"$p">>}
-    }};
-group(daily) ->
-    {'$group', {
-        '_id', {
-            'year', {'$year', <<"$rqt">>},
-            'month', {'$month', <<"$rqt">>},
-            'day', {'$dayOfMonth', <<"$rqt">>}
-        },
-        'messages', {'$sum', 1},
-        'revenue', {'$sum', <<"$p">>}
-    }};
-group(monthly) ->
-    {'$group', {
-        '_id', {
-            'year', {'$year', <<"$rqt">>},
-            'month', {'$month', <<"$rqt">>}
-        },
-        'messages', {'$sum', 1},
-        'revenue', {'$sum', <<"$p">>}
-    }}.
-
-project(hourly) ->
-    {'$project', {
-        '_id', 0,
-        'year', <<"$_id.year">>,
-        'month', <<"$_id.month">>,
-        'day', <<"$_id.day">>,
-        'hour', <<"$_id.hour">>,
-        'number', <<"$messages">>,
-        'revenue', <<"$revenue">>
-    }};
-project(daily) ->
-    {'$project', {
-        '_id', 0,
-        'year', <<"$_id.year">>,
-        'month', <<"$_id.month">>,
-        'day', <<"$_id.day">>,
-        'number', <<"$messages">>,
-        'revenue', <<"$revenue">>
-    }};
-project(monthly) ->
-    {'$project', {
-        '_id', 0,
-        'year', <<"$_id.year">>,
-        'month', <<"$_id.month">>,
-        'number', <<"$messages">>,
-        'revenue', <<"$revenue">>
-    }}.
-
-build_mt_aggr_report_response(Doc) ->
-    Y = bsondoc:at(year, Doc),
-    M = bsondoc:at(month, Doc),
-    D = bsondoc:at(day, Doc, 1),
-    H = bsondoc:at(hour, Doc, 0),
-    Date = ac_datetime:datetime_to_iso8601({{Y,M,D},{H,0,0}}),
-    Doc2 = bson:exclude([year, month, day, hour], Doc),
-    Doc3 = bson:update(date, Date, Doc2),
-    bson:fields(Doc3).
 
 decode_order_by(<<"req_time">>) ->
     rqt;

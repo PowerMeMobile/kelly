@@ -1,4 +1,4 @@
--module(k_http_api_handler_batches).
+-module(k_http_api_v1_reports_mt_aggr_summary).
 
 -behaviour(gen_http_api).
 
@@ -14,7 +14,6 @@
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
--include_lib("k_storage/include/customer.hrl").
 
 %% ===================================================================
 %% gen_cowboy_crud callbacks
@@ -27,30 +26,16 @@ init() ->
         #param{name = to, mandatory = true, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
-        #param{name = user_id, mandatory = false, repeated = false, type = binary},
-        #param{name = skip, mandatory = true, repeated = false, type = integer},
-        #param{name = limit, mandatory = true, repeated = false, type = integer}
+        #param{name = group_by , mandatory = true, repeated = false, type =
+            {custom, fun convert_group_by/1}}
     ],
     {ok, #specs{
         read = Read,
-        route = "/batches"
+        route = "/v1/reports/mt_aggr_summary"
     }}.
 
 read(Params) ->
-    Report =
-        case ?gv(customer_uuid, Params) of
-            undefined ->
-                k_statistic_mt_batches:get_all(Params);
-            CustomerUuid ->
-                %% don't do the report until the customer exists
-                case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
-                    {ok, #customer{}} ->
-                        k_statistic_mt_batches:get_all(Params);
-                    {error, no_entry} ->
-                        []
-                end
-        end,
-    {ok, Report}.
+    {ok, k_statistic_mt_aggr_reports:summary(Params)}.
 
 create(_Params) ->
     ok.
@@ -64,3 +49,10 @@ delete(_Params) ->
 %% ===================================================================
 %% Internal
 %% ===================================================================
+
+convert_group_by(<<"m">>) ->
+    monthly;
+convert_group_by(<<"d">>) ->
+    daily;
+convert_group_by(<<"h">>) ->
+    hourly.

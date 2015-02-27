@@ -1,4 +1,4 @@
--module(k_http_api_handler_batches_details).
+-module(k_http_api_v1_reports_mt_aggr_by_gateway).
 
 -behaviour(gen_http_api).
 
@@ -21,16 +21,21 @@
 
 init() ->
     Read = [
-        #param{name = req_id, mandatory = true, repeated = false, type = uuid}
+        #param{name = from, mandatory = true, repeated = false, type =
+            {custom, fun ac_datetime:iso8601_to_datetime/1}},
+        #param{name = to, mandatory = true, repeated = false, type =
+            {custom, fun ac_datetime:iso8601_to_datetime/1}},
+        #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
+        #param{name = group_by , mandatory = true, repeated = false, type =
+            {custom, fun convert_group_by/1}}
     ],
     {ok, #specs{
         read = Read,
-        route = "/batches/:req_id"
+        route = "/v1/reports/mt_aggr_by_gateway"
     }}.
 
 read(Params) ->
-    ReqId = ?gv(req_id, Params),
-    {ok, k_statistic_mt_batches:get_one(ReqId)}.
+    {ok, k_statistic_mt_aggr_reports:by_gateway(Params)}.
 
 create(_Params) ->
     ok.
@@ -44,3 +49,10 @@ delete(_Params) ->
 %% ===================================================================
 %% Internal
 %% ===================================================================
+
+convert_group_by(<<"m">>) ->
+    monthly;
+convert_group_by(<<"d">>) ->
+    daily;
+convert_group_by(<<"h">>) ->
+    hourly.
