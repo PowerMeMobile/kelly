@@ -36,12 +36,13 @@ by_country(Params) ->
                 )
             },
             by_network_group(GroupBy),
-            by_network_project(GroupBy)
+            by_network_project(GroupBy),
+            {'$sort',
+                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
-    SortedDocs = lists:sort(Docs),
-    ByNetResps = [response(Doc) || Doc <- SortedDocs],
+    ByNetResps = [response(Doc) || Doc <- Docs],
     NetIds = [proplists:get_value(network_id, R) || R <- ByNetResps],
     NetDict = get_net_dict(NetIds),
     add_country(ByNetResps, NetDict).
@@ -66,12 +67,13 @@ by_gateway(Params) ->
                 )
             },
             by_gateway_group(GroupBy),
-            by_gateway_project(GroupBy)
+            by_gateway_project(GroupBy),
+            {'$sort',
+                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
-    SortedDocs = lists:sort(Docs),
-    [response(Doc) || Doc <- SortedDocs].
+    [response(Doc) || Doc <- Docs].
 
 -spec by_period([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 by_period(Params) ->
@@ -93,12 +95,13 @@ by_period(Params) ->
                 )
             },
             by_period_group(GroupBy),
-            by_period_project(GroupBy)
+            by_period_project(GroupBy),
+            {'$sort',
+                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
-    SortedDocs = lists:sort(Docs),
-    [response(Doc) || Doc <- SortedDocs].
+    [response(Doc) || Doc <- Docs].
 
 -spec summary([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 summary(Params) ->
@@ -120,12 +123,13 @@ summary(Params) ->
                 )
             },
             summary_group(GroupBy),
-            summary_project(GroupBy)
+            summary_project(GroupBy),
+            {'$sort',
+                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
-    SortedDocs = lists:sort(Docs),
-    [response(Doc) || Doc <- SortedDocs].
+    [response(Doc) || Doc <- Docs].
 
 %% ===================================================================
 %% Internals
