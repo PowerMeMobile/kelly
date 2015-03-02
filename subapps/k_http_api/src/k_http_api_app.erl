@@ -117,6 +117,7 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_v1_batches_block,
 
         k_http_api_v1_reports_mt_aggr_by_country,
+        k_http_api_v1_reports_mt_aggr_by_country_and_network,
         k_http_api_v1_reports_mt_aggr_by_gateway,
         k_http_api_v1_reports_mt_aggr_by_period,
         k_http_api_v1_reports_mt_aggr_summary

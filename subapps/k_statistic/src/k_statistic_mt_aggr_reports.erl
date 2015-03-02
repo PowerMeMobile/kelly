@@ -2,6 +2,7 @@
 
 -export([
     by_country/1,
+    by_country_and_network/1,
     by_period/1,
     by_gateway/1,
     summary/1
@@ -18,6 +19,37 @@
 
 -spec by_country([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 by_country(Params) ->
+    From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
+    To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
+    CustomerSel =
+        case ?gv(customer_uuid, Params) of
+            undefined -> [];
+            CustomerUuid -> [{'ci', CustomerUuid}]
+        end,
+    GroupBy = ?gv(group_by, Params),
+    Command = {
+        'aggregate', <<"mt_messages">>,
+        'pipeline', [
+            {'$match',
+                bson:document(
+                    [{'rqt', {'$gte', From, '$lt', To}}] ++
+                    CustomerSel
+                )
+            },
+            by_network_group(GroupBy),
+            by_network_project(GroupBy),
+            {'$sort',
+                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
+        ]
+    },
+    {ok, Docs} = shifted_storage:command(Command),
+    ByNetResps = [response(Doc) || Doc <- Docs],
+    NetIds = [proplists:get_value(network_id, R) || R <- ByNetResps],
+    NetDict = get_net_dict(NetIds),
+    group_by_date_and_country(remove_net_id(add_country(ByNetResps, NetDict))).
+
+-spec by_country_and_network([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
+by_country_and_network(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
     CustomerSel =
@@ -411,8 +443,8 @@ by_network_project(monthly) ->
         'revenue', <<"$revenue">>
     }}.
 
-add_country(Resps, Dict) ->
-    add_country(Resps, Dict, []).
+add_country(Rs, Dict) ->
+    add_country(Rs, Dict, []).
 
 add_country([], _Dict, Acc) ->
     lists:reverse(Acc);
@@ -421,6 +453,34 @@ add_country([R|Rs], Dict, Acc) ->
     Net = dict:fetch(NetId, Dict),
     R2 = [{country, Net#network.country} | R],
     add_country(Rs, Dict, [R2 | Acc]).
+
+remove_net_id(Rs) ->
+    remove_net_id(Rs, []).
+
+remove_net_id([], Acc) ->
+    lists:reverse(Acc);
+remove_net_id([R|Rs], Acc) ->
+    R2 = proplists:delete(network_id, R),
+    remove_net_id(Rs, [R2 | Acc]).
+
+group_by_date_and_country(Rs) ->
+    group_by_date_and_country(Rs, dict:new()).
+
+group_by_date_and_country([], D) ->
+    [[{date, Dt},
+      {country, C},
+      {client_type, Ct},
+      {number, N},
+      {revenue, R}] || {{Dt, C, Ct}, {N, R}} <- dict:to_list(D)];
+group_by_date_and_country([R|Rs], D) ->
+    Date = proplists:get_value(date, R),
+    Country = proplists:get_value(country, R),
+    ClientType = proplists:get_value(client_type, R),
+    Number = proplists:get_value(number, R),
+    Revenue = proplists:get_value(revenue, R),
+    Update = fun({Nums, Revs}) -> {Number + Nums, Revenue + Revs} end,
+    D2 = dict:update({Date, Country, ClientType}, Update, {Number, Revenue}, D),
+    group_by_date_and_country(Rs, D2).
 
 get_net_dict(NetIds) ->
     get_net_dict(NetIds, dict:new()).
