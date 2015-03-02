@@ -44,7 +44,14 @@ by_country(Params) ->
     ByNetResps = [response(Doc) || Doc <- Docs],
     NetIds = [proplists:get_value(network_id, R) || R <- ByNetResps],
     NetDict = get_net_dict(NetIds),
-    group_by_date_and_country(remove_net_id(add_country(ByNetResps, NetDict))).
+    AddCountryAndRmNetId =
+        fun(R, Dict) ->
+            NetId = proplists:get_value(network_id, R),
+            R2 = proplists:delete(network_id, R),
+            Net = dict:fetch(NetId, Dict),
+            [{country, Net#network.country} | R2]
+        end,
+    group_by_date_and_country(modify(AddCountryAndRmNetId, ByNetResps, NetDict)).
 
 -spec by_country_and_network([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 by_country_and_network(Params) ->
@@ -75,7 +82,14 @@ by_country_and_network(Params) ->
     ByNetResps = [response(Doc) || Doc <- Docs],
     NetIds = [proplists:get_value(network_id, R) || R <- ByNetResps],
     NetDict = get_net_dict(NetIds),
-    add_country_and_name(ByNetResps, NetDict).
+    AddCountryAndName =
+        fun(R, Dict) ->
+            NetId = proplists:get_value(network_id, R),
+            Net = dict:fetch(NetId, Dict),
+            [{country, Net#network.country},
+             {network_name, Net#network.name} | R]
+        end,
+    modify(AddCountryAndName, ByNetResps, NetDict).
 
 -spec by_gateway([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 by_gateway(Params) ->
@@ -106,7 +120,13 @@ by_gateway(Params) ->
     Resps = [response(Doc) || Doc <- Docs],
     GtwIds = [proplists:get_value(gateway_id, R) || R <- Resps],
     GtwDict = get_gtw_dict(GtwIds),
-    add_gateway_name(Resps, GtwDict).
+    AddName =
+        fun(R, Dict) ->
+            Id = proplists:get_value(gateway_id, R),
+            Gtw = dict:fetch(Id, Dict),
+            [{gateway_name, Gtw#gateway.name} | R]
+        end,
+    modify(AddName, Resps, GtwDict).
 
 -spec by_period([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 by_period(Params) ->
@@ -444,48 +464,14 @@ by_network_project(monthly) ->
         'revenue', <<"$revenue">>
     }}.
 
-add_country(Rs, Dict) ->
-    add_country(Rs, Dict, []).
+modify(Fun_2, Rs, Dict) ->
+    modify(Fun_2, Rs, Dict, []).
 
-add_country([], _Dict, Acc) ->
+modify(_Fun_2, [], _Dict, Acc) ->
     lists:reverse(Acc);
-add_country([R|Rs], Dict, Acc) ->
-    NetId = proplists:get_value(network_id, R),
-    Net = dict:fetch(NetId, Dict),
-    R2 = [{country, Net#network.country} | R],
-    add_country(Rs, Dict, [R2 | Acc]).
-
-add_country_and_name(Rs, Dict) ->
-    add_country_and_name(Rs, Dict, []).
-
-add_country_and_name([], _Dict, Acc) ->
-    lists:reverse(Acc);
-add_country_and_name([R|Rs], Dict, Acc) ->
-    NetId = proplists:get_value(network_id, R),
-    Net = dict:fetch(NetId, Dict),
-    R2 = [{country, Net#network.country},
-          {network_name, Net#network.name} | R],
-    add_country_and_name(Rs, Dict, [R2 | Acc]).
-
-remove_net_id(Rs) ->
-    remove_net_id(Rs, []).
-
-remove_net_id([], Acc) ->
-    lists:reverse(Acc);
-remove_net_id([R|Rs], Acc) ->
-    R2 = proplists:delete(network_id, R),
-    remove_net_id(Rs, [R2 | Acc]).
-
-add_gateway_name(Rs, Dict) ->
-    add_gateway_name(Rs, Dict, []).
-
-add_gateway_name([], _Dict, Acc) ->
-    lists:reverse(Acc);
-add_gateway_name([R|Rs], Dict, Acc) ->
-    Id = proplists:get_value(gateway_id, R),
-    Gtw = dict:fetch(Id, Dict),
-    R2 = [{gateway_name, Gtw#gateway.name} | R],
-    add_gateway_name(Rs, Dict, [R2 | Acc]).
+modify(Fun_2, [R | Rs], Dict, Acc) ->
+    R2 = Fun_2(R, Dict),
+    modify(Fun_2, Rs, Dict, [R2 | Acc]).
 
 group_by_date_and_country(Rs) ->
     group_by_date_and_country(Rs, dict:new()).
@@ -498,7 +484,7 @@ group_by_date_and_country([], D) ->
       {client_type, Ct},
       {number, N},
       {revenue, R}] || {{Dt, C, Ct}, {N, R}} <- L2];
-group_by_date_and_country([R|Rs], D) ->
+group_by_date_and_country([R | Rs], D) ->
     Date = proplists:get_value(date, R),
     Country = proplists:get_value(country, R),
     ClientType = proplists:get_value(client_type, R),
@@ -513,7 +499,7 @@ get_net_dict(NetIds) ->
 
 get_net_dict([], Dict) ->
     Dict;
-get_net_dict([NetId|NetIds], Dict) ->
+get_net_dict([NetId | NetIds], Dict) ->
     case dict:is_key(NetId, Dict) of
         true ->
             get_net_dict(NetIds, Dict);
@@ -528,7 +514,7 @@ get_gtw_dict(GtwIds) ->
 
 get_gtw_dict([], Dict) ->
     Dict;
-get_gtw_dict([GtwId|GtwIds], Dict) ->
+get_gtw_dict([GtwId | GtwIds], Dict) ->
     case dict:is_key(GtwId, Dict) of
         true ->
             get_gtw_dict(GtwIds, Dict);
