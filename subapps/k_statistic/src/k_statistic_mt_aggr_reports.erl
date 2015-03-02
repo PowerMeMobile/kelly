@@ -37,9 +37,7 @@ by_country(Params) ->
                 )
             },
             by_network_group(GroupBy),
-            by_network_project(GroupBy),
-            {'$sort',
-                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
+            by_network_project(GroupBy)
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
@@ -77,7 +75,7 @@ by_country_and_network(Params) ->
     ByNetResps = [response(Doc) || Doc <- Docs],
     NetIds = [proplists:get_value(network_id, R) || R <- ByNetResps],
     NetDict = get_net_dict(NetIds),
-    add_country(ByNetResps, NetDict).
+    add_country_and_name(ByNetResps, NetDict).
 
 -spec by_gateway([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 by_gateway(Params) ->
@@ -105,7 +103,10 @@ by_gateway(Params) ->
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
-    [response(Doc) || Doc <- Docs].
+    Resps = [response(Doc) || Doc <- Docs],
+    GtwIds = [proplists:get_value(gateway_id, R) || R <- Resps],
+    GtwDict = get_gtw_dict(GtwIds),
+    add_gateway_name(Resps, GtwDict).
 
 -spec by_period([{atom(), term()}]) -> [[{bson:label(), bson:value()}]].
 by_period(Params) ->
@@ -454,6 +455,18 @@ add_country([R|Rs], Dict, Acc) ->
     R2 = [{country, Net#network.country} | R],
     add_country(Rs, Dict, [R2 | Acc]).
 
+add_country_and_name(Rs, Dict) ->
+    add_country_and_name(Rs, Dict, []).
+
+add_country_and_name([], _Dict, Acc) ->
+    lists:reverse(Acc);
+add_country_and_name([R|Rs], Dict, Acc) ->
+    NetId = proplists:get_value(network_id, R),
+    Net = dict:fetch(NetId, Dict),
+    R2 = [{country, Net#network.country},
+          {network_name, Net#network.name} | R],
+    add_country_and_name(Rs, Dict, [R2 | Acc]).
+
 remove_net_id(Rs) ->
     remove_net_id(Rs, []).
 
@@ -463,15 +476,28 @@ remove_net_id([R|Rs], Acc) ->
     R2 = proplists:delete(network_id, R),
     remove_net_id(Rs, [R2 | Acc]).
 
+add_gateway_name(Rs, Dict) ->
+    add_gateway_name(Rs, Dict, []).
+
+add_gateway_name([], _Dict, Acc) ->
+    lists:reverse(Acc);
+add_gateway_name([R|Rs], Dict, Acc) ->
+    Id = proplists:get_value(gateway_id, R),
+    Gtw = dict:fetch(Id, Dict),
+    R2 = [{gateway_name, Gtw#gateway.name} | R],
+    add_gateway_name(Rs, Dict, [R2 | Acc]).
+
 group_by_date_and_country(Rs) ->
     group_by_date_and_country(Rs, dict:new()).
 
 group_by_date_and_country([], D) ->
+    L = dict:to_list(D),
+    L2 = lists:reverse(lists:keysort(1, L)),
     [[{date, Dt},
       {country, C},
       {client_type, Ct},
       {number, N},
-      {revenue, R}] || {{Dt, C, Ct}, {N, R}} <- dict:to_list(D)];
+      {revenue, R}] || {{Dt, C, Ct}, {N, R}} <- L2];
 group_by_date_and_country([R|Rs], D) ->
     Date = proplists:get_value(date, R),
     Country = proplists:get_value(country, R),
@@ -495,4 +521,19 @@ get_net_dict([NetId|NetIds], Dict) ->
             {ok, Net} = k_storage_networks:get_network(NetId),
             Dict2 = dict:store(NetId, Net, Dict),
             get_net_dict(NetIds, Dict2)
+    end.
+
+get_gtw_dict(GtwIds) ->
+    get_gtw_dict(GtwIds, dict:new()).
+
+get_gtw_dict([], Dict) ->
+    Dict;
+get_gtw_dict([GtwId|GtwIds], Dict) ->
+    case dict:is_key(GtwId, Dict) of
+        true ->
+            get_gtw_dict(GtwIds, Dict);
+        false ->
+            {ok, Gtw} = k_storage_gateways:get_gateway(GtwId),
+            Dict2 = dict:store(GtwId, Gtw, Dict),
+            get_gtw_dict(GtwIds, Dict2)
     end.
