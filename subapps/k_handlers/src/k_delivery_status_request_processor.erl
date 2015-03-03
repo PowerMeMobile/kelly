@@ -65,6 +65,7 @@ statuses_v1(MsgDocs) ->
     %% then compress them to one status, i.e.
     %% [delivered, blocked] -> blocked
     %% [pending, submitted] -> pending
+    %% [delivered, delivered] -> delivered
     compress_statuses_v1(addr_to_statuses_map(MsgDocs)).
 
 compress_statuses_v1(Addr2Sts) ->
