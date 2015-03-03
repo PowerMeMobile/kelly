@@ -186,7 +186,11 @@ authenticate(CustomerId, UserId, Password, Interface) ->
 check_password(PasswHash, PasswHash) ->
     allow;
 check_password(Passw, PasswHash) ->
-    case ac_hexdump:binary_to_hexdump(crypto:hash(md5, Passw), to_lower) =:= PasswHash of
+    Enc = fun(P) ->
+        ac_hexdump:binary_to_hexdump(crypto:hash(md5, P), to_lower)
+    end,
+    Hashes = [Enc(P) || P <- [Passw, bstr:lower(Passw), bstr:upper(Passw)]],
+    case lists:member(PasswHash, Hashes) of
         true ->
             allow;
         _ ->
