@@ -278,7 +278,7 @@ dto_build_long_part_req_info(#just_sms_request_dto{
         in_msg_id = InMsgId,
         gateway_id = GatewayId,
         type = {part, #part_info{
-            ref = lists:delete(InMsgId, InMsgIds),
+            ref = InMsgIds,
             seq = PartSeqNum,
             total = PartsTotal
         }},
@@ -503,7 +503,7 @@ v1_build_long_part_req_info(#sms_req_v1{
         in_msg_id = InMsgId,
         gateway_id = GatewayId,
         type = {part, #part_info{
-            ref = lists:delete(InMsgId, InMsgIds),
+            ref = InMsgIds,
             seq = PartSeqNum,
             total = PartsTotal
         }},
