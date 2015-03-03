@@ -132,7 +132,6 @@ to_dict(AddrDoc, MsgDoc, Dict) ->
     Addr = k_storage_utils:doc_to_addr(AddrDoc),
     Status = bson:at(s, MsgDoc),
     Ts = timestamp(Status, MsgDoc),
-    %Ts = ac_datetime:timestamp_to_unixepoch(timestamp(Status, MsgDoc)),
     ac_dict:prepend(Addr, {Status, Ts}, Dict).
 
 ref_num(Part) ->
