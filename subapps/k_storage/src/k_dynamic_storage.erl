@@ -160,7 +160,11 @@ set_mt_batch_info(#batch_info{
     user_id = UserId,
     client_type = ClientType,
     src_addr = SrcAddr,
+    encoding = Encoding,
     body = Body,
+    reg_dlr = RegDlr,
+    esm_class = EsmClass,
+    val_period = ValPeriod,
     req_time = ReqTime,
     recipients = Recipients,
     messages = Messages,
@@ -175,7 +179,11 @@ set_mt_batch_info(#batch_info{
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
             'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+            'e'  , k_storage_utils:encoding_to_binary(Encoding),
             'b'  , Body,
+            'rd' , RegDlr,
+            'ec' , EsmClass,
+            'vp' , ValPeriod,
             'rqt', ReqTime
         },
         '$inc', {
