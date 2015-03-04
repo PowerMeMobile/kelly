@@ -359,21 +359,30 @@ dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
     -> [#req_info{}].
 v1_sms_req_to_req_infos(SmsReq, ReqTime) ->
     #sms_req_v1{
+        message = Msg,
+        encoding = Encoding,
+        params = Params,
         dst_addrs = DstAddrs,
         msg_ids = InMsgIds,
-        encodings = Encs,
         messages = Msgs,
-        params_s = ParamsS,
         net_ids = NetIds,
         prices = Prices
     } = SmsReq,
-    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Encs, Msgs, ParamsS, []).
+    Msgs2 = case Msgs of
+                undefined ->
+                    %% one message many recipients case
+                    Dup = length(DstAddrs),
+                    lists:duplicate(Dup, Msg);
+                _ ->
+                    Msgs
+            end,
+    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Encoding, Msgs2, Params, []).
 
-v1_build_req_infos(_, _, [], [], [], [], [], [], [], Acc) ->
+v1_build_req_infos(_SmsReq, _ReqTime, [], [], [], [], _Enc, [], _Params, Acc) ->
     lists:reverse(Acc);
 v1_build_req_infos(SmsReq, ReqTime,
     [DstAddr|DstAddrs], [InMsgId|InMsgIds], [NetId|NetIds], [Price|Prices],
-    [Enc|Encs], [Msg|Msgs], [Params|ParamsS], Acc
+    Enc, [Msg|Msgs], Params, Acc
 ) ->
     Type = SmsReq#sms_req_v1.type,
     ReqInfo =
@@ -389,7 +398,7 @@ v1_build_req_infos(SmsReq, ReqTime,
                 [v1_build_part_req_info(
                     SmsReq, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Msg, Params)]
         end,
-    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Encs, Msgs, ParamsS, ReqInfo ++ Acc).
+    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Enc, Msgs, Params, ReqInfo ++ Acc).
 
 v1_build_short_req_info(#sms_req_v1{
     req_id = ReqId,
@@ -524,11 +533,11 @@ v1_process_oneapi_req(#sms_req_v1{
     interface = oneapi,
     customer_id = CustomerId,
     user_id = UserId,
-    params_s = ParamsS,
+    params = Params,
     src_addr = SrcAddr
 }, InMsgIds) ->
-    NotifyURL = ?gv(oneapi_notify_url, hd(ParamsS), undefined),
-    CallbackData = ?gv(oneapi_callback_data, hd(ParamsS), undefined),
+    NotifyURL = ?gv(oneapi_notify_url, Params, undefined),
+    CallbackData = ?gv(oneapi_callback_data, Params, undefined),
     ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
     case create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
             NotifyURL, CallbackData, ReqId, InMsgIds) of
