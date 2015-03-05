@@ -111,6 +111,8 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_mt_msg,
 
         %% API v1
+        k_http_api_v1_blacklists,
+
         % keep batches details above batches
         k_http_api_v1_batches_details,
         k_http_api_v1_batches,
