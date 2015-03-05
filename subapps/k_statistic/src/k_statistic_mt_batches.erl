@@ -142,9 +142,6 @@ done_time(pending, Doc) ->
     bson:at(rqt, Doc);
 done_time(submitted, Doc) ->
     bson:at(rpt, Doc);
-%% deprecated
-done_time(sent, Doc) ->
-    bson:at(rpt, Doc);
 done_time(failed, Doc) ->
     bson:at(rpt, Doc);
 done_time(blocked, Doc) ->
