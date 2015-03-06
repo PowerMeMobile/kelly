@@ -32,8 +32,9 @@ process(Req) ->
     try
         process(ContentType, Payload)
     catch
-        _:_ ->
-            ?log_error("Exception: ~p~n", [erlang:get_stacktrace()]),
+        Class:Error ->
+            Stacktrace = erlang:get_stacktrace(),
+            ?log_error("Exception: ~p:~p Stacktrace: ~p", [Class, Error, Stacktrace]),
             {ok, []}
     end.
 
