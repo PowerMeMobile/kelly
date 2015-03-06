@@ -114,6 +114,7 @@ doc_to_mt_batch_info(Doc) ->
         customer_id = bsondoc:at(ci, Doc),
         user_id = bsondoc:at(ui, Doc),
         client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
+        def_time = bsondoc:at(dft, Doc),
         src_addr = doc_to_addr(SrcAddrDoc),
         encoding = binary_to_encoding(bsondoc:at(e, Doc)),
         body = bsondoc:at(b, Doc),

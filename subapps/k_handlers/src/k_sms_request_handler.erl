@@ -91,7 +91,7 @@ process_sms_req(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
         Error ->
             Error
     end;
-process_sms_req(#sms_req_v1{interface = ClientType} = SmsReq) ->
+process_sms_req(#sms_req_v1{interface = ClientType, def_time = undefined} = SmsReq) ->
     ?log_debug("Got sms request: ~p", [SmsReq]),
     ReqTime = ac_datetime:utc_timestamp(),
     ReqInfos = v1_sms_req_to_req_infos(SmsReq, ReqTime),
@@ -115,6 +115,35 @@ process_sms_req(#sms_req_v1{interface = ClientType} = SmsReq) ->
             end;
         Error ->
             Error
+    end;
+process_sms_req(#sms_req_v1{def_time = DefTime} = SmsReq) ->
+    ?log_debug("Got deferred sms request: ~p", [SmsReq]),
+    DefTime2 = ac_datetime:unixepoch_to_timestamp(DefTime),
+    ReqTime = ac_datetime:utc_timestamp(),
+    ReqInfos = v1_sms_req_to_req_infos(SmsReq, ReqTime),
+    BatchInfo = v1_build_batch_info(SmsReq, ReqTime, ReqInfos),
+    case DefTime2 =< ReqTime of
+        true ->
+            case k_dynamic_storage:set_mt_batch_info(BatchInfo) of
+                ok ->
+                    case ac_utils:safe_foreach(
+                        fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
+                    ) of
+                        ok ->
+                            {ok, []};
+                        Error ->
+                            Error
+                    end;
+                Error ->
+                    Error
+            end;
+        false ->
+            case k_storage_defers:set_mt_def_batch_info(BatchInfo, SmsReq) of
+                ok ->
+                    {ok, []};
+                Error ->
+                    Error
+            end
     end.
 
 %% ===================================================================
@@ -565,12 +594,14 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         customer_id = CustomerId,
         user_id = UserId,
         interface = ClientType,
+        def_time = DefTime,
         src_addr = SrcAddr,
         encoding = Encoding,
         params = Params,
         message = Body,
         dst_addrs = DstAddrs
     } = SmsReq,
+    DefTime2 = ac_datetime:unixepoch_to_timestamp(DefTime),
     RegDlr = ?gv(registered_delivery, Params, false),
     EsmClass = ?gv(esm_class, Params, 0),
     ValPeriod = ?gv(validity_period, Params, <<"">>),
@@ -583,6 +614,7 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         customer_id = CustomerId,
         user_id = UserId,
         client_type = ClientType,
+        def_time = DefTime2,
         src_addr = SrcAddr,
         encoding = Encoding,
         body = Body,

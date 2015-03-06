@@ -155,6 +155,7 @@ set_mt_batch_info(#batch_info{
     customer_id = CustomerId,
     user_id = UserId,
     client_type = ClientType,
+    def_time = DefTime,
     src_addr = SrcAddr,
     encoding = Encoding,
     body = Body,
@@ -170,18 +171,34 @@ set_mt_batch_info(#batch_info{
         '_id', ReqId
     },
     Modifier = {
-        '$setOnInsert', {
-            'ci' , CustomerId,
-            'ui' , UserId,
-            'ct' , bsondoc:atom_to_binary(ClientType),
-            'sa' , k_storage_utils:addr_to_doc(SrcAddr),
-            'e'  , k_storage_utils:encoding_to_binary(Encoding),
-            'b'  , Body,
-            'rd' , RegDlr,
-            'ec' , EsmClass,
-            'vp' , ValPeriod,
-            'rqt', ReqTime
-        },
+        '$setOnInsert',
+            case DefTime of
+                undefined -> {
+                    'ci' , CustomerId,
+                    'ui' , UserId,
+                    'ct' , bsondoc:atom_to_binary(ClientType),
+                    'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+                    'e'  , k_storage_utils:encoding_to_binary(Encoding),
+                    'b'  , Body,
+                    'rd' , RegDlr,
+                    'ec' , EsmClass,
+                    'vp' , ValPeriod,
+                    'rqt', ReqTime
+                };
+                DefTime -> {
+                    'ci' , CustomerId,
+                    'ui' , UserId,
+                    'ct' , bsondoc:atom_to_binary(ClientType),
+                    'dft', DefTime,
+                    'sa' , k_storage_utils:addr_to_doc(SrcAddr),
+                    'e'  , k_storage_utils:encoding_to_binary(Encoding),
+                    'b'  , Body,
+                    'rd' , RegDlr,
+                    'ec' , EsmClass,
+                    'vp' , ValPeriod,
+                    'rqt', ReqTime
+                }
+            end,
         '$inc', {
             'rs' , Recipients,
             'ms' , Messages,

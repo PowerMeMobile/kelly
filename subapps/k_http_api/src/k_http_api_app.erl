@@ -118,6 +118,11 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_v1_batches,
         k_http_api_v1_batches_block,
 
+        % keep defers details above defers
+        k_http_api_v1_defers_details,
+        k_http_api_v1_defers,
+        k_http_api_v1_defers_recipients,
+
         k_http_api_v1_reports_mt_aggr_by_country,
         k_http_api_v1_reports_mt_aggr_by_country_and_network,
         k_http_api_v1_reports_mt_aggr_by_gateway,

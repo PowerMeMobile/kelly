@@ -11,6 +11,7 @@
 -export([
     ensure_static_storage_indexes/1,
     ensure_mailbox_storage_indexes/1,
+    ensure_defers_storage_indexes/1,
     ensure_dynamic_storage_indexes/1,
 
     next_mode_event/5,
@@ -64,6 +65,10 @@ ensure_static_storage_indexes(ServerName) ->
 
 -spec ensure_mailbox_storage_indexes(server_name()) -> ok.
 ensure_mailbox_storage_indexes(_ServerName) ->
+    ok.
+
+-spec ensure_defers_storage_indexes(server_name()) -> ok.
+ensure_defers_storage_indexes(_ServerName) ->
     ok.
 
 -spec ensure_dynamic_storage_indexes(server_name()) -> ok.

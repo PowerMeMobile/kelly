@@ -49,6 +49,25 @@
     customer_id :: customer_uuid(),
     user_id :: user_id(),
     client_type :: client_type(),
+    def_time :: timestamp(),
+    src_addr :: src_addr(),
+    encoding :: encoding(),
+    body :: binary(),
+    reg_dlr :: boolean(),
+    esm_class  :: esm_class(),
+    val_period :: val_period(),
+    req_time :: timestamp(),
+    recipients :: pos_integer(),
+    messages :: pos_integer(),
+    price :: float()
+}).
+
+-record(def_batch_info, {
+    req_id :: req_id(),
+    customer_id :: customer_uuid(),
+    user_id :: user_id(),
+    client_type :: client_type(),
+    def_time :: timestamp(),
     src_addr :: src_addr(),
     encoding :: encoding(),
     body :: binary(),

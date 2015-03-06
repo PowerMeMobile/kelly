@@ -1,16 +1,13 @@
-{application, k_handlers, [
+{application, k_defers, [
     {description, ""},
     {vsn, git},
     {registered, []},
     {applications, [
         kernel,
         stdlib,
-        gproc,
         k_common,
-        k_storage,
-        k_mailbox,
-        k_defers
+        k_storage
     ]},
-    {mod, {k_handlers_app, []}},
+    {mod, {k_defers_app, []}},
     {env, []}
 ]}.

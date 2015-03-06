@@ -92,6 +92,9 @@ init([SpecModule]) ->
     %% initialize mailbox storage.
     ok = start_mailbox_storage(SpecModule),
 
+    %% initiallize defers storage.
+    ok = start_defers_storage(SpecModule),
+
     %% initialize dynamic storage.
     {ok, NewState} =
          case read_storage_state(SpecModule) of
@@ -187,6 +190,17 @@ start_mailbox_storage(SpecModule) ->
     ?log_debug("~p registered as ~p", [Pid, Name]),
 
     ok = SpecModule:ensure_mailbox_storage_indexes(Name).
+
+start_defers_storage(SpecModule) ->
+    Name = defers_storage,
+
+    {ok, StaticProps} = application:get_env(?APP, Name),
+
+    {ok, Pid} = gen_storage_manager_sup:start_child([{server_name, Name} | StaticProps]),
+    true = register(Name, Pid),
+    ?log_debug("~p registered as ~p", [Pid, Name]),
+
+    ok = SpecModule:ensure_defers_storage_indexes(Name).
 
 start_dynamic_storage(SpecModule, 'RegularMode') ->
     ok = start_curr_dynamic_storage(SpecModule);

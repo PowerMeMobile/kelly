@@ -38,7 +38,7 @@ get_all(Params) ->
             )
         },
     {ok, Docs} = shifted_storage:find(mt_batches, Selector, {}, Skip, Limit),
-    [build_mt_batch_simple_response(Batch) || {_, Doc} <- Docs,
+    [build_mt_batch_response(Batch) || {_, Doc} <- Docs,
         begin Batch = k_storage_utils:doc_to_mt_batch_info(Doc), true end].
 
 -spec get_one(uuid()) -> [[{atom(), term()}]].
@@ -47,7 +47,7 @@ get_one(ReqId) ->
     Projector = {},
     {ok, Doc} = shifted_storage:find_one(mt_batches, Selector, Projector),
     Batch = k_storage_utils:doc_to_mt_batch_info(Doc),
-    Resp = build_mt_batch_simple_response(Batch),
+    Resp = build_mt_batch_response(Batch),
     Selector2 = {'ri', ReqId},
     Projector2 = {
         '_id', 0,
@@ -120,8 +120,9 @@ merge([{Key, Value}|Pairs], Dict) ->
     NewDict = dict:update_counter(Key, Value, Dict),
     merge(Pairs, NewDict).
 
-build_mt_batch_simple_response(Batch) ->
-    ReqTime  = ac_datetime:timestamp_to_datetime(Batch#batch_info.req_time),
+build_mt_batch_response(Batch) ->
+    %% TODO: add def_time if defined
+    ReqTime = ac_datetime:timestamp_to_datetime(Batch#batch_info.req_time),
     ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
     [
         {req_id, Batch#batch_info.req_id},
