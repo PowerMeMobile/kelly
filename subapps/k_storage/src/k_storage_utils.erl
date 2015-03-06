@@ -4,6 +4,8 @@
     addr_to_doc/1,
     doc_to_addr/1,
 
+    addr_to_proplist/1,
+
     doc_to_mt_msg_info/1,
     doc_to_mt_batch_info/1,
 
@@ -51,6 +53,21 @@ doc_to_addr({a, Addr, t, Ton, n, Npi, r, RefNum}) ->
         npi = Npi,
         ref_num = RefNum
     }.
+
+-spec addr_to_proplist(#addr{}) -> [{addr, binary()} | {ton | npi | ref_num, integer()}].
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
+    [
+        {addr, Addr},
+        {ton, Ton},
+        {npi, Npi}
+    ];
+addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
+    [
+        {addr, Addr},
+        {ton, Ton},
+        {npi, Npi},
+        {ref_num, RefNum}
+    ].
 
 -spec doc_to_mt_msg_info(bson:document()) -> #msg_info{}.
 doc_to_mt_msg_info(Doc) ->

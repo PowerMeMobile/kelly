@@ -128,7 +128,7 @@ build_mt_batch_simple_response(Batch) ->
         {customer_uuid, Batch#batch_info.customer_id},
         {user_id, Batch#batch_info.user_id},
         {client_type, Batch#batch_info.client_type},
-        {src_addr, addr_to_proplist(Batch#batch_info.src_addr)},
+        {src_addr, k_storage_utils:addr_to_proplist(Batch#batch_info.src_addr)},
         {encoding, Batch#batch_info.encoding},
         {body, Batch#batch_info.body},
         {reg_dlr, Batch#batch_info.reg_dlr},
@@ -148,17 +148,3 @@ done_time(blocked, Doc) ->
     bson:at(rpt, Doc);
 done_time(_, Doc) ->
     bson:at(dt, Doc).
-
-addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
-    [
-        {addr, Addr},
-        {ton, Ton},
-        {npi, Npi}
-    ];
-addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
-    [
-        {addr, Addr},
-        {ton, Ton},
-        {npi, Npi},
-        {ref_num, RefNum}
-    ].
