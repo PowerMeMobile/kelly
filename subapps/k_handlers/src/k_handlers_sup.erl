@@ -20,6 +20,10 @@
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/supervisor_spec.hrl").
 
+%% ===================================================================
+%% API
+%% ===================================================================
+
 -spec start_link() -> {ok, pid()}.
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
