@@ -41,6 +41,8 @@ init([]) ->
 
         ?HANDLER(amqp_k1api_sms_request),
         ?HANDLER(amqp_sms_request),
+        ?HANDLER(amqp_sms_request_deferred),
+
         ?HANDLER(amqp_sms_response),
         ?HANDLER(amqp_receipt_batch),
         ?HANDLER(amqp_funnel_events),

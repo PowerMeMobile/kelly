@@ -1,6 +1,15 @@
 -module(k_sms_request_handler).
 
--export([process/1]).
+-export([
+    process/1
+]).
+
+%% Used by k_sms_request_deferred_handler
+-export([
+    v1_sms_req_to_req_infos/2,
+    v1_build_batch_info/3
+]).
+
 -compile({no_auto_import, [split_binary/2]}).
 
 -include("amqp_worker_reply.hrl").
@@ -91,7 +100,7 @@ process_sms_req(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
         Error ->
             Error
     end;
-process_sms_req(#sms_req_v1{interface = ClientType, def_time = undefined} = SmsReq) ->
+process_sms_req(#sms_req_v1{interface = ClientType} = SmsReq) ->
     ?log_debug("Got sms request: ~p", [SmsReq]),
     ReqTime = ac_datetime:utc_timestamp(),
     ReqInfos = v1_sms_req_to_req_infos(SmsReq, ReqTime),
@@ -115,35 +124,6 @@ process_sms_req(#sms_req_v1{interface = ClientType, def_time = undefined} = SmsR
             end;
         Error ->
             Error
-    end;
-process_sms_req(#sms_req_v1{def_time = DefTime} = SmsReq) ->
-    ?log_debug("Got deferred sms request: ~p", [SmsReq]),
-    DefTime2 = ac_datetime:unixepoch_to_timestamp(DefTime),
-    ReqTime = ac_datetime:utc_timestamp(),
-    ReqInfos = v1_sms_req_to_req_infos(SmsReq, ReqTime),
-    BatchInfo = v1_build_batch_info(SmsReq, ReqTime, ReqInfos),
-    case DefTime2 =< ReqTime of
-        true ->
-            case k_dynamic_storage:set_mt_batch_info(BatchInfo) of
-                ok ->
-                    case ac_utils:safe_foreach(
-                        fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
-                    ) of
-                        ok ->
-                            {ok, []};
-                        Error ->
-                            Error
-                    end;
-                Error ->
-                    Error
-            end;
-        false ->
-            case k_storage_defers:set_mt_def_batch_info(BatchInfo, SmsReq) of
-                ok ->
-                    {ok, []};
-                Error ->
-                    Error
-            end
     end.
 
 %% ===================================================================
@@ -588,6 +568,8 @@ v1_process_oneapi_req(#sms_req_v1{
             ok
     end.
 
+-spec v1_build_batch_info(#sms_req_v1{}, erlang:timestamp(), [#req_info{}])
+    -> #batch_info{}.
 v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
     #sms_req_v1{
         req_id = ReqId,
