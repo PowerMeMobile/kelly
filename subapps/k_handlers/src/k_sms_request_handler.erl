@@ -583,7 +583,11 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         message = Body,
         dst_addrs = DstAddrs
     } = SmsReq,
-    DefTime2 = ac_datetime:unixepoch_to_timestamp(DefTime),
+    DefTime2 =
+        case DefTime of
+            undefined -> undefined;
+            _ -> ac_datetime:unixepoch_to_timestamp(DefTime)
+        end,
     RegDlr = ?gv(registered_delivery, Params, false),
     EsmClass = ?gv(esm_class, Params, 0),
     ValPeriod = ?gv(validity_period, Params, <<"">>),
