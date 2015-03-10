@@ -2,7 +2,8 @@
 
 -export([
     get_all/1,
-    get_one/1
+    get_details/1,
+    get_recipients/1
 ]).
 
 -include_lib("alley_dto/include/adto.hrl").
@@ -50,8 +51,8 @@ get_all(Params) ->
             {error, Error}
     end.
 
--spec get_one(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
-get_one(ReqId) ->
+-spec get_details(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
+get_details(ReqId) ->
     Selector = {'_id', ReqId},
     Projector = {},
     case shifted_storage:find_one(mt_batches, Selector, Projector) of
@@ -73,6 +74,20 @@ get_one(ReqId) ->
                 {error, Error} ->
                     {error, Error}
             end;
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec get_recipients(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
+get_recipients(ReqId) ->
+    Selector = {ri, ReqId},
+    Projector = {
+        '_id', 0,
+        da   , 1
+    },
+    case shifted_storage:find(mt_messages, Selector, Projector) of
+        {ok, Docs} ->
+            {ok, build_addrs([D || {_, D} <- Docs])};
         {error, Error} ->
             {error, Error}
     end.
@@ -166,3 +181,18 @@ done_time(blocked, Doc) ->
     bson:at(rpt, Doc);
 done_time(_, Doc) ->
     bson:at(dt, Doc).
+
+build_addrs(Docs) ->
+    build_addrs(Docs, []).
+
+build_addrs([], Acc) ->
+    lists:sort(sets:to_list(sets:from_list(Acc)));
+build_addrs([D | Ds], Acc) ->
+    case bson:at(da, D) of
+        <<"xxxxxxxxxx">> ->
+            build_addrs(Ds, Acc);
+        AddrDoc ->
+            Addr = k_storage_utils:doc_to_addr(AddrDoc),
+            Addr2 = k_storage_utils:addr_to_proplist(Addr),
+            build_addrs(Ds, [Addr2 | Acc])
+    end.

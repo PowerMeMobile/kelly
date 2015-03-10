@@ -1,4 +1,4 @@
--module(k_http_api_v1_batches_details).
+-module(k_http_api_v1_batches_recipients).
 
 -behaviour(gen_http_api).
 
@@ -14,6 +14,7 @@
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
+-include_lib("k_storage/include/customer.hrl").
 
 %% ===================================================================
 %% gen_cowboy_crud callbacks
@@ -25,17 +26,13 @@ init() ->
     ],
     {ok, #specs{
         read = Read,
-        route = "/v1/batches/:req_id"
+        route = "/v1/batches/:req_id/recipients"
     }}.
 
 read(Params) ->
     ReqId = ?gv(req_id, Params),
-    case k_statistic_mt_batches:get_details(ReqId) of
-        {ok, Resp} ->
-            {ok, Resp};
-        {error, no_entry} ->
-            {http_code, 404}
-    end.
+    {ok, Resp} = k_statistic_mt_batches:get_recipients(ReqId),
+    {ok, Resp}.
 
 create(_Params) ->
     ok.

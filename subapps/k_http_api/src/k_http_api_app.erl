@@ -117,6 +117,7 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_v1_batches_details,
         k_http_api_v1_batches,
         k_http_api_v1_batches_block,
+        k_http_api_v1_batches_recipients,
 
         % keep defers details above defers
         k_http_api_v1_defers_details,
