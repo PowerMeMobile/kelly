@@ -8,7 +8,8 @@
 %% API
 -export([
     get_all/4,
-    get_one/1,
+    get_details/1,
+    get_recipients/1,
     get_expired_up_to/1,
     delete/1,
     delete/2,
@@ -48,14 +49,26 @@ get_all(CustomerUuid, UserId, Skip, Limit) ->
             {error, Error}
     end.
 
--spec get_one(req_id()) ->
+-spec get_details(req_id()) ->
     {ok, #batch_info{}} | {error, reason()}.
-get_one(ReqId) ->
+get_details(ReqId) ->
     Selector = {'_id', ReqId},
     Projector = {'rqs', 0},
     case mongodb_storage:find_one(defers_storage, mt_defers, Selector, Projector) of
         {ok, Doc} ->
             {ok, k_storage_utils:doc_to_mt_batch_info(Doc)};
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec get_recipients(req_id()) ->
+    {ok, [#addr{}]} | {error, reason()}.
+get_recipients(ReqId) ->
+    Selector = {'_id', ReqId},
+    Projector = {'_id', 0, 'rqs', 1},
+    case mongodb_storage:find_one(defers_storage, mt_defers, Selector, Projector) of
+        {ok, Doc} ->
+            {ok, build_recipients(Doc)};
         {error, Error} ->
             {error, Error}
     end.
@@ -148,8 +161,15 @@ set_mt_def_batch_info(#batch_info{
 gateway_id(#sms_req_v1{} = SmsReq) ->
     SmsReq#sms_req_v1.gateway_id.
 
+dst_addrs(#sms_req_v1{} = SmsReq) ->
+    SmsReq#sms_req_v1.dst_addrs.
+
 reformat_request(Doc) ->
     ReqId = bsondoc:at('_id', Doc),
     Reqs = [{bsondoc:at('gi', R), bsondoc:at('rq', R)}
             || R <- bsondoc:at('rqs', Doc)],
     {ReqId, Reqs}.
+
+build_recipients(Doc) ->
+    Reqs = [binary_to_term(bsondoc:at('rq', R)) || R <- bsondoc:at('rqs', Doc)],
+    lists:sort(lists:flatten([dst_addrs(R) || R <- Reqs])).

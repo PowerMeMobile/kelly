@@ -43,7 +43,7 @@ read(Params) ->
     ReqId = ?gv(req_id, Params),
     %% in case of can_change_body = false
     %% WARNING: You can edit only deferred date and time of this message, because the message contains custom tags.
-    case k_defers:get_one(ReqId) of
+    case k_defers:get_details(ReqId) of
         {ok, Resp} ->
             {ok, Resp};
         {error, no_entry} ->

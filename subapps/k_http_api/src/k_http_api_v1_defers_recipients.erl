@@ -21,14 +21,18 @@
 %% ===================================================================
 
 init() ->
-    Read = [],
+    Read = [
+        #param{name = req_id, mandatory = true, repeated = false, type = uuid}
+    ],
     {ok, #specs{
         read = Read,
         route = "/v1/defers/:req_id/recipients"
     }}.
 
-read(_Params) ->
-    {ok, [{recipients, []}]}.
+read(Params) ->
+    ReqId = ?gv(req_id, Params),
+    {ok, Resp} = k_defers:get_recipients(ReqId),
+    {ok, Resp}.
 
 create(_Params) ->
     ok.

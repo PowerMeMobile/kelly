@@ -2,7 +2,8 @@
 
 -export([
     get_all/1,
-    get_one/1
+    get_details/1,
+    get_recipients/1
 ]).
 
 -include_lib("alley_dto/include/adto.hrl").
@@ -29,9 +30,9 @@ get_all(Params) ->
             {error, Error}
     end.
 
--spec get_one(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
-get_one(ReqId) ->
-    case k_storage_defers:get_one(ReqId) of
+-spec get_details(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
+get_details(ReqId) ->
+    case k_storage_defers:get_details(ReqId) of
         {ok, Batch} ->
             Resp = build_mt_batch_response(Batch),
             %% TODO: determine if possible to change the body
@@ -39,6 +40,16 @@ get_one(ReqId) ->
         {error, Error} ->
             {error, Error}
     end.
+
+-spec get_recipients(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
+get_recipients(ReqId) ->
+    case k_storage_defers:get_recipients(ReqId) of
+        {ok, Addrs} ->
+            {ok, [k_storage_utils:addr_to_proplist(A) || A <- Addrs]};
+        {error, Error} ->
+            {error, Error}
+    end.
+
 
 %% ===================================================================
 %% Internal
