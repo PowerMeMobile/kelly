@@ -10,25 +10,35 @@
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
 
+-type reason() :: term().
+
 %% ===================================================================
 %% API
 %% ===================================================================
 
--spec get_all([{atom(), term()}]) -> [[{atom(), term()}]].
+-spec get_all([{atom(), term()}]) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
 get_all(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     UserId = ?gv(user_id, Params),
     Skip = ?gv(skip, Params),
     Limit = ?gv(limit, Params),
-    {ok, Batches} = k_storage_defers:get_all(CustomerUuid, UserId, Skip, Limit),
-    [build_mt_batch_response(B) || B <- Batches].
+    case k_storage_defers:get_all(CustomerUuid, UserId, Skip, Limit) of
+        {ok, Batches} ->
+            {ok, [build_mt_batch_response(B) || B <- Batches]};
+        {error, Error} ->
+            {error, Error}
+    end.
 
--spec get_one(uuid()) -> [[{atom(), term()}]].
+-spec get_one(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
 get_one(ReqId) ->
-    {ok, Batch} = k_storage_defers:get_one(ReqId),
-    Resp = build_mt_batch_response(Batch),
-    %% TODO: determine if possible to change the body
-    Resp ++ [{can_change_body, true}].
+    case k_storage_defers:get_one(ReqId) of
+        {ok, Batch} ->
+            Resp = build_mt_batch_response(Batch),
+            %% TODO: determine if possible to change the body
+            {ok, Resp ++ [{can_change_body, true}]};
+        {error, Error} ->
+            {error, Error}
+    end.
 
 %% ===================================================================
 %% Internal

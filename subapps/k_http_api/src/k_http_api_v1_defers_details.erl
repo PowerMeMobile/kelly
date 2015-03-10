@@ -43,8 +43,12 @@ read(Params) ->
     ReqId = ?gv(req_id, Params),
     %% in case of can_change_body = false
     %% WARNING: You can edit only deferred date and time of this message, because the message contains custom tags.
-    Resp = k_defers:get_one(ReqId),
-    {ok, Resp}.
+    case k_defers:get_one(ReqId) of
+        {ok, Resp} ->
+            {ok, Resp};
+        {error, no_entry} ->
+            {http_code, 404}
+    end.
 
 create(_Params) ->
     ok.
@@ -57,5 +61,6 @@ update(Params) ->
     {ok, [{defers_details, put}]}.
 
 delete(Params) ->
-    _ReqId = ?gv(req_id, Params),
-    {ok, [{defers_details, delete}]}.
+    ReqId = ?gv(req_id, Params),
+    ok = k_storage_defers:delete(ReqId),
+    {http_code, 204}.

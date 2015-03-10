@@ -33,7 +33,7 @@ init() ->
     }}.
 
 read(Params) ->
-    Resp = k_defers:get_all(Params),
+    {ok, Resp} = k_defers:get_all(Params),
     {ok, Resp}.
 
 create(_Params) ->

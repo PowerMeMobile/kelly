@@ -10,11 +10,13 @@
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
 
+-type reason() :: term().
+
 %% ===================================================================
 %% API
 %% ===================================================================
 
--spec get_all([{atom(), term()}]) -> [[{atom(), term()}]].
+-spec get_all([{atom(), term()}]) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
 get_all(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
@@ -37,28 +39,43 @@ get_all(Params) ->
                 CustomerUuidSel ++ UserIdSel
             )
         },
-    {ok, Docs} = shifted_storage:find(mt_batches, Selector, {}, Skip, Limit),
-    [build_mt_batch_response(Batch) || {_, Doc} <- Docs,
-        begin Batch = k_storage_utils:doc_to_mt_batch_info(Doc), true end].
+    case shifted_storage:find(mt_batches, Selector, {}, Skip, Limit) of
+        {ok, Docs} ->
+            {ok, [build_mt_batch_response(Batch)
+                    || {_, Doc} <- Docs,
+                    begin
+                        Batch = k_storage_utils:doc_to_mt_batch_info(Doc), true
+                    end]};
+        {error, Error} ->
+            {error, Error}
+    end.
 
--spec get_one(uuid()) -> [[{atom(), term()}]].
+-spec get_one(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
 get_one(ReqId) ->
     Selector = {'_id', ReqId},
     Projector = {},
-    {ok, Doc} = shifted_storage:find_one(mt_batches, Selector, Projector),
-    Batch = k_storage_utils:doc_to_mt_batch_info(Doc),
-    Resp = build_mt_batch_response(Batch),
-    Selector2 = {'ri', ReqId},
-    Projector2 = {
-        '_id', 0,
-        s    , 1,
-        rpt  , 1,
-        dt   , 1
-    },
-    {ok, Docs} = shifted_storage:find(mt_messages, Selector2, Projector2),
-    Statuses = build_statuses(Docs, Batch#batch_info.messages),
-    DoneTime = get_done_time(Docs),
-    Resp ++ [{statuses, Statuses}, {done_time, DoneTime}].
+    case shifted_storage:find_one(mt_batches, Selector, Projector) of
+        {ok, Doc} ->
+            Batch = k_storage_utils:doc_to_mt_batch_info(Doc),
+            Resp = build_mt_batch_response(Batch),
+            Selector2 = {'ri', ReqId},
+            Projector2 = {
+                '_id', 0,
+                s    , 1,
+                rpt  , 1,
+                dt   , 1
+            },
+            case shifted_storage:find(mt_messages, Selector2, Projector2) of
+                {ok, Docs} ->
+                    Statuses = build_statuses(Docs, Batch#batch_info.messages),
+                    DoneTime = get_done_time(Docs),
+                    {ok, Resp ++ [{statuses, Statuses}, {done_time, DoneTime}]};
+                {error, Error} ->
+                    {error, Error}
+            end;
+        {error, Error} ->
+            {error, Error}
+    end.
 
 %% ===================================================================
 %% Internals

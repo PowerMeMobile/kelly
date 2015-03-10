@@ -37,7 +37,7 @@ init() ->
     }}.
 
 read(Params) ->
-    Report =
+    {ok, Report} =
         case ?gv(customer_uuid, Params) of
             undefined ->
                 k_statistic_mt_batches:get_all(Params);
@@ -47,7 +47,7 @@ read(Params) ->
                     {ok, #customer{}} ->
                         k_statistic_mt_batches:get_all(Params);
                     {error, no_entry} ->
-                        []
+                        {ok, []}
                 end
         end,
     {ok, Report}.
