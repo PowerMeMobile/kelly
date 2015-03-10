@@ -43,6 +43,7 @@
 -type msg_id() :: binary(). %% MongoDB ObjectID
 -type esm_class() :: integer().
 -type val_period() :: binary().
+-type req_type() :: single | multiple.
 
 -record(batch_info, {
     req_id :: req_id(),
@@ -50,6 +51,7 @@
     user_id :: user_id(),
     client_type :: client_type(),
     def_time :: timestamp(),
+    req_type :: req_type(),
     src_addr :: src_addr(),
     encoding :: encoding(),
     body :: binary(),

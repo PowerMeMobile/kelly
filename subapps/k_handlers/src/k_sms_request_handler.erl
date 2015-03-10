@@ -358,6 +358,7 @@ dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         customer_id = CustomerId,
         user_id = UserId,
         client_type = ClientType,
+        req_type = single,
         src_addr = SrcAddr,
         encoding = Encoding,
         body = Body,
@@ -387,14 +388,16 @@ v1_sms_req_to_req_infos(SmsReq, ReqTime) ->
         net_ids = NetIds,
         prices = Prices
     } = SmsReq,
-    Msgs2 = case Msgs of
-                undefined ->
-                    %% one message many recipients case
-                    Dup = length(DstAddrs),
-                    lists:duplicate(Dup, Msg);
-                _ ->
-                    Msgs
-            end,
+    Msgs2 =
+        case Msgs of
+            undefined ->
+                %% one message to many recipients
+                Dup = length(DstAddrs),
+                lists:duplicate(Dup, Msg);
+            _ ->
+                %% one message to each recipient
+                Msgs
+        end,
     v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Encoding, Msgs2, Params, []).
 
 v1_build_req_infos(_SmsReq, _ReqTime, [], [], [], [], _Enc, [], _Params, Acc) ->
@@ -581,13 +584,23 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         encoding = Encoding,
         params = Params,
         message = Body,
-        dst_addrs = DstAddrs
+        dst_addrs = DstAddrs,
+        messages = Msgs
     } = SmsReq,
     DefTime2 =
         case DefTime of
             undefined -> undefined;
             _ -> ac_datetime:unixepoch_to_timestamp(DefTime)
         end,
+    ReqType =
+        case Msgs of
+            undefined ->
+                %% single message to many recipients
+                single;
+                _ ->
+                %% one message to each recipient
+                multiple
+            end,
     RegDlr = ?gv(registered_delivery, Params, false),
     EsmClass = ?gv(esm_class, Params, 0),
     ValPeriod = ?gv(validity_period, Params, <<"">>),
@@ -601,6 +614,7 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         user_id = UserId,
         client_type = ClientType,
         def_time = DefTime2,
+        req_type = ReqType,
         src_addr = SrcAddr,
         encoding = Encoding,
         body = Body,

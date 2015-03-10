@@ -35,8 +35,7 @@ get_details(ReqId) ->
     case k_storage_defers:get_details(ReqId) of
         {ok, Batch} ->
             Resp = build_mt_batch_response(Batch),
-            %% TODO: determine if possible to change the body
-            {ok, Resp ++ [{can_change_body, true}]};
+            {ok, Resp};
         {error, Error} ->
             {error, Error}
     end.
@@ -66,6 +65,7 @@ build_mt_batch_response(Batch) ->
         {user_id, Batch#batch_info.user_id},
         {client_type, Batch#batch_info.client_type},
         {def_time, DefISO},
+        {req_type, Batch#batch_info.req_type},
         {src_addr, k_storage_utils:addr_to_proplist(Batch#batch_info.src_addr)},
         {encoding, Batch#batch_info.encoding},
         {body, Batch#batch_info.body},

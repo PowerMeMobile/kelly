@@ -53,7 +53,7 @@ process_sms_req(#sms_req_v1{} = SmsReq) ->
     ReqTime = ac_datetime:utc_timestamp(),
     ReqInfos = k_sms_request_handler:v1_sms_req_to_req_infos(SmsReq, ReqTime),
     BatchInfo = k_sms_request_handler:v1_build_batch_info(SmsReq, ReqTime, ReqInfos),
-    case k_storage_defers:set_mt_def_batch_info(BatchInfo, SmsReq) of
+    case k_storage_defers:set_batch_info(BatchInfo, SmsReq) of
         ok ->
             {ok, []};
         Error ->

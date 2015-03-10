@@ -161,6 +161,7 @@ build_mt_batch_response(Batch) ->
         {customer_uuid, Batch#batch_info.customer_id},
         {user_id, Batch#batch_info.user_id},
         {client_type, Batch#batch_info.client_type},
+        {req_type, Batch#batch_info.req_type},
         {src_addr, k_storage_utils:addr_to_proplist(Batch#batch_info.src_addr)},
         {encoding, Batch#batch_info.encoding},
         {body, Batch#batch_info.body},

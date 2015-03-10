@@ -13,7 +13,7 @@
     get_expired_up_to/1,
     delete/1,
     delete/2,
-    set_mt_def_batch_info/2
+    set_batch_info/2
 ]).
 
 -type reason() :: any().
@@ -105,13 +105,14 @@ delete(ReqId, GtwId) ->
     },
     mongodb_storage:upsert(defers_storage, mt_defers, Selector, Modifier).
 
--spec set_mt_def_batch_info(#batch_info{}, term()) -> ok | {error, reason()}.
-set_mt_def_batch_info(#batch_info{
+-spec set_batch_info(#batch_info{}, term()) -> ok | {error, reason()}.
+set_batch_info(#batch_info{
     req_id = ReqId,
     customer_id = CustomerId,
     user_id = UserId,
     client_type = ClientType,
     def_time = DefTime,
+    req_type = ReqType,
     src_addr = SrcAddr,
     encoding = Encoding,
     body = Body,
@@ -132,6 +133,7 @@ set_mt_def_batch_info(#batch_info{
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
             'dft', DefTime,
+            'rt' , bsondoc:atom_to_binary(ReqType),
             'sa' , k_storage_utils:addr_to_doc(SrcAddr),
             'e'  , k_storage_utils:encoding_to_binary(Encoding),
             'b'  , Body,
