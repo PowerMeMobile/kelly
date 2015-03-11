@@ -587,11 +587,6 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         dst_addrs = DstAddrs,
         messages = Msgs
     } = SmsReq,
-    DefTime2 =
-        case DefTime of
-            undefined -> undefined;
-            _ -> ac_datetime:unixepoch_to_timestamp(DefTime)
-        end,
     ReqType =
         case Msgs of
             undefined ->
@@ -613,7 +608,7 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         customer_id = CustomerId,
         user_id = UserId,
         client_type = ClientType,
-        def_time = DefTime2,
+        def_time = DefTime,
         req_type = ReqType,
         src_addr = SrcAddr,
         encoding = Encoding,

@@ -81,7 +81,7 @@ incoming_sms_to_v1(Msg) ->
         msg_id = ItemId,
         src_addr = SrcAddr,
         body = Body,
-        recv_time = ac_datetime:timestamp_to_datetime(RecvTime)
+        recv_time = RecvTime
      }.
 
 delete_retrieved(Messages) ->
