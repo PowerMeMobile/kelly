@@ -3,7 +3,8 @@
 -export([
     get_all/1,
     get_details/1,
-    get_recipients/1
+    get_recipients/1,
+    update/1
 ]).
 
 -include_lib("alley_dto/include/adto.hrl").
@@ -17,7 +18,7 @@
 %% API
 %% ===================================================================
 
--spec get_all([{atom(), term()}]) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
+-spec get_all(plist()) -> {ok, plist()} | {error, reason()}.
 get_all(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     UserId = ?gv(user_id, Params),
@@ -30,7 +31,7 @@ get_all(Params) ->
             {error, Error}
     end.
 
--spec get_details(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
+-spec get_details(uuid()) -> {ok, plist()} | {error, reason()}.
 get_details(ReqId) ->
     case k_storage_defers:get_details(ReqId) of
         {ok, Batch} ->
@@ -40,7 +41,7 @@ get_details(ReqId) ->
             {error, Error}
     end.
 
--spec get_recipients(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
+-spec get_recipients(uuid()) -> {ok, plist()} | {error, reason()}.
 get_recipients(ReqId) ->
     case k_storage_defers:get_recipients(ReqId) of
         {ok, Addrs} ->
@@ -49,6 +50,12 @@ get_recipients(ReqId) ->
             {error, Error}
     end.
 
+-spec update(plist()) -> ok | {error, reason()}.
+update(Params) ->
+    ReqId = ?gv(req_id, Params),
+    DefTime = datetime_to_timestamp(?gv(def_time, Params)),
+    Body = ?gv(body, Params),
+    check_and_maybe_update(ReqId, DefTime, Body).
 
 %% ===================================================================
 %% Internal
@@ -75,3 +82,69 @@ build_mt_batch_response(Batch) ->
         {messages, Batch#batch_info.messages},
         {price, Batch#batch_info.price}
     ].
+
+datetime_to_timestamp(undefined) ->
+    undefined;
+datetime_to_timestamp({{_,_,_},{_,_,_}} = Datetime) ->
+    ac_datetime:datetime_to_timestamp(Datetime).
+
+check_and_maybe_update(_ReqId, undefined, undefined) ->
+    ok;
+check_and_maybe_update(ReqId, DefTime, Body) ->
+    check_def_time(ReqId, DefTime, Body).
+
+check_def_time(ReqId, DefTime, Body) ->
+    case DefTime of
+        undefined ->
+            check_req_id(ReqId, DefTime, Body);
+        _ ->
+            case DefTime >= ac_datetime:utc_timestamp() of
+                true ->
+                    check_req_id(ReqId, DefTime, Body);
+                false ->
+                    {error, def_time_in_past}
+            end
+    end.
+
+check_req_id(ReqId, DefTime, Body) ->
+    case k_storage_defers:get_details(ReqId) of
+        {ok, Batch} ->
+            check_req_type(ReqId, DefTime, Body, Batch);
+        {error, no_entry} ->
+            {error, req_id_unknown}
+    end.
+
+check_req_type(ReqId, DefTime, Body, Batch) ->
+    ReqType = Batch#batch_info.req_type,
+    case {ReqType, Body} of
+        {single, undefined} ->
+            k_storage_defers:update(ReqId, DefTime, Body);
+        {single, _Body} ->
+            check_body(ReqId, DefTime, Body, Batch);
+        {multiple, undefined} ->
+            k_storage_defers:update(ReqId, DefTime, Body);
+        {multiple, _Body} ->
+            {error, req_type_multiple}
+    end.
+
+check_body(ReqId, DefTime, Body, Batch) ->
+    BatchEnc = Batch#batch_info.encoding,
+    Recipients = Batch#batch_info.recipients,
+    Messages = Batch#batch_info.messages,
+    BatchParts = round(Messages/Recipients),
+
+    {ok, GuessEnc} = alley_services_utils:guess_encoding(Body),
+    GuessSize = alley_services_utils:chars_size(GuessEnc, Body),
+    GuessParts = alley_services_utils:calc_parts_number(GuessSize, GuessEnc),
+
+    case BatchEnc =:= GuessEnc of
+        true ->
+            case BatchParts =:= GuessParts of
+                true ->
+                    k_storage_defers:update(ReqId, DefTime, Body);
+                false ->
+                    {error, {body_parts, BatchParts, GuessParts}}
+            end;
+        false ->
+            {error, {body_encoding, BatchEnc, GuessEnc}}
+    end.

@@ -25,9 +25,9 @@ init() ->
     ],
     Update = [
         #param{name = req_id, mandatory = true, repeated = false, type = uuid},
-        #param{name = def_date, mandatory = false, repeated = false, type =
+        #param{name = def_time, mandatory = false, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
-        #param{name = message, mandatory = false, repeated = false, type = binary}
+        #param{name = body, mandatory = false, repeated = false, type = binary}
     ],
     Delete = [
         #param{name = req_id, mandatory = true, repeated = false, type = uuid}
@@ -52,11 +52,14 @@ create(_Params) ->
     ok.
 
 update(Params) ->
-    _ReqId = ?gv(req_id, Params),
-    %% The message language can not be changed. (different encoding)
-    %% Deferred date and time can not be set in the past. Please specify deferred date and time at least one minute past the current time (03/03/2015 16:55:41). (should be checked on client as well)
-    %% Number of messages should not be changed. Original size was 2 messages, but now it is 1 (different lenght)
-    {ok, [{defers_details, put}]}.
+    case k_defers:update(Params) of
+        ok ->
+            {ok, <<>>};
+        {error, {Error, Was, Now}} ->
+            {http_code, 403, [{error, Error}, {was, Was}, {now, Now}]};
+        {error, Error} ->
+            {http_code, 403, [{error, Error}]}
+    end.
 
 delete(Params) ->
     ReqId = ?gv(req_id, Params),

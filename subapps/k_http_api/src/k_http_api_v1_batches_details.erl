@@ -34,7 +34,7 @@ read(Params) ->
         {ok, Resp} ->
             {ok, Resp};
         {error, no_entry} ->
-            {http_code, 404}
+            {http_code, 404, [{error, req_id_unknown}]}
     end.
 
 create(_Params) ->

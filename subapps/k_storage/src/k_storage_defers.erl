@@ -13,7 +13,8 @@
     get_expired_up_to/1,
     delete/1,
     delete/2,
-    set_batch_info/2
+    set_batch_info/2,
+    update/3
 ]).
 
 -type reason() :: any().
@@ -80,11 +81,11 @@ get_expired_up_to(Ts) ->
         'dft', {'$lte', Ts}
     },
     Projector = {
-        'rqs', 1
+        'dft', 1, 'b', 1, 'rqs', 1
     },
     case mongodb_storage:find(defers_storage, mt_defers, Selector, Projector) of
         {ok, Docs} ->
-            {ok, [reformat_request(D) || {_, D} <- Docs]};
+            {ok, [reformat_req(D) || {_, D} <- Docs]};
         {error, Error} ->
             {error, Error}
     end.
@@ -156,6 +157,25 @@ set_batch_info(#batch_info{
     },
     mongodb_storage:upsert(defers_storage, mt_defers, Selector, Modifier).
 
+-spec update(req_id(), os:timestamp(), binary()) -> ok | {error, reason()}.
+update(ReqId, DefTime, Body) ->
+    Selector = {
+        '_id', ReqId
+    },
+    Fields =
+        case {DefTime, Body} of
+            {undefined, Body} ->
+                {'b', Body};
+            {DefTime, undefined} ->
+                {'dft', DefTime};
+            {DefTime, Body} ->
+                {'dft', DefTime, 'b', Body}
+        end,
+    Modifier = {
+        '$set', Fields
+    },
+    mongodb_storage:upsert(defers_storage, mt_defers, Selector, Modifier).
+
 %% ===================================================================
 %% Internal
 %% ===================================================================
@@ -166,11 +186,18 @@ gateway_id(#sms_req_v1{} = SmsReq) ->
 dst_addrs(#sms_req_v1{} = SmsReq) ->
     SmsReq#sms_req_v1.dst_addrs.
 
-reformat_request(Doc) ->
+reformat_req(Doc) ->
     ReqId = bsondoc:at('_id', Doc),
-    Reqs = [{bsondoc:at('gi', R), bsondoc:at('rq', R)}
+    DefTime = bsondoc:at('dft', Doc),
+    Body = bsondoc:at('b', Doc),
+    Reqs = [{bsondoc:at('gi', R), update_req(bsondoc:at('rq', R), DefTime, Body)}
             || R <- bsondoc:at('rqs', Doc)],
     {ReqId, Reqs}.
+
+update_req(ReqBin, DefTime, Body) ->
+    Req = binary_to_term(ReqBin),
+    Req2 = Req#sms_req_v1{def_time = DefTime, message = Body},
+    term_to_binary(Req2).
 
 build_recipients(Doc) ->
     Reqs = [binary_to_term(bsondoc:at('rq', R)) || R <- bsondoc:at('rqs', Doc)],
