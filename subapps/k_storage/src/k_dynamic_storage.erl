@@ -8,6 +8,8 @@
 
     set_mt_batch_info/1,
 
+    get_mt_msg_info/2,
+
     set_mo_msg_info/1,
     set_mo_downlink_dlr_status/3
 ]).
@@ -210,6 +212,20 @@ set_mt_batch_info(#batch_info{
     },
     {ok, StorageMode} = k_storage_manager:get_storage_mode(),
     StorageMode:set_mt_batch_info(Selector, Modifier).
+
+-spec get_mt_msg_info(req_id(), in_msg_id()) ->
+    {ok, #msg_info{}} | {error, reason()}.
+get_mt_msg_info(ReqId, InMsgId) ->
+    Selector = {
+        ri , ReqId,
+        imi, InMsgId
+    },
+    case shifted_storage:find_one(mt_messages, Selector, {}) of
+        {ok, Doc} ->
+            {ok, k_storage_utils:doc_to_mt_msg_info(Doc)};
+        {error, Error} ->
+            {error, Error}
+    end.
 
 -spec set_mo_msg_info(#msg_info{}) -> ok | {error, reason()}.
 set_mo_msg_info(MsgInfo = #msg_info{}) ->

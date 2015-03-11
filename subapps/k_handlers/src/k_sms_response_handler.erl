@@ -71,12 +71,7 @@ check_failed_responses(RespInfo) when
         RespInfo#resp_info.resp_status =:= blocked ->
     ReqId = RespInfo#resp_info.req_id,
     InMsgId = RespInfo#resp_info.in_msg_id,
-    Selector = {
-        ri , ReqId,
-        imi, InMsgId
-    },
-    {ok, Doc} = shifted_storage:find_one(mt_messages, Selector, {}),
-    MsgInfo = k_storage_utils:doc_to_mt_msg_info(Doc),
+    {ok, MsgInfo} = k_dynamic_storage:get_mt_msg_info(ReqId, InMsgId),
     case MsgInfo#msg_info.req_time of
         {0,0,0} ->
             %% response came before request. it happens sometimes.

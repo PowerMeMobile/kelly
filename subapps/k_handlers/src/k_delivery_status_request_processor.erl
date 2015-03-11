@@ -61,14 +61,14 @@ process(ReqDTO = #sms_status_req_v1{}) ->
 status_k1api({_Id, MsgDoc}) ->
     Address =
         case bson:at(da, MsgDoc) of
-        <<"xxxxxxxxxx">> ->
-            %% the most probable case when this happens is
-            %% when the sms request hasn't yet been processed,
-            %% possibly due to an error in it.
-            #addr{addr = <<"unknown">>, ton = 5, npi = 0};
-        AddrDoc ->
-            k_storage_utils:doc_to_addr(AddrDoc)
-    end,
+            <<"xxxxxxxxxx">> ->
+                %% the most probable case when this happens is
+                %% when the sms request hasn't yet been processed,
+                %% possibly due to an error in it.
+                #addr{addr = <<"unknown">>, ton = 5, npi = 0};
+            AddrDoc ->
+                k_storage_utils:doc_to_addr(AddrDoc)
+        end,
     Status = bson:at(s, MsgDoc),
     #k1api_sms_status_dto{
         address = Address,
