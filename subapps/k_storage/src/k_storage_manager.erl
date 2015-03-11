@@ -68,11 +68,18 @@ ensure_mailbox_storage_indexes(_ServerName) ->
     ok.
 
 -spec ensure_defers_storage_indexes(server_name()) -> ok.
-ensure_defers_storage_indexes(_ServerName) ->
-    ok.
+ensure_defers_storage_indexes(ServerName) ->
+    ok = mongodb_storage:ensure_index(ServerName, mt_defers,
+        {key, {ci, 1, ui, 1}}),
+    ok = mongodb_storage:ensure_index(ServerName, mt_defers,
+        {key, {dft, 1}}).
 
 -spec ensure_dynamic_storage_indexes(server_name()) -> ok.
 ensure_dynamic_storage_indexes(ServerName) ->
+    ok = mongodb_storage:ensure_index(ServerName, mt_batches,
+        {key, {rqt, 1, ci, 1}}),
+    ok = mongodb_storage:ensure_index(ServerName, mt_batches,
+        {key, {ri, 1}}),
     ok = mongodb_storage:ensure_index(ServerName, mt_messages,
         {key, {ri, 1, imi, 1}}),
     ok = mongodb_storage:ensure_index(ServerName, mt_messages,
