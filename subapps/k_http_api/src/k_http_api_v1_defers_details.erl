@@ -55,6 +55,8 @@ update(Params) ->
     case k_defers:update(Params) of
         ok ->
             {ok, <<>>};
+        {error, no_entry} ->
+            {http_code, 404};
         {error, {Error, Was, Now}} ->
             {http_code, 403, [{error, Error}, {was, Was}, {now, Now}]};
         {error, Error} ->

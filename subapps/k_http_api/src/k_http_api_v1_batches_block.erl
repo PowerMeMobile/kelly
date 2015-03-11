@@ -38,13 +38,23 @@ read(_Params) ->
 
 create(Params) ->
     ReqId = ?gv(req_id, Params),
-    Result = k_j3_support:block_request(ReqId),
-    {ok, {result, Result}}.
+    case k_statistic_mt_batches:get_details(ReqId) of
+        {ok, _Resp} ->
+            ok = k_j3_support:block_request(ReqId),
+            {ok, <<>>};
+        {error, no_entry} ->
+            {http_code, 404}
+    end.
 
 update(_Params) ->
     ok.
 
 delete(Params) ->
     ReqId = ?gv(req_id, Params),
-    Result = k_j3_support:unblock_request(ReqId),
-    {ok, {result, Result}}.
+    case k_statistic_mt_batches:get_details(ReqId) of
+        {ok, _Resp} ->
+            ok = k_j3_support:unblock_request(ReqId),
+            {ok, <<>>};
+        {error, no_entry} ->
+            {http_code, 404}
+    end.

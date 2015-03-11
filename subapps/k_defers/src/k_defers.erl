@@ -111,7 +111,7 @@ check_req_id(ReqId, DefTime, Body) ->
         {ok, Batch} ->
             check_req_type(ReqId, DefTime, Body, Batch);
         {error, no_entry} ->
-            {error, req_id_unknown}
+            {error, no_entry}
     end.
 
 check_req_type(ReqId, DefTime, Body, Batch) ->

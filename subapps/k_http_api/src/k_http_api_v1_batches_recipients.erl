@@ -31,8 +31,12 @@ init() ->
 
 read(Params) ->
     ReqId = ?gv(req_id, Params),
-    {ok, Resp} = k_statistic_mt_batches:get_recipients(ReqId),
-    {ok, Resp}.
+    case k_statistic_mt_batches:get_recipients(ReqId) of
+        {ok, Resp} ->
+            {ok, Resp};
+        {error, no_entry} ->
+            {http_code, 404}
+    end.
 
 create(_Params) ->
     ok.
