@@ -80,7 +80,7 @@ build_mt_batch_response(Batch) ->
         {req_time, ReqISO},
         {recipients, Batch#batch_info.recipients},
         {messages, Batch#batch_info.messages},
-        {price, Batch#batch_info.price}
+        {revenue, Batch#batch_info.price}
     ].
 
 datetime_to_timestamp(undefined) ->

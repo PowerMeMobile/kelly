@@ -236,7 +236,7 @@ summary_project(hourly) ->
         'month', <<"$_id.month">>,
         'day', <<"$_id.day">>,
         'hour', <<"$_id.hour">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
 summary_project(daily) ->
@@ -245,7 +245,7 @@ summary_project(daily) ->
         'year', <<"$_id.year">>,
         'month', <<"$_id.month">>,
         'day', <<"$_id.day">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
 summary_project(monthly) ->
@@ -253,7 +253,7 @@ summary_project(monthly) ->
         '_id', 0,
         'year', <<"$_id.year">>,
         'month', <<"$_id.month">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }}.
 
@@ -299,7 +299,7 @@ by_period_project(hourly) ->
         'day', <<"$_id.day">>,
         'hour', <<"$_id.hour">>,
         'client_type', <<"$_id.client_type">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
 by_period_project(daily) ->
@@ -309,7 +309,7 @@ by_period_project(daily) ->
         'month', <<"$_id.month">>,
         'day', <<"$_id.day">>,
         'client_type', <<"$_id.client_type">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
 by_period_project(monthly) ->
@@ -318,7 +318,7 @@ by_period_project(monthly) ->
         'year', <<"$_id.year">>,
         'month', <<"$_id.month">>,
         'client_type', <<"$_id.client_type">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }}.
 
@@ -368,7 +368,7 @@ by_gateway_project(hourly) ->
         'hour', <<"$_id.hour">>,
         'client_type', <<"$_id.client_type">>,
         'gateway_id', <<"$_id.gateway_id">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
 by_gateway_project(daily) ->
@@ -379,7 +379,7 @@ by_gateway_project(daily) ->
         'day', <<"$_id.day">>,
         'client_type', <<"$_id.client_type">>,
         'gateway_id', <<"$_id.gateway_id">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
 by_gateway_project(monthly) ->
@@ -389,7 +389,7 @@ by_gateway_project(monthly) ->
         'month', <<"$_id.month">>,
         'client_type', <<"$_id.client_type">>,
         'gateway_id', <<"$_id.gateway_id">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }}.
 
@@ -439,7 +439,7 @@ by_network_project(hourly) ->
         'hour', <<"$_id.hour">>,
         'client_type', <<"$_id.client_type">>,
         'network_id', <<"$_id.network_id">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
 by_network_project(daily) ->
@@ -450,7 +450,7 @@ by_network_project(daily) ->
         'day', <<"$_id.day">>,
         'client_type', <<"$_id.client_type">>,
         'network_id', <<"$_id.network_id">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }};
 by_network_project(monthly) ->
@@ -460,7 +460,7 @@ by_network_project(monthly) ->
         'month', <<"$_id.month">>,
         'client_type', <<"$_id.client_type">>,
         'network_id', <<"$_id.network_id">>,
-        'number', <<"$messages">>,
+        'messages', <<"$messages">>,
         'revenue', <<"$revenue">>
     }}.
 
@@ -482,16 +482,16 @@ group_by_date_and_country([], D) ->
     [[{date, Dt},
       {country, C},
       {client_type, Ct},
-      {number, N},
+      {messages, N},
       {revenue, R}] || {{Dt, C, Ct}, {N, R}} <- L2];
 group_by_date_and_country([R | Rs], D) ->
     Date = proplists:get_value(date, R),
     Country = proplists:get_value(country, R),
     ClientType = proplists:get_value(client_type, R),
-    Number = proplists:get_value(number, R),
+    Messages = proplists:get_value(messages, R),
     Revenue = proplists:get_value(revenue, R),
-    Update = fun({Nums, Revs}) -> {Number + Nums, Revenue + Revs} end,
-    D2 = dict:update({Date, Country, ClientType}, Update, {Number, Revenue}, D),
+    Update = fun({Msgs, Revs}) -> {Messages + Msgs, Revenue + Revs} end,
+    D2 = dict:update({Date, Country, ClientType}, Update, {Messages, Revenue}, D),
     group_by_date_and_country(Rs, D2).
 
 get_net_dict(NetIds) ->

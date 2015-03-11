@@ -57,7 +57,7 @@ doc_to_mt_msg(Doc) ->
         {status, MsgInfo#msg_info.status},
         {status_update_time, StatusISO},
         {network_id, MsgInfo#msg_info.network_id},
-        {price, MsgInfo#msg_info.price}
+        {revenue, MsgInfo#msg_info.price}
     ].
 
 -spec doc_to_mo_msg(bson:document()) -> plist().
