@@ -153,7 +153,6 @@ merge([{Key, Value}|Pairs], Dict) ->
     merge(Pairs, NewDict).
 
 build_mt_batch_response(Batch) ->
-    %% TODO: add def_time if defined
     ReqTime = ac_datetime:timestamp_to_datetime(Batch#batch_info.req_time),
     ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
     [
@@ -169,8 +168,16 @@ build_mt_batch_response(Batch) ->
         {req_time, ReqISO},
         {recipients, Batch#batch_info.recipients},
         {messages, Batch#batch_info.messages},
-        {price, Batch#batch_info.price}
-    ].
+        {revenue, Batch#batch_info.price}
+    ] ++
+    case Batch#batch_info.def_time =/= undefined of
+        true ->
+            DefTime = ac_datetime:timestamp_to_datetime(Batch#batch_info.def_time),
+            DefISO = ac_datetime:datetime_to_iso8601(DefTime),
+            [{def_time, DefISO}];
+        false ->
+            []
+    end.
 
 done_time(pending, Doc) ->
     bson:at(rqt, Doc);
