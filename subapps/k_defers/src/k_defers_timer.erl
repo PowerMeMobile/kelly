@@ -79,7 +79,7 @@ publish_def_reqs([{ReqId, Reqs} | DefReqs]) ->
 
 publish_req(ReqId, []) ->
     ok = k_storage_defers:delete(ReqId);
-publish_req(ReqId, [{GtwId, Payload} | Reqs]) ->
-    ok = k_defers_publisher:publish(ReqId, GtwId, Payload),
+publish_req(ReqId, [{GtwId, PayloadZ} | Reqs]) ->
+    ok = k_defers_publisher:publish(ReqId, GtwId, PayloadZ),
     ok = k_storage_defers:delete(ReqId, GtwId),
     publish_req(ReqId, Reqs).

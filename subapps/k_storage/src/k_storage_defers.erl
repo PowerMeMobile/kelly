@@ -18,6 +18,7 @@
 ]).
 
 -type reason() :: any().
+-type req_zbin() :: binary().
 
 %% ===================================================================
 %% API
@@ -75,7 +76,7 @@ get_recipients(ReqId) ->
     end.
 
 -spec get_expired_up_to(os:timestamp()) ->
-    {ok, [#batch_info{}]} | {error, reason()}.
+    {ok, [{gateway_id(), req_zbin()}]} | {error, reason()}.
 get_expired_up_to(Ts) ->
     Selector = {
         'dft', {'$lte', Ts}
@@ -124,7 +125,7 @@ set_batch_info(#batch_info{
     recipients = Recipients,
     messages = Messages,
     price = Price
-}, SmsReq) ->
+}, Req) ->
     Selector = {
         '_id', ReqId
     },
@@ -150,8 +151,8 @@ set_batch_info(#batch_info{
         },
         '$push', {
             'rqs', {
-                'gi', gateway_id(SmsReq),
-                'rq', term_to_binary(SmsReq)
+                'gi', gateway_id(Req),
+                'rq', req_to_zbin(Req)
             }
         }
     },
@@ -180,11 +181,11 @@ update(ReqId, DefTime, Body) ->
 %% Internal
 %% ===================================================================
 
-gateway_id(#sms_req_v1{} = SmsReq) ->
-    SmsReq#sms_req_v1.gateway_id.
+gateway_id(#sms_req_v1{} = Req) ->
+    Req#sms_req_v1.gateway_id.
 
-dst_addrs(#sms_req_v1{} = SmsReq) ->
-    SmsReq#sms_req_v1.dst_addrs.
+dst_addrs(#sms_req_v1{} = Req) ->
+    Req#sms_req_v1.dst_addrs.
 
 reformat_req(Doc) ->
     ReqId = bsondoc:at('_id', Doc),
@@ -194,11 +195,17 @@ reformat_req(Doc) ->
             || R <- bsondoc:at('rqs', Doc)],
     {ReqId, Reqs}.
 
-update_req(ReqBin, DefTime, Body) ->
-    Req = binary_to_term(ReqBin),
+update_req(ReqZBin, DefTime, Body) ->
+    Req = zbin_to_req(ReqZBin),
     Req2 = Req#sms_req_v1{def_time = DefTime, message = Body},
-    term_to_binary(Req2).
+    req_to_zbin(Req2).
 
 build_recipients(Doc) ->
-    Reqs = [binary_to_term(bsondoc:at('rq', R)) || R <- bsondoc:at('rqs', Doc)],
+    Reqs = [zbin_to_req(bsondoc:at('rq', R)) || R <- bsondoc:at('rqs', Doc)],
     lists:sort(lists:flatten([dst_addrs(R) || R <- Reqs])).
+
+req_to_zbin(Req) ->
+    zlib:compress(term_to_binary(Req)).
+
+zbin_to_req(Bin) ->
+    binary_to_term(zlib:uncompress(Bin)).

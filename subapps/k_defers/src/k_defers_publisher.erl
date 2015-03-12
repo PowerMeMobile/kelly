@@ -44,7 +44,7 @@
     info           :: term() | noproc | noconnection
 }).
 
--type payload() :: binary().
+-type payloadz() :: binary().
 -type req_id() :: uuid().
 -type gateway_id() :: uuid().
 
@@ -56,9 +56,9 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec publish(req_id(), gateway_id(), payload()) -> ok.
-publish(ReqId, GtwId, Payload) ->
-    gen_server:call(?MODULE, {ReqId, GtwId, Payload}, 60000).
+-spec publish(req_id(), gateway_id(), payloadz()) -> ok.
+publish(ReqId, GtwId, PayloadZ) ->
+    gen_server:call(?MODULE, {ReqId, GtwId, PayloadZ}, 60000).
 
 %% ===================================================================
 %% gen_server callbacks
@@ -74,7 +74,7 @@ init([]) ->
             {stop, amqp_unavailable}
     end.
 
-handle_call({ReqId, GtwId, Payload}, From, St = #st{}) ->
+handle_call({ReqId, GtwId, PayloadZ}, From, St = #st{}) ->
     {Headers, RoutingKey} = headers_and_routing_key(GtwId),
     Props = [
         {content_type, <<"SmsReqV1z">>},
@@ -84,7 +84,6 @@ handle_call({ReqId, GtwId, Payload}, From, St = #st{}) ->
         {headers, Headers}
     ],
     Channel = St#st.chan,
-    PayloadZ = zlib:compress(Payload),
     ok = rmql:basic_publish(Channel, RoutingKey, PayloadZ, Props),
     true = ets:insert(?MODULE, #unconfirmed{id = St#st.next_id, from = From}),
     {noreply, St#st{next_id = St#st.next_id + 1}};
