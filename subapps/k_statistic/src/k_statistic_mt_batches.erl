@@ -21,17 +21,20 @@
 get_all(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
+    CustomerUuid = ?gv(customer_uuid, Params),
+    UserId = ?gv(user_id, Params),
     Skip = ?gv(skip, Params),
     Limit = ?gv(limit, Params),
     CustomerUuidSel =
-        case ?gv(customer_uuid, Params) of
+        case CustomerUuid of
             undefined -> [];
-            CustomerId -> [{'ci', CustomerId}]
+            CustomerUuid -> [{'ci', CustomerUuid}]
         end,
     UserIdSel =
-        case ?gv(user_id, Params) of
-            undefined -> [];
-            UserId -> [{'ui', UserId}]
+        case {CustomerUuid, UserId} of
+            {undefined, _} -> [];
+            {_, undefined} -> [];
+            {_, UserId} -> [{'ui', UserId}]
         end,
     Selector =
         {'$query',

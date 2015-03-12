@@ -30,12 +30,13 @@ get_all(CustomerUuid, UserId, Skip, Limit) ->
     CustomerUuidSel =
         case CustomerUuid of
             undefined -> [];
-            CustomerId -> [{'ci', CustomerId}]
+            CustomerUuid -> [{'ci', CustomerUuid}]
         end,
     UserIdSel =
-        case UserId of
-            undefined -> [];
-            UserId -> [{'ui', UserId}]
+        case {CustomerUuid, UserId} of
+            {undefined, _} -> [];
+            {_, undefined} -> [];
+            {_, UserId} -> [{'ui', UserId}]
         end,
     Selector =
         {'$query',
