@@ -51,14 +51,14 @@ process(Req) ->
 %% Internal
 %% ===================================================================
 
-%% deprecated
+%% deprecated since 2.6.0
 process(<<"SmsRequest">>, ReqBin) ->
     {ok, SmsReq} = adto:decode(#just_sms_request_dto{}, ReqBin),
     process_sms_req(SmsReq);
 process(<<"SmsRequest2">>, ReqBin) ->
     {ok, SmsReq} = adto:decode(#just_sms_request_dto{}, ReqBin),
     process_sms_req(SmsReq);
-%% deprecated
+%% deprecated since 2.6.0
 process(<<"OneAPISmsRequest">>, ReqBin) ->
     {ok, SmsReq} = adto:decode(#just_sms_request_dto{}, ReqBin),
     process_sms_req(SmsReq);
