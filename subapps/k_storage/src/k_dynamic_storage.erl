@@ -56,7 +56,7 @@ set_mt_req_info(#req_info{req_id = ReqId, in_msg_id = InMsgId} = ReqInfo) ->
 -spec set_mt_resp_info(#resp_info{}) -> ok | {error, reason()}.
 set_mt_resp_info(#resp_info{
     req_id = ReqId,
-    customer_id = CustomerId,
+    customer_uuid = CustomerUuid,
     in_msg_id = InMsgId,
     client_type = ClientType,
     gateway_id = GatewayId,
@@ -71,7 +71,7 @@ set_mt_resp_info(#resp_info{
     },
     Modifier = {
         '$setOnInsert', {
-            'ci' , CustomerId,
+            'ci' , CustomerUuid,
             'ui' , ?UNKNOWN_ID,
             'ct' , bsondoc:atom_to_binary(ClientType),
             'gi' , GatewayId,
@@ -154,7 +154,7 @@ set_mt_downlink_dlr_status(ReqId, InMsgId, Status, Timestamp) ->
 -spec set_mt_batch_info(#batch_info{}) -> ok | {error, reason()}.
 set_mt_batch_info(#batch_info{
     req_id = ReqId,
-    customer_id = CustomerId,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     client_type = ClientType,
     def_time = DefTime,
@@ -177,7 +177,7 @@ set_mt_batch_info(#batch_info{
         '$setOnInsert',
             case DefTime of
                 undefined -> {
-                    'ci' , CustomerId,
+                    'ci' , CustomerUuid,
                     'ui' , UserId,
                     'ct' , bsondoc:atom_to_binary(ClientType),
                     'rt' , bsondoc:atom_to_binary(ReqType),
@@ -190,7 +190,7 @@ set_mt_batch_info(#batch_info{
                     'rqt', ReqTime
                 };
                 DefTime -> {
-                    'ci' , CustomerId,
+                    'ci' , CustomerUuid,
                     'ui' , UserId,
                     'ct' , bsondoc:atom_to_binary(ClientType),
                     'dft', DefTime,
@@ -231,7 +231,7 @@ get_mt_msg_info(ReqId, InMsgId) ->
 set_mo_msg_info(MsgInfo = #msg_info{}) ->
     MsgId = MsgInfo#msg_info.msg_id,
     GatewayId = MsgInfo#msg_info.gateway_id,
-    CustomerId = MsgInfo#msg_info.customer_id,
+    CustomerUuid = MsgInfo#msg_info.customer_uuid,
     UserId = MsgInfo#msg_info.user_id,
     Type = MsgInfo#msg_info.type,
     Encoding = MsgInfo#msg_info.encoding,
@@ -248,7 +248,7 @@ set_mo_msg_info(MsgInfo = #msg_info{}) ->
     Modifier = {
         '$set' , {
             'gi' , GatewayId,
-            'ci' , CustomerId,
+            'ci' , CustomerUuid,
             'ui' , UserId,
             't'  , bsondoc:atom_to_binary(Type),
             'e'  , k_storage_utils:encoding_to_binary(Encoding),
@@ -282,7 +282,7 @@ set_mo_downlink_dlr_status(MsgId, Status, Timestamp) ->
 %% ===================================================================
 
 set_mt_req_info_modifier(#req_info{
-    customer_id = CustomerId,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     client_type = ClientType,
     gateway_id = GatewayId,
@@ -308,7 +308,7 @@ set_mt_req_info_modifier(#req_info{
         '$set',
     if NetId =/= undefined ->
         {
-            'ci' , CustomerId,
+            'ci' , CustomerUuid,
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
             'gi' , GatewayId,
@@ -326,7 +326,7 @@ set_mt_req_info_modifier(#req_info{
         };
         true ->
         {
-            'ci' , CustomerId,
+            'ci' , CustomerUuid,
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
             'gi' , GatewayId,
@@ -343,7 +343,7 @@ set_mt_req_info_modifier(#req_info{
     end
     };
 set_mt_req_info_modifier(#req_info{
-    customer_id = CustomerId,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     client_type = ClientType,
     gateway_id = GatewayId,
@@ -369,7 +369,7 @@ set_mt_req_info_modifier(#req_info{
         '$set',
     if NetId =/= undefined ->
         {
-            'ci' , CustomerId,
+            'ci' , CustomerUuid,
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
             'gi' , GatewayId,
@@ -392,7 +392,7 @@ set_mt_req_info_modifier(#req_info{
         };
         true ->
         {
-            'ci' , CustomerId,
+            'ci' , CustomerUuid,
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
             'gi' , GatewayId,

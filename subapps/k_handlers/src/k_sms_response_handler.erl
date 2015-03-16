@@ -98,7 +98,7 @@ sms_response_to_resp_info_list(SmsResponse) ->
 convert(SmsResponse, SmsStatus) ->
     #just_sms_response_dto{
         id = RequestId,
-        customer_id = CustomerId,
+        customer_id = CustomerUuid,
         client_type = ClientType,
         gateway_id = GatewayId,
         timestamp = UTCString
@@ -117,7 +117,7 @@ convert(SmsResponse, SmsStatus) ->
     {Status2, ErrorCode2} = fix_status(Status, ErrorCode),
     #resp_info{
         req_id = RequestId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         client_type = ClientType,
         in_msg_id = OriginalId,
         gateway_id = GatewayId,

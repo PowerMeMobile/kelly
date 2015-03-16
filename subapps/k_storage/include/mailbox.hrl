@@ -10,7 +10,8 @@
 -record(k_mb_pending_item, {
     id          :: binary(),
     type        :: atom(),
-    customer_id :: binary(),
+    %% rename to customer_uuid
+    customer_id :: uuid(),
     user_id     :: binary()
 }).
 
@@ -30,7 +31,8 @@
 
 -record(k_mb_incoming_sms, {
     id                   :: binary(),
-    customer_id          :: binary(),
+    %% rename to customer_uuid
+    customer_id          :: uuid(),
     user_id              :: binary(),
     src_addr             :: addr(),
     dst_addr             :: addr(),
@@ -44,7 +46,8 @@
 
 -record(k_mb_k1api_receipt, {
     id                   :: binary(),
-    customer_id          :: binary(),
+    %% rename to customer_uuid
+    customer_id          :: uuid(),
     user_id              :: binary(),
     src_addr             :: addr(),
     dst_addr             :: addr(),
@@ -60,7 +63,8 @@
 
 -record(k_mb_funnel_receipt, {
     id                   :: binary(),
-    customer_id          :: binary(),
+    %% rename to customer_uuid
+    customer_id          :: uuid(),
     user_id              :: binary(),
     src_addr             :: addr(),
     dst_addr             :: addr(),
@@ -85,7 +89,8 @@
 
 -record(k_mb_k1api_receipt_sub, {
     id              :: binary(),
-    customer_id     :: binary(),
+    %% rename to customer_uuid
+    customer_id     :: uuid(),
     user_id         :: binary(),
     queue_name      :: binary(),
     src_addr        :: addr(),
@@ -98,7 +103,8 @@
 
 -record(k_mb_k1api_incoming_sms_sub, {
     id              :: binary(),
-    customer_id     :: binary(),
+    %% rename to customer_uuid
+    customer_id     :: uuid(),
     user_id         :: binary(),
     priority        :: integer(),
     queue_name      :: binary(),
@@ -111,7 +117,8 @@
 
 -record(k_mb_funnel_sub, {
     id              :: binary(),
-    customer_id     :: binary(),
+    %% rename to customer_uuid
+    customer_id     :: uuid(),
     user_id         :: binary(),
     priority        :: integer(),
     queue_name      :: binary(),
@@ -122,6 +129,5 @@
     #k_mb_k1api_receipt_sub{} |
     #k_mb_k1api_incoming_sms_sub{} |
     #k_mb_funnel_sub{}.
-
 
 -endif.

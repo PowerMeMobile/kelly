@@ -112,7 +112,7 @@ register_delivery_receipt(MsgInfo) ->
 
 build_receipt_item(#msg_info{
     client_type = oneapi,
-    customer_id = CustomerId,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     req_id = ReqId,
     in_msg_id = InMsgId,
@@ -125,7 +125,7 @@ build_receipt_item(#msg_info{
     ItemId = uuid:unparse(uuid:generate_time()),
     #k_mb_k1api_receipt{
         id = ItemId,
-        customer_id = CustomerId,
+        customer_id = CustomerUuid,
         user_id = UserId,
         src_addr = SrcAddr,
         dst_addr = DstAddr,
@@ -137,7 +137,7 @@ build_receipt_item(#msg_info{
     };
 build_receipt_item(#msg_info{
     client_type = funnel,
-    customer_id = CustomerId,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     req_id = ReqId,
     in_msg_id = InMsgId,
@@ -150,7 +150,7 @@ build_receipt_item(#msg_info{
     ItemId = uuid:unparse(uuid:generate_time()),
     #k_mb_funnel_receipt{
         id = ItemId,
-        customer_id = CustomerId,
+        customer_id = CustomerUuid,
         user_id = UserId,
         src_addr = SrcAddr,
         dst_addr = DstAddr,

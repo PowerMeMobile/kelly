@@ -168,7 +168,7 @@ dto_build_req_infos(SmsReq, ReqTime, [{DstAddr,MsgId,NetId,Price}|Quarts], Acc) 
 dto_build_short_req_info(#just_sms_request_dto{
     id = ReqId,
     client_type = ClientType,
-    customer_id = CustomerId,
+    customer_id = CustomerUuid,
     user_id = UserId,
     gateway_id = GatewayId,
     type = Type,
@@ -182,7 +182,7 @@ dto_build_short_req_info(#just_sms_request_dto{
     ValPeriod = dto_get_param(<<"validity_period">>, Params, <<"">>),
     #req_info{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         in_msg_id = InMsgId,
@@ -202,7 +202,7 @@ dto_build_short_req_info(#just_sms_request_dto{
 
 dto_build_part_req_info(#just_sms_request_dto{
     id = ReqId,
-    customer_id = CustomerId,
+    customer_id = CustomerUuid,
     user_id = UserId,
     client_type = ClientType,
     gateway_id = GatewayId,
@@ -229,7 +229,7 @@ dto_build_part_req_info(#just_sms_request_dto{
     ValPeriod = dto_get_param(<<"validity_period">>, Params, <<"">>),
     #req_info{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         in_msg_id = InMsgId,
@@ -270,7 +270,7 @@ dto_build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price) ->
 dto_build_long_part_req_info(#just_sms_request_dto{
     id = ReqId,
     client_type = ClientType,
-    customer_id = CustomerId,
+    customer_id = CustomerUuid,
     user_id = UserId,
     gateway_id = GatewayId,
     encoding = Encoding,
@@ -282,7 +282,7 @@ dto_build_long_part_req_info(#just_sms_request_dto{
     ValPeriod = dto_get_param(<<"validity_period">>, Params, <<"">>),
     #req_info{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         in_msg_id = InMsgId,
@@ -316,7 +316,7 @@ dto_get_param(Name, Params, Default) ->
 dto_process_oneapi_req(#just_sms_request_dto{
     client_type = oneapi,
     id = ReqId,
-    customer_id = CustomerId,
+    customer_id = CustomerUuid,
     user_id = UserId,
     params = Params,
     source_addr = SrcAddr
@@ -324,7 +324,7 @@ dto_process_oneapi_req(#just_sms_request_dto{
     NotifyURL = dto_get_param(<<"oneapi_notify_url">>, Params, undefined),
     CallbackData = dto_get_param(<<"oneapi_callback_data">>, Params, undefined),
     ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
-    case create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
+    case create_oneapi_receipt_subscription(CustomerUuid, UserId, SrcAddr,
             NotifyURL, CallbackData, ReqId, InMsgIds) of
         {ok, SubId} ->
             ?log_debug("Create receipt subscription: ~p", [SubId]),
@@ -337,7 +337,7 @@ dto_process_oneapi_req(#just_sms_request_dto{
 dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
     #just_sms_request_dto{
         id = ReqId,
-        customer_id = CustomerId,
+        customer_id = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         source_addr = SrcAddr,
@@ -355,7 +355,7 @@ dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         fun(R, Acc) -> R#req_info.price + Acc end, 0, ReqInfos),
     #batch_info{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         req_type = single,
@@ -425,7 +425,7 @@ v1_build_req_infos(SmsReq, ReqTime,
 v1_build_short_req_info(#sms_req_v1{
     req_id = ReqId,
     interface = ClientType,
-    customer_id = CustomerId,
+    customer_id = CustomerUuid,
     user_id = UserId,
     gateway_id = GatewayId,
     type = Type,
@@ -436,7 +436,7 @@ v1_build_short_req_info(#sms_req_v1{
     ValPeriod = ?gv(validity_period, Params, <<"">>),
     #req_info{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         in_msg_id = InMsgId,
@@ -456,7 +456,7 @@ v1_build_short_req_info(#sms_req_v1{
 
 v1_build_part_req_info(#sms_req_v1{
     req_id = ReqId,
-    customer_id = CustomerId,
+    customer_id = CustomerUuid,
     user_id = UserId,
     interface = ClientType,
     gateway_id = GatewayId,
@@ -480,7 +480,7 @@ v1_build_part_req_info(#sms_req_v1{
     ValPeriod = ?gv(validity_period, Params, <<"">>),
     #req_info{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         in_msg_id = InMsgId,
@@ -518,7 +518,7 @@ v1_build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price, Enc, B
 v1_build_long_part_req_info(#sms_req_v1{
     req_id = ReqId,
     interface = ClientType,
-    customer_id = CustomerId,
+    customer_id = CustomerUuid,
     user_id = UserId,
     gateway_id = GatewayId,
     src_addr = SrcAddr
@@ -528,7 +528,7 @@ v1_build_long_part_req_info(#sms_req_v1{
     ValPeriod = ?gv(validity_period, Params, <<"">>),
     #req_info{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         in_msg_id = InMsgId,
@@ -553,7 +553,7 @@ v1_build_long_part_req_info(#sms_req_v1{
 v1_process_oneapi_req(#sms_req_v1{
     req_id = ReqId,
     interface = oneapi,
-    customer_id = CustomerId,
+    customer_id = CustomerUuid,
     user_id = UserId,
     params = Params,
     src_addr = SrcAddr
@@ -561,7 +561,7 @@ v1_process_oneapi_req(#sms_req_v1{
     NotifyURL = ?gv(oneapi_notify_url, Params, undefined),
     CallbackData = ?gv(oneapi_callback_data, Params, undefined),
     ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
-    case create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
+    case create_oneapi_receipt_subscription(CustomerUuid, UserId, SrcAddr,
             NotifyURL, CallbackData, ReqId, InMsgIds) of
         {ok, SubId} ->
             ?log_debug("Create receipt subscription: ~p", [SubId]),
@@ -576,7 +576,7 @@ v1_process_oneapi_req(#sms_req_v1{
 v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
     #sms_req_v1{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_id = CustomerUuid,
         user_id = UserId,
         interface = ClientType,
         def_time = DefTime,
@@ -605,7 +605,7 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
         fun(R, Acc) -> R#req_info.price + Acc end, 0, ReqInfos),
     #batch_info{
         req_id = ReqId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         client_type = ClientType,
         def_time = DefTime,
@@ -627,13 +627,13 @@ v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
 %% ===================================================================
 
 create_oneapi_receipt_subscription(_, _, _, undefined, _, _, _) -> nop;
-create_oneapi_receipt_subscription(CustomerId, UserId, SrcAddr,
+create_oneapi_receipt_subscription(CustomerUuid, UserId, SrcAddr,
         NotifyURL, CallbackData, ReqId, InMsgIds) ->
     {ok, QName} = application:get_env(k_handlers, oneapi_incoming_sms_queue),
     SubId = uuid:unparse(uuid:generate_time()),
     Sub = #k_mb_k1api_receipt_sub{
         id = SubId,
-        customer_id = CustomerId,
+        customer_id = CustomerUuid,
         user_id = UserId,
         queue_name = QName,
         src_addr = SrcAddr,
@@ -811,7 +811,7 @@ dto_sms_req_to_req_infos_regular_short_batch_test() ->
     Expected = [
         #req_info{
            req_id = RID,
-           customer_id = CID,
+           customer_uuid = CID,
            user_id = UID,
            client_type = CT,
            in_msg_id = <<"1">>,
@@ -830,7 +830,7 @@ dto_sms_req_to_req_infos_regular_short_batch_test() ->
         },
         #req_info{
            req_id = RID,
-           customer_id = CID,
+           customer_uuid = CID,
            user_id = UID,
            client_type = CT,
            in_msg_id = <<"2">>,
@@ -926,7 +926,7 @@ dto_sms_req_to_req_infos_part_test() ->
     Expected = [
         #req_info{
             req_id = RID,
-            customer_id = CID,
+            customer_uuid = CID,
             user_id = UID,
             client_type = CT,
             in_msg_id = <<"1">>,
@@ -1007,7 +1007,7 @@ dto_sms_req_to_req_infos_multipart_test() ->
     Expected = [
         #req_info{
             req_id = RID,
-            customer_id = CID,
+            customer_uuid = CID,
             user_id = UID,
             client_type = CT,
             in_msg_id = <<"1">>,
@@ -1026,7 +1026,7 @@ dto_sms_req_to_req_infos_multipart_test() ->
         },
         #req_info{
             req_id = RID,
-            customer_id = CID,
+            customer_uuid = CID,
             user_id = UID,
             client_type = CT,
             in_msg_id = <<"2">>,
@@ -1045,7 +1045,7 @@ dto_sms_req_to_req_infos_multipart_test() ->
         },
         #req_info{
             req_id = RID,
-            customer_id = CID,
+            customer_uuid = CID,
             user_id = UID,
             client_type = CT,
             in_msg_id = <<"3">>,

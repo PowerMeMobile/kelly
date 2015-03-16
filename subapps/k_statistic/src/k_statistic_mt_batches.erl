@@ -156,11 +156,14 @@ merge([{Key, Value}|Pairs], Dict) ->
     merge(Pairs, NewDict).
 
 build_mt_batch_response(Batch) ->
+    CustomerUuid = Batch#batch_info.customer_uuid,
+    CustomerId = CustomerUuid,
     ReqTime = ac_datetime:timestamp_to_datetime(Batch#batch_info.req_time),
     ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
     [
         {req_id, Batch#batch_info.req_id},
-        {customer_uuid, Batch#batch_info.customer_id},
+        {customer_uuid, CustomerUuid},
+        {customer_id, CustomerId},
         {user_id, Batch#batch_info.user_id},
         {client_type, Batch#batch_info.client_type},
         {req_type, Batch#batch_info.req_type},

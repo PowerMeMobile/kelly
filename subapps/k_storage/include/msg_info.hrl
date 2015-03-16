@@ -47,7 +47,7 @@
 
 -record(batch_info, {
     req_id :: req_id(),
-    customer_id :: customer_uuid(),
+    customer_uuid :: customer_uuid(),
     user_id :: user_id(),
     client_type :: client_type(),
     def_time :: timestamp(),
@@ -66,7 +66,7 @@
 
 -record(def_batch_info, {
     req_id :: req_id(),
-    customer_id :: customer_uuid(),
+    customer_uuid :: customer_uuid(),
     user_id :: user_id(),
     client_type :: client_type(),
     def_time :: timestamp(),
@@ -84,7 +84,7 @@
 
 -record(req_info, {
     req_id :: req_id(),
-    customer_id :: customer_uuid(),
+    customer_uuid :: customer_uuid(),
     user_id :: user_id(),
     client_type :: client_type(),
     in_msg_id :: in_msg_id(),
@@ -104,7 +104,7 @@
 
 -record(resp_info, {
     req_id :: req_id(),
-    customer_id :: customer_uuid(),
+    customer_uuid :: customer_uuid(),
     in_msg_id :: in_msg_id(),
     client_type :: client_type(),
     gateway_id :: gateway_id(),
@@ -123,7 +123,7 @@
 
 -record(msg_info, {
     msg_id :: msg_id(),
-    customer_id :: customer_uuid(),
+    customer_uuid :: customer_uuid(),
     user_id :: user_id(),
     client_type :: client_type(),
     req_id :: req_id(),

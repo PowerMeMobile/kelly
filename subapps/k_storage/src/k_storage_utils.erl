@@ -84,7 +84,7 @@ doc_to_mt_msg_info(Doc) ->
     #msg_info{
         msg_id = objectid_to_binary(ObjId),
         client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
-        customer_id = bsondoc:at(ci, Doc),
+        customer_uuid = bsondoc:at(ci, Doc),
         user_id = bsondoc:at(ui, Doc),
         req_id = bsondoc:at(ri, Doc),
         in_msg_id = bsondoc:at(imi, Doc),
@@ -111,7 +111,7 @@ doc_to_mt_batch_info(Doc) ->
     SrcAddrDoc = bsondoc:at(sa, Doc),
     #batch_info{
         req_id = bsondoc:at('_id', Doc),
-        customer_id = bsondoc:at(ci, Doc),
+        customer_uuid = bsondoc:at(ci, Doc),
         user_id = bsondoc:at(ui, Doc),
         client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
         def_time = bsondoc:at(dft, Doc),
@@ -135,7 +135,7 @@ doc_to_mo_msg_info(Doc) ->
     DstAddrDoc = bsondoc:at(da, Doc),
     #msg_info{
         msg_id = objectid_to_binary(ObjId),
-        customer_id = bsondoc:at(ci, Doc),
+        customer_uuid = bsondoc:at(ci, Doc),
         in_msg_id = bsondoc:at(imi, Doc),
         gateway_id = bsondoc:at(gi, Doc),
         type = bsondoc:binary_to_atom(bsondoc:at(t, Doc)),

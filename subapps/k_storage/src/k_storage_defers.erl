@@ -111,7 +111,7 @@ delete(ReqId, GtwId) ->
 -spec set_batch_info(#batch_info{}, term()) -> ok | {error, reason()}.
 set_batch_info(#batch_info{
     req_id = ReqId,
-    customer_id = CustomerId,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     client_type = ClientType,
     def_time = DefTime,
@@ -132,7 +132,7 @@ set_batch_info(#batch_info{
     },
     Modifier = {
         '$setOnInsert', {
-            'ci' , CustomerId,
+            'ci' , CustomerUuid,
             'ui' , UserId,
             'ct' , bsondoc:atom_to_binary(ClientType),
             'dft', DefTime,

@@ -53,9 +53,9 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
 
     %% try to determine customer id and user id,
     %% this will return
-    %% {customer_id, user_id} | {customer_id, undefined} | {undefined, undefined}.
+    %% {customer_uuid, user_id} | {customer_uuid, undefined} | {undefined, undefined}.
     %% i think it makes sense to store even partly filled message.
-    {CustomerId, UserId} =
+    {CustomerUuid, UserId} =
         case k_storage_customers:addr2cust_resolve(DstAddr) of
             {ok, CID, UID} ->
                 ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
@@ -81,7 +81,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
     MsgInfo = #msg_info{
         msg_id = ItemId,
         gateway_id = GatewayId,
-        customer_id = CustomerId,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         type = regular,
         encoding = DataCoding,
