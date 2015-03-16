@@ -128,25 +128,27 @@ process(ContentType, ReqBin) ->
 -spec authenticate(customer_uuid(), user_id(), binary(), atom()) ->
     {allow, #customer{}} |
     {error, term()} |
-    {deny, no_such_customer} |
-    {deny, no_such_user} |
-    {deny, password} |
-    {deny, connection_type} |
-    {deny, blocked} |
-    {deny, deactivated} |
+    {deny, unknown_customer} |
+    {deny, unknown_user} |
+    {deny, wrong_password} |
+    {deny, wrong_interface} |
+    {deny, blocked_customer} |
+    {deny, blocked_user} |
+    {deny, deactivated_customer} |
+    {deny, deactivated_user} |
     {deny, credit_limit_exceeded}.
 authenticate(CustomerId, UserId, Password, Interface) ->
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
             ?log_debug("Customer found: ~p", [Customer]),
-            case check_state(Customer#customer.state) of
+            case check_state(customer, Customer#customer.state) of
                 allow ->
                     case k_storage_customers:get_customer_user(Customer, UserId) of
                         {ok, User = #user{}} ->
                             ?log_debug("User found: ~p", [User]),
                             case check_password(Password, User#user.password) of
                                 allow ->
-                                    case check_state(User#user.state) of
+                                    case check_state(user, User#user.state) of
                                         allow ->
                                             case check_interface(Interface, User#user.connection_types) of
                                                 allow ->
@@ -167,7 +169,7 @@ authenticate(CustomerId, UserId, Password, Interface) ->
                             end;
                         {error, no_entry} ->
                             ?log_debug("Customer id: ~p User id: ~p not found", [CustomerId, UserId]),
-                            {deny, no_such_user};
+                            {deny, unknown_user};
                         Error ->
                             ?log_error("Unexpected error: ~p", [Error]),
                             Error
@@ -177,7 +179,7 @@ authenticate(CustomerId, UserId, Password, Interface) ->
             end;
         {error, no_entry} ->
             ?log_info("Customer id: ~p not found", [CustomerId]),
-            {deny, no_such_customer};
+            {deny, unknown_customer};
         Error ->
             ?log_error("Unexpected error: ~p.", [Error]),
             Error
@@ -194,7 +196,7 @@ check_password(Passw, PasswHash) ->
         true ->
             allow;
         _ ->
-            {deny, password}
+            {deny, wrong_password}
     end.
 
 check_interface(Interface, Interfaces) ->
@@ -202,15 +204,19 @@ check_interface(Interface, Interfaces) ->
         true ->
             allow;
         false ->
-            {deny, connection_type}
+            {deny, wrong_interface}
     end.
 
-check_state(active) ->
+check_state(_, active) ->
     allow;
-check_state(blocked) ->
-    {deny, blocked};
-check_state(deactivated) ->
-    {deny, deactivate}.
+check_state(customer, blocked) ->
+    {deny, blocked_customer};
+check_state(user, blocked) ->
+    {deny, blocked_user};
+check_state(customer, deactivated) ->
+    {deny, deactivated_customer};
+check_state(user, deactivated) ->
+    {deny, deactivated_user}.
 
 check_credit_limit(Customer) ->
     Credit = Customer#customer.credit,
@@ -406,6 +412,7 @@ build_error_response(<<"AuthRespV1">>, ReqId, {deny, Reason}) ->
     Response = #auth_resp_v1{
         req_id = ReqId,
         result = #auth_error_v1{
+            code = Reason,
             message = "Request denied: " ++ atom_to_list(Reason)
         }
     },
@@ -416,6 +423,7 @@ build_error_response(<<"AuthRespV1">>, ReqId, {error, Reason}) ->
     Response = #auth_resp_v1{
         req_id = ReqId,
         result = #auth_error_v1{
+            code = Reason,
             message = "Request error: " ++ atom_to_list(Reason)
         }
     },
