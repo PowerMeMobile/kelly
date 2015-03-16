@@ -53,21 +53,21 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReq">> ->
 
 process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReqV1">> ->
     case adto:decode(#coverage_req_v1{}, ReqBin) of
-        {ok, Req} ->
+        {ok, #coverage_req_v1{req_id = ReqId} = Req} ->
             ?log_debug("Got coverage request: ~p", [Req]),
             case k_coverage_request_processor:process(Req) of
-                {ok, Resp} ->
+                {ok, #coverage_resp_v1{} = Resp} ->
                     ?log_debug("Built coverage response: ~p", [Resp]),
-                    case adto:encode(Resp) of
-                        {ok, RespBin} ->
-                            {<<"CoverageRespV1">>, RespBin};
-                        {error, Error} ->
-                            ?log_error("Coverage response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
-                    end;
+                    {ok, RespBin} = adto:encode(Resp),
+                    {<<"CoverageRespV1">>, RespBin};
                 {error, Error} ->
                     ?log_error("Coverage request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
+                    ErrResp = #error_resp_v1{
+                        req_id = ReqId,
+                        error = Error
+                    },
+                    {ok, ErrRespBin} = adto:encode(ErrResp),
+                    {<<"ErrorRespV1">>, ErrRespBin}
             end;
         {error, Error} ->
             ?log_error("Coverage request decode error: ~p", [Error]),

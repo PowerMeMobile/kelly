@@ -99,9 +99,9 @@ process(Req = #coverage_req_v1{}) ->
                     ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
                     {error, Error}
             end;
-        {error, Error} ->
-            ?log_error("Get customer id: ~p failed with: ~p", [CustomerId, Error]),
-            {error, Error}
+        {error, no_entry} ->
+            ?log_error("Customer id: ~p not found", [CustomerId]),
+            {error, unknown_customer}
     end.
 
 %% ===================================================================
