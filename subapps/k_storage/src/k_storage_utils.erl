@@ -17,7 +17,9 @@
     encoding_to_binary/1,
     binary_to_encoding/1,
 
-    get_uuid_to_customer_dict/1
+    get_uuid_to_customer_dict/1,
+    get_id_to_gateway_dict/1,
+    get_id_to_network_dict/1
 ]).
 
 %-define(TEST, 1).
@@ -185,6 +187,38 @@ get_uuid_to_customer_dict([Uuid | Uuids], Dict) ->
             {ok, C} = k_storage_customers:get_customer_by_uuid(Uuid),
             Dict2 = dict:store(Uuid, C, Dict),
             get_uuid_to_customer_dict(Uuids, Dict2)
+    end.
+
+-spec get_id_to_network_dict([uuid()]) -> [#network{}].
+get_id_to_network_dict(NetIds) ->
+    get_id_to_network_dict(NetIds, dict:new()).
+
+get_id_to_network_dict([], Dict) ->
+    Dict;
+get_id_to_network_dict([NetId | NetIds], Dict) ->
+    case dict:is_key(NetId, Dict) of
+        true ->
+            get_id_to_network_dict(NetIds, Dict);
+        false ->
+            {ok, Net} = k_storage_networks:get_network(NetId),
+            Dict2 = dict:store(NetId, Net, Dict),
+            get_id_to_network_dict(NetIds, Dict2)
+    end.
+
+-spec get_id_to_gateway_dict([uuid()]) -> [#gateway{}].
+get_id_to_gateway_dict(GtwIds) ->
+    get_id_to_gateway_dict(GtwIds, dict:new()).
+
+get_id_to_gateway_dict([], Dict) ->
+    Dict;
+get_id_to_gateway_dict([GtwId | GtwIds], Dict) ->
+    case dict:is_key(GtwId, Dict) of
+        true ->
+            get_id_to_gateway_dict(GtwIds, Dict);
+        false ->
+            {ok, Gtw} = k_storage_gateways:get_gateway(GtwId),
+            Dict2 = dict:store(GtwId, Gtw, Dict),
+            get_id_to_gateway_dict(GtwIds, Dict2)
     end.
 
 %% ===================================================================

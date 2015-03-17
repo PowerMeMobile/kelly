@@ -43,7 +43,7 @@ by_country(Params) ->
     {ok, Docs} = shifted_storage:command(Command),
     ByNetResps = [response(Doc) || Doc <- Docs],
     NetIds = [proplists:get_value(network_id, R) || R <- ByNetResps],
-    NetDict = get_net_dict(NetIds),
+    NetDict = k_storage_utils:get_id_to_network_dict(NetIds),
     AddCountryAndRmNetId =
         fun(R, Dict) ->
             NetId = proplists:get_value(network_id, R),
@@ -81,7 +81,7 @@ by_country_and_network(Params) ->
     {ok, Docs} = shifted_storage:command(Command),
     ByNetResps = [response(Doc) || Doc <- Docs],
     NetIds = [proplists:get_value(network_id, R) || R <- ByNetResps],
-    NetDict = get_net_dict(NetIds),
+    NetDict = k_storage_utils:get_id_to_network_dict(NetIds),
     AddCountryAndName =
         fun(R, Dict) ->
             NetId = proplists:get_value(network_id, R),
@@ -119,7 +119,7 @@ by_gateway(Params) ->
     {ok, Docs} = shifted_storage:command(Command),
     Resps = [response(Doc) || Doc <- Docs],
     GtwIds = [proplists:get_value(gateway_id, R) || R <- Resps],
-    GtwDict = get_gtw_dict(GtwIds),
+    GtwDict = k_storage_utils:get_id_to_gateway_dict(GtwIds),
     AddName =
         fun(R, Dict) ->
             Id = proplists:get_value(gateway_id, R),
@@ -493,33 +493,3 @@ group_by_date_and_country([R | Rs], D) ->
     Update = fun({Msgs, Revs}) -> {Messages + Msgs, Revenue + Revs} end,
     D2 = dict:update({Date, Country, ClientType}, Update, {Messages, Revenue}, D),
     group_by_date_and_country(Rs, D2).
-
-get_net_dict(NetIds) ->
-    get_net_dict(NetIds, dict:new()).
-
-get_net_dict([], Dict) ->
-    Dict;
-get_net_dict([NetId | NetIds], Dict) ->
-    case dict:is_key(NetId, Dict) of
-        true ->
-            get_net_dict(NetIds, Dict);
-        false ->
-            {ok, Net} = k_storage_networks:get_network(NetId),
-            Dict2 = dict:store(NetId, Net, Dict),
-            get_net_dict(NetIds, Dict2)
-    end.
-
-get_gtw_dict(GtwIds) ->
-    get_gtw_dict(GtwIds, dict:new()).
-
-get_gtw_dict([], Dict) ->
-    Dict;
-get_gtw_dict([GtwId | GtwIds], Dict) ->
-    case dict:is_key(GtwId, Dict) of
-        true ->
-            get_gtw_dict(GtwIds, Dict);
-        false ->
-            {ok, Gtw} = k_storage_gateways:get_gateway(GtwId),
-            Dict2 = dict:store(GtwId, Gtw, Dict),
-            get_gtw_dict(GtwIds, Dict2)
-    end.
