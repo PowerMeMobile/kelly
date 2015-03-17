@@ -6,8 +6,8 @@
 
 %% Used by k_sms_request_deferred_handler
 -export([
-    v1_sms_req_to_req_infos/2,
-    v1_build_batch_info/3
+    v1_sms_req_to_req_infos/1,
+    v1_build_batch_info/2
 ]).
 
 -compile({no_auto_import, [split_binary/2]}).
@@ -102,9 +102,8 @@ process_sms_req(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
     end;
 process_sms_req(#sms_req_v1{interface = ClientType} = SmsReq) ->
     ?log_debug("Got sms request: ~p", [SmsReq]),
-    ReqTime = ac_datetime:utc_timestamp(),
-    ReqInfos = v1_sms_req_to_req_infos(SmsReq, ReqTime),
-    BatchInfo = v1_build_batch_info(SmsReq, ReqTime, ReqInfos),
+    ReqInfos = v1_sms_req_to_req_infos(SmsReq),
+    BatchInfo = v1_build_batch_info(SmsReq, ReqInfos),
     case k_dynamic_storage:set_mt_batch_info(BatchInfo) of
         ok ->
             case ClientType of
@@ -375,9 +374,9 @@ dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
 %% #sms_req_v1{} specific
 %% ===================================================================
 
--spec v1_sms_req_to_req_infos(#sms_req_v1{}, erlang:timestamp())
+-spec v1_sms_req_to_req_infos(#sms_req_v1{})
     -> [#req_info{}].
-v1_sms_req_to_req_infos(SmsReq, ReqTime) ->
+v1_sms_req_to_req_infos(SmsReq) ->
     #sms_req_v1{
         message = Msg,
         encoding = Encoding,
@@ -398,11 +397,11 @@ v1_sms_req_to_req_infos(SmsReq, ReqTime) ->
                 %% one message to each recipient
                 Msgs
         end,
-    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Encoding, Msgs2, Params, []).
+    v1_build_req_infos(SmsReq, DstAddrs, InMsgIds, NetIds, Prices, Encoding, Msgs2, Params, []).
 
-v1_build_req_infos(_SmsReq, _ReqTime, [], [], [], [], _Enc, [], _Params, Acc) ->
+v1_build_req_infos(_SmsReq, [], [], [], [], _Enc, [], _Params, Acc) ->
     lists:reverse(Acc);
-v1_build_req_infos(SmsReq, ReqTime,
+v1_build_req_infos(SmsReq,
     [DstAddr|DstAddrs], [InMsgId|InMsgIds], [NetId|NetIds], [Price|Prices],
     Enc, [Msg|Msgs], Params, Acc
 ) ->
@@ -411,26 +410,27 @@ v1_build_req_infos(SmsReq, ReqTime,
         case request_type(Type, InMsgId) of
             short ->
                 [v1_build_short_req_info(
-                    SmsReq, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Msg, Params)];
+                    SmsReq, DstAddr, InMsgId, NetId, Price, Enc, Msg, Params)];
             {long, MsgIds} ->
                 lists:reverse(
                     v1_build_long_req_infos(
-                        SmsReq, ReqTime, DstAddr, MsgIds, NetId, Price, Enc, Msg, Params));
+                        SmsReq, DstAddr, MsgIds, NetId, Price, Enc, Msg, Params));
             part ->
                 [v1_build_part_req_info(
-                    SmsReq, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Msg, Params)]
+                    SmsReq, DstAddr, InMsgId, NetId, Price, Enc, Msg, Params)]
         end,
-    v1_build_req_infos(SmsReq, ReqTime, DstAddrs, InMsgIds, NetIds, Prices, Enc, Msgs, Params, ReqInfo ++ Acc).
+    v1_build_req_infos(SmsReq, DstAddrs, InMsgIds, NetIds, Prices, Enc, Msgs, Params, ReqInfo ++ Acc).
 
 v1_build_short_req_info(#sms_req_v1{
     req_id = ReqId,
+    req_time = ReqTime,
     interface = ClientType,
     customer_id = CustomerUuid,
     user_id = UserId,
     gateway_id = GatewayId,
     type = Type,
     src_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Body, Params) ->
+}, DstAddr, InMsgId, NetId, Price, Enc, Body, Params) ->
     RegDlr = ?gv(registered_delivery, Params, false),
     EsmClass = ?gv(esm_class, Params, 0),
     ValPeriod = ?gv(validity_period, Params, <<"">>),
@@ -456,13 +456,14 @@ v1_build_short_req_info(#sms_req_v1{
 
 v1_build_part_req_info(#sms_req_v1{
     req_id = ReqId,
+    req_time = ReqTime,
     customer_id = CustomerUuid,
     user_id = UserId,
     interface = ClientType,
     gateway_id = GatewayId,
     type = part,
     src_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, NetId, Price, Enc, Body, Params) ->
+}, DstAddr, InMsgId, NetId, Price, Enc, Body, Params) ->
     PartRefNum = DstAddr#addr.ref_num,
     %%
     %% This sending breaks the matching below because there might be two dest addrs with
@@ -498,7 +499,7 @@ v1_build_part_req_info(#sms_req_v1{
         price = Price
     }.
 
-v1_build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price, Enc, Body, Params) ->
+v1_build_long_req_infos(SmsReq, DstAddr, InMsgIds, NetId, Price, Enc, Body, Params) ->
     {Enc2, _DC, Bitness} = encoding_dc_bitness(Enc, Params, default_gateway_settings()),
     EncBody = encode_msg(Body, Enc2),
     SrcPort = ?gv(source_port, Params, undefined),
@@ -510,19 +511,20 @@ v1_build_long_req_infos(SmsReq, ReqTime, DstAddr, InMsgIds, NetId, Price, Enc, B
     BodyParts = split_msg(EncBody, Bitness, PortAddr),
     [
         v1_build_long_part_req_info(
-            SmsReq, ReqTime, DstAddr, InMsgId, InMsgIds, Enc, BodyPart, PartSeqNum, PartsTotal,
+            SmsReq, DstAddr, InMsgId, InMsgIds, Enc, BodyPart, PartSeqNum, PartsTotal,
             NetId, Price, Params
         ) || {InMsgId, BodyPart, PartSeqNum} <- lists:zip3(InMsgIds, BodyParts, PartSeqNums)
     ].
 
 v1_build_long_part_req_info(#sms_req_v1{
     req_id = ReqId,
+    req_time = ReqTime,
     interface = ClientType,
     customer_id = CustomerUuid,
     user_id = UserId,
     gateway_id = GatewayId,
     src_addr = SrcAddr
-}, ReqTime, DstAddr, InMsgId, InMsgIds, Enc, BodyPart, PartSeqNum, PartsTotal, NetId, Price, Params) ->
+}, DstAddr, InMsgId, InMsgIds, Enc, BodyPart, PartSeqNum, PartsTotal, NetId, Price, Params) ->
     RegDlr = ?gv(registered_delivery, Params, false),
     EsmClass = ?gv(esm_class, Params, 0),
     ValPeriod = ?gv(validity_period, Params, <<"">>),
@@ -571,11 +573,12 @@ v1_process_oneapi_req(#sms_req_v1{
             ok
     end.
 
--spec v1_build_batch_info(#sms_req_v1{}, erlang:timestamp(), [#req_info{}])
+-spec v1_build_batch_info(#sms_req_v1{}, [#req_info{}])
     -> #batch_info{}.
-v1_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
+v1_build_batch_info(SmsReq, ReqInfos) ->
     #sms_req_v1{
         req_id = ReqId,
+        req_time = ReqTime,
         customer_id = CustomerUuid,
         user_id = UserId,
         interface = ClientType,

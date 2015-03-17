@@ -50,9 +50,8 @@ process(ReqCT, ReqBin) ->
 
 process_sms_req(#sms_req_v1{} = SmsReq) ->
     ?log_debug("Got deferred sms request: ~p", [SmsReq]),
-    ReqTime = ac_datetime:utc_timestamp(),
-    ReqInfos = k_sms_request_handler:v1_sms_req_to_req_infos(SmsReq, ReqTime),
-    BatchInfo = k_sms_request_handler:v1_build_batch_info(SmsReq, ReqTime, ReqInfos),
+    ReqInfos = k_sms_request_handler:v1_sms_req_to_req_infos(SmsReq),
+    BatchInfo = k_sms_request_handler:v1_build_batch_info(SmsReq, ReqInfos),
     case k_storage_defers:set_batch_info(BatchInfo, SmsReq) of
         ok ->
             {ok, []};
