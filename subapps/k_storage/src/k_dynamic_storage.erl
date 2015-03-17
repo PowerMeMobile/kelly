@@ -437,7 +437,7 @@ set_mt_req_info_modifier_regular_undef_network_id_test() ->
     ReqTime = {0,0,0},
     ReqInfo = #req_info{
             req_id = RID,
-            customer_id = CID,
+            customer_uuid = CID,
             user_id = UID,
             client_type = CT,
             in_msg_id = <<"3">>,
@@ -501,7 +501,7 @@ set_mt_req_info_modifier_regular_test() ->
     Price = 1.0,
     ReqInfo = #req_info{
             req_id = RID,
-            customer_id = CID,
+            customer_uuid = CID,
             user_id = UID,
             client_type = CT,
             in_msg_id = <<"3">>,
@@ -566,7 +566,7 @@ set_mt_req_info_modifier_part_undef_network_id_test() ->
     ReqTime = {0,0,0},
     ReqInfo = #req_info{
             req_id = RID,
-            customer_id = CID,
+            customer_uuid = CID,
             user_id = UID,
             client_type = CT,
             in_msg_id = <<"3">>,
@@ -636,7 +636,7 @@ set_mt_req_info_modifier_part_test() ->
     Price = 1.0,
     ReqInfo = #req_info{
             req_id = RID,
-            customer_id = CID,
+            customer_uuid = CID,
             user_id = UID,
             client_type = CT,
             in_msg_id = <<"3">>,
