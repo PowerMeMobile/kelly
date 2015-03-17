@@ -45,11 +45,11 @@ get_all(Params) ->
         },
     case shifted_storage:find(mt_batches, Selector, {}, Skip, Limit) of
         {ok, Docs} ->
-            {ok, [build_mt_batch_response(Batch)
-                    || {_, Doc} <- Docs,
-                    begin
-                        Batch = k_storage_utils:doc_to_mt_batch_info(Doc), true
-                    end]};
+            Batches = [k_storage_utils:doc_to_mt_batch_info(D) || {_, D} <- Docs],
+            Uuids = [B#batch_info.customer_uuid || B <- Batches],
+            Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
+            Resp = [build_mt_batch_resp(B, Dict) || B <- Batches],
+            {ok, Resp};
         {error, Error} ->
             {error, Error}
     end.
@@ -61,7 +61,9 @@ get_details(ReqId) ->
     case shifted_storage:find_one(mt_batches, Selector, Projector) of
         {ok, Doc} ->
             Batch = k_storage_utils:doc_to_mt_batch_info(Doc),
-            Resp = build_mt_batch_response(Batch),
+            Dict = k_storage_utils:get_uuid_to_customer_dict(
+                [Batch#batch_info.customer_uuid]),
+            Resp = build_mt_batch_resp(Batch, Dict),
             Selector2 = {'ri', ReqId},
             Projector2 = {
                 '_id', 0,
@@ -155,9 +157,10 @@ merge([{Key, Value}|Pairs], Dict) ->
     NewDict = dict:update_counter(Key, Value, Dict),
     merge(Pairs, NewDict).
 
-build_mt_batch_response(Batch) ->
+build_mt_batch_resp(Batch, Dict) ->
     CustomerUuid = Batch#batch_info.customer_uuid,
-    CustomerId = CustomerUuid,
+    Customer = dict:fetch(CustomerUuid, Dict),
+    CustomerId = Customer#customer.customer_id,
     ReqTime = ac_datetime:timestamp_to_datetime(Batch#batch_info.req_time),
     ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
     [

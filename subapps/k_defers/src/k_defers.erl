@@ -26,7 +26,10 @@ get_all(Params) ->
     Limit = ?gv(limit, Params),
     case k_storage_defers:get_all(CustomerUuid, UserId, Skip, Limit) of
         {ok, Batches} ->
-            {ok, [build_mt_batch_response(B) || B <- Batches]};
+            Uuids = [B#batch_info.customer_uuid || B <- Batches],
+            Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
+            Resp = [build_mt_batch_resp(B, Dict) || B <- Batches],
+            {ok, Resp};
         {error, Error} ->
             {error, Error}
     end.
@@ -35,7 +38,9 @@ get_all(Params) ->
 get_details(ReqId) ->
     case k_storage_defers:get_details(ReqId) of
         {ok, Batch} ->
-            Resp = build_mt_batch_response(Batch),
+            Dict = k_storage_utils:get_uuid_to_customer_dict(
+                [Batch#batch_info.customer_uuid]),
+            Resp = build_mt_batch_resp(Batch, Dict),
             {ok, Resp};
         {error, Error} ->
             {error, Error}
@@ -61,9 +66,10 @@ update(Params) ->
 %% Internal
 %% ===================================================================
 
-build_mt_batch_response(Batch) ->
+build_mt_batch_resp(Batch, Dict) ->
     CustomerUuid = Batch#batch_info.customer_uuid,
-    CustomerId = CustomerUuid,
+    Customer = dict:fetch(CustomerUuid, Dict),
+    CustomerId = Customer#customer.customer_id,
     DefTime = ac_datetime:timestamp_to_datetime(Batch#batch_info.def_time),
     DefISO = ac_datetime:datetime_to_iso8601(DefTime),
     ReqTime = ac_datetime:timestamp_to_datetime(Batch#batch_info.req_time),

@@ -15,7 +15,9 @@
     binary_to_objectid/1,
 
     encoding_to_binary/1,
-    binary_to_encoding/1
+    binary_to_encoding/1,
+
+    get_uuid_to_customer_dict/1
 ]).
 
 %-define(TEST, 1).
@@ -167,6 +169,22 @@ binary_to_encoding(Binary) ->
     catch
         _:_ ->
             binary_to_integer(Binary)
+    end.
+
+-spec get_uuid_to_customer_dict([uuid()]) -> [#customer{}].
+get_uuid_to_customer_dict(Uuids) ->
+    get_uuid_to_customer_dict(Uuids, dict:new()).
+
+get_uuid_to_customer_dict([], Dict) ->
+    Dict;
+get_uuid_to_customer_dict([Uuid | Uuids], Dict) ->
+    case dict:is_key(Uuid, Dict) of
+        true ->
+            get_uuid_to_customer_dict(Uuids, Dict);
+        false ->
+            {ok, C} = k_storage_customers:get_customer_by_uuid(Uuid),
+            Dict2 = dict:store(Uuid, C, Dict),
+            get_uuid_to_customer_dict(Uuids, Dict2)
     end.
 
 %% ===================================================================
