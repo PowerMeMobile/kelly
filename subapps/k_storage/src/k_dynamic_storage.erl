@@ -7,6 +7,7 @@
     set_mt_downlink_dlr_status/4,
 
     set_mt_batch_info/1,
+    set_mt_batch_status/2,
 
     get_mt_msg_info/2,
 
@@ -212,6 +213,25 @@ set_mt_batch_info(#batch_info{
     },
     {ok, StorageMode} = k_storage_manager:get_storage_mode(),
     StorageMode:set_mt_batch_info(Selector, Modifier).
+
+-spec set_mt_batch_status(req_id(), status()) -> ok | {error, reason()}.
+set_mt_batch_status(ReqId, Status) ->
+    Selector = {
+        '_id', ReqId
+    },
+    Modifier =
+        case Status of
+            blocked ->
+                {'$set', {
+                    's', bsondoc:atom_to_binary(Status)
+                }};
+            unblocked ->
+                {'$unset', {
+                    's', 1
+                }}
+        end,
+    {ok, StorageMode} = k_storage_manager:get_storage_mode(),
+    StorageMode:set_mt_batch_status(Selector, Modifier).
 
 -spec get_mt_msg_info(req_id(), in_msg_id()) ->
     {ok, #msg_info{}} | {error, reason()}.

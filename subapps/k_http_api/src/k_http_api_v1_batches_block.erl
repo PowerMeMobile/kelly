@@ -38,8 +38,8 @@ read(_Params) ->
 
 create(Params) ->
     ReqId = ?gv(req_id, Params),
-    case k_statistic_mt_batches:get_details(ReqId) of
-        {ok, _Resp} ->
+    case k_dynamic_storage:set_mt_batch_status(ReqId, blocked) of
+        ok ->
             ok = k_j3_support:block_request(ReqId),
             {ok, <<>>};
         {error, no_entry} ->
@@ -51,8 +51,8 @@ update(_Params) ->
 
 delete(Params) ->
     ReqId = ?gv(req_id, Params),
-    case k_statistic_mt_batches:get_details(ReqId) of
-        {ok, _Resp} ->
+    case k_dynamic_storage:set_mt_batch_status(ReqId, unblocked) of
+        ok ->
             ok = k_j3_support:unblock_request(ReqId),
             {ok, <<>>};
         {error, no_entry} ->

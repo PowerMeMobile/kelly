@@ -58,6 +58,7 @@
     reg_dlr :: boolean(),
     esm_class  :: esm_class(),
     val_period :: val_period(),
+    status :: undefined | blocked,
     req_time :: timestamp(),
     recipients :: pos_integer(),
     messages :: pos_integer(),

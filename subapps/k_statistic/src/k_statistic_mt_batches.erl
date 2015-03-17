@@ -74,8 +74,14 @@ get_details(ReqId) ->
             case shifted_storage:find(mt_messages, Selector2, Projector2) of
                 {ok, Docs} ->
                     Statuses = build_statuses(Docs, Batch#batch_info.messages),
-                    DoneTime = get_done_time(Docs),
-                    {ok, Resp ++ [{statuses, Statuses}, {done_time, DoneTime}]};
+                    DoneTime = done_time(Docs),
+                    Status = batch_status(Batch#batch_info.status, Statuses),
+                    Resp2 = Resp ++ [
+                        {statuses, Statuses},
+                        {done_time, DoneTime},
+                        {status, Status}
+                    ],
+                    {ok, Resp2};
                 {error, Error} ->
                     {error, Error}
             end;
@@ -118,16 +124,34 @@ build_statuses(Docs, TotalMsgs) ->
         end,
     [{K,V} || {K,V} <- Statuses2, V =/= 0].
 
-get_done_time(Docs) ->
-    StatusTimes = [{S, done_time(S, Doc)} || {_, Doc} <-Docs,
-        begin S = binary_to_existing_atom(bsondoc:at(s, Doc), latin1), true end],
-    case proplists:get_value(pending, StatusTimes) of
+is_pending(Statuses) ->
+    case proplists:get_value(pending, Statuses) of
         undefined ->
+            false;
+        _ ->
+            true
+    end.
+
+done_time(Docs) ->
+    StatusTimes = [{S, done_time(S, Doc)} || {_, Doc} <- Docs,
+        begin S = binary_to_existing_atom(bsondoc:at(s, Doc), latin1), true end],
+    case is_pending(StatusTimes) of
+        false ->
             ac_datetime:datetime_to_iso8601(
                 ac_datetime:timestamp_to_datetime(
                     lists:max([D || {_S, D} <- StatusTimes])));
         _ ->
             undefined
+    end.
+
+batch_status(Blocked, Statuses) ->
+    case {Blocked, is_pending(Statuses)} of
+        {blocked, true} ->
+            blocked;
+        {_, true} ->
+            processing;
+        {_, false} ->
+            completed
     end.
 
 merge(Pairs) ->

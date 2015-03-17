@@ -126,6 +126,7 @@ doc_to_mt_batch_info(Doc) ->
         reg_dlr = bsondoc:at(rd, Doc),
         esm_class = bsondoc:at(ec, Doc),
         val_period = bsondoc:at(vp, Doc),
+        status = bsondoc:binary_to_atom(bsondoc:at(s, Doc)),
         req_time = bsondoc:at(rqt, Doc),
         recipients = bsondoc:at(rs, Doc),
         messages = bsondoc:at(ms, Doc),

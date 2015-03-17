@@ -7,6 +7,7 @@
     set_mt_downlink_dlr_status/2,
 
     set_mt_batch_info/2,
+    set_mt_batch_status/2,
 
     set_mo_msg_info/2,
     set_mo_downlink_dlr_status/2
@@ -58,6 +59,26 @@ set_mt_downlink_dlr_status(Selector, Modifier) ->
 -spec set_mt_batch_info(selector(), modifier()) -> ok | {error, reason()}.
 set_mt_batch_info(Selector, Modifier) ->
     mongodb_storage:upsert(curr_dynamic_storage, mt_batches, Selector, Modifier).
+
+-spec set_mt_batch_status(selector(), modifier()) -> ok | {error, reason()}.
+set_mt_batch_status(Selector, Modifier) ->
+    Command = {
+        'findandmodify', <<"mt_batches">>,
+        'query' , Selector,
+        'update', Modifier,
+        'fields', {'_id', 1}
+    },
+    case mongodb_storage:command(curr_dynamic_storage, Command) of
+        {ok, Result} ->
+            case bsondoc:at(value, Result) of
+                undefined ->
+                    {error, no_entry};
+                _ ->
+                    ok
+            end;
+        {error, Error} ->
+            {error, Error}
+    end.
 
 -spec set_mo_msg_info(selector(), modifier()) -> ok | {error, reason()}.
 set_mo_msg_info(Selector, Modifier) ->
