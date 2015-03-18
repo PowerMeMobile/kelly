@@ -19,16 +19,16 @@
 %% ===================================================================
 
 init() ->
-    Create = [
+    Update = [
         #param{name = req_id, mandatory = true, repeated = false, type = uuid}
     ],
     Delete = [
         #param{name = req_id, mandatory = true, repeated = false, type = uuid}
     ],
     {ok, #specs{
-        create = Create,
+        create = undefined,
         read = undefined,
-        update = undefined,
+        update = Update,
         delete = Delete,
         route = "/v1/batches/:req_id/block"
     }}.
@@ -36,7 +36,10 @@ init() ->
 read(_Params) ->
     ok.
 
-create(Params) ->
+create(_Params) ->
+    ok.
+
+update(Params) ->
     ReqId = ?gv(req_id, Params),
     case k_dynamic_storage:set_mt_batch_status(ReqId, blocked) of
         ok ->
@@ -45,9 +48,6 @@ create(Params) ->
         {error, no_entry} ->
             {http_code, 404}
     end.
-
-update(_Params) ->
-    ok.
 
 delete(Params) ->
     ReqId = ?gv(req_id, Params),
