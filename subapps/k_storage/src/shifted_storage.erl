@@ -127,10 +127,20 @@ find([Shift | Shifts], Coll, Selector, Projector, Skip, Limit, Acc) ->
     Props2 = [{mongodb_dbname, Shift} | Props],
 
     {ok, Pid} = mongodb_storage:start_link(Props2),
+
+    Query =
+        case bsondoc:at('$query', Selector) of
+            undefined ->
+                Selector;
+            Doc ->
+                Doc
+        end,
     Command = {
         'count', atom_to_binary(Coll, latin1),
-        Selector %% should be in {'$query, Query, ...} form
+        'query', Query
     },
+    %%io:format("~p~n", [Command]),
+
     Res =
         case mongodb_storage:command(Pid, Command) of
             %% collection is missing
