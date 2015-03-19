@@ -227,7 +227,7 @@ build_addrs(Docs) ->
     build_addrs(Docs, []).
 
 build_addrs([], Acc) ->
-    lists:sort(sets:to_list(sets:from_list(Acc)));
+    lists:reverse(Acc);
 build_addrs([D | Ds], Acc) ->
     case bson:at(da, D) of
         <<"xxxxxxxxxx">> ->

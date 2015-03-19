@@ -203,7 +203,7 @@ update_req(ReqZBin, DefTime, Body) ->
 
 build_recipients(Doc) ->
     Reqs = [zbin_to_req(bsondoc:at('rq', R)) || R <- bsondoc:at('rqs', Doc)],
-    lists:sort(lists:flatten([dst_addrs(R) || R <- Reqs])).
+    lists:flatten([dst_addrs(R) || R <- Reqs]).
 
 req_to_zbin(Req) ->
     zlib:compress(term_to_binary(Req)).
