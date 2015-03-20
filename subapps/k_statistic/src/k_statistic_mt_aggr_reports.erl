@@ -75,7 +75,7 @@ by_country_and_network(Params) ->
             by_network_group(GroupBy),
             by_network_project(GroupBy),
             {'$sort',
-                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
+                {'year', 1, 'month', 1, 'day', 1, 'hour', 1}}
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
@@ -113,7 +113,7 @@ by_gateway(Params) ->
             by_gateway_group(GroupBy),
             by_gateway_project(GroupBy),
             {'$sort',
-                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
+                {'year', 1, 'month', 1, 'day', 1, 'hour', 1}}
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
@@ -150,7 +150,7 @@ by_period(Params) ->
             by_period_group(GroupBy),
             by_period_project(GroupBy),
             {'$sort',
-                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
+                {'year', 1, 'month', 1, 'day', 1, 'hour', 1}}
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
@@ -178,7 +178,7 @@ summary(Params) ->
             summary_group(GroupBy),
             summary_project(GroupBy),
             {'$sort',
-                {'year', -1, 'month', -1, 'day', -1, 'hour', -1}}
+                {'year', 1, 'month', 1, 'day', 1, 'hour', 1}}
         ]
     },
     {ok, Docs} = shifted_storage:command(Command),
@@ -484,7 +484,7 @@ group_by_date_and_country(Rs) ->
 
 group_by_date_and_country([], D) ->
     L = dict:to_list(D),
-    L2 = lists:reverse(lists:keysort(1, L)),
+    L2 = lists:keysort(1, L),
     [[{date, Dt},
       {country, C},
       {client_type, Ct},
