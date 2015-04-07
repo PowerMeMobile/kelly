@@ -115,8 +115,8 @@ delete(Params) ->
     case k_storage_gateways:get_gateway(GtwID) of
         {ok, Gtw = #gateway{settings = Settings}} ->
             NewSettings = lists:keydelete(SettingID, #setting.name, Settings),
+            ok = k_j3_support:delete_setting(GtwID, SettingID),
             ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
-            k_snmp:delete_setting(GtwID, SettingID),
             {ok, StsPropList} = prepare_settings(Settings),
             ?log_debug("StsPropList: ~p", [StsPropList]),
             {http_code, 204};
@@ -173,8 +173,8 @@ update_setting(update, Gtw, Params) ->
                 value = NewValue
             },
             NewSettings = lists:keyreplace(SettingID, #setting.name, Settings, NewSetting),
+            ok = k_j3_support:set_setting(GtwID, NewSetting),
             ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
-            k_snmp:set_setting(GtwID, NewSetting),
             {ok, [StsPropList]} = prepare_settings(NewSetting),
             ?log_debug("StsPropList: ~p", [StsPropList]),
             {http_code, 200, StsPropList}
@@ -205,8 +205,8 @@ create_setting(create, GTW, Params) ->
         value = Value
     },
     GtwID = ?gv(gateway_id, Params),
-    k_storage_gateways:set_gateway(GtwID, GTW#gateway{settings = [Setting | GTW#gateway.settings]}),
-    k_snmp:set_setting(GtwID, Setting),
+    ok = k_j3_support:set_setting(GtwID, Setting),
+    ok = k_storage_gateways:set_gateway(GtwID, GTW#gateway{settings = [Setting | GTW#gateway.settings]}),
     {ok, [StsPropList]} = prepare_settings(Setting),
     ?log_debug("StsPropList: ~p", [StsPropList]),
     {http_code, 201, StsPropList}.

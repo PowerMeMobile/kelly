@@ -77,9 +77,9 @@ delete(Params) ->
     case k_storage_gateways:get_gateway(Uuid) of
         {ok, #gateway{connections = Cs, settings = Ss}} ->
             %% delete everything related to the gateway that has set via API.
-            [ok = k_snmp:delete_connection(Uuid, C#connection.id) || C <- Cs],
-            [ok = k_snmp:delete_setting(Uuid, S#setting.name) || S <- Ss],
-            ok = k_snmp:delete_gateway(Uuid),
+            [ok = k_j3_support:delete_connection(Uuid, C#connection.id) || C <- Cs],
+            [ok = k_j3_support:delete_setting(Uuid, S#setting.name) || S <- Ss],
+            ok = k_j3_support:delete_gateway(Uuid),
             ok = k_storage_gateways:del_gateway(Uuid),
             {http_code, 204};
         {error, no_entry} ->
@@ -126,7 +126,7 @@ update_gtw(Gtw, Params) ->
     NewRPS = ?gv(rps, Params, RPS),
     NewName = ?gv(name, Params, Name),
     NewGtw = #gateway{rps = NewRPS, name = NewName, connections = Conns},
-    k_snmp:set_gateway(Uuid, NewName, NewRPS),
+    ok = k_j3_support:set_gateway(Uuid, NewName, NewRPS),
     ok = k_storage_gateways:set_gateway(Uuid, NewGtw),
     case k_storage_gateways:get_gateway(Uuid) of
         {ok, Updated = #gateway{}} ->
@@ -146,7 +146,7 @@ create_gtw(Params) ->
     Name = ?gv(name, Params),
     Uuid = ?gv(id, Params),
     Gateway = #gateway{rps = RPS, name = Name},
-    k_snmp:set_gateway(Uuid, Name, RPS),
+    ok = k_j3_support:set_gateway(Uuid, Name, RPS),
     ok = k_storage_gateways:set_gateway(Uuid, Gateway),
     case k_storage_gateways:get_gateway(Uuid) of
         {ok, Gtw = #gateway{}} ->

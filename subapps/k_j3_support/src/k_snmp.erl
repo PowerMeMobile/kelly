@@ -24,19 +24,7 @@
     set_row/3,
     set_row/1,
     del_row/2,
-    del_row/1,
-
-    set_customer/3,
-    delete_customer/1,
-
-    set_gateway/3,
-    delete_gateway/1,
-
-    set_connection/2,
-    delete_connection/2,
-
-    set_setting/2,
-    delete_setting/2
+    del_row/1
 ]).
 
 %% Callbacks
@@ -91,63 +79,6 @@ set_row(TableName, Index, ValueList) ->
 del_row(TableName, Index)->
     Task = #task{function = fun ?MODULE:del_row/1, args = {TableName, Index}},
     process_task(Task).
-
--spec set_customer(binary(), integer(), integer()) -> ok.
-set_customer(ID, RPS, Priority) when
-        is_binary(ID) andalso is_integer(RPS) andalso is_integer(Priority) ->
-    set_row(cst, binary_to_list(ID), [
-        {cstRPS, RPS},
-        {cstPriority, Priority}
-    ]).
-
--spec delete_customer(binary()) -> ok.
-delete_customer(ID) when is_binary(ID) ->
-    del_row(cst, binary_to_list(ID)).
-
--spec set_gateway(binary(), binary(), integer()) -> ok.
-set_gateway(ID, Name, RPS) when
-        is_binary(ID) andalso is_binary(Name) andalso is_integer(RPS) ->
-    set_row(gtw, binary_to_list(ID), [
-        {gtwName, binary_to_list(Name)}, {gtwRPS, RPS}
-    ]).
-
--spec delete_gateway(binary()) -> ok.
-delete_gateway(ID) when is_binary(ID) ->
-    del_row(gtw, binary_to_list(ID)).
-
--spec set_connection(binary(), #connection{}) -> ok.
-set_connection(GtwID, Conn = #connection{}) when is_binary(GtwID) ->
-    set_row(cnn, binary_to_list(GtwID) ++ [Conn#connection.id], [
-        {cnnAddr, binary_to_list(Conn#connection.host)},
-        {cnnPort, Conn#connection.port},
-        {cnnType, bind_type_to_integer(Conn#connection.bind_type)},
-        {cnnSystemId, binary_to_list(Conn#connection.system_id)},
-        {cnnPassword, binary_to_list(Conn#connection.password)},
-        {cnnSystemType, binary_to_list(Conn#connection.system_type)},
-        {cnnAddrTon, Conn#connection.addr_ton},
-        {cnnAddrNpi, Conn#connection.addr_npi},
-        {cnnAddrRange, binary_to_list(Conn#connection.addr_range)}
-    ]).
-
--spec delete_connection(binary(), integer()) -> ok.
-delete_connection(GtwID, ConnID) when
-        is_binary(GtwID) andalso is_integer(ConnID) ->
-    del_row(cnn, binary_to_list(GtwID) ++ [ConnID]).
-
--spec set_setting(binary(), #setting{}) -> ok.
-set_setting(GtwID, Setting = #setting{}) when is_binary(GtwID) ->
-    Index = binary_to_list(GtwID) ++
-            [size(Setting#setting.name)] ++
-            binary_to_list(Setting#setting.name),
-    set_row(sts, Index, [
-        {stsValue, binary_to_list(Setting#setting.value)}
-    ]).
-
--spec delete_setting(binary(), integer()) -> ok.
-delete_setting(GtwID, SettingID) when
-        is_binary(GtwID) andalso is_binary(SettingID) ->
-    Index = binary_to_list(GtwID) ++ [size(SettingID)] ++ binary_to_list(SettingID),
-    del_row(sts, Index).
 
 %% ===================================================================
 %% Behaviour callbacks
@@ -338,7 +269,3 @@ parse_snmp_result(Result) ->
         {error, Reason} ->
             {error, Reason}
     end.
-
-bind_type_to_integer(transmitter) -> 1;
-bind_type_to_integer(receiver)    -> 2;
-bind_type_to_integer(transceiver) -> 3.

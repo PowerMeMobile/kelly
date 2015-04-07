@@ -90,8 +90,8 @@ update(Params) ->
 delete(Params) ->
     GtwUuid = ?gv(gateway_id, Params),
     ConnectionID = ?gv(id, Params),
+    ok = k_j3_support:delete_connection(GtwUuid, ConnectionID),
     ok = k_storage_gateways:del_gateway_connection(GtwUuid, ConnectionID),
-    k_snmp:delete_connection(GtwUuid, ConnectionID),
     {http_code, 204}.
 
 %% ===================================================================
@@ -153,8 +153,8 @@ update_connection(Gtw, Params) ->
                 addr_range = NewAddrRange
             },
             {ok, NewConnections} = replace_connection(NewConnection, Connections),
+            ok = k_j3_support:set_connection(GtwID, NewConnection),
             ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
-            k_snmp:set_connection(GtwID, NewConnection),
             {ok, [Plist]} = prepare_connections(NewConnection),
             ?log_debug("Connection: ~p", [Plist]),
             {http_code, 200, Plist}
@@ -231,8 +231,8 @@ create_connection(Params) ->
         addr_range  = AddrRange
     },
     GtwUuid = ?gv(gateway_id, Params),
-    k_storage_gateways:set_gateway_connection(GtwUuid, Connection),
-    k_snmp:set_connection(GtwUuid, Connection),
+    ok = k_j3_support:set_connection(GtwUuid, Connection),
+    ok = k_storage_gateways:set_gateway_connection(GtwUuid, Connection),
     {ok, [Plist]} = prepare_connections(Connection),
     ?log_debug("Connection: ~p", [Plist]),
     {http_code, 201, Plist}.
