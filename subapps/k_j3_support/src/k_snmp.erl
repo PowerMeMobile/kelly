@@ -14,7 +14,7 @@
 
 %% API
 -export([
-    get_column_val/2,
+    get_row_val/2,
     set_row/3,
     del_row/2
 ]).
@@ -42,8 +42,8 @@
 %% API
 %% ===================================================================
 
--spec get_column_val(snmp_column_name(), snmp_index()) -> snmp_result().
-get_column_val(ColumnName, Index) ->
+-spec get_row_val(snmp_column_name(), snmp_index()) -> snmp_result().
+get_row_val(ColumnName, Index) ->
     {ok, [OID]} = snmpm:name_to_oid(ColumnName),
     Result = snmpm:sync_get(?USER, ?TARGET, [OID ++ Index]),
     parse_snmp_result(Result).
@@ -118,7 +118,7 @@ set(Index, [{ColumnName, Value} | ValueList]) ->
 
 is_exist(TableName, Index)->
     {ok, ColumnName} = status_column_name(TableName),
-    case get_column_val(ColumnName, Index) of
+    case get_row_val(ColumnName, Index) of
         {ok, ?active} -> exist;
         {ok, Some} when is_integer(Some) -> incorrectState;
         {error, {timeout, T}} -> {error, {timeout, T}};

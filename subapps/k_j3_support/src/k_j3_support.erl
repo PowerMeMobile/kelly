@@ -192,9 +192,9 @@ prepare_gtws(_Counters, [], Acc) ->
     {ok, Acc};
 prepare_gtws(Counters, [#gateway{id = GtwUuidBin} | Rest], Acc) ->
     GtwUuid = binary_to_list(GtwUuidBin),
-    {ok, Name} = k_snmp:get_column_val(gtwName, GtwUuid),
-    {ok, Status} = k_snmp:get_column_val(gtwStatus, GtwUuid),
-    {ok, MaxRPS} = k_snmp:get_column_val(gtwRPS, GtwUuid),
+    {ok, Name} = k_snmp:get_row_val(gtwName, GtwUuid),
+    {ok, Status} = k_snmp:get_row_val(gtwStatus, GtwUuid),
+    {ok, MaxRPS} = k_snmp:get_row_val(gtwRPS, GtwUuid),
     {ok, ActualRpsIn} = get_actual_rps_sms(smsIn, GtwUuid, Counters),
     {ok, ActualRpsOut} = get_actual_rps_sms(smsOut, GtwUuid, Counters),
     GtwPropList = [
