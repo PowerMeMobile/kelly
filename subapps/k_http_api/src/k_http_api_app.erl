@@ -57,8 +57,9 @@ try_update_dispatch_rules() ->
     WhichApps = application:which_applications(1000),
     case lists:keymember(?APP, 1, WhichApps) of
         true ->
-            update_dispatch_rules(),ok;
-        false -> ok
+            update_dispatch_rules();
+        false ->
+            ok
     end.
 
 %% ===================================================================
@@ -69,12 +70,6 @@ dispatch_rules() ->
     DispatchRaw = [
     %% {Host, list({Path, Handler, Opts})}
         {'_', gen_http_api_handlers_dispatch_rules() ++ [
-            %% GUI
-            {"/gui", k_http_api_gui_index_router, []}, %% redirect to Index.html
-            {"/gui/[...]", cowboy_static, [
-                {directory, <<"gui">>},
-                {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
-            ]},
             %% Error(404) handler
             {'_', k_http_api_not_found_handler, []}
         ]}
