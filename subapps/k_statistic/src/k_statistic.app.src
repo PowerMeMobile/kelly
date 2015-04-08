@@ -7,7 +7,7 @@
         stdlib,
         k_common,
         k_storage,
-        k_j3_support
+        k_support
     ]},
     {env, []}
 ]}.

@@ -28,7 +28,7 @@ init() ->
     }}.
 
 read(_Params) ->
-    ok = k_j3_support:reconfigure(),
+    ok = k_support_just:reconfigure(),
     {ok, {result, ok}}.
 
 create(_Params) ->

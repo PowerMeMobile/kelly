@@ -1,4 +1,4 @@
--module(k_j3_support_sup).
+-module(k_support_sup).
 
 -behaviour(supervisor).
 

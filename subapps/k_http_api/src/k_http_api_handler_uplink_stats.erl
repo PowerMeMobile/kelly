@@ -25,7 +25,7 @@ init() ->
     }}.
 
 read(_Params) ->
-    case k_j3_support:get_throughput() of
+    case k_support_just:get_throughput() of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->

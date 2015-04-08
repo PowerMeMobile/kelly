@@ -1,4 +1,4 @@
--module(k_j3_support).
+-module(k_support_just).
 
 -export([
     reconfigure/0,
@@ -16,10 +16,7 @@
     delete_connection/2,
 
     set_setting/2,
-    delete_setting/2,
-
-    %% TODO: find a better place for it.
-    get_funnel_connections/0
+    delete_setting/2
 ]).
 
 -include_lib("alley_dto/include/adto.hrl").
@@ -48,7 +45,7 @@ get_throughput() ->
     {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
     {ok, ReqBin} =
         'JustAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),
-    case k_j3_support_rmq:rpc_call(CtrlQueue, <<"ThroughputRequest">>, ReqBin) of
+    case k_support_rmq:rpc_call(CtrlQueue, <<"ThroughputRequest">>, ReqBin) of
         {ok, <<"ThroughputResponse">>, RespBin} ->
             {ok, #'ThroughputResponse'{slices = Slices}} =
                 'JustAsn':decode('ThroughputResponse', RespBin),
@@ -73,7 +70,7 @@ block_request(ReqId) ->
         sms_req_id = ReqId
     },
     {ok, ReqBin} = adto:encode(Req),
-    case k_j3_support_rmq:rpc_call(CtrlQueue, <<"BlockReqV1">>, ReqBin) of
+    case k_support_rmq:rpc_call(CtrlQueue, <<"BlockReqV1">>, ReqBin) of
         {ok, <<"BlockRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#block_resp_v1{}, RespBin),
             #block_resp_v1{result = Result} = Resp,
@@ -90,7 +87,7 @@ unblock_request(ReqId) ->
         sms_req_id = ReqId
     },
     {ok, ReqBin} = adto:encode(Req),
-    case k_j3_support_rmq:rpc_call(CtrlQueue, <<"UnblockReqV1">>, ReqBin) of
+    case k_support_rmq:rpc_call(CtrlQueue, <<"UnblockReqV1">>, ReqBin) of
         {ok, <<"UnblockRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#unblock_resp_v1{}, RespBin),
             #unblock_resp_v1{result = Result} = Resp,
@@ -157,23 +154,6 @@ delete_setting(GtwID, SettingID) when
     k_just_snmp:del_row(sts, Index).
 
 %% ===================================================================
-%% TODO: Funnel specific
-%% ===================================================================
-
--spec get_funnel_connections() -> {ok, [{atom(), term()}]} | {error, term()}.
-get_funnel_connections() ->
-    {ok, CtrlQueue} = application:get_env(k_handlers, funnel_control_queue),
-    {ok, ReqBin} = adto:encode(#funnel_connections_request_dto{}),
-    case k_j3_support_rmq:rpc_call(CtrlQueue, <<"ConnectionsRequest">>, ReqBin) of
-        {ok, <<"ConnectionsResponse">>, RespBin} ->
-            {ok, #funnel_connections_response_dto{connections = Connections}} =
-                adto:decode(#funnel_connections_response_dto{}, RespBin),
-            {ok, _ConnectionPropLists} = prepare_conns(Connections);
-        {error, Error} ->
-            {error, Error}
-    end.
-
-%% ===================================================================
 %% Internal
 %% ===================================================================
 
@@ -213,47 +193,6 @@ get_actual_rps_sms(Type, Uuid, [#'Counter'{gatewayId = Uuid, type = Type, count 
     {ok, Count};
 get_actual_rps_sms(Type, Uuid, [_| Rest]) ->
     get_actual_rps_sms(Type, Uuid, Rest).
-
-%% ===================================================================
-%% TODO: Internal Funnel specific
-%% ===================================================================
-
-prepare_conns(ConnList) when is_list(ConnList) ->
-    prepare_conns(ConnList, []).
-
-prepare_conns([], Acc) ->
-    {ok, Acc};
-prepare_conns([#funnel_connection_dto{
-    connection_id = ConnectionId,
-    remote_ip = RemoteIp,
-    customer_id = CustomerId,
-    user_id = UserId,
-    connected_at = ConnectedAt,
-    type = Type,
-    msgs_received = MsgsReceived,
-    msgs_sent = MsgsSent,
-    errors = Errors
-} | Rest], Acc) ->
-    ConnectedAtDT = ac_datetime:utc_string_to_datetime(ConnectedAt),
-    ConnectedAtISO = ac_datetime:datetime_to_iso8601(ConnectedAtDT),
-    ConnPropList = [
-        {id, ConnectionId},
-        {remote_ip, RemoteIp},
-        {customer_id, CustomerId},
-        {user_id, UserId},
-        {connected_at, ConnectedAtISO},
-        {type, Type},
-        {msgs_received, MsgsReceived},
-        {msgs_sent, MsgsSent},
-        {errors, [error_to_proplist(Error) || Error <- Errors]}
-    ],
-    prepare_conns(Rest, [ConnPropList | Acc]).
-
-error_to_proplist(#error_dto{error_code = ErrorCode, timestamp = Timestamp}) ->
-    [
-        {error_code, ErrorCode},
-        {timestamp, Timestamp}
-    ].
 
 bind_type_to_integer(transmitter) -> 1;
 bind_type_to_integer(receiver)    -> 2;

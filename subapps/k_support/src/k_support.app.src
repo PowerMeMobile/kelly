@@ -1,4 +1,4 @@
-{application, k_j3_support, [
+{application, k_support, [
     {description, ""},
     {vsn, git},
     {registered, []},
@@ -9,6 +9,6 @@
         k_storage,
         snmp
     ]},
-    {mod, {k_j3_support_app, []} },
+    {mod, {k_support_app, []} },
     {env, []}
 ]}.

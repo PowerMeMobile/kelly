@@ -1,5 +1,4 @@
-%% TODO: move snmp specific logic to k_j3_support
-
+%% TODO: move snmp specific logic to k_support
 -module(k_http_api_handler_gateways_settings).
 
 -behaviour(gen_http_api).
@@ -115,7 +114,7 @@ delete(Params) ->
     case k_storage_gateways:get_gateway(GtwID) of
         {ok, Gtw = #gateway{settings = Settings}} ->
             NewSettings = lists:keydelete(SettingID, #setting.name, Settings),
-            ok = k_j3_support:delete_setting(GtwID, SettingID),
+            ok = k_support_just:delete_setting(GtwID, SettingID),
             ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
             {ok, StsPropList} = prepare_settings(Settings),
             ?log_debug("StsPropList: ~p", [StsPropList]),
@@ -173,7 +172,7 @@ update_setting(update, Gtw, Params) ->
                 value = NewValue
             },
             NewSettings = lists:keyreplace(SettingID, #setting.name, Settings, NewSetting),
-            ok = k_j3_support:set_setting(GtwID, NewSetting),
+            ok = k_support_just:set_setting(GtwID, NewSetting),
             ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
             {ok, [StsPropList]} = prepare_settings(NewSetting),
             ?log_debug("StsPropList: ~p", [StsPropList]),
@@ -205,7 +204,7 @@ create_setting(create, GTW, Params) ->
         value = Value
     },
     GtwID = ?gv(gateway_id, Params),
-    ok = k_j3_support:set_setting(GtwID, Setting),
+    ok = k_support_just:set_setting(GtwID, Setting),
     ok = k_storage_gateways:set_gateway(GtwID, GTW#gateway{settings = [Setting | GTW#gateway.settings]}),
     {ok, [StsPropList]} = prepare_settings(Setting),
     ?log_debug("StsPropList: ~p", [StsPropList]),
