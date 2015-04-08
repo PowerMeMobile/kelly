@@ -27,5 +27,5 @@ start_link() ->
 
 init([]) ->
     {ok, {{one_for_one, 5, 10}, [
-        {k_snmp, {k_snmp, start_link, []}, permanent, 5000, worker, [k_snmp]}
+        {k_support_snmp, {k_support_snmp, start_link, []}, permanent, 5000, worker, [k_support_snmp]}
     ]}}.

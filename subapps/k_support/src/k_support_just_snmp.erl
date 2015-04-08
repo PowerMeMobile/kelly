@@ -1,4 +1,4 @@
--module(k_just_snmp).
+-module(k_support_just_snmp).
 
 -include_lib("alley_common/include/logging.hrl").
 
@@ -38,7 +38,7 @@
 -spec get_row_val(snmp_column_name(), snmp_index()) -> snmp_result().
 get_row_val(ColumnName, Index) ->
     {ok, [OID]} = snmpm:name_to_oid(ColumnName),
-    k_snmp:sync_get(?JUST_USER, [OID ++ Index]).
+    k_support_snmp:sync_get(?JUST_USER, [OID ++ Index]).
 
 -spec set_row(snmp_column_name(), snmp_index(), snmp_value_list()) -> ok.
 set_row(TableName, Index, ValueList) ->
@@ -99,7 +99,7 @@ set(Index, Values) ->
         {OID ++ Index, Value}
     end,
     Values2 = [Fun(V) || V <- Values],
-    k_snmp:sync_set(?JUST_USER, Values2).
+    k_support_snmp:sync_set(?JUST_USER, Values2).
 
 is_exist(TableName, Index)->
     {ok, ColumnName} = status_column_name(TableName),
