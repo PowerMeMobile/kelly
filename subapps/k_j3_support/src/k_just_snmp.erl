@@ -25,6 +25,7 @@
 -type snmp_error_reason() :: term().
 -type snmp_value_list() :: [{snmp_column_name(), snmp_value()}].
 -type snmp_result() :: {ok, snmp_value()} |
+                        {error, noTarget} |
                         {error, noSuchObject} |
                         {error, noSuchInstance} |
                         {error, er_snmp_state()} |
@@ -42,15 +43,14 @@ get_row_val(ColumnName, Index) ->
 -spec set_row(snmp_column_name(), snmp_index(), snmp_value_list()) -> ok.
 set_row(TableName, Index, ValueList) ->
     case is_exist(TableName, Index) of
-        exist ->
+        {ok, exist} ->
             update(Index, ValueList);
-        notExist ->
+        {ok, notExist} ->
             create(TableName, Index, ValueList);
-        incorrectState ->
+        {ok, incorrectState} ->
             recreate(TableName, Index, ValueList);
-        Unexpected ->
-            ?log_warn("Not expected value: ~p", [Unexpected]),
-            Unexpected
+        {error, noTarget} ->
+            {error, noTarget}
     end.
 
 -spec del_row(snmp_column_name(), snmp_index()) -> ok.
@@ -93,27 +93,21 @@ create(TableName, Index, ValueList) ->
 update(Index, ValueList) ->
     set(Index, ValueList).
 
-set(_Index, []) ->
-    ok;
-set(Index, [{ColumnName, Value} | ValueList]) ->
-    {ok, [OID]} = snmpm:name_to_oid(ColumnName),
-    Result = k_snmp:sync_set(?JUST_USER, [{OID ++ Index, Value}]),
-    case Result of
-        {ok, _} ->
-            set(Index, ValueList);
-        {error, Reason} ->
-            ?log_error("Set index: ~p column: ~p value: ~p failed with: ~p",
-                [Index, ColumnName, Value, Reason]),
-            {error, Reason}
-    end.
+set(Index, Values) ->
+    Fun = fun({ColName, Value}) ->
+        {ok, [OID]} = snmpm:name_to_oid(ColName),
+        {OID ++ Index, Value}
+    end,
+    Values2 = [Fun(V) || V <- Values],
+    k_snmp:sync_set(?JUST_USER, Values2).
 
 is_exist(TableName, Index)->
     {ok, ColumnName} = status_column_name(TableName),
     case get_row_val(ColumnName, Index) of
-        {ok, ?active} -> exist;
-        {ok, Some} when is_integer(Some) -> incorrectState;
-        {error, {timeout, T}} -> {error, {timeout, T}};
-        {_Error, _More} -> notExist
+        {ok, ?active} -> {ok, exist};
+        {ok, Some} when is_integer(Some) -> {ok, incorrectState};
+        {error, noTarget} -> {error, noTarget};
+        {_Error, _More} -> {ok, notExist}
     end.
 
 status_column_name(TableName) ->
