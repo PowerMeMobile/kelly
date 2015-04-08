@@ -21,41 +21,45 @@
 -type snmp_index() :: list().
 -type snmp_column_name() :: atom().
 -type snmp_value() :: term().
--type er_snmp_state() :: term().
--type snmp_error_reason() :: term().
 -type snmp_value_list() :: [{snmp_column_name(), snmp_value()}].
 -type snmp_result() :: {ok, snmp_value()} |
-                        {error, noTarget} |
-                        {error, noSuchObject} |
-                        {error, noSuchInstance} |
-                        {error, er_snmp_state()} |
-                        {error, snmp_error_reason()}.
+                        {error, no_target} |
+                        {error, no_object} |
+                        {error, no_instance} |
+                        {error, not_found}.
 
 %% ===================================================================
 %% API
 %% ===================================================================
 
 -spec get_row_val(snmp_column_name(), snmp_index()) -> snmp_result().
-get_row_val(ColumnName, Index) ->
-    {ok, [OID]} = snmpm:name_to_oid(ColumnName),
-    k_support_snmp:sync_get(?USER, [OID ++ Index]).
+get_row_val(ColName, Index) ->
+    {ok, OID} = k_support_snmp:name_to_oid(ColName),
+    case k_support_snmp:sync_get(?USER, [OID ++ Index]) of
+        {ok, Value} ->
+            {ok, Value};
+        {error, Reason} ->
+            ?log_error("Get index: ~p column: ~p failed with: ~p",
+                [Index, ColName, Reason]),
+            {error, Reason}
+    end.
 
 -spec set_row(snmp_column_name(), snmp_index(), snmp_value_list()) -> ok.
-set_row(TableName, Index, ValueList) ->
-    case is_exist(TableName, Index) of
+set_row(TabName, Index, Values) ->
+    case is_exist(TabName, Index) of
         {ok, exist} ->
-            update(Index, ValueList);
-        {ok, notExist} ->
-            create(TableName, Index, ValueList);
-        {ok, incorrectState} ->
-            recreate(TableName, Index, ValueList);
-        {error, noTarget} ->
-            {error, noTarget}
+            update(Index, Values);
+        {ok, not_found} ->
+            create(TabName, Index, Values);
+        {ok, bad_state} ->
+            recreate(TabName, Index, Values);
+        {error, no_target} ->
+            {error, no_target}
     end.
 
 -spec del_row(snmp_column_name(), snmp_index()) -> ok.
-del_row(TableName, Index)->
-    case TableName of
+del_row(TabName, Index)->
+    case TabName of
         gtw ->
             set(Index, [{gtwStatus, ?destroy}]);
         sts ->
@@ -63,58 +67,58 @@ del_row(TableName, Index)->
         cst ->
             set(Index, [{cstStatus, ?destroy}]);
         cnn ->
-            set(Index, [{cnnStatus, ?destroy}]);
-        _Any ->
-            {error, noSuchTable}
+            set(Index, [{cnnStatus, ?destroy}])
     end.
 
 %% ===================================================================
 %% Internal
 %% ===================================================================
 
-recreate(TableName, Index, ValueList) ->
-    del_row(TableName, Index),
-    create(TableName, Index, ValueList).
+recreate(TabName, Index, Values) ->
+    del_row(TabName, Index),
+    create(TabName, Index, Values).
 
-create(TableName, Index, ValueList) ->
-    case TableName of
+create(TabName, Index, Values) ->
+    case TabName of
         gtw ->
-            update(Index, [{gtwStatus, ?createAndWait}] ++ ValueList ++ [{gtwStatus, ?active}]);
+            update(Index, [{gtwStatus, ?createAndWait}] ++ Values ++ [{gtwStatus, ?active}]);
         sts ->
-            update(Index, [{stsStatus, ?createAndWait}] ++ ValueList ++ [{stsStatus, ?active}]);
+            update(Index, [{stsStatus, ?createAndWait}] ++ Values ++ [{stsStatus, ?active}]);
         cst ->
-            update(Index, [{cstStatus, ?createAndWait}] ++ ValueList ++ [{cstStatus, ?active}]);
+            update(Index, [{cstStatus, ?createAndWait}] ++ Values ++ [{cstStatus, ?active}]);
         cnn ->
-            update(Index, [{cnnStatus, ?createAndWait}] ++ ValueList ++ [{cnnStatus, ?active}]);
-        _Any ->
-            {error, noSuchTable}
+            update(Index, [{cnnStatus, ?createAndWait}] ++ Values ++ [{cnnStatus, ?active}])
     end.
 
-update(Index, ValueList) ->
-    set(Index, ValueList).
+update(Index, Values) ->
+    set(Index, Values).
 
-set(Index, Values) ->
-    Fun = fun({ColName, Value}) ->
-        {ok, [OID]} = snmpm:name_to_oid(ColName),
-        {OID ++ Index, Value}
-    end,
-    Values2 = [Fun(V) || V <- Values],
-    k_support_snmp:sync_set(?USER, Values2).
+set(_Index, []) ->
+    ok;
+set(Index, [{ColName, Value} | Values]) ->
+    {ok, OID} = k_support_snmp:name_to_oid(ColName),
+    case k_support_snmp:sync_set(?USER, [{OID ++ Index, Value}]) of
+        ok ->
+            set(Index, Values);
+        {error, Reason} ->
+            ?log_error("Set index: ~p column: ~p value: ~p failed with: ~p",
+                [Index, ColName, Value, Reason]),
+            {error, Reason}
+    end.
 
-is_exist(TableName, Index)->
-    {ok, ColumnName} = status_column_name(TableName),
-    case get_row_val(ColumnName, Index) of
+is_exist(TabName, Index)->
+    {ok, ColName} = status_column_name(TabName),
+    case get_row_val(ColName, Index) of
         {ok, ?active} -> {ok, exist};
-        {ok, Some} when is_integer(Some) -> {ok, incorrectState};
-        {error, noTarget} -> {error, noTarget};
-        {_Error, _More} -> {ok, notExist}
+        {ok, Some} when is_integer(Some) -> {ok, bad_state};
+        {error, no_target} -> {error, no_target};
+        {_Error, _More} -> {ok, not_found}
     end.
 
-status_column_name(TableName) ->
-    case TableName of
+status_column_name(TabName) ->
+    case TabName of
         gtw -> {ok, gtwStatus};
         sts -> {ok, stsStatus};
         cst -> {ok, cstStatus};
-        cnn -> {ok, cnnStatus};
-        _Any -> {error, noSuchTable}
+        cnn -> {ok, cnnStatus}
     end.

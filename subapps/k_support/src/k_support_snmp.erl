@@ -5,6 +5,7 @@
 %% API
 -export([
     start_link/0,
+    name_to_oid/1,
     sync_get/2,
     sync_set/2
 ]).
@@ -34,14 +35,11 @@
 -type snmp_oid() :: [byte()].
 
 -type snmp_value() :: term().
--type er_snmp_state() :: term().
--type snmp_error_reason() :: term().
 -type snmp_result() :: {ok, snmp_value()} |
-                        {error, noAgent} |
-                        {error, noSuchObject} |
-                        {error, noSuchInstance} |
-                        {error, er_snmp_state()} |
-                        {error, snmp_error_reason()}.
+                       {error, no_target} |
+                       {error, no_object} |
+                       {error, no_instance} |
+                       {error, not_found}.
 
 -define(PMM_OID, [1,3,6,1,4,1,20789]).
 %% > snmpm:name_to_oid(powerMeMobile).
@@ -61,12 +59,22 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+-spec name_to_oid(atom()) -> snmp_result().
+name_to_oid(Name) ->
+    case snmpm:name_to_oid(Name) of
+        {ok, [OID]} ->
+            {ok, OID};
+        {error, Error} ->
+            ?log_error("snmpm:name_to_oid(~p) failed with: ~p",
+                [Name, Error])
+    end.
+
 -spec sync_get(snmp_user(), [snmp_oid()]) -> snmp_result().
 sync_get(User, Oids) ->
     case gen_server:call(?MODULE, {get_target, User}, 30000) of
         {ok, Target} ->
             Result = snmpm:sync_get(User, Target, Oids),
-            parse_snmp_get_result(Result);
+            parse_sync_get_result(Result);
         {error, Error} ->
             {error, Error}
     end.
@@ -76,7 +84,7 @@ sync_set(User, Values) ->
     case gen_server:call(?MODULE, {get_target, User}, 30000) of
         {ok, Target} ->
             Result = snmpm:sync_set(User, Target, Values),
-            parse_snmp_set_result(Result);
+            parse_sync_set_result(Result);
         {error, Error} ->
             {error, Error}
     end.
@@ -125,7 +133,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% ===================================================================
 
 choose_target(_User, []) ->
-    {error, noTarget};
+    {error, no_target};
 choose_target(User, [Target | Targets]) ->
     case snmpm:sync_get(User, Target, [?PMM_OID]) of
         {error, {timeout, _}} ->
@@ -134,14 +142,14 @@ choose_target(User, [Target | Targets]) ->
             {ok, Target}
     end.
 
-parse_snmp_get_result(Result) ->
+parse_sync_get_result(Result) ->
     case Result of
         {ok, {noError, 0, [#varbind{value = Value}]}, _Remaining} ->
             case Value of
                 noSuchObject ->
-                    {error, noSuchObject};
+                    {error, no_object};
                 noSuchInstance ->
-                    {error, noSuchInstance};
+                    {error, no_instance};
                 AnyValue->
                     {ok, AnyValue}
             end;
@@ -153,7 +161,7 @@ parse_snmp_get_result(Result) ->
             {error, Reason}
     end.
 
-parse_snmp_set_result(Result) ->
+parse_sync_set_result(Result) ->
     case Result of
         {ok, {noError, 0, _PrevValues}, _Remaining} ->
             ok;
