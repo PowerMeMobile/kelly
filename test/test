@@ -6,9 +6,11 @@
 # 3. Test http api with using both eunit and py.test
 # 4. Stop kelly node
 
-echo PWD: $(pwd)
+echo PWD: ${PWD}
 
-KELLY_BIN='./rel/kelly/bin/kelly'
+KELLY_BASE="${PWD}/rel/kelly"
+KELLY_BIN="${KELLY_BASE}/bin/kelly"
+PIPE_DIR="/tmp/${PWD}/rel/kelly/"
 
 echo Start kelly node
 $KELLY_BIN start
@@ -21,6 +23,10 @@ KELLY_PING_RESULT=$($KELLY_BIN ping | grep pong)
 if [[ "" == "$KELLY_PING_RESULT" ]]; then
     exit 1
 fi
+
+echo Stub SNMP
+echo "k_support_snmp_stub:stub()." | ${KELLY_BASE}/erts-5.10.4/bin/to_erl ${PIPE_DIR}
+sleep 1
 
 echo Configure kelly node
 ./rel/files/http_conf.sh
