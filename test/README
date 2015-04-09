@@ -1,0 +1,14 @@
+# setup virtualenv and install deps
+$ virtualenv env --no-site-packages
+$ source env/bin/activate
+$ pip install -r requirements.txt
+
+# activate virtualenv and run tests
+$ source env/bin/activate
+$ py.test -v *.py
+$ py.test -v http_blacklist_test.py -k test_read_succ
+$ py.test --pdb
+
+# make standalone test script and then run it in verbose mode
+$ py.test --genscript=runtests.py
+$ python runtests.py -v

@@ -1,14 +1,4 @@
-# setup python's virtualenv as described here
-# https://gist.github.com/ten0s/125f708b185daeab184a
-
-# $ . env/bin/activate
-# $ py.test http_network_maps_test.py
-# $ py.test --pdb
-# $ py.test -v
-
-# make standalone test script and then run it in verbose mode
-# $ py.test --genscript=runtests.py
-# $ python runtests.py -v
+# -*- coding: utf-8 -*-
 
 import pytest
 import requests
