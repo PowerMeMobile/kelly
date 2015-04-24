@@ -55,39 +55,6 @@ process(<<"BindRequest">>, ReqBin) ->
             ?log_error("Auth request decode error: ~p", [Error]),
             noreply
     end;
-process(<<"OneAPIAuthReq">>, ReqBin) ->
-    RespCT = <<"OneAPIAuthResp">>,
-    case adto:decode(#k1api_auth_request_dto{}, ReqBin) of
-        {ok, AuthReq} ->
-            ?log_debug("Got auth request: ~p", [AuthReq]),
-            CustomerId = AuthReq#k1api_auth_request_dto.customer_id,
-            UserId     = AuthReq#k1api_auth_request_dto.user_id,
-            Password   = AuthReq#k1api_auth_request_dto.password,
-            ConnType   = AuthReq#k1api_auth_request_dto.connection_type,
-            ReqId      = AuthReq#k1api_auth_request_dto.id,
-            case authenticate(CustomerId, UserId, Password, ConnType) of
-                {allow, Customer = #customer{}} ->
-                    {ok, Networks, Providers} = build_networks_and_providers(Customer),
-                    Features = get_features(UserId, Customer),
-                    {ok, Response} = build_auth_response(RespCT,
-                        ReqId, Customer, UserId, Networks, Providers, Features),
-                    ?log_debug("Auth allowed", []),
-                    encode_response(RespCT, Response);
-                {deny, Reason} ->
-                    {ok, Response} = build_error_response(RespCT,
-                        ReqId, {deny, Reason}),
-                    ?log_notice("Auth denied: ~p", [Reason]),
-                    encode_response(RespCT, Response);
-                {error, Reason} ->
-                    {ok, Response} = build_error_response(RespCT,
-                        ReqId, {error, Reason}),
-                    ?log_error("Auth error: ~p", [Reason]),
-                    encode_response(RespCT, Response)
-            end;
-        {error, Error} ->
-            ?log_error("Auth request decode error: ~p", [Error]),
-            noreply
-    end;
 process(<<"AuthReqV1">>, ReqBin) ->
     RespCT = <<"AuthRespV1">>,
     case adto:decode(#auth_req_v1{}, ReqBin) of
@@ -310,41 +277,6 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Prov
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO};
-build_auth_response(<<"OneAPIAuthResp">>, ReqId, Customer, _UserId, Networks, Providers, Features) ->
-    #customer{
-        customer_uuid = CustomerUuid,
-        customer_id = CustomerId,
-        originators = Originators,
-        default_provider_id = DP,
-        receipts_allowed = RA,
-        no_retry = NR,
-        default_validity = _DV,
-        max_validity = MV,
-        pay_type = PayType
-    } = Customer,
-
-    CustomerDTO = #k1api_auth_response_customer_dto{
-        uuid = CustomerUuid,
-        id = CustomerId,
-        allowed_sources = allowed_sources(Originators),
-        default_source = default_source(Originators),
-        networks = [network_to_dto(N) || N <- Networks],
-        providers = [provider_to_dto(P) || P <- Providers],
-        default_provider_id = DP,
-        receipts_allowed = RA,
-        no_retry = NR,
-        default_validity = MV,
-        max_validity = MV,
-        pay_type = PayType,
-        features = [feature_to_dto(F) || F <- Features]
-    },
-
-    ResponseDTO = #k1api_auth_response_dto{
-        id = ReqId,
-        result = {customer, CustomerDTO}
-    },
-    ?log_debug("Built auth response: ~p", [ResponseDTO]),
-    {ok, ResponseDTO};
 build_auth_response(<<"AuthRespV1">>, ReqId, Customer, UserId, Networks, Providers, Features) ->
     #customer{
         customer_uuid = CustomerUuid,
@@ -392,22 +324,6 @@ build_error_response(<<"BindResponse">>, ReqId, {_, Reason}) ->
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO};
-build_error_response(<<"OneAPIAuthResp">>, ReqId, {deny, Reason}) ->
-    Response = #k1api_auth_response_dto{
-        id = ReqId,
-        result = {error, "Request denied: " ++ atom_to_list(Reason)}
-    },
-
-    ?log_debug("Built auth response: ~p", [Response]),
-    {ok, Response};
-build_error_response(<<"OneAPIAuthResp">>, ReqId, {error, Reason}) ->
-    Response = #k1api_auth_response_dto{
-        id = ReqId,
-        result = {error, "Request error: " ++ atom_to_list(Reason)}
-    },
-
-    ?log_debug("Built auth response: ~p", [Response]),
-    {ok, Response};
 build_error_response(<<"AuthRespV1">>, ReqId, {deny, Reason}) ->
     Response = #auth_resp_v1{
         req_id = ReqId,

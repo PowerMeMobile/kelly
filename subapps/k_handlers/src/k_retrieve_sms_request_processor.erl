@@ -11,26 +11,6 @@
 %% ===================================================================
 
 -spec process(record()) -> {ok, record()} | {error, term()}.
-process(Req = #k1api_retrieve_sms_request_dto{}) ->
-    ReqId      = Req#k1api_retrieve_sms_request_dto.id,
-    CustomerId = Req#k1api_retrieve_sms_request_dto.customer_id,
-    UserId     = Req#k1api_retrieve_sms_request_dto.user_id,
-    DestAddr   = Req#k1api_retrieve_sms_request_dto.dest_addr,
-    BatchSize  = Req#k1api_retrieve_sms_request_dto.batch_size,
-    %% TODO: Ensure correct DestAddr for Customer:User
-    case k_mailbox:get_incoming_sms(CustomerId, UserId, DestAddr, BatchSize) of
-        {ok, Messages, Pending} ->
-            MessagesDTO = [incoming_sms_to_dto(M) || M <- Messages],
-            Resp = #k1api_retrieve_sms_response_dto{
-                id = ReqId,
-                messages = MessagesDTO,
-                total = Pending
-            },
-            delete_retrieved(Messages),
-            {ok, Resp};
-        Error ->
-            Error
-    end;
 process(Req = #retrieve_sms_req_v1{}) ->
     ReqId      = Req#retrieve_sms_req_v1.req_id,
     CustomerId = Req#retrieve_sms_req_v1.customer_id,
@@ -55,20 +35,6 @@ process(Req = #retrieve_sms_req_v1{}) ->
 %% ===================================================================
 %% Interal
 %% ===================================================================
-
-incoming_sms_to_dto(Msg) ->
-    #k_mb_incoming_sms{
-        id = ItemId,
-        src_addr = SrcAddr,
-        received = RecvTime,
-        body = Body
-    } = Msg,
-    #k1api_retrieved_sms_dto{
-        datetime = RecvTime,
-        sender_addr = SrcAddr,
-        message_id = ItemId,
-        message = Body
-     }.
 
 incoming_sms_to_v1(Msg) ->
     #k_mb_incoming_sms{

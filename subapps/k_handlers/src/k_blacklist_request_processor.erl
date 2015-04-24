@@ -11,21 +11,6 @@
 %% ===================================================================
 
 -spec process(record()) -> {ok, record()} | {error, term()}.
-process(Req = #k1api_blacklist_request_dto{}) ->
-    ReqId       = Req#k1api_blacklist_request_dto.id,
-    _CustomerId = Req#k1api_blacklist_request_dto.customer_id,
-    _UserId     = Req#k1api_blacklist_request_dto.user_id,
-    _Version    = Req#k1api_blacklist_request_dto.version,
-
-    case k_storage_blacklist:get_blacklist_entries() of
-        {ok, Entries} ->
-            {ok, #k1api_blacklist_response_dto{
-                id = ReqId,
-                entries = [entry_to_dto(E) || E <- Entries]
-            }};
-        Error ->
-            Error
-    end;
 process(Req = #blacklist_req_v1{}) ->
     ReqId = Req#blacklist_req_v1.req_id,
 
@@ -42,18 +27,6 @@ process(Req = #blacklist_req_v1{}) ->
 %% ===================================================================
 %% Internal
 %% ===================================================================
-
-entry_to_dto(Entry) ->
-    #blacklist_entry{
-        id = Id,
-        dst_addr = DstAddr,
-        src_addr = SrcAddr
-    } = Entry,
-    #blacklist_entry_dto{
-        id = Id,
-        dst_addr = DstAddr,
-        src_addr = SrcAddr
-    }.
 
 entry_to_v1(Entry) ->
     #blacklist_entry{

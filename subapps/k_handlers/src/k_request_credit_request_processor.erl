@@ -16,21 +16,6 @@
 %% ===================================================================
 
 -spec process(record()) -> {ok, record()} | {error, term()}.
-process(ReqDTO = #k1api_request_credit_request_dto{}) ->
-    ReqId       = ReqDTO#k1api_request_credit_request_dto.id,
-    CustomerId  = ReqDTO#k1api_request_credit_request_dto.customer_id,
-    CreditRequested = ReqDTO#k1api_request_credit_request_dto.credit,
-
-    case request_credit(CustomerId, CreditRequested) of
-        {ok, Result, CreditLeft} ->
-            {ok, #k1api_request_credit_response_dto{
-                id = ReqId,
-                result = Result,
-                credit_left = CreditLeft
-            }};
-        Error ->
-            Error
-    end;
 process(ReqDTO = #credit_req_v1{}) ->
     ReqId       = ReqDTO#credit_req_v1.req_id,
     CustomerId  = ReqDTO#credit_req_v1.customer_id,

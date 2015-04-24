@@ -28,29 +28,6 @@ start_link() ->
 %% ===================================================================
 
 -spec process(req_ct(), req_bin()) -> {resp_ct(), resp_bin()} | {req_ct(), <<>>}.
-process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReq">> ->
-    case adto:decode(#k1api_coverage_request_dto{}, ReqBin) of
-        {ok, ReqDTO} ->
-            ?log_debug("Got coverage request: ~p", [ReqDTO]),
-            case k_coverage_request_processor:process(ReqDTO) of
-                {ok, RespDTO} ->
-                    ?log_debug("Built coverage response: ~p", [RespDTO]),
-                    case adto:encode(RespDTO) of
-                        {ok, RespBin} ->
-                            {<<"CoverageResp">>, RespBin};
-                        {error, Error} ->
-                            ?log_error("Coverage response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
-                    end;
-                {error, Error} ->
-                    ?log_error("Coverage request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
-            end;
-        {error, Error} ->
-            ?log_error("Coverage request decode error: ~p", [Error]),
-            {ReqCT, <<>>}
-    end;
-
 process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReqV1">> ->
     case adto:decode(#coverage_req_v1{}, ReqBin) of
         {ok, #coverage_req_v1{req_id = ReqId} = Req} ->
@@ -71,29 +48,6 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"CoverageReqV1">> ->
             end;
         {error, Error} ->
             ?log_error("Coverage request decode error: ~p", [Error]),
-            {ReqCT, <<>>}
-    end;
-
-process(ReqCT, ReqBin) when ReqCT =:= <<"BlacklistReq">> ->
-    case adto:decode(#k1api_blacklist_request_dto{}, ReqBin) of
-        {ok, ReqDTO} ->
-            ?log_debug("Got blacklist request: ~p", [ReqDTO]),
-            case k_blacklist_request_processor:process(ReqDTO) of
-                {ok, RespDTO} ->
-                    ?log_debug("Built blacklist response: ~p", [RespDTO]),
-                    case adto:encode(RespDTO) of
-                        {ok, RespBin} ->
-                            {<<"BlacklistResp">>, RespBin};
-                        {error, Error} ->
-                            ?log_error("Blacklist response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
-                    end;
-                {error, Error} ->
-                    ?log_error("Blacklist request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
-            end;
-        {error, Error} ->
-            ?log_error("Blacklist request decode error: ~p", [Error]),
             {ReqCT, <<>>}
     end;
 
@@ -120,29 +74,6 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"BlacklistReqV1">> ->
             {ReqCT, <<>>}
     end;
 
-process(ReqCT, ReqBin) when ReqCT =:= <<"DeliveryStatusReq">> ->
-    case adto:decode(#k1api_sms_delivery_status_request_dto{}, ReqBin) of
-        {ok, ReqDTO} ->
-            ?log_debug("Got delivery status request: ~p", [ReqDTO]),
-            case k_delivery_status_request_processor:process(ReqDTO) of
-                {ok, RespDTO} ->
-                    ?log_debug("Built delivery status response: ~p", [RespDTO]),
-                    case adto:encode(RespDTO) of
-                        {ok, RespBin} ->
-                            {<<"DeliveryStatusResp">>, RespBin};
-                        {error, Error} ->
-                            ?log_error("Delivery status response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
-                    end;
-                {error, Error} ->
-                    ?log_error("Delivery status request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
-            end;
-        {error, Error} ->
-            ?log_error("Delivery status request decode error: ~p", [Error]),
-            {ReqCT, <<>>}
-    end;
-
 process(ReqCT, ReqBin) when ReqCT =:= <<"SmsStatusReqV1">> ->
     case adto:decode(#sms_status_req_v1{}, ReqBin) of
         {ok, ReqDTO} ->
@@ -166,29 +97,6 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"SmsStatusReqV1">> ->
             {ReqCT, <<>>}
     end;
 
-process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReq">> ->
-    case adto:decode(#k1api_retrieve_sms_request_dto{}, ReqBin) of
-        {ok, ReqDTO} ->
-            ?log_debug("Got retrieve sms request: ~p", [ReqDTO]),
-            case k_retrieve_sms_request_processor:process(ReqDTO) of
-                {ok, RespDTO} ->
-                    ?log_debug("Built retrieve sms response: ~p", [RespDTO]),
-                    case adto:encode(RespDTO) of
-                        {ok, RespBin} ->
-                            {<<"RetrieveSmsResp">>, RespBin};
-                        {error, Error} ->
-                            ?log_error("Retrieve sms response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
-                    end;
-                {error, Error} ->
-                    ?log_error("Retrieve sms request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
-            end;
-        {error, Error} ->
-            ?log_error("Retrieve sms request decode error: ~p", [Error]),
-            {ReqCT, <<>>}
-    end;
-
 process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReqV1">> ->
     case adto:decode(#retrieve_sms_req_v1{}, ReqBin) of
         {ok, ReqDTO} ->
@@ -209,29 +117,6 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReqV1">> ->
             end;
         {error, Error} ->
             ?log_error("Retrieve sms request decode error: ~p", [Error]),
-            {ReqCT, <<>>}
-    end;
-
-process(ReqCT, ReqBin) when ReqCT =:= <<"RequestCreditReq">> ->
-    case adto:decode(#k1api_request_credit_request_dto{}, ReqBin) of
-        {ok, ReqDTO} ->
-            ?log_debug("Got request credit request: ~p", [ReqDTO]),
-            case k_request_credit_request_processor:process(ReqDTO) of
-                {ok, RespDTO} ->
-                    ?log_debug("Built request credit response: ~p", [RespDTO]),
-                    case adto:encode(RespDTO) of
-                        {ok, RespBin} ->
-                            {<<"RequestCreditResp">>, RespBin};
-                        {error, Error} ->
-                            ?log_error("request credit response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
-                    end;
-                {error, Error} ->
-                    ?log_error("request credit request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
-            end;
-        {error, Error} ->
-            ?log_error("request credit request decode error: ~p", [Error]),
             {ReqCT, <<>>}
     end;
 
