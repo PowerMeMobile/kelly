@@ -2,7 +2,8 @@
 
 -export([
     connections/0,
-    disconnect/4
+    disconnect/4,
+    throughput/0
 ]).
 
 -include_lib("alley_dto/include/adto.hrl").
@@ -59,6 +60,25 @@ disconnect(CustomerId, UserId, BindType, ConnectionId) ->
             {error, Error}
     end.
 
+-spec throughput() -> {ok, [{atom(), term()}]} | {error, term()}.
+throughput() ->
+    {ok, CtrlQueue} = application:get_env(k_handlers, funnel_control_queue),
+    ReqId = uuid:unparse(uuid:generate_time()),
+    Req = #throughput_req_v1{
+        req_id = ReqId
+    },
+    ?log_debug("Sending throughput request: ~p", [Req]),
+    {ok, ReqBin} = adto:encode(Req),
+    case k_support_rmq:rpc_call(CtrlQueue, <<"ThroughputReqV1">>, ReqBin) of
+        {ok, <<"ThroughputRespV1">>, RespBin} ->
+            {ok, Resp} = adto:decode(#throughput_resp_v1{}, RespBin),
+            ?log_debug("Got throughput response: ~p", [Resp]),
+            Slices = Resp#throughput_resp_v1.slices,
+            {ok, prepare_slices(Slices)};
+        {error, Error} ->
+            {error, Error}
+    end.
+
 %% ===================================================================
 %% Internal
 %% ===================================================================
@@ -67,7 +87,7 @@ prepare_conns(Conns) ->
     prepare_conns(Conns, []).
 
 prepare_conns([], Acc) ->
-    Acc;
+    lists:reverse(Acc);
 prepare_conns([#connection_v1{
     connection_id = ConnectionId,
     remote_ip = RemoteIP,
@@ -98,4 +118,29 @@ error_to_plist(#connection_error_v1{error_code = Code, timestamp = TS}) ->
     [
         {error_code, Code},
         {timestamp, ac_datetime:timestamp_to_iso8601(TS)}
+    ].
+
+prepare_slices(Slices) ->
+    prepare_slices(Slices, []).
+
+prepare_slices([], Acc) ->
+    lists:reverse(Acc);
+prepare_slices([Slice | Slices], Acc) ->
+    PeriodStart = Slice#throughput_slice_v1.period_start,
+    Counters = Slice#throughput_slice_v1.counters,
+    Plist = [
+        {period_start, ac_datetime:timestamp_to_iso8601(PeriodStart)},
+        {counters, [counter_to_plist(C) || C <- Counters]}
+    ],
+    prepare_slices(Slices, [Plist | Acc]).
+
+counter_to_plist(#throughput_counter_v1{
+    connection_id = ConnectionId,
+    direction = Direction,
+    count = Count
+}) ->
+    [
+        {connection_id, ConnectionId},
+        {direction, Direction},
+        {count, Count}
     ].
