@@ -95,10 +95,10 @@ gen_http_api_handlers_dispatch_rules() ->
 
         %% Control API
         k_http_api_v1_just_reconfigure,
+        k_http_api_v1_funnel_connections,
 
         %% Statistic API
         k_http_api_handler_uplink_stats,
-        k_http_api_handler_downlink_stats,
         k_http_api_handler_statuses_stats,
         k_http_api_handler_msg_stats,
         k_http_api_handler_mt_msg_aggr_stats,
