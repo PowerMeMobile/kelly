@@ -6,8 +6,7 @@
         kernel,
         stdlib,
         k_common,
-        k_storage,
-        k_support
+        k_storage
     ]},
     {env, []}
 ]}.
