@@ -94,7 +94,7 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_addr2cust,
 
         %% Control API
-        k_http_api_handler_just_reconfigure,
+        k_http_api_v1_just_reconfigure,
 
         %% Statistic API
         k_http_api_handler_uplink_stats,

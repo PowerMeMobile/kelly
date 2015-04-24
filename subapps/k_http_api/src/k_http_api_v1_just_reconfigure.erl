@@ -1,4 +1,4 @@
--module(k_http_api_handler_just_reconfigure).
+-module(k_http_api_v1_just_reconfigure).
 
 -behaviour(gen_http_api).
 
@@ -24,7 +24,7 @@ init() ->
         read = [],
         update = undefined,
         delete = undefined,
-        route = "/just/reconfigure"
+        route = "/v1/just/reconfigure"
     }}.
 
 read(_Params) ->
