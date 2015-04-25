@@ -1,4 +1,4 @@
--module(k_support_sup).
+-module(k_control_sup).
 
 -behaviour(supervisor).
 
@@ -27,5 +27,5 @@ start_link() ->
 
 init([]) ->
     {ok, {{one_for_one, 5, 10}, [
-        {k_support_snmp, {k_support_snmp, start_link, []}, permanent, 5000, worker, [k_support_snmp]}
+        {k_control_snmp, {k_control_snmp, start_link, []}, permanent, 5000, worker, [k_control_snmp]}
     ]}}.

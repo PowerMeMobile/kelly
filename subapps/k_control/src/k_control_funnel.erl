@@ -1,4 +1,4 @@
--module(k_support_funnel).
+-module(k_control_funnel).
 
 -export([
     connections/0,
@@ -27,7 +27,7 @@ connections() ->
     },
     ?log_debug("Sending funnel connections request: ~p", [Req]),
     {ok, ReqBin} = adto:encode(Req),
-    case k_support_rmq:rpc_call(CtrlQueue, <<"ConnectionsReqV1">>, ReqBin) of
+    case k_control_rmq:rpc_call(CtrlQueue, <<"ConnectionsReqV1">>, ReqBin) of
         {ok, <<"ConnectionsRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#connections_resp_v1{}, RespBin),
             ?log_debug("Got funnel connections response: ~p", [Resp]),
@@ -51,7 +51,7 @@ disconnect(CustomerId, UserId, BindType, ConnectionId) ->
     },
     ?log_debug("Sending funnel disconnect request: ~p", [Req]),
     {ok, ReqBin} = adto:encode(Req),
-    case k_support_rmq:rpc_call(CtrlQueue, <<"DisconnectReqV1">>, ReqBin) of
+    case k_control_rmq:rpc_call(CtrlQueue, <<"DisconnectReqV1">>, ReqBin) of
         {ok, <<"DisconnectRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#disconnect_resp_v1{}, RespBin),
             ?log_debug("Got funnel disconnect response: ~p", [Resp]),
@@ -69,7 +69,7 @@ throughput() ->
     },
     ?log_debug("Sending funnel throughput request: ~p", [Req]),
     {ok, ReqBin} = adto:encode(Req),
-    case k_support_rmq:rpc_call(CtrlQueue, <<"ThroughputReqV1">>, ReqBin) of
+    case k_control_rmq:rpc_call(CtrlQueue, <<"ThroughputReqV1">>, ReqBin) of
         {ok, <<"ThroughputRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#throughput_resp_v1{}, RespBin),
             ?log_debug("Got funnel throughput response: ~p", [Resp]),

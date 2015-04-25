@@ -1,4 +1,4 @@
--module(k_support_rmq).
+-module(k_control_rmq).
 
 -export([
     rpc_call/3

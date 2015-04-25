@@ -25,7 +25,7 @@ if [[ "" == "$KELLY_PING_RESULT" ]]; then
 fi
 
 echo Stub SNMP
-echo "k_support_snmp_stub:stub()." | ${KELLY_BASE}/erts-5.10.4/bin/to_erl ${PIPE_DIR}
+echo "k_control_snmp_stub:stub()." | ${KELLY_BASE}/erts-5.10.4/bin/to_erl ${PIPE_DIR}
 sleep 1
 
 echo Configure kelly node

@@ -28,7 +28,7 @@ init() ->
     }}.
 
 read(_Params) ->
-    ok = k_support_just:reconfigure(),
+    ok = k_control_just:reconfigure(),
     {ok, {result, ok}}.
 
 create(_Params) ->

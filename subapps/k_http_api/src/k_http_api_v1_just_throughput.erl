@@ -25,11 +25,11 @@ init() ->
     }}.
 
 read(_Params) ->
-    case k_support_just:throughput() of
+    case k_control_just:throughput() of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->
-            ?log_debug("Uplink report failed with: ~p", [Error]),
+            ?log_debug("Get just throughput failed with: ~p", [Error]),
             {exception, 'svc0003'}
     end.
 

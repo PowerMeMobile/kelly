@@ -26,7 +26,7 @@ init() ->
     }}.
 
 read(_Params) ->
-    case k_support_funnel:throughput() of
+    case k_control_funnel:throughput() of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->

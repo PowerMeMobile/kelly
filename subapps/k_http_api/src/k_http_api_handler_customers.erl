@@ -143,7 +143,7 @@ update(Params) ->
 
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
-    ok = k_support_just:delete_customer(CustomerUuid),
+    ok = k_control_just:delete_customer(CustomerUuid),
     ok = k_storage_customers:del_customer(CustomerUuid),
     {http_code, 204}.
 
@@ -189,7 +189,7 @@ update_customer(Customer, Params) ->
         state = NewState
     },
 
-    ok = k_support_just:set_customer(CustomerUuid, NewRps, NewPriority),
+    ok = k_control_just:set_customer(CustomerUuid, NewRps, NewPriority),
     ok = k_storage_customers:set_customer(CustomerUuid, NewCustomer),
     {ok, [Plist]} = prepare(NewCustomer),
     ?log_debug("Customer: ~p", [Plist]),
@@ -219,7 +219,7 @@ create_customer(Params) ->
         language = ?gv(language, Params),
         state = ?gv(state, Params)
     },
-    ok = k_support_just:set_customer(CustomerUuid, Rps, Priority),
+    ok = k_control_just:set_customer(CustomerUuid, Rps, Priority),
     ok = k_storage_customers:set_customer(CustomerUuid, Customer),
     {ok, [Plist]} = prepare(Customer),
     ?log_debug("Customer: ~p", [Plist]),

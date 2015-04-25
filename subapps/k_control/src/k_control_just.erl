@@ -1,4 +1,4 @@
--module(k_support_just).
+-module(k_control_just).
 
 -export([
     reconfigure/0,
@@ -47,7 +47,7 @@ throughput() ->
     {ok, ReqBin} =
         'JustAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),
     ?log_debug("Sending just connections request", []),
-    case k_support_rmq:rpc_call(CtrlQueue, <<"ThroughputRequest">>, ReqBin) of
+    case k_control_rmq:rpc_call(CtrlQueue, <<"ThroughputRequest">>, ReqBin) of
         {ok, <<"ThroughputResponse">>, RespBin} ->
             {ok, Resp = #'ThroughputResponse'{slices = Slices}} =
                 'JustAsn':decode('ThroughputResponse', RespBin),
@@ -65,7 +65,7 @@ block_request(ReqId) ->
         sms_req_id = ReqId
     },
     {ok, ReqBin} = adto:encode(Req),
-    case k_support_rmq:rpc_call(CtrlQueue, <<"BlockReqV1">>, ReqBin) of
+    case k_control_rmq:rpc_call(CtrlQueue, <<"BlockReqV1">>, ReqBin) of
         {ok, <<"BlockRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#block_resp_v1{}, RespBin),
             #block_resp_v1{result = Result} = Resp,
@@ -82,7 +82,7 @@ unblock_request(ReqId) ->
         sms_req_id = ReqId
     },
     {ok, ReqBin} = adto:encode(Req),
-    case k_support_rmq:rpc_call(CtrlQueue, <<"UnblockReqV1">>, ReqBin) of
+    case k_control_rmq:rpc_call(CtrlQueue, <<"UnblockReqV1">>, ReqBin) of
         {ok, <<"UnblockRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#unblock_resp_v1{}, RespBin),
             #unblock_resp_v1{result = Result} = Resp,
@@ -94,29 +94,29 @@ unblock_request(ReqId) ->
 -spec set_customer(binary(), integer(), integer()) -> ok.
 set_customer(ID, RPS, Priority) when
         is_binary(ID) andalso is_integer(RPS) andalso is_integer(Priority) ->
-    k_support_just_snmp:set_row(cst, binary_to_list(ID), [
+    k_control_just_snmp:set_row(cst, binary_to_list(ID), [
         {cstRPS, RPS},
         {cstPriority, Priority}
     ]).
 
 -spec delete_customer(binary()) -> ok.
 delete_customer(ID) when is_binary(ID) ->
-    k_support_just_snmp:del_row(cst, binary_to_list(ID)).
+    k_control_just_snmp:del_row(cst, binary_to_list(ID)).
 
 -spec set_gateway(binary(), binary(), integer()) -> ok.
 set_gateway(ID, Name, RPS) when
         is_binary(ID) andalso is_binary(Name) andalso is_integer(RPS) ->
-    k_support_just_snmp:set_row(gtw, binary_to_list(ID), [
+    k_control_just_snmp:set_row(gtw, binary_to_list(ID), [
         {gtwName, binary_to_list(Name)}, {gtwRPS, RPS}
     ]).
 
 -spec delete_gateway(binary()) -> ok.
 delete_gateway(ID) when is_binary(ID) ->
-    k_support_just_snmp:del_row(gtw, binary_to_list(ID)).
+    k_control_just_snmp:del_row(gtw, binary_to_list(ID)).
 
 -spec set_connection(binary(), #connection{}) -> ok.
 set_connection(GtwID, Conn = #connection{}) when is_binary(GtwID) ->
-    k_support_just_snmp:set_row(cnn, binary_to_list(GtwID) ++ [Conn#connection.id], [
+    k_control_just_snmp:set_row(cnn, binary_to_list(GtwID) ++ [Conn#connection.id], [
         {cnnAddr, binary_to_list(Conn#connection.host)},
         {cnnPort, Conn#connection.port},
         {cnnType, bind_type_to_integer(Conn#connection.bind_type)},
@@ -131,14 +131,14 @@ set_connection(GtwID, Conn = #connection{}) when is_binary(GtwID) ->
 -spec delete_connection(binary(), integer()) -> ok.
 delete_connection(GtwID, ConnID) when
         is_binary(GtwID) andalso is_integer(ConnID) ->
-    k_support_just_snmp:del_row(cnn, binary_to_list(GtwID) ++ [ConnID]).
+    k_control_just_snmp:del_row(cnn, binary_to_list(GtwID) ++ [ConnID]).
 
 -spec set_setting(binary(), #setting{}) -> ok.
 set_setting(GtwID, Setting = #setting{}) when is_binary(GtwID) ->
     Index = binary_to_list(GtwID) ++
             [size(Setting#setting.name)] ++
             binary_to_list(Setting#setting.name),
-    k_support_just_snmp:set_row(sts, Index, [
+    k_control_just_snmp:set_row(sts, Index, [
         {stsValue, binary_to_list(Setting#setting.value)}
     ]).
 
@@ -146,7 +146,7 @@ set_setting(GtwID, Setting = #setting{}) when is_binary(GtwID) ->
 delete_setting(GtwID, SettingID) when
         is_binary(GtwID) andalso is_binary(SettingID) ->
     Index = binary_to_list(GtwID) ++ [size(SettingID)] ++ binary_to_list(SettingID),
-    k_support_just_snmp:del_row(sts, Index).
+    k_control_just_snmp:del_row(sts, Index).
 
 %% ===================================================================
 %% Internal

@@ -43,7 +43,7 @@ update(Params) ->
     ReqId = ?gv(req_id, Params),
     case k_dynamic_storage:set_mt_batch_status(ReqId, blocked) of
         ok ->
-            ok = k_support_just:block_request(ReqId),
+            ok = k_control_just:block_request(ReqId),
             {ok, <<>>};
         {error, no_entry} ->
             {http_code, 404}
@@ -53,7 +53,7 @@ delete(Params) ->
     ReqId = ?gv(req_id, Params),
     case k_dynamic_storage:set_mt_batch_status(ReqId, unblocked) of
         ok ->
-            ok = k_support_just:unblock_request(ReqId),
+            ok = k_control_just:unblock_request(ReqId),
             {ok, <<>>};
         {error, no_entry} ->
             {http_code, 404}

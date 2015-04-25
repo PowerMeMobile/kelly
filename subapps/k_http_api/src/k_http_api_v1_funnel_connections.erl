@@ -32,7 +32,7 @@ init() ->
     }}.
 
 read(_Params) ->
-    case k_support_funnel:connections() of
+    case k_control_funnel:connections() of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->
@@ -51,7 +51,7 @@ delete(Params) ->
     UserId = ?gv(user_id, Params),
     BindType = ?gv(bind_type, Params),
     ConnectionId = ?gv(connection_id, Params),
-    case k_support_funnel:disconnect(
+    case k_control_funnel:disconnect(
             CustomerId, UserId, BindType, ConnectionId) of
         ok ->
             {ok, <<>>};

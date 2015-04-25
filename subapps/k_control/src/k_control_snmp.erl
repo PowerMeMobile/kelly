@@ -1,4 +1,4 @@
--module(k_support_snmp).
+-module(k_control_snmp).
 
 -behaviour(gen_server).
 

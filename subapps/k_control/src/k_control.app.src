@@ -1,4 +1,4 @@
-{application, k_support, [
+{application, k_control, [
     {description, ""},
     {vsn, git},
     {registered, []},
@@ -9,6 +9,6 @@
         k_storage,
         snmp
     ]},
-    {mod, {k_support_app, []} },
+    {mod, {k_control_app, []} },
     {env, []}
 ]}.
