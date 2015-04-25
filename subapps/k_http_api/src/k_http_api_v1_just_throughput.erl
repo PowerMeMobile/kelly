@@ -1,4 +1,4 @@
--module(k_http_api_handler_uplink_stats).
+-module(k_http_api_v1_just_throughput).
 
 -behaviour(gen_http_api).
 
@@ -21,11 +21,11 @@
 init() ->
     {ok, #specs{
         read = [],
-        route = "/report/uplink"
+        route = "/v1/just/throughput"
     }}.
 
 read(_Params) ->
-    case k_support_just:get_throughput() of
+    case k_support_just:throughput() of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->

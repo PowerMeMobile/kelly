@@ -2,7 +2,8 @@
 
 -export([
     reconfigure/0,
-    get_throughput/0,
+    throughput/0,
+
     block_request/1,
     unblock_request/1,
 
@@ -40,24 +41,18 @@ reconfigure() ->
     [set_gtw(Gtw) || Gtw <- Gtws],
     ok.
 
--spec get_throughput() -> {ok, [{atom(), term()}]} | {error, term()}.
-get_throughput() ->
+-spec throughput() -> {ok, [{atom(), term()}]} | {error, term()}.
+throughput() ->
     {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
     {ok, ReqBin} =
         'JustAsn':encode('ThroughputRequest', #'ThroughputRequest'{}),
+    ?log_debug("Sending just connections request", []),
     case k_support_rmq:rpc_call(CtrlQueue, <<"ThroughputRequest">>, ReqBin) of
         {ok, <<"ThroughputResponse">>, RespBin} ->
-            {ok, #'ThroughputResponse'{slices = Slices}} =
+            {ok, Resp = #'ThroughputResponse'{slices = Slices}} =
                 'JustAsn':decode('ThroughputResponse', RespBin),
-            Counters =
-                lists:flatten(
-                    lists:reverse([Slice#'Slice'.counters || Slice <- Slices])),
-            case k_storage_gateways:get_gateways() of
-                {ok, GtwList} ->
-                    {ok, _GtwPropLists} = prepare_gtws(Counters, GtwList);
-                {error, Error} ->
-                    {error, Error}
-            end;
+            ?log_debug("Got just throughput response: ~p", [Resp]),
+            {ok, prepare_slices(Slices)};
         {error, Error} ->
             {error, Error}
     end.
@@ -163,36 +158,35 @@ set_gtw(Gtw) ->
     [ok = set_connection(GtwId, Conn) || Conn <- Gtw#gateway.connections],
     [ok = set_setting(GtwId, Setting) || Setting <- Gtw#gateway.settings].
 
-prepare_gtws(Counters, GtwList) when is_list(GtwList) ->
-    prepare_gtws(Counters, GtwList, []);
-prepare_gtws(Counters, Gtw = #gateway{}) ->
-    prepare_gtws(Counters, [Gtw], []).
+prepare_slices(Slices) ->
+    prepare_slices(Slices, []).
 
-prepare_gtws(_Counters, [], Acc) ->
-    {ok, Acc};
-prepare_gtws(Counters, [#gateway{id = GtwUuidBin} | Rest], Acc) ->
-    GtwUuid = binary_to_list(GtwUuidBin),
-    {ok, Name} = k_support_just_snmp:get_row_val(gtwName, GtwUuid),
-    {ok, Status} = k_support_just_snmp:get_row_val(gtwStatus, GtwUuid),
-    {ok, MaxRPS} = k_support_just_snmp:get_row_val(gtwRPS, GtwUuid),
-    {ok, ActualRpsIn} = get_actual_rps_sms(smsIn, GtwUuid, Counters),
-    {ok, ActualRpsOut} = get_actual_rps_sms(smsOut, GtwUuid, Counters),
-    GtwPropList = [
-        {id, GtwUuidBin},
-        {name, list_to_binary(Name)},
-        {status, Status},
-        {max_rps, MaxRPS},
-        {actual_rps_in, ActualRpsIn},
-        {actual_rps_out, ActualRpsOut}
+prepare_slices([], Acc) ->
+    lists:reverse(Acc);
+prepare_slices([Slice | Slices], Acc) ->
+    PeriodStart = Slice#'Slice'.periodStart,
+    Counters = Slice#'Slice'.counters,
+    Plist = [
+        {period_start, ac_datetime:utc_string_to_iso8601(PeriodStart)},
+        {counters, [counter_to_plist(C) || C <- Counters]}
     ],
-    prepare_gtws(Counters, Rest, [GtwPropList | Acc]).
+    prepare_slices(Slices, [Plist | Acc]).
 
-get_actual_rps_sms(_Type, _Uuid, []) ->
-    {ok, 0};
-get_actual_rps_sms(Type, Uuid, [#'Counter'{gatewayId = Uuid, type = Type, count = Count} | _]) ->
-    {ok, Count};
-get_actual_rps_sms(Type, Uuid, [_| Rest]) ->
-    get_actual_rps_sms(Type, Uuid, Rest).
+counter_to_plist(#'Counter'{
+    gatewayId = GatewayId,
+    gatewayName = GatewayName,
+    type = Type,
+    count = Count
+}) ->
+    [
+        {gateway_id, list_to_binary(GatewayId)},
+        {gateway_name, list_to_binary(GatewayName)},
+        {direction, direction(Type)},
+        {count, Count}
+    ].
+
+direction('smsOut') -> out;
+direction('smsIn')  -> in.
 
 bind_type_to_integer(transmitter) -> 1;
 bind_type_to_integer(receiver)    -> 2;
