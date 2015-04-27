@@ -61,11 +61,11 @@ unregister(SubscriptionID, CustomerID, UserID) ->
 
 -spec get_suitable_subscription(k_mb_item()) ->
     {ok, k_mb_subscription()} | undefined.
-get_suitable_subscription(Item = #k_mb_k1api_receipt{}) ->
-    case k_storage_mailbox:get_subscription_for_k1api_receipt(Item) of
+get_suitable_subscription(Item = #k_mb_oneapi_receipt{}) ->
+    case k_storage_mailbox:get_subscription_for_oneapi_receipt(Item) of
         undefined ->
             process_get_suitable_sub_req(Item);
-        {ok, Subscription = #k_mb_k1api_receipt_sub{}} ->
+        {ok, Subscription = #k_mb_oneapi_receipt_sub{}} ->
             {ok, Subscription}
     end;
 get_suitable_subscription(Item) ->
@@ -155,10 +155,10 @@ get_suitable_subscription(#k_mb_funnel_receipt{}, Subscriptions) ->
 get_suitable_subscription(Item = #k_mb_incoming_sms{}, Subscriptions) ->
     SuitableSubs = [Sub || Sub <- Subscriptions, is_suitable_for_incoming_sms(Item, Sub)],
     resolve_subscription_priority(SuitableSubs);
-get_suitable_subscription(#k_mb_k1api_receipt{src_addr = SrcAddr}, Subscriptions) ->
+get_suitable_subscription(#k_mb_oneapi_receipt{src_addr = SrcAddr}, Subscriptions) ->
     ?log_debug("Subscriptions: ~p", [Subscriptions]),
     ?log_debug("SrcAddr: ~p", [SrcAddr]),
-    case lists:keyfind(SrcAddr, #k_mb_k1api_receipt_sub.src_addr, Subscriptions) of
+    case lists:keyfind(SrcAddr, #k_mb_oneapi_receipt_sub.src_addr, Subscriptions) of
         false ->
             undefined;
         Subscription ->
@@ -169,13 +169,13 @@ get_suitable_subscription(_, _) ->
 
 is_suitable_for_incoming_sms(_Item, #k_mb_funnel_sub{}) ->
     true;
-is_suitable_for_incoming_sms(Item, Sub = #k_mb_k1api_incoming_sms_sub{}) when
-    Sub#k_mb_k1api_incoming_sms_sub.dst_addr =:= Item#k_mb_incoming_sms.dst_addr
-    andalso Sub#k_mb_k1api_incoming_sms_sub.criteria =:= undefined ->
+is_suitable_for_incoming_sms(Item, Sub = #k_mb_oneapi_incoming_sms_sub{}) when
+    Sub#k_mb_oneapi_incoming_sms_sub.dst_addr =:= Item#k_mb_incoming_sms.dst_addr
+    andalso Sub#k_mb_oneapi_incoming_sms_sub.criteria =:= undefined ->
     true;
-is_suitable_for_incoming_sms(Item, Sub = #k_mb_k1api_incoming_sms_sub{}) when
-    Sub#k_mb_k1api_incoming_sms_sub.dst_addr =:= Item#k_mb_incoming_sms.dst_addr ->
-    Criteria = Sub#k_mb_k1api_incoming_sms_sub.criteria,
+is_suitable_for_incoming_sms(Item, Sub = #k_mb_oneapi_incoming_sms_sub{}) when
+    Sub#k_mb_oneapi_incoming_sms_sub.dst_addr =:= Item#k_mb_incoming_sms.dst_addr ->
+    Criteria = Sub#k_mb_oneapi_incoming_sms_sub.criteria,
     Body = Item#k_mb_incoming_sms.body,
     case bstr:prefix(Body, Criteria) of
         true -> true;
@@ -198,8 +198,8 @@ resolve_subscription_priority([Subscription | RestSubs]) ->
     Subscription = lists:foldl(MaxFun, Subscription, RestSubs),
     {ok, Subscription}.
 
-priority(Sub = #k_mb_k1api_incoming_sms_sub{}) ->
-    Sub#k_mb_k1api_incoming_sms_sub.priority;
+priority(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
+    Sub#k_mb_oneapi_incoming_sms_sub.priority;
 priority(Sub = #k_mb_funnel_sub{}) ->
     Sub#k_mb_funnel_sub.priority.
 
@@ -235,21 +235,21 @@ ets_lookup_subs(Key) ->
     end,
     {ok, Subscriptions}.
 
-get_customer_user(Sub = #k_mb_k1api_receipt_sub{}) ->
-    CustomerID = Sub#k_mb_k1api_receipt_sub.customer_id,
-    UserID = Sub#k_mb_k1api_receipt_sub.user_id,
+get_customer_user(Sub = #k_mb_oneapi_receipt_sub{}) ->
+    CustomerID = Sub#k_mb_oneapi_receipt_sub.customer_id,
+    UserID = Sub#k_mb_oneapi_receipt_sub.user_id,
     {CustomerID, UserID};
-get_customer_user(Sub = #k_mb_k1api_incoming_sms_sub{}) ->
-    CustomerID = Sub#k_mb_k1api_incoming_sms_sub.customer_id,
-    UserID = Sub#k_mb_k1api_incoming_sms_sub.user_id,
+get_customer_user(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
+    CustomerID = Sub#k_mb_oneapi_incoming_sms_sub.customer_id,
+    UserID = Sub#k_mb_oneapi_incoming_sms_sub.user_id,
     {CustomerID, UserID};
 get_customer_user(Sub = #k_mb_funnel_sub{}) ->
     CustomerID = Sub#k_mb_funnel_sub.customer_id,
     UserID = Sub#k_mb_funnel_sub.user_id,
     {CustomerID, UserID};
-get_customer_user(Item = #k_mb_k1api_receipt{}) ->
-    CustomerID = Item#k_mb_k1api_receipt.customer_id,
-    UserID = Item#k_mb_k1api_receipt.user_id,
+get_customer_user(Item = #k_mb_oneapi_receipt{}) ->
+    CustomerID = Item#k_mb_oneapi_receipt.customer_id,
+    UserID = Item#k_mb_oneapi_receipt.user_id,
     {CustomerID, UserID};
 get_customer_user(Item = #k_mb_funnel_receipt{}) ->
     CustomerID = Item#k_mb_funnel_receipt.customer_id,

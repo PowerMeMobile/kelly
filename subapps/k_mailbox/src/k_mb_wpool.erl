@@ -86,7 +86,7 @@ handle_fork_call( _Arg, _CallMess, _ReplyTo, _WP ) ->
 
 handle_fork_cast(_Arg, {process_item, {ItemType, ItemID}}, _WP) when
     ItemType == k_mb_incoming_sms orelse
-    ItemType == k_mb_k1api_receipt orelse
+    ItemType == k_mb_oneapi_receipt orelse
     ItemType == k_mb_funnel_receipt ->
 
     case k_storage_mailbox:get_item(ItemType, ItemID) of
@@ -145,9 +145,9 @@ mark_as_pending(Item = #k_mb_incoming_sms{}) ->
         user_id = UserID
     } = Item,
     k_storage_mailbox:set_pending(ItemType, ItemID, CustomerID, UserID);
-mark_as_pending(Item = #k_mb_k1api_receipt{}) ->
-    ItemType = k_mb_k1api_receipt,
-    #k_mb_k1api_receipt{
+mark_as_pending(Item = #k_mb_oneapi_receipt{}) ->
+    ItemType = k_mb_oneapi_receipt,
+    #k_mb_oneapi_receipt{
         id = ItemID,
         customer_id = CustomerID,
         user_id = UserID
@@ -161,8 +161,8 @@ send_item(Item, Subscription) ->
     ?log_debug("Send item: ~p to queue: ~p", [ItemID, QName]),
     ContentType =
         case Item of
-            #k_mb_incoming_sms{} -> <<"OutgoingBatch">>;
-            #k_mb_k1api_receipt{} -> <<"ReceiptBatch">>;
+            #k_mb_incoming_sms{}   -> <<"OutgoingBatch">>;
+            #k_mb_oneapi_receipt{} -> <<"ReceiptBatch">>;
             #k_mb_funnel_receipt{} -> <<"ReceiptBatch">>
         end,
     case k_mb_amqp_producer_srv:send(ItemID, Binary, QName, ContentType) of
@@ -204,7 +204,7 @@ build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
         message_id = InMsgId,
         submit_date = ac_datetime:timestamp_to_utc_string(SubmitDate),
         done_date = ac_datetime:timestamp_to_utc_string(DoneDate),
-        %% it's atom here, see #k_mb_k1api_receipt{} case
+        %% it's atom here, see #k_mb_oneapi_receipt{} case
         message_state = Status,
         source = SrcAddr,
         dest = DstAddr
@@ -238,7 +238,7 @@ build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_funnel_sub{}) ->
     },
     {ok, Bin} = adto:encode(Batch),
     {ok, ItemID, QName, Bin};
-build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_k1api_incoming_sms_sub{}) ->
+build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
     #k_mb_incoming_sms{
         id = ItemID,
         src_addr = SrcAddr,
@@ -246,7 +246,7 @@ build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_k1api_incoming_sms_sub{}) ->
         received = Received,
         body = Body
     } = Item,
-    #k_mb_k1api_incoming_sms_sub{
+    #k_mb_oneapi_incoming_sms_sub{
         queue_name = QName,
         notify_url = NotifyURL,
         callback_data = CallbackData
@@ -262,13 +262,13 @@ build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_k1api_incoming_sms_sub{}) ->
     },
     {ok, Bin} = adto:encode(DTO),
     {ok, ItemID, QName, Bin};
-build_dto(Item = #k_mb_k1api_receipt{}, Sub = #k_mb_k1api_receipt_sub{}) ->
-    #k_mb_k1api_receipt{
+build_dto(Item = #k_mb_oneapi_receipt{}, Sub = #k_mb_oneapi_receipt_sub{}) ->
+    #k_mb_oneapi_receipt{
         id = ItemID,
         dst_addr = DstAddr,
         status = Status
     } = Item,
-    #k_mb_k1api_receipt_sub{
+    #k_mb_oneapi_receipt_sub{
         queue_name = QName,
         callback_data = CallbackData,
         notify_url = NotifyURL

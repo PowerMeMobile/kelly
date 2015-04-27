@@ -634,7 +634,7 @@ create_oneapi_receipt_subscription(CustomerUuid, UserId, SrcAddr,
         NotifyURL, CallbackData, ReqId, InMsgIds) ->
     {ok, QName} = application:get_env(k_handlers, oneapi_incoming_sms_queue),
     SubId = uuid:unparse(uuid:generate_time()),
-    Sub = #k_mb_k1api_receipt_sub{
+    Sub = #k_mb_oneapi_receipt_sub{
         id = SubId,
         customer_id = CustomerUuid,
         user_id = UserId,

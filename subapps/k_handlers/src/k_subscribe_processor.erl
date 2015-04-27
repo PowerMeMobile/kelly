@@ -22,7 +22,7 @@ process(Request = #k1api_subscribe_sms_receipts_request_dto{}) ->
     } = Request,
     %% TODO: Ensure correct SrcAddr for Customer:User
     {ok, QName} = application:get_env(k_handlers, oneapi_receipt_sms_queue),
-    Subscription = #k_mb_k1api_receipt_sub{
+    Subscription = #k_mb_oneapi_receipt_sub{
         id = ReqId,
         customer_id = CustomerId,
         user_id = UserId,
@@ -62,7 +62,7 @@ process(Request = #k1api_subscribe_incoming_sms_request_dto{}) ->
     } = Request,
     %% TODO: Ensure correct DstAddr for Customer:User
     {ok, QName} = application:get_env(k_handlers, oneapi_incoming_sms_queue),
-    Subscription = #k_mb_k1api_incoming_sms_sub{
+    Subscription = #k_mb_oneapi_incoming_sms_sub{
         id = Id,
         customer_id = CustomerId,
         user_id = UserId,

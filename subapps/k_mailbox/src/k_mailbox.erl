@@ -25,8 +25,8 @@
 register_subscription(Subscription) ->
     k_mb_subscription_mgr:register(Subscription).
 
--spec register_sms_req_receipts_subscription(Subscription::#k_mb_k1api_receipt_sub{}) -> ok.
-register_sms_req_receipts_subscription(Subscription = #k_mb_k1api_receipt_sub{}) ->
+-spec register_sms_req_receipts_subscription(Subscription::#k_mb_oneapi_receipt_sub{}) -> ok.
+register_sms_req_receipts_subscription(Subscription = #k_mb_oneapi_receipt_sub{}) ->
     k_storage_mailbox:save(Subscription).
 
 -spec unregister_subscription(
@@ -38,13 +38,13 @@ unregister_subscription(SubscriptionID, CustomerID, UserID) ->
     k_mb_subscription_mgr:unregister(SubscriptionID, CustomerID, UserID).
 
 -spec register_incoming_item(Item::k_mb_item()) -> ok.
-register_incoming_item(Item = #k_mb_k1api_receipt{}) ->
-    case k_storage_mailbox:get_subscription_for_k1api_receipt(Item) of
+register_incoming_item(Item = #k_mb_oneapi_receipt{}) ->
+    case k_storage_mailbox:get_subscription_for_oneapi_receipt(Item) of
         undefined ->
             ?log_debug("Suitable subscription NOT FOUND. "
                 "Don't register OneAPI receipt", []),
             ok;
-        {ok, #k_mb_k1api_receipt_sub{}} ->
+        {ok, #k_mb_oneapi_receipt_sub{}} ->
             k_storage_mailbox:save(Item),
             k_mb_wpool:process_incoming_item(Item)
     end;

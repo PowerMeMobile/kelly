@@ -123,7 +123,7 @@ build_receipt_item(#msg_info{
     dlr_time = DlrTime
 }) ->
     ItemId = uuid:unparse(uuid:generate_time()),
-    #k_mb_k1api_receipt{
+    #k_mb_oneapi_receipt{
         id = ItemId,
         customer_id = CustomerUuid,
         user_id = UserId,

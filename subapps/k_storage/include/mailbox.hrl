@@ -36,7 +36,7 @@
     user_id              :: binary(),
     src_addr             :: addr(),
     dst_addr             :: addr(),
-    received             :: erlang:timestamp(), %% k1api retrieve sms request
+    received             :: erlang:timestamp(), %% oneapi retrieve sms request
     body                 :: binary(),
     encoding             :: incoming_sms_encoding(),
 
@@ -44,7 +44,7 @@
     created_at           :: erlang:timestamp()
 }).
 
--record(k_mb_k1api_receipt, {
+-record(k_mb_oneapi_receipt, {
     id                   :: binary(),
     %% rename to customer_uuid
     customer_id          :: uuid(),
@@ -79,7 +79,7 @@
 }).
 
 -type k_mb_item() ::
-    #k_mb_k1api_receipt{} |
+    #k_mb_oneapi_receipt{} |
     #k_mb_funnel_receipt{} |
     #k_mb_incoming_sms{}.
 
@@ -87,7 +87,7 @@
 %% Subscriptions
 %% ===================================================================
 
--record(k_mb_k1api_receipt_sub, {
+-record(k_mb_oneapi_receipt_sub, {
     id              :: binary(),
     %% rename to customer_uuid
     customer_id     :: uuid(),
@@ -101,7 +101,7 @@
     created_at      :: erlang:timestamp()
 }).
 
--record(k_mb_k1api_incoming_sms_sub, {
+-record(k_mb_oneapi_incoming_sms_sub, {
     id              :: binary(),
     %% rename to customer_uuid
     customer_id     :: uuid(),
@@ -126,8 +126,8 @@
 }).
 
 -type k_mb_subscription() ::
-    #k_mb_k1api_receipt_sub{} |
-    #k_mb_k1api_incoming_sms_sub{} |
+    #k_mb_oneapi_receipt_sub{} |
+    #k_mb_oneapi_incoming_sms_sub{} |
     #k_mb_funnel_sub{}.
 
 -endif.

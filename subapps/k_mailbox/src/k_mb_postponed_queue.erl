@@ -101,14 +101,14 @@ postpone(Item, Attempt, _MaxRetry) ->
 
 get_current_attempt(Item = #k_mb_funnel_receipt{}) ->
     {ok, Item#k_mb_funnel_receipt.delivery_attempt};
-get_current_attempt(Item = #k_mb_k1api_receipt{}) ->
-    {ok, Item#k_mb_k1api_receipt.delivery_attempt};
+get_current_attempt(Item = #k_mb_oneapi_receipt{}) ->
+    {ok, Item#k_mb_oneapi_receipt.delivery_attempt};
 get_current_attempt(Item = #k_mb_incoming_sms{}) ->
     {ok, Item#k_mb_incoming_sms.delivery_attempt}.
 
 increment_attempt(Item = #k_mb_funnel_receipt{}, Attempt) ->
     Item#k_mb_funnel_receipt{delivery_attempt = Attempt + 1};
-increment_attempt(Item = #k_mb_k1api_receipt{}, Attempt) ->
-    Item#k_mb_k1api_receipt{delivery_attempt = Attempt + 1};
+increment_attempt(Item = #k_mb_oneapi_receipt{}, Attempt) ->
+    Item#k_mb_oneapi_receipt{delivery_attempt = Attempt + 1};
 increment_attempt(Item = #k_mb_incoming_sms{}, Attempt) ->
     Item#k_mb_incoming_sms{delivery_attempt = Attempt + 1}.

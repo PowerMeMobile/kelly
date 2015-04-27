@@ -43,8 +43,8 @@ init([]) ->
         ?WORKER(k_amqp_api_handler),
         ?WORKER(k_amqp_auth_handler),
 
-        ?HANDLER(amqp_k1api_sms_request),
         ?HANDLER(amqp_sms_request),
+        ?HANDLER(amqp_funnel_sms_request),
         ?HANDLER(amqp_sms_request_deferred),
 
         ?HANDLER(amqp_sms_response),
