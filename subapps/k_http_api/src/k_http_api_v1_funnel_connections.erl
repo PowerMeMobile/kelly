@@ -25,7 +25,7 @@ init() ->
         delete = [
             #param{name = customer_id, mandatory = false, repeated = false, type = binary},
             #param{name = user_id, mandatory = false, repeated = false, type = binary},
-            #param{name = bind_type, mandatory = false, repeated = false, type = {custom, fun bind_type/1}},
+            #param{name = bind_type, mandatory = false, repeated = true, type = {custom, fun bind_type/1}},
             #param{name = connection_id, mandatory = false, repeated = false, type = uuid}
         ],
         route = "/v1/funnel/connections"
