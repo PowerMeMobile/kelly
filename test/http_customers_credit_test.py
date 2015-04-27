@@ -1,16 +1,24 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+
+import os
 import requests
 
-HOST = 'localhost'
-PORT = '8080'
+KELLY_HOST = os.getenv('KELLY_HOST')
+if KELLY_HOST == None or KELLY_HOST == '':
+    KELLY_HOST = '127.0.0.1'
+
+KELLY_PORT = os.getenv('KELLY_PORT')
+if KELLY_PORT == None or KELLY_PORT == '':
+    KELLY_PORT = '8080'
+
 CUSTOMER_ID = '493b3678-9dc8-11e2-8cce-00269e42f7a5'
 BAD_CUSTOMER_ID = 'bad_customer'
 
-CUSTOMER_URL = 'http://'+HOST+':'+PORT+'/customers/'+CUSTOMER_ID
-CREDIT_URL = 'http://'+HOST+':'+PORT+'/customers/'+CUSTOMER_ID+'/credit'
-BAD_CREDIT_URL = 'http://'+HOST+':'+PORT+'/customers/'+BAD_CUSTOMER_ID+'/credit'
+CUSTOMER_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/customers/'+CUSTOMER_ID
+CREDIT_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/customers/'+CUSTOMER_ID+'/credit'
+BAD_CREDIT_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/customers/'+BAD_CUSTOMER_ID+'/credit'
 
 @pytest.fixture(scope="function")
 def http(request):

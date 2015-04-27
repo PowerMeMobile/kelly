@@ -1,15 +1,22 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+
+import os
 import requests
 
-HOST = 'localhost'
-PORT = '8080'
+KELLY_HOST = os.getenv('KELLY_HOST')
+if KELLY_HOST == None or KELLY_HOST == '':
+    KELLY_HOST = '127.0.0.1'
+
+KELLY_PORT = os.getenv('KELLY_PORT')
+if KELLY_PORT == None or KELLY_PORT == '':
+    KELLY_PORT = '8080'
 
 ENTRY_ID = '62ce045e-c4b3-11e3-9d4c-00269e42f7a5'
 BAD_ENTRY_ID = 'bad_entry_id'
 
-BASE_URL = 'http://'+HOST+':'+PORT+'/network_maps'
+BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/network_maps'
 
 @pytest.fixture(scope="function")
 def http(request):
