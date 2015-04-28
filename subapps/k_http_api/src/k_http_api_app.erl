@@ -81,6 +81,11 @@ gen_http_api_handlers_dispatch_rules() ->
         %% deprecated since PowerAlley 1.5.0
         k_http_api_handler_blacklist,
         k_http_api_handler_mt_msg_aggr_stats,
+        k_http_api_handler_customers,
+        k_http_api_handler_customers_credit,
+        k_http_api_handler_customers_originators,
+        k_http_api_handler_customers_users,
+        k_http_api_handler_customers_users_features,
 
         %% Config API
         k_http_api_handler_gateways,
@@ -89,18 +94,7 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_providers,
         k_http_api_handler_networks,
         k_http_api_handler_network_maps,
-        k_http_api_handler_customers,
-        k_http_api_handler_customers_credit,
-        k_http_api_handler_customers_originators,
-        k_http_api_handler_customers_users,
-        k_http_api_handler_customers_users_features,
         k_http_api_handler_addr2cust,
-
-        %% Control API
-        k_http_api_v1_just_reconfigure,
-        k_http_api_v1_just_throughput,
-        k_http_api_v1_funnel_connections,
-        k_http_api_v1_funnel_throughput,
 
         %% Statistic API
         k_http_api_handler_statuses_stats,
@@ -108,8 +102,23 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_mt_msg_stats,
         k_http_api_handler_mt_msg,
 
+        %%
         %% API v1
+        %%
+
+        %% Control API
+        k_http_api_v1_just_reconfigure,
+        k_http_api_v1_just_throughput,
+        k_http_api_v1_funnel_connections,
+        k_http_api_v1_funnel_throughput,
+
+        %% Config API
         k_http_api_v1_blacklists,
+        k_http_api_v1_customers,
+        k_http_api_v1_customers_credit,
+        k_http_api_v1_customers_originators,
+        k_http_api_v1_customers_users,
+        k_http_api_v1_customers_users_features,
 
         % keep batches details above batches
         k_http_api_v1_batches_details,
