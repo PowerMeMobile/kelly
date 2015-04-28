@@ -13,19 +13,39 @@ KELLY_PORT = os.getenv('KELLY_PORT')
 if KELLY_PORT == None or KELLY_PORT == '':
     KELLY_PORT = '8080'
 
-CUSTOMER_ID = '493b3678-9dc8-11e2-8cce-00269e42f7a5'
-BAD_CUSTOMER_ID = 'bad_customer'
+CUSTOMER_UUID = '493b3678-9dc8-11e2-8cce-00269e42f7a5'
+BAD_CUSTOMER_UUID = 'bad_customer'
 
-CUSTOMER_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/customers/'+CUSTOMER_ID
-CREDIT_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/customers/'+CUSTOMER_ID+'/credit'
-BAD_CREDIT_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/customers/'+BAD_CUSTOMER_ID+'/credit'
+BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/customers'
+CUSTOMER_URL = BASE_URL+'/'+CUSTOMER_UUID
+CREDIT_URL = CUSTOMER_URL+'/credit'
+BAD_CREDIT_URL = BASE_URL+'/'+BAD_CUSTOMER_UUID+'/credit'
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def http(request):
     http = requests
 
+    data = {'customer_uuid':CUSTOMER_UUID,
+            'customer_id':'0',
+            'name':'name',
+            'priority':1,
+            'rps':1000,
+            'receipts_allowed':True,
+            'no_retry':False,
+            'default_validity':'000003000000000R',
+            'max_validity':259200,
+            'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec73',
+            'network_map_id':'befa8b7c-c4a3-11e3-b670-00269e42f7a5',
+            'pay_type':'postpaid',
+            'credit':10000.0,
+            'credit_limit':10000.0,
+            'language':'en',
+            'state':'active'}
+    req = http.post(BASE_URL, data=data)
+
     def fin():
         print ("finalizing...")
+        http.delete(BASE_URL+'/'+CUSTOMER_UUID)
 
     request.addfinalizer(fin)
     return http
