@@ -78,6 +78,10 @@ dispatch_rules() ->
 
 gen_http_api_handlers_dispatch_rules() ->
     gen_http_api:compile_routes([
+        %% deprecated since PowerAlley 1.5.0
+        k_http_api_handler_blacklist,
+        k_http_api_handler_mt_msg_aggr_stats,
+
         %% Config API
         k_http_api_handler_gateways,
         k_http_api_handler_gateways_connections,
@@ -90,7 +94,6 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_customers_originators,
         k_http_api_handler_customers_users,
         k_http_api_handler_customers_users_features,
-        k_http_api_handler_blacklist,
         k_http_api_handler_addr2cust,
 
         %% Control API
@@ -102,7 +105,6 @@ gen_http_api_handlers_dispatch_rules() ->
         %% Statistic API
         k_http_api_handler_statuses_stats,
         k_http_api_handler_msg_stats,
-        k_http_api_handler_mt_msg_aggr_stats,
         k_http_api_handler_mt_msg_stats,
         k_http_api_handler_mt_msg,
 
