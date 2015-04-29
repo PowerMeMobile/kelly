@@ -79,7 +79,7 @@ def test_update_customer_succ(http):
     req_data['originators'] = []
     assert resp_data == req_data
 
-def test_read_bad_customer_succ(http):
+def test_read_bad_customer_fail(http):
     req = http.get(BASE_URL+'/'+BAD_CUSTOMER_UUID)
     assert req.status_code == 404
 

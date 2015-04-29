@@ -95,7 +95,7 @@ def test_update_user_succ(http):
     del req_data['password']
     assert resp_data == req_data
 
-def test_read_bad_user_succ(http):
+def test_read_bad_user_fail(http):
     req = http.get(BASE_USERS_URL+'/'+BAD_USER_ID)
     assert req.status_code == 404
 
