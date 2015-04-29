@@ -52,7 +52,7 @@ def http(request):
     return http
 
 def test_create_user_succ(http):
-    req_data = {'id':USER_ID,
+    req_data = {'user_id':USER_ID,
                 'password':'secret',
                 'interfaces':'transmitter;receiver',
                 'mobile_phone':'375290000000',
@@ -89,7 +89,7 @@ def test_update_user_succ(http):
     assert req.status_code == 200
     resp_data = req.json()
     # add/remove some fields expected in response
-    req_data['id'] = USER_ID
+    req_data['user_id'] = USER_ID
     req_data['interfaces'] = ['transmitter']
     req_data['features'] = []
     del req_data['password']
@@ -103,7 +103,7 @@ def test_read_user_succ(http):
     req = http.get(BASE_USERS_URL+'/'+USER_ID)
     assert req.status_code == 200
     resp_data = req.json()
-    exp_data = {'id':USER_ID,
+    exp_data = {'user_id':USER_ID,
                 'interfaces':['transmitter'],
                 'mobile_phone':'375290000001',
                 'first_name':'fn1',

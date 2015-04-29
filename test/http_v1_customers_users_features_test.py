@@ -46,7 +46,7 @@ def http(request):
             'state':'active'}
     req = http.post(BASE_CUSTOMERS_URL, data=data)
 
-    data = {'id':'user',
+    data = {'user_id':'user',
             'password':'secret',
             'interfaces':'soap',
             'state':'active'}

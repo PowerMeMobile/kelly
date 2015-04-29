@@ -27,11 +27,11 @@
 init() ->
     Read = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
-        #param{name = id, mandatory = false, repeated = false, type = binary}
+        #param{name = user_id, mandatory = false, repeated = false, type = binary}
     ],
     Update = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
-        #param{name = id, mandatory = true, repeated = false, type = binary},
+        #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = false, repeated = false, type = binary},
         #param{name = interfaces, mandatory = false, repeated = true, type =
              {custom, fun interface/1}},
@@ -48,11 +48,11 @@ init() ->
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
-        #param{name = id, mandatory = true, repeated = false, type = binary}
+        #param{name = user_id, mandatory = true, repeated = false, type = binary}
     ],
     Create = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
-        #param{name = id, mandatory = true, repeated = false, type = binary},
+        #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = true, repeated = false, type = binary},
         #param{name = interfaces, mandatory = true, repeated = true, type =
             {custom, fun interface/1}},
@@ -72,7 +72,7 @@ init() ->
         read = Read,
         update = Update,
         delete = Delete,
-        route = "/v1/customers/:customer_uuid/users/[:id]"
+        route = "/v1/customers/:customer_uuid/users/[:user_id]"
     }}.
 
 create(Params) ->
@@ -92,7 +92,7 @@ read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            get_customer_user(Customer, ?gv(id, Params));
+            get_customer_user(Customer, ?gv(user_id, Params));
         {error, no_entry} ->
             ?log_warn("Customer not found: ~p", [CustomerUuid]),
             {exception, 'svc0003'};
@@ -116,7 +116,7 @@ update(Params) ->
 
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
-    UserId = ?gv(id, Params),
+    UserId = ?gv(user_id, Params),
     case k_storage_customers:del_customer_user(CustomerUuid, UserId) of
         {error, no_entry} ->
             ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
@@ -136,13 +136,13 @@ delete(Params) ->
 prepare_users(User = #user{features = Features}) ->
     {ok, FeaturesPlists} =
         k_http_api_v1_customers_users_features:prepare_features(Features),
-    Fun = ?record_to_proplist(user),
-    Plist = Fun(
-        User#user{features = FeaturesPlists}
-    ),
+    UserFun = ?record_to_proplist(user),
+    Plist = UserFun(User#user{features = FeaturesPlists}),
     Plist2 = [{interfaces, ?gv(connection_types, Plist)} | Plist],
-    Plist3 = proplists:delete(password, Plist2),
-    proplists:delete(connection_types, Plist3);
+    Plist3 = [{user_id, ?gv(id, Plist)} | Plist2],
+    Plist4 = proplists:delete(password, Plist3),
+    Plist5 = proplists:delete(connection_types, Plist4),
+    proplists:delete(id, Plist5);
 prepare_users(Users) when is_list(Users) ->
     {ok, [prepare_users(User) || User <- Users]}.
 
@@ -151,7 +151,7 @@ prepare_users(Users) when is_list(Users) ->
 %% ===================================================================
 
 create_user(Customer, Params) ->
-    UserId = ?gv(id, Params),
+    UserId = ?gv(user_id, Params),
     case k_storage_customers:get_customer_user(Customer, UserId) of
         {ok, #user{}} ->
             ?log_error("User already exists: ~p", [UserId]),
@@ -193,7 +193,7 @@ create_user(Customer, Params) ->
     end.
 
 update_user(Customer, Params) ->
-    UserId = ?gv(id, Params),
+    UserId = ?gv(user_id, Params),
     case k_storage_customers:get_customer_user(Customer, UserId) of
         {ok, User} ->
             Password = resolve_pass(?gv(password, Params), User#user.password),
