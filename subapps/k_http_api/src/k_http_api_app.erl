@@ -120,6 +120,8 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_v1_customers_users,
         k_http_api_v1_customers_users_features,
 
+        k_http_api_v1_msisdns,
+
         % keep batches details above batches
         k_http_api_v1_batches_details,
         k_http_api_v1_batches,
