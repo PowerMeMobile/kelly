@@ -21,7 +21,7 @@
 
 init() ->
     Update = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = amount, mandatory = true, repeated = false, type = float}
     ],
     {ok, #specs{

@@ -26,23 +26,23 @@
 
 init() ->
     Read = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = name, mandatory = false, repeated = false, type = binary}
     ],
     Update = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = name, mandatory = true, repeated = false, type = binary},
         #param{name = value, mandatory = true, repeated = false, type = binary}
     ],
     Delete = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = name, mandatory = true, repeated = false, type = binary}
     ],
     Create = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = name, mandatory = true, repeated = false, type = binary},
         #param{name = value, mandatory = true, repeated = false, type = binary}

@@ -26,11 +26,11 @@
 
 init() ->
     Read = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = false, repeated = false, type = binary}
     ],
     Update = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = false, repeated = false, type = binary},
         #param{name = interfaces, mandatory = false, repeated = true, type =
@@ -47,11 +47,11 @@ init() ->
             {custom, fun user_state/1}}
     ],
     Delete = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = true, repeated = false, type = binary}
     ],
     Create = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = true, repeated = false, type = binary},
         #param{name = interfaces, mandatory = true, repeated = true, type =

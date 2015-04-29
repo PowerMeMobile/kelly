@@ -21,16 +21,16 @@
 
 init() ->
     Read = [
-        #param{name = customer_uuid, mandatory = false, repeated = false, type = binary}
+        #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid}
     ],
     Update = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = customer_id, mandatory = false, repeated = false, type = binary},
         #param{name = name, mandatory = false, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = integer},
         #param{name = rps, mandatory = false, repeated = false, type = integer},
-        #param{name = network_map_id, mandatory = false, repeated = false, type = binary},
-        #param{name = default_provider_id, mandatory = false, repeated = false, type = binary},
+        #param{name = network_map_id, mandatory = false, repeated = false, type = uuid},
+        #param{name = default_provider_id, mandatory = false, repeated = false, type = uuid},
         #param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
         #param{name = no_retry, mandatory = false, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = false, repeated = false, type = binary},
@@ -44,16 +44,16 @@ init() ->
             {custom, fun customer_state/1}}
     ],
     Delete = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary}
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid}
     ],
     Create = [
-        #param{name = customer_uuid, mandatory = false, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = customer_id, mandatory = true, repeated = false, type = binary},
         #param{name = name, mandatory = true, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = integer},
         #param{name = rps, mandatory = false, repeated = false, type = integer},
-        #param{name = network_map_id, mandatory = true, repeated = false, type = binary},
-        #param{name = default_provider_id, mandatory = true, repeated = false, type = binary},
+        #param{name = network_map_id, mandatory = true, repeated = false, type = uuid},
+        #param{name = default_provider_id, mandatory = true, repeated = false, type = uuid},
         #param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
         #param{name = no_retry, mandatory = true, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = true, repeated = false, type = binary},

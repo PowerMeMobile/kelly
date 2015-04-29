@@ -26,11 +26,11 @@
 
 init() ->
     Read = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = false, repeated = false, type = binary}
     ],
     Update = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = msisdn, mandatory = false, repeated = false, type =
             {custom, fun decode_msisdn/1}},
@@ -40,11 +40,11 @@ init() ->
             {custom, fun originator_state/1}}
     ],
     Delete = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = true, repeated = false, type = binary}
     ],
     Create = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = false, repeated = false, type = binary},
         #param{name = msisdn, mandatory = true, repeated = false, type =
             {custom, fun decode_msisdn/1}},
