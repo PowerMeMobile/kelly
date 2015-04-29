@@ -32,8 +32,8 @@ init() ->
     Update = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
         #param{name = id, mandatory = true, repeated = false, type = binary},
-        #param{name = address, mandatory = false, repeated = false, type =
-            {custom, fun decode_addr/1}},
+        #param{name = msisdn, mandatory = false, repeated = false, type =
+            {custom, fun decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
         #param{name = state, mandatory = false, repeated = false, type =
@@ -46,8 +46,8 @@ init() ->
     Create = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
         #param{name = id, mandatory = false, repeated = false, type = binary},
-        #param{name = address, mandatory = true, repeated = false, type =
-            {custom, fun decode_addr/1}},
+        #param{name = msisdn, mandatory = true, repeated = false, type =
+            {custom, fun decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
         #param{name = state, mandatory = true, repeated = false, type =
@@ -112,12 +112,12 @@ delete(Params) ->
     end.
 
 -spec prepare_originators(#originator{}) -> {ok, [{atom(), term()}]}.
-prepare_originators(Originator = #originator{}) ->
+prepare_originators(Orig = #originator{}) ->
     AddrFun = ?record_to_proplist(addr),
     OrigFun = ?record_to_proplist(originator),
-    AddrPlist = AddrFun(Originator#originator.address),
-    Originator2 = Originator#originator{address = AddrPlist},
-    OrigFun(Originator2);
+    AddrPlist = proplists:delete(ref_num, AddrFun(Orig#originator.address)),
+    OrigPlist = proplists:delete(address, OrigFun(Orig)),
+    [{msisdn, AddrPlist} | OrigPlist];
 prepare_originators(Originators) when is_list(Originators) ->
     {ok, [prepare_originators(Originator) || Originator <- Originators]}.
 
@@ -136,13 +136,13 @@ create_originator(Customer, Params) ->
         {ok, #originator{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
-            Address = ?gv(address, Params),
+            Msisdn = ?gv(msisdn, Params),
             Description = ?gv(description, Params),
             IsDefault = ?gv(is_default, Params),
             State = ?gv(state, Params),
             Originator = #originator{
                 id = Id,
-                address = Address,
+                address = Msisdn,
                 description = Description,
                 is_default = IsDefault,
                 state = State
@@ -160,13 +160,13 @@ update_originator(Customer, Params) ->
     Id = ?gv(id, Params),
     case k_storage_customers:get_customer_originator(Customer, Id) of
         {ok, Originator} ->
-            Address = ?gv(address, Params, Originator#originator.address),
+            Msisdn = ?gv(msisdn, Params, Originator#originator.address),
             Description = ?gv(description, Params, Originator#originator.description),
             IsDefault = ?gv(is_default, Params, Originator#originator.is_default),
             State = ?gv(state, Params, Originator#originator.state),
             Updated = #originator{
                 id = Id,
-                address = Address,
+                address = Msisdn,
                 description = Description,
                 is_default = IsDefault,
                 state = State
@@ -201,7 +201,7 @@ get_customer_originator(Customer, Id) ->
     end.
 
 %% convert "addr,ton,npi" to #addr{addr, ton, npi}
-decode_addr(AddrBin) ->
+decode_msisdn(AddrBin) ->
     AddrString = binary_to_list(AddrBin),
     [Addr, Ton, Npi] = string:tokens(AddrString, ","),
     #addr{

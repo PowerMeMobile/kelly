@@ -53,7 +53,7 @@ def http(request):
 
 def test_create_originator_succ(http):
     req_data = {'id':ORIGINATOR_ID,
-                'address':'375290000000,1,1',
+                'msisdn':'375290000000,1,1',
                 'description':'descr',
                 'state':'approved',
                 'is_default':True}
@@ -61,11 +61,11 @@ def test_create_originator_succ(http):
     assert req.status_code == 201
     resp_data = req.json()
     # add/remove some fields expected in response
-    req_data['address'] = {'addr':'375290000000', 'ton':1, 'npi':1, 'ref_num':None}
+    req_data['msisdn'] = {'addr':'375290000000', 'ton':1, 'npi':1}
     assert resp_data == req_data
 
 def test_update_originator_succ(http):
-    req_data = {'address':'Hello,5,0',
+    req_data = {'msisdn':'Hello,5,0',
                 'description':'descr2',
                 'state':'pending',
                 'is_default':False}
@@ -74,7 +74,7 @@ def test_update_originator_succ(http):
     resp_data = req.json()
     # add/remove some fields expected in response
     req_data['id'] = ORIGINATOR_ID
-    req_data['address'] = {'addr':'Hello', 'ton':5, 'npi':0, 'ref_num':None}
+    req_data['msisdn'] = {'addr':'Hello', 'ton':5, 'npi':0}
     assert resp_data == req_data
 
 def test_read_bad_originator_succ(http):
@@ -86,11 +86,10 @@ def test_read_originator_succ(http):
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = {'id':ORIGINATOR_ID,
-                'address':'Hello,5,0',
                 'description':'descr2',
                 'state':'pending',
                 'is_default':False,
-                'address':{'addr':'Hello', 'ton':5, 'npi':0, 'ref_num':None}}
+                'msisdn':{'addr':'Hello', 'ton':5, 'npi':0}}
     assert resp_data == exp_data
 
 def test_delete_originator_succ(http):
