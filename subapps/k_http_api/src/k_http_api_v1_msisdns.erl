@@ -54,8 +54,7 @@ create(Params) ->
     case k_storage_msisdns:get_one(Msisdn) of
         {error, not_found} ->
             ok = k_storage_msisdns:create(Msisdn),
-            Resp = prepare(Msisdn, undefined),
-            {http_code, 201, Resp};
+            {http_code, 201, <<"">>};
         {ok, _} ->
             {exception, 'svc0004'}
     end.

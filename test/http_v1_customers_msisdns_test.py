@@ -70,8 +70,6 @@ def test_create_msisdn_succ(http):
     req_data = {'msisdn':MSISDN}
     req = http.post(BASE_CUSTOMERS_MSISDNS_URL, data=req_data)
     assert req.status_code == 201
-    resp_data = req.json()
-    assert resp_data == {'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}
 
 def test_create_msisdn_again_fail(http):
     req_data = {'msisdn':MSISDN}

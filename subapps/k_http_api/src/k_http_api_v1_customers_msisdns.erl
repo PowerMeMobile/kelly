@@ -50,9 +50,7 @@ create(Params) ->
                     {exception, 'svc0003'};
                 {ok, {Msisdn, undefined}} ->
                     ok = k_storage_msisdns:assign_to(Msisdn, CustomerUuid),
-                    {ok, [Plist]} = prepare_msisdns([Msisdn]),
-                    ?log_debug("Msisdn: ~p", [Plist]),
-                    {http_code, 201, Plist};
+                    {http_code, 201, <<"">>};
                 {ok, {Msisdn, CustomerUuid}} ->
                     {exception, 'svc0004'};
                 {ok, {Msisdn, _}} ->

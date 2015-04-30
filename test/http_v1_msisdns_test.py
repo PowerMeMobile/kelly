@@ -43,11 +43,6 @@ def test_create_msisdn_succ(http):
     req_data = {'msisdn':MSISDN}
     req = http.post(BASE_URL, data=req_data)
     assert req.status_code == 201
-    resp_data = req.json()
-    # add some fields expected in response
-    req_data['msisdn'] = {'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}
-    req_data['customer_uuid'] = None
-    assert resp_data == req_data
 
 def test_create_same_msisdn_fail(http):
     req_data = {'msisdn':MSISDN}
