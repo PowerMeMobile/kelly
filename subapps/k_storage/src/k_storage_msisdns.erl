@@ -2,22 +2,26 @@
 
 -export([
     create/1,
-    set_customer_uuid/2,
     delete/1,
     get_one/1,
-    get_many/3
+    get_many/3,
+
+    assign/2,
+    unassign/1,
+    get_assigned_to/1
 ]).
 
 -include("storages.hrl").
 -include("customer.hrl").
 
+-type msisdn() :: addr().
 -type state() :: all | free | used.
 
 %% ===================================================================
 %% API
 %% ===================================================================
 
--spec get_one(addr()) -> {ok, {addr(), customer_uuid()}} | {error, not_found}.
+-spec get_one(msisdn()) -> {ok, {msisdn(), customer_uuid()}} | {error, not_found}.
 get_one(Msisdn) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
@@ -29,7 +33,7 @@ get_one(Msisdn) ->
             {ok, doc_to_tuple(Doc)}
     end.
 
--spec get_many(addr(), customer_uuid(), state()) -> {ok, [{addr(), customer_uuid()}]}.
+-spec get_many(msisdn(), customer_uuid(), state()) -> {ok, [{msisdn(), customer_uuid()}]}.
 get_many(Msisdn, CustomerUuid, State) ->
     Selector = bson:document(lists:flatten([
         [{'msisdn', {'$exists', true}}],
@@ -41,42 +45,52 @@ get_many(Msisdn, CustomerUuid, State) ->
     {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
     {ok, [doc_to_tuple(Doc) || {_, Doc} <- Docs]}.
 
--spec delete(addr()) -> ok.
+-spec get_assigned_to(customer_uuid()) -> {ok, [msisdn()]}.
+get_assigned_to(CustomerUuid) ->
+    Selector = {
+        'customer_uuid', CustomerUuid
+    },
+    {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
+    {ok, [k_storage_utils:doc_to_addr(bsondoc:at(msisdn, D)) || {_, D} <- Docs]}.
+
+-spec delete(msisdn()) -> ok.
 delete(Msisdn) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
     },
     ok = mongodb_storage:delete(static_storage, msisdns, Selector).
 
--spec create(addr()) -> ok | {error, already_used}.
+-spec create(msisdn()) -> ok.
 create(Msisdn) ->
     Modifier = {
         'msisdn'       , k_storage_utils:addr_to_doc(Msisdn),
         'customer_uuid', undefined,
         'user_id'      , undefined
     },
-    case get_one(Msisdn) of
-        {error, not_found} ->
-            {ok, _ID} = mongodb_storage:insert(static_storage, msisdns, Modifier),
-            ok;
-        {ok, _} ->
-            {error, already_used}
-    end.
+    {ok, _ID} = mongodb_storage:insert(static_storage, msisdns, Modifier),
+    ok.
 
--spec set_customer_uuid(addr(), customer_uuid()) -> ok | {error, not_found}.
-set_customer_uuid(Msisdn, CustomerUuid) ->
+-spec assign(msisdn(), customer_uuid()) -> ok.
+assign(Msisdn, CustomerUuid) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
     },
     Modifier = {'$set', {
-        'customer_uuid', CustomerUuid
+        'customer_uuid', CustomerUuid,
+        'user_id'      , undefined
     }},
-    case get_one(Msisdn) of
-        {error, not_found} ->
-            {error, not_found};
-        {ok, _} ->
-            ok = mongodb_storage:upsert(static_storage, msisdns, Selector, Modifier)
-    end.
+    ok = mongodb_storage:upsert(static_storage, msisdns, Selector, Modifier).
+
+-spec unassign(msisdn()) -> ok.
+unassign(Msisdn) ->
+    Selector = {
+        'msisdn', k_storage_utils:addr_to_doc(Msisdn)
+    },
+    Modifier = {'$set', {
+        'customer_uuid', undefined,
+        'user_id'      , undefined
+    }},
+    ok = mongodb_storage:upsert(static_storage, msisdns, Selector, Modifier).
 
 %% ===================================================================
 %% Internal

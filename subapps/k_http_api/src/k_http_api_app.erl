@@ -114,11 +114,12 @@ gen_http_api_handlers_dispatch_rules() ->
 
         %% Config API
         k_http_api_v1_blacklists,
-        k_http_api_v1_customers,
         k_http_api_v1_customers_credit,
+        k_http_api_v1_customers_msisdns,
         k_http_api_v1_customers_originators,
         k_http_api_v1_customers_users,
         k_http_api_v1_customers_users_features,
+        k_http_api_v1_customers,
 
         k_http_api_v1_msisdns,
 
