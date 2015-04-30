@@ -251,8 +251,6 @@ prepare([Customer = #customer{} | Rest], Acc) ->
             originators = OriginatorPlists
         }
     ),
-
-    ?log_debug("Customer: ~p", [Plist]),
     prepare(Rest, [Plist | Acc]).
 
 customer_state(State) ->
