@@ -6,9 +6,12 @@
     get_one/1,
     get_many/3,
 
-    assign_to/2,
-    unassign_from/2,
-    get_assigned_to/1
+    assign_to_customer/2,
+    assign_to_user/3,
+    unassign_from_customer/1,
+    unassign_from_user/1,
+    get_assigned_to_customer/1,
+    get_assigned_to_user/2
 ]).
 
 -include("storages.hrl").
@@ -45,13 +48,23 @@ get_many(Msisdn, CustomerUuid, State) ->
     {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
     {ok, [doc_to_tuple(Doc) || {_, Doc} <- Docs]}.
 
--spec get_assigned_to(customer_uuid()) -> {ok, [msisdn()]}.
-get_assigned_to(CustomerUuid) ->
+-spec get_assigned_to_customer(customer_uuid()) -> {ok, [msisdn()]}.
+get_assigned_to_customer(CustomerUuid) ->
     Selector = {
         'customer_uuid', CustomerUuid
     },
     {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
     {ok, [k_storage_utils:doc_to_addr(bsondoc:at(msisdn, D)) || {_, D} <- Docs]}.
+
+-spec get_assigned_to_user(customer_uuid(), user_id()) -> {ok, [msisdn()]}.
+get_assigned_to_user(CustomerUuid, UserId) ->
+    Selector = {
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId
+    },
+    {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
+    {ok, [k_storage_utils:doc_to_addr(bsondoc:at(msisdn, D)) || {_, D} <- Docs]}.
+
 
 -spec delete(msisdn()) -> ok.
 delete(Msisdn) ->
@@ -70,8 +83,8 @@ create(Msisdn) ->
     {ok, _ID} = mongodb_storage:insert(static_storage, msisdns, Modifier),
     ok.
 
--spec assign_to(msisdn(), customer_uuid()) -> ok.
-assign_to(Msisdn, CustomerUuid) ->
+-spec assign_to_customer(msisdn(), customer_uuid()) -> ok.
+assign_to_customer(Msisdn, CustomerUuid) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
     },
@@ -81,14 +94,35 @@ assign_to(Msisdn, CustomerUuid) ->
     }},
     ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
 
--spec unassign_from(msisdn(), customer_uuid()) -> ok.
-unassign_from(Msisdn, _CustomerUuid) ->
+-spec assign_to_user(msisdn(), customer_uuid(), user_id()) -> ok.
+assign_to_user(Msisdn, CustomerUuid, UserId) ->
+    Selector = {
+        'msisdn', k_storage_utils:addr_to_doc(Msisdn)
+    },
+    Modifier = {'$set', {
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId
+    }},
+    ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
+
+-spec unassign_from_customer(msisdn()) -> ok.
+unassign_from_customer(Msisdn) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
     },
     Modifier = {'$set', {
         'customer_uuid', undefined,
         'user_id'      , undefined
+    }},
+    ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
+
+-spec unassign_from_user(msisdn()) -> ok.
+unassign_from_user(Msisdn) ->
+    Selector = {
+        'msisdn', k_storage_utils:addr_to_doc(Msisdn)
+    },
+    Modifier = {'$set', {
+        'user_id', undefined
     }},
     ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
 
@@ -99,4 +133,5 @@ unassign_from(Msisdn, _CustomerUuid) ->
 doc_to_tuple(Doc) ->
     Msisdn = k_storage_utils:doc_to_addr(bsondoc:at(msisdn, Doc)),
     CustomerUuid = bsondoc:at(customer_uuid, Doc),
-    {Msisdn, CustomerUuid}.
+    UserId = bsondoc:at(user_id, Doc),
+    {Msisdn, CustomerUuid, UserId}.

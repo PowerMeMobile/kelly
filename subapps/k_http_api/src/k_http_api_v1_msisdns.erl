@@ -66,7 +66,7 @@ update(Params) ->
         {error, not_found} ->
             {exception, 'svc0003'};
         {ok, _} ->
-            ok = k_storage_msisdns:assign_to(Msisdn, CustomerUuid),
+            ok = k_storage_msisdns:assign_to_customer(Msisdn, CustomerUuid),
             Resp = prepare(Msisdn, CustomerUuid),
             {http_code, 200, Resp}
     end.
@@ -94,7 +94,7 @@ prepare_values(Values) ->
 
 prepare_values([], Acc) ->
     lists:reverse(Acc);
-prepare_values([{Msisdn, CustomerUuid} | Values], Acc) ->
+prepare_values([{Msisdn, CustomerUuid, _UserId} | Values], Acc) ->
     Res = [{msisdn, msisdn2addr(Msisdn)}, {customer_uuid, CustomerUuid}],
     prepare_values(Values, [Res | Acc]).
 

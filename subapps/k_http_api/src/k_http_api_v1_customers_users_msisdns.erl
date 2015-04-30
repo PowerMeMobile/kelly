@@ -1,4 +1,4 @@
--module(k_http_api_v1_customers_msisdns).
+-module(k_http_api_v1_customers_users_msisdns).
 
 -behaviour(gen_http_api).
 
@@ -21,15 +21,18 @@
 
 init() ->
     Read = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid}
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
+        #param{name = user_id, mandatory = true, repeated = false, type = binary}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
+        #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = msisdn, mandatory = true, repeated = false, type =
             {custom, fun decode_msisdn/1}}
     ],
     Create = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
+        #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = msisdn, mandatory = true, repeated = false, type =
             {custom, fun decode_msisdn/1}}
     ],
@@ -37,25 +40,33 @@ init() ->
         create = Create,
         read = Read,
         delete = Delete,
-        route = "/v1/customers/:customer_uuid/msisdns/[:msisdn]"
+        route = "/v1/customers/:customer_uuid/users/:user_id/msisdns/[:msisdn]"
     }}.
 
 create(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
+    UserId = ?gv(user_id, Params),
     Msisdn = ?gv(msisdn, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
-        {ok, #customer{}} ->
-            case k_storage_msisdns:get_one(Msisdn) of
-                {error, not_found} ->
+        {ok, Customer} ->
+            case k_storage_customers:get_customer_user(Customer, UserId) of
+                {error, no_entry} ->
                     {exception, 'svc0003'};
-                {ok, {Msisdn, undefined, undefined}} ->
-                    ok = k_storage_msisdns:assign_to_customer(
-                        Msisdn, CustomerUuid),
-                    {http_code, 201, <<"">>};
-                {ok, {Msisdn, CustomerUuid, _}} ->
-                    {exception, 'svc0004'};
-                {ok, {Msisdn, _, _}} ->
-                    {http_code, 409, <<"Msisdn already assigned">>}
+                {ok, _User} ->
+                    case k_storage_msisdns:get_one(Msisdn) of
+                        {error, not_found} ->
+                            {exception, 'svc0003'};
+                        {ok, {Msisdn, undefined, undefined}} ->
+                            ok = k_storage_msisdns:assign_to_user(
+                                Msisdn, CustomerUuid, UserId),
+                            {ok, [Plist]} = prepare_msisdns([Msisdn]),
+                            ?log_debug("Msisdn: ~p", [Plist]),
+                            {http_code, 201, Plist};
+                        {ok, {Msisdn, CustomerUuid, UserId}} ->
+                            {exception, 'svc0004'};
+                        {ok, {Msisdn, _, _}} ->
+                            {http_code, 409, <<"Msisdn already assigned">>}
+                    end
             end;
         {error, no_entry} ->
             {exception, 'svc0003'};
@@ -66,13 +77,20 @@ create(Params) ->
 
 read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
+    UserId = ?gv(user_id, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
-        {ok, #customer{}} ->
-            {ok, Msisdns} =
-                k_storage_msisdns:get_assigned_to_customer(CustomerUuid),
-            {ok, Plist} = prepare_msisdns(Msisdns),
-            ?log_debug("Msisdns: ~p", [Plist]),
-            {http_code, 200, Plist};
+        {ok, Customer} ->
+            case k_storage_customers:get_customer_user(Customer, UserId) of
+                {error, no_entry} ->
+                    {exception, 'svc0003'};
+                {ok, _User} ->
+                    {ok, Msisdns} =
+                        k_storage_msisdns:get_assigned_to_user(
+                            CustomerUuid, UserId),
+                    {ok, Plist} = prepare_msisdns(Msisdns),
+                    ?log_debug("Msisdns: ~p", [Plist]),
+                    {http_code, 200, Plist}
+            end;
         {error, no_entry} ->
             {exception, 'svc0003'};
         Error ->
@@ -85,8 +103,9 @@ update(_Params) ->
 
 delete(Params) ->
     _CustomerUuid = ?gv(customer_uuid, Params),
+    _UserId = ?gv(user_id, Params),
     Msisdn = ?gv(msisdn, Params),
-    case k_storage_msisdns:unassign_from_customer(Msisdn) of
+    case k_storage_msisdns:unassign_from_user(Msisdn) of
         ok ->
             {http_code, 204};
         Error ->
