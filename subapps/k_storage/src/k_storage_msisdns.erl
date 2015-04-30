@@ -6,8 +6,8 @@
     get_one/1,
     get_many/3,
 
-    assign/2,
-    unassign/1,
+    assign_to/2,
+    unassign_from/2,
     get_assigned_to/1
 ]).
 
@@ -70,8 +70,8 @@ create(Msisdn) ->
     {ok, _ID} = mongodb_storage:insert(static_storage, msisdns, Modifier),
     ok.
 
--spec assign(msisdn(), customer_uuid()) -> ok.
-assign(Msisdn, CustomerUuid) ->
+-spec assign_to(msisdn(), customer_uuid()) -> ok.
+assign_to(Msisdn, CustomerUuid) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
     },
@@ -79,10 +79,10 @@ assign(Msisdn, CustomerUuid) ->
         'customer_uuid', CustomerUuid,
         'user_id'      , undefined
     }},
-    ok = mongodb_storage:upsert(static_storage, msisdns, Selector, Modifier).
+    ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
 
--spec unassign(msisdn()) -> ok.
-unassign(Msisdn) ->
+-spec unassign_from(msisdn(), customer_uuid()) -> ok.
+unassign_from(Msisdn, _CustomerUuid) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
     },
@@ -90,7 +90,7 @@ unassign(Msisdn) ->
         'customer_uuid', undefined,
         'user_id'      , undefined
     }},
-    ok = mongodb_storage:upsert(static_storage, msisdns, Selector, Modifier).
+    ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
 
 %% ===================================================================
 %% Internal

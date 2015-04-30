@@ -49,7 +49,7 @@ create(Params) ->
                 {error, not_found} ->
                     {exception, 'svc0003'};
                 {ok, {Msisdn, undefined}} ->
-                    ok = k_storage_msisdns:assign(Msisdn, CustomerUuid),
+                    ok = k_storage_msisdns:assign_to(Msisdn, CustomerUuid),
                     {ok, [Plist]} = prepare_msisdns([Msisdn]),
                     ?log_debug("Msisdn: ~p", [Plist]),
                     {http_code, 201, Plist};
@@ -84,8 +84,9 @@ update(_Params) ->
     ok.
 
 delete(Params) ->
+    CustomerUuid = ?gv(customer_uuid, Params),
     Msisdn = ?gv(msisdn, Params),
-    case k_storage_msisdns:unassign(Msisdn) of
+    case k_storage_msisdns:unassign_from(Msisdn, CustomerUuid) of
         ok ->
             {http_code, 204};
         Error ->

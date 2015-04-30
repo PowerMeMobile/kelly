@@ -67,7 +67,7 @@ update(Params) ->
         {error, not_found} ->
             {exception, 'svc0003'};
         {ok, _} ->
-            ok = k_storage_msisdns:assign(Msisdn, CustomerUuid),
+            ok = k_storage_msisdns:assign_to(Msisdn, CustomerUuid),
             Resp = prepare(Msisdn, CustomerUuid),
             {http_code, 200, Resp}
     end.
