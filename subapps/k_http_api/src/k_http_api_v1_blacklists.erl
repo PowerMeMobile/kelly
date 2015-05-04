@@ -69,10 +69,7 @@ update(Params) ->
         {ok, Entry = #blacklist_entry{}} ->
             update_blacklist_entry(Entry, Params);
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        {error, Error} ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 delete(Params) ->
@@ -88,10 +85,7 @@ is_exist(Params) ->
         {ok, #blacklist_entry{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
-            create_blacklist_entry(Params);
-        {error, Error} ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            create_blacklist_entry(Params)
     end.
 
 read_all() ->
@@ -99,10 +93,7 @@ read_all() ->
         {ok, Entries} ->
             {ok, Plists} = prepare(Entries),
             ?log_debug("Blacklist Entries: ~p", [Plists]),
-            {http_code, 200, Plists};
-        {error, Error} ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {http_code, 200, Plists}
     end.
 
 read_id(Uuid) ->
@@ -112,10 +103,7 @@ read_id(Uuid) ->
             ?log_debug("Blacklist Entry: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
-            {exception, 'svc0003', []};
-        {error, Error} ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003', []}
     end.
 
 update_blacklist_entry(Entry, Params) ->

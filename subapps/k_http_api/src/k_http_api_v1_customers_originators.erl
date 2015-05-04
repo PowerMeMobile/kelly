@@ -67,10 +67,7 @@ create(Params) ->
         {ok, Customer = #customer{}} ->
             create_originator(Customer, Params);
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 read(Params) ->
@@ -79,10 +76,7 @@ read(Params) ->
         {ok, Customer = #customer{}} ->
             get_customer_originator(Customer, ?gv(id, Params));
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 update(Params) ->
@@ -91,10 +85,7 @@ update(Params) ->
         {ok, Customer = #customer{}} ->
             update_originator(Customer, Params);
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 delete(Params) ->
@@ -105,10 +96,7 @@ delete(Params) ->
             ?log_warn("Customer [~p] not found", [CustomerUuid]),
             {exception, 'svc0003'};
         ok ->
-            {http_code, 204};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {http_code, 204}
     end.
 
 -spec prepare_originators(#originator{}) -> {ok, [{atom(), term()}]}.
@@ -150,10 +138,7 @@ create_originator(Customer, Params) ->
             ok = k_storage_customers:set_customer_originator(Originator, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_originators([Originator]),
             ?log_debug("Originator: ~p", [Plist]),
-            {http_code, 201, Plist};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {http_code, 201, Plist}
     end.
 
 update_originator(Customer, Params) ->
@@ -176,10 +161,7 @@ update_originator(Customer, Params) ->
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 get_customer_originator(Customer, undefined) ->
@@ -194,10 +176,7 @@ get_customer_originator(Customer, Id) ->
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 %% convert "addr,ton,npi" to #addr{addr, ton, npi}

@@ -82,10 +82,7 @@ create(Params) ->
             create_user(Customer, Params);
         {error, no_entry} ->
             ?log_warn("Customer not found: ~p", [CustomerUuid]),
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 read(Params) ->
@@ -95,10 +92,7 @@ read(Params) ->
             get_customer_user(Customer, ?gv(user_id, Params));
         {error, no_entry} ->
             ?log_warn("Customer not found: ~p", [CustomerUuid]),
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 update(Params) ->
@@ -108,10 +102,7 @@ update(Params) ->
             update_user(Customer, Params);
         {error, no_entry} ->
             ?log_warn("Customer not found: ~p", [CustomerUuid]),
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 delete(Params) ->
@@ -122,10 +113,7 @@ delete(Params) ->
             ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
             {exception, 'svc0003'};
         ok ->
-            {http_code, 204};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {http_code, 204}
     end.
 
 %% ===================================================================
@@ -186,10 +174,7 @@ create_user(Customer, Params) ->
             ok = k_storage_customers:set_customer_user(User, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_users([User]),
             ?log_debug("User: ~p", [Plist]),
-            {http_code, 201, Plist};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {http_code, 201, Plist}
     end.
 
 update_user(Customer, Params) ->
@@ -228,10 +213,7 @@ update_user(Customer, Params) ->
         {error, no_entry} ->
             CustomerUuid = ?gv(customer_uuid, Params),
             ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 get_customer_user(Customer, undefined) ->
@@ -248,10 +230,7 @@ get_customer_user(Customer, UserId) ->
         {error, no_entry} ->
             CustomerUuid = Customer#customer.customer_uuid,
             ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 resolve_pass(undefined, Pass) ->

@@ -76,10 +76,7 @@ create(Params) ->
                     {http_code, 409, <<"Msisdn already assigned">>}
             end;
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 read(Params) ->
@@ -92,10 +89,7 @@ read(Params) ->
             ?log_debug("Msisdns: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 update(_Params) ->

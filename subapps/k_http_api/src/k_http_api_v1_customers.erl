@@ -89,10 +89,7 @@ is_exist(Params) ->
         {ok, #customer{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
-            create_customer(Params);
-        Error ->
-            ?log_debug("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            create_customer(Params)
     end.
 
 read(Params) ->
@@ -109,10 +106,7 @@ read_all() ->
         {ok, Customers} ->
             {ok, Plists} = prepare(Customers),
             ?log_debug("Customers: ~p", [Plists]),
-            {http_code, 200, Plists};
-        {error, Error} ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {http_code, 200, Plists}
     end.
 
 read_customer_uuid(CustomerUuid) ->
@@ -122,10 +116,7 @@ read_customer_uuid(CustomerUuid) ->
             ?log_debug("Customer: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 update(Params) ->
@@ -134,12 +125,8 @@ update(Params) ->
         {ok, Customer = #customer{}} ->
             update_customer(Customer, Params);
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_debug("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
-
 
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
