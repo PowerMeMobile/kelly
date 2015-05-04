@@ -100,7 +100,7 @@ update(Params) ->
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     OriginatorId = ?gv(id, Params),
-    case k_storage_customers:del_customer_originator(CustomerUuid, OriginatorId) of
+    case k_storage_customers:del_customer_originator_by_id(CustomerUuid, OriginatorId) of
         {error, no_entry} ->
             ?log_warn("Customer [~p] not found", [CustomerUuid]),
             {exception, 'svc0003'};

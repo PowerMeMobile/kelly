@@ -7,12 +7,15 @@
     get_customer_by_id/1,
     set_customer/2,
     del_customer/1,
+
     get_customer_user/2,
     set_customer_user/2,
     del_customer_user/2,
+
     get_customer_originator/2,
     set_customer_originator/2,
-    del_customer_originator/2,
+    del_customer_originator_by_id/2,
+    del_customer_originator_by_msisdn/2,
 
     change_credit/2
 ]).
@@ -179,11 +182,23 @@ set_customer_originator(Originator = #originator{id = OriginatorId}, CustomerUui
         Error -> Error
     end.
 
--spec del_customer_originator(customer_uuid(), originator_id()) -> ok | {error, no_entry} | {error, term()}.
-del_customer_originator(CustomerUuid, OriginatorId) ->
+-spec del_customer_originator_by_id(customer_uuid(), originator_id()) ->
+    ok | {error, no_entry} | {error, term()}.
+del_customer_originator_by_id(CustomerUuid, OriginatorId) ->
     case get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{originators = Originators}} ->
             NewOriginators = lists:keydelete(OriginatorId, #originator.id, Originators),
+            set_customer(CustomerUuid, Customer#customer{originators = NewOriginators});
+        Error ->
+            Error
+    end.
+
+-spec del_customer_originator_by_msisdn(customer_uuid(), addr()) ->
+    ok | {error, no_entry} | {error, term()}.
+del_customer_originator_by_msisdn(CustomerUuid, Msisdn) ->
+    case get_customer_by_uuid(CustomerUuid) of
+        {ok, Customer = #customer{originators = Originators}} ->
+            NewOriginators = lists:keydelete(Msisdn, #originator.address, Originators),
             set_customer(CustomerUuid, Customer#customer{originators = NewOriginators});
         Error ->
             Error

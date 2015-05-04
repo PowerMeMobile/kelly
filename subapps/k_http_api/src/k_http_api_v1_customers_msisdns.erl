@@ -53,6 +53,15 @@ create(Params) ->
                         customer_uuid = undefined,
                         user_id = undefined
                 }} ->
+                    Originator = #originator{
+                        id = uuid:unparse(uuid:generate_time()),
+                        address = Msisdn,
+                        description = <<"">>,
+                        is_default = false,
+                        state = approved
+                    },
+                    ok = k_storage_customers:set_customer_originator(
+                        Originator, CustomerUuid),
                     ok = k_storage_msisdns:assign_to_customer(
                         Msisdn, CustomerUuid),
                     {http_code, 201, <<"">>};
@@ -93,15 +102,11 @@ update(_Params) ->
     ok.
 
 delete(Params) ->
-    _CustomerUuid = ?gv(customer_uuid, Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
     Msisdn = ?gv(msisdn, Params),
-    case k_storage_msisdns:unassign_from_customer(Msisdn) of
-        ok ->
-            {http_code, 204};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
-    end.
+    ok = k_storage_msisdns:unassign_from_customer(Msisdn),
+    ok = k_storage_customers:del_customer_originator_by_msisdn(CustomerUuid, Msisdn),
+    {http_code, 204}.
 
 %% ===================================================================
 %% Internal
