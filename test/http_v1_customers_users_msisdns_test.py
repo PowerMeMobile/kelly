@@ -70,6 +70,9 @@ def http(request):
              'state':'active'}
     req3 = http.post(CUSTOMERS_USERS_URL, data=data3)
 
+    data4 = {'msisdn':MSISDN}
+    req4 = http.post(CUSTOMERS_MSISDNS_URL, data=data4)
+
     def fin():
         print ("finalizing...")
         http.delete(CUSTOMERS_MSISDNS_URL+'/'+MSISDN)
@@ -102,7 +105,7 @@ def test_read_msisdns_non_empty_succ(http):
     resp_data = req.json()
     assert resp_data == [{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}]
 
-def test_read_bad_user_succ(http):
+def test_read_bad_user_fail(http):
     req = http.get(CUSTOMERS_USERS_URL+'/'+BAD_USER_ID+'/msisdns')
     assert req.status_code == 404
 

@@ -58,29 +58,25 @@ create(Params) ->
                             {exception, 'svc0003'};
                         {ok, #msisdn_info{
                                 msisdn = Msisdn,
-                                customer_uuid = undefined,
+                                customer_uuid = CustomerUuid,
                                 user_id = undefined
                         }} ->
                             ok = k_storage_msisdns:assign_to_user(
                                 Msisdn, CustomerUuid, UserId),
-                            {ok, [Plist]} = prepare_msisdns([Msisdn]),
-                            ?log_debug("Msisdn: ~p", [Plist]),
-                            {http_code, 201, Plist};
+                            {http_code, 201, <<"">>};
                         {ok, #msisdn_info{
                                 msisdn = Msisdn,
                                 customer_uuid = CustomerUuid,
                                 user_id = UserId
                         }} ->
                             {exception, 'svc0004'};
-                        {ok, #msisdn_info{msisdn = Msisdn}} ->
+                        {ok, I = #msisdn_info{msisdn = Msisdn}} ->
+                            ?log_error("~p", [I]),
                             {http_code, 409, <<"Msisdn already assigned">>}
                     end
             end;
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 read(Params) ->
@@ -100,10 +96,7 @@ read(Params) ->
                     {http_code, 200, Plist}
             end;
         {error, no_entry} ->
-            {exception, 'svc0003'};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
+            {exception, 'svc0003'}
     end.
 
 update(_Params) ->
@@ -113,13 +106,8 @@ delete(Params) ->
     _CustomerUuid = ?gv(customer_uuid, Params),
     _UserId = ?gv(user_id, Params),
     Msisdn = ?gv(msisdn, Params),
-    case k_storage_msisdns:unassign_from_user(Msisdn) of
-        ok ->
-            {http_code, 204};
-        Error ->
-            ?log_error("Unexpected error: ~p", [Error]),
-            {http_code, 500}
-    end.
+    ok = k_storage_msisdns:unassign_from_user(Msisdn),
+    {http_code, 204}.
 
 %% ===================================================================
 %% Internal
