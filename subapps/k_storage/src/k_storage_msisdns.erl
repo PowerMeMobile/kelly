@@ -38,7 +38,7 @@ get_many(Msisdn, CustomerUuid, State) ->
         [{'msisdn', {'$exists', true}}],
         [{'msisdn', k_storage_utils:addr_to_doc(Msisdn)} || Msisdn =/= undefined],
         [{'customer_uuid', CustomerUuid} || CustomerUuid =/= undefined],
-        [{'customer_uuid', {'$eq', undefined}} || State =:= free],
+        [{'customer_uuid', undefined} || State =:= free],
         [{'customer_uuid', {'$ne', undefined}} || State =:= used]
     ])),
     {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
