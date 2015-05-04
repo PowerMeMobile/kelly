@@ -19,8 +19,9 @@ BAD_CUSTOMER_UUID = 'bad_customer'
 USER_ID = 'user'
 BAD_USER_ID = 'bad_user'
 
-BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1/customers'
-BASE_USERS_URL = BASE_URL+'/'+CUSTOMER_UUID+'/users'
+BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1'
+CUSTOMERS_URL = BASE_URL+'/customers'
+USERS_URL = CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users'
 
 @pytest.fixture(scope="module")
 def http(request):
@@ -42,11 +43,11 @@ def http(request):
             'credit_limit':10000.0,
             'language':'en',
             'state':'active'}
-    req = http.post(BASE_URL, data=data)
+    req = http.post(CUSTOMERS_URL, data=data)
 
     def fin():
         print ("finalizing...")
-        http.delete(BASE_URL+'/'+CUSTOMER_UUID)
+        http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
 
     request.addfinalizer(fin)
     return http
@@ -64,7 +65,7 @@ def test_create_user_succ(http):
                 'country':'cou',
                 'language':'en',
                 'state':'active'}
-    req = http.post(BASE_USERS_URL, data=req_data)
+    req = http.post(USERS_URL, data=req_data)
     assert req.status_code == 201
     resp_data = req.json()
     # add/remove some fields expected in response
@@ -85,7 +86,7 @@ def test_update_user_succ(http):
                 'country':'cou1',
                 'language':'fr',
                 'state':'blocked'}
-    req = http.put(BASE_USERS_URL+'/'+USER_ID, data=req_data)
+    req = http.put(USERS_URL+'/'+USER_ID, data=req_data)
     assert req.status_code == 200
     resp_data = req.json()
     # add/remove some fields expected in response
@@ -96,11 +97,11 @@ def test_update_user_succ(http):
     assert resp_data == req_data
 
 def test_read_bad_user_succ(http):
-    req = http.get(BASE_USERS_URL+'/'+BAD_USER_ID)
+    req = http.get(USERS_URL+'/'+BAD_USER_ID)
     assert req.status_code == 404
 
 def test_read_user_succ(http):
-    req = http.get(BASE_USERS_URL+'/'+USER_ID)
+    req = http.get(USERS_URL+'/'+USER_ID)
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = {'user_id':USER_ID,
@@ -118,5 +119,5 @@ def test_read_user_succ(http):
     assert resp_data == exp_data
 
 def test_delete_user_succ(http):
-    req = http.delete(BASE_USERS_URL+'/'+USER_ID)
+    req = http.delete(USERS_URL+'/'+USER_ID)
     assert req.status_code == 204

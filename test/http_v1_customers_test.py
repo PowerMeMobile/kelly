@@ -16,7 +16,8 @@ if KELLY_PORT == None or KELLY_PORT == '':
 CUSTOMER_UUID = '493b3678-9dc8-11e2-8cce-00269e42f7a5'
 BAD_CUSTOMER_UUID = '00000000-0000-0000-0000-000000000000'
 
-BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1/customers'
+BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1'
+CUSTOMERS_URL = BASE_URL+'/customers'
 
 @pytest.fixture(scope="module")
 def http(request):
@@ -24,7 +25,7 @@ def http(request):
 
     def fin():
         print ("finalizing...")
-        http.delete(BASE_URL+'/'+CUSTOMER_UUID)
+        http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
 
     request.addfinalizer(fin)
     return http
@@ -46,7 +47,7 @@ def test_create_customer_succ(http):
                 'credit_limit':10000.0,
                 'language':'en',
                 'state':'active'}
-    req = http.post(BASE_URL, data=req_data)
+    req = http.post(CUSTOMERS_URL, data=req_data)
     assert req.status_code == 201
     resp_data = req.json()
     # add some fields expected in response
@@ -70,7 +71,7 @@ def test_update_customer_succ(http):
                 'credit_limit':0.0,
                 'language':'fr',
                 'state':'blocked'}
-    req = http.put(BASE_URL+'/'+CUSTOMER_UUID, data=req_data)
+    req = http.put(CUSTOMERS_URL+'/'+CUSTOMER_UUID, data=req_data)
     assert req.status_code == 200
     resp_data = req.json()
     # add some fields expected in response
@@ -80,11 +81,11 @@ def test_update_customer_succ(http):
     assert resp_data == req_data
 
 def test_read_bad_customer_fail(http):
-    req = http.get(BASE_URL+'/'+BAD_CUSTOMER_UUID)
+    req = http.get(CUSTOMERS_URL+'/'+BAD_CUSTOMER_UUID)
     assert req.status_code == 404
 
 def test_read_customer_succ(http):
-    req = http.get(BASE_URL+'/'+CUSTOMER_UUID)
+    req = http.get(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = {'customer_uuid':CUSTOMER_UUID,
@@ -108,5 +109,5 @@ def test_read_customer_succ(http):
     assert resp_data == exp_data
 
 def test_delete_customer_succ(http):
-    req = http.delete(BASE_URL+'/'+CUSTOMER_UUID)
+    req = http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
     assert req.status_code == 204

@@ -21,8 +21,8 @@ BAD_MSISDN = '00000,0,0'
 CUSTOMER_UUID = '493b3678-9dc8-11e2-8cce-00269e42f7a5'
 
 BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1'
-BASE_MSISDNS_URL = BASE_URL+'/msisdns'
-BASE_CUSTOMERS_URL = BASE_URL+'/customers'
+MSISDNS_URL = BASE_URL+'/msisdns'
+CUSTOMERS_URL = BASE_URL+'/customers'
 
 @pytest.fixture(scope="module")
 def http(request):
@@ -44,37 +44,37 @@ def http(request):
             'credit_limit':10000.0,
             'language':'en',
             'state':'active'}
-    req = http.post(BASE_CUSTOMERS_URL, data=data)
+    req = http.post(CUSTOMERS_URL, data=data)
     print req.json()
 
     def fin():
         print ("finalizing...")
-        http.delete(BASE_CUSTOMERS_URL+'/'+CUSTOMER_UUID)
-        http.delete(BASE_MSISDNS_URL+'/'+MSISDN)
+        http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
+        http.delete(MSISDNS_URL+'/'+MSISDN)
 
     request.addfinalizer(fin)
     return http
 
 def test_read_bad_msisdn_succ(http):
-    req = http.get(BASE_MSISDNS_URL+'?msisdn='+BAD_MSISDN)
+    req = http.get(MSISDNS_URL+'?msisdn='+BAD_MSISDN)
     assert req.status_code == 200
     resp_data = req.json()
     assert resp_data == []
 
 def test_create_msisdn_succ(http):
     req_data = {'msisdn':MSISDN}
-    req = http.post(BASE_MSISDNS_URL, data=req_data)
+    req = http.post(MSISDNS_URL, data=req_data)
     assert req.status_code == 201
 
 def test_create_same_msisdn_fail(http):
     req_data = {'msisdn':MSISDN}
-    req = http.post(BASE_MSISDNS_URL, data=req_data)
+    req = http.post(MSISDNS_URL, data=req_data)
     assert req.status_code == 400
     resp_data = req.json()
     assert resp_data['request_error']['service_exception']['message_id'] == 'SVC0004'
 
 def test_read_all_succ(http):
-    req = http.get(BASE_MSISDNS_URL+'/'+MSISDN+'?state=all')
+    req = http.get(MSISDNS_URL+'/'+MSISDN+'?state=all')
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = [{'msisdn':{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)},
@@ -84,7 +84,7 @@ def test_read_all_succ(http):
     assert resp_data == exp_data
 
 def test_read_free_succ(http):
-    req = http.get(BASE_MSISDNS_URL+'/'+MSISDN+'?state=free')
+    req = http.get(MSISDNS_URL+'/'+MSISDN+'?state=free')
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = [{'msisdn':{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)},
@@ -94,18 +94,18 @@ def test_read_free_succ(http):
     assert resp_data == exp_data
 
 def test_read_used_succ(http):
-    req = http.get(BASE_MSISDNS_URL+'/'+MSISDN+'?state=used')
+    req = http.get(MSISDNS_URL+'/'+MSISDN+'?state=used')
     assert req.status_code == 200
     resp_data = req.json()
     assert resp_data == []
 
 def test_update_msisdn_succ(http):
     req_data = {'customer_uuid':CUSTOMER_UUID}
-    req = http.put(BASE_MSISDNS_URL+'/'+MSISDN, data=req_data)
+    req = http.put(MSISDNS_URL+'/'+MSISDN, data=req_data)
     assert req.status_code == 200
 
 def test_read_all_2_succ(http):
-    req = http.get(BASE_MSISDNS_URL+'/'+MSISDN+'?state=all')
+    req = http.get(MSISDNS_URL+'/'+MSISDN+'?state=all')
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = [{'msisdn':{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)},
@@ -115,13 +115,13 @@ def test_read_all_2_succ(http):
     assert resp_data == exp_data
 
 def test_read_free_2_succ(http):
-    req = http.get(BASE_MSISDNS_URL+'/'+MSISDN+'?state=free')
+    req = http.get(MSISDNS_URL+'/'+MSISDN+'?state=free')
     assert req.status_code == 200
     resp_data = req.json()
     assert resp_data == []
 
 def test_read_used_2_succ(http):
-    req = http.get(BASE_MSISDNS_URL+'/'+MSISDN+'?state=used')
+    req = http.get(MSISDNS_URL+'/'+MSISDN+'?state=used')
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = [{'msisdn':{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)},
@@ -131,11 +131,11 @@ def test_read_used_2_succ(http):
     assert resp_data == exp_data
 
 def test_delete_msisdn_succ(http):
-    req = http.delete(BASE_MSISDNS_URL+'/'+MSISDN)
+    req = http.delete(MSISDNS_URL+'/'+MSISDN)
     assert req.status_code == 204
 
 def test_read_all_3_succ(http):
-    req = http.get(BASE_MSISDNS_URL+'/'+MSISDN+'?state=all')
+    req = http.get(MSISDNS_URL+'/'+MSISDN+'?state=all')
     assert req.status_code == 200
     resp_data = req.json()
     assert resp_data == []

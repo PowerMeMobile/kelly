@@ -14,7 +14,8 @@ if KELLY_PORT == None or KELLY_PORT == '':
     KELLY_PORT = '8080'
 
 ENTRY_ID = '2efa6712-cc3d-480f-8e31-bf95730a9ce9'
-BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1/blacklists'
+BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1'
+BLACKLISTS_URL = BASE_URL+'/blacklists'
 
 @pytest.fixture(scope="function")
 def http(request):
@@ -22,13 +23,13 @@ def http(request):
 
     def fin():
         print ("finalizing...")
-        http.delete(BASE_URL+'/'+ENTRY_ID)
+        http.delete(BLACKLISTS_URL+'/'+ENTRY_ID)
 
     request.addfinalizer(fin)
     return http
 
 def test_create_entry_succ(http):
-    req = http.post(BASE_URL, data={'id':ENTRY_ID,
+    req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
                                     'dst_addr':'375296000001,1,1',
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
@@ -42,7 +43,7 @@ def test_create_entry_succ(http):
     assert json['src_addr']['npi'] == 0
 
 def test_create_entry_wo_src_addr_succ(http):
-    req = http.post(BASE_URL, data={'id':ENTRY_ID,
+    req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
                                     'dst_addr':'375296000001,1,1'})
     assert req.status_code == 201
     json = req.json()
@@ -52,12 +53,12 @@ def test_create_entry_wo_src_addr_succ(http):
     assert json['dst_addr']['npi'] == 1
 
 def test_read_succ(http):
-    req = http.post(BASE_URL, data={'id':ENTRY_ID,
+    req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
                                     'dst_addr':'375296000001,1,1',
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
 
-    req = http.get(BASE_URL+'/'+ENTRY_ID)
+    req = http.get(BLACKLISTS_URL+'/'+ENTRY_ID)
     assert req.status_code == 200
     json = req.json()
     json = req.json()
@@ -70,12 +71,12 @@ def test_read_succ(http):
     assert json['src_addr']['npi'] == 0
 
 def test_update_entry_1_succ(http):
-    req = http.post(BASE_URL, data={'id':ENTRY_ID,
+    req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
                                     'dst_addr':'375296000001,1,1',
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
 
-    req = http.put(BASE_URL+'/'+ENTRY_ID, data={'dst_addr':'375296000003,1,1',
+    req = http.put(BLACKLISTS_URL+'/'+ENTRY_ID, data={'dst_addr':'375296000003,1,1',
                                                 'src_addr':''})
     assert req.status_code == 200
     json = req.json()
@@ -88,12 +89,12 @@ def test_update_entry_1_succ(http):
     assert json['src_addr']['npi'] == 0
 
 def test_update_entry_2_succ(http):
-    req = http.post(BASE_URL, data={'id':ENTRY_ID,
+    req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
                                     'dst_addr':'375296000001,1,1',
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
 
-    req = http.put(BASE_URL+'/'+ ENTRY_ID, data={'dst_addr':'375296000004,1,1'})
+    req = http.put(BLACKLISTS_URL+'/'+ ENTRY_ID, data={'dst_addr':'375296000004,1,1'})
     assert req.status_code == 200
     json = req.json()
     assert json['id'] == ENTRY_ID
@@ -105,10 +106,10 @@ def test_update_entry_2_succ(http):
     assert json['src_addr']['npi'] == 0
 
 def test_delete_succ(http):
-    req = http.post(BASE_URL, data={'id':ENTRY_ID,
+    req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
                                     'dst_addr':'375296000001,1,1',
                                     'src_addr':'Hola,5,0'})
     assert req.status_code == 201
 
-    req = http.delete(BASE_URL+'/'+ENTRY_ID)
+    req = http.delete(BLACKLISTS_URL+'/'+ENTRY_ID)
     assert req.status_code == 204

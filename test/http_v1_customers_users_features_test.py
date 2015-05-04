@@ -19,10 +19,11 @@ USER_ID = 'user'
 BAD_CUSTOMER_UUID = '00000000-0000-0000-0000-000000000000'
 BAD_USER_ID = 'bad_user'
 
-BASE_CUSTOMERS_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1/customers'
-BASE_FEATURES_URL = BASE_CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users/'+USER_ID+'/features'
-BAD_CUSTOMER_FEATURES_URL = BASE_CUSTOMERS_URL+'/'+BAD_CUSTOMER_UUID+'/users/'+USER_ID+'/features'
-BAD_USER_FEATURES_URL = BASE_CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users/'+BAD_USER_ID+'/features'
+BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1'
+CUSTOMERS_URL = BASE_URL +'/customers'
+FEATURES_URL = CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users/'+USER_ID+'/features'
+BAD_CUSTOMER_FEATURES_URL = CUSTOMERS_URL+'/'+BAD_CUSTOMER_UUID+'/users/'+USER_ID+'/features'
+BAD_USER_FEATURES_URL = CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users/'+BAD_USER_ID+'/features'
 
 @pytest.fixture(scope="function")
 def http(request):
@@ -44,22 +45,22 @@ def http(request):
             'credit_limit':10000.0,
             'language':'en',
             'state':'active'}
-    req = http.post(BASE_CUSTOMERS_URL, data=data)
+    req = http.post(CUSTOMERS_URL, data=data)
 
     data = {'user_id':'user',
             'password':'secret',
             'interfaces':'soap',
             'state':'active'}
-    req = http.post(BASE_CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users', data=data)
+    req = http.post(CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users', data=data)
 
     def fin():
         print ("finalizing...")
-        req = http.get(BASE_FEATURES_URL)
+        req = http.get(FEATURES_URL)
         if req.status_code == 200:
             for data in req.json():
-                http.delete(BASE_FEATURES_URL+'/'+data['name'])
-        http.delete(BASE_CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users/user')
-        http.delete(BASE_CUSTOMERS_URL+'/'+CUSTOMER_UUID)
+                http.delete(FEATURES_URL+'/'+data['name'])
+        http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users/user')
+        http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
 
     request.addfinalizer(fin)
     return http
@@ -73,70 +74,70 @@ def test_bad_user_fail(http):
     assert req.status_code == 404
 
 def test_get_all_empty_succ(http):
-    req = http.get(BASE_FEATURES_URL)
+    req = http.get(FEATURES_URL)
     assert req.status_code == 200
     assert req.json() == []
 
 def test_get_non_existing_fail(http):
-    req = http.get(BASE_FEATURES_URL+'/override_originator')
+    req = http.get(FEATURES_URL+'/override_originator')
     assert req.status_code == 404
 
 def test_post_new_succ(http):
-    req = http.post(BASE_FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
+    req = http.post(FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
     assert req.status_code == 200
     assert len(req.json()) == 1
     assert req.json() == [{'name':'override_originator', 'value':'empty'}]
 
 def test_post_existing_fail(http):
-    http.post(BASE_FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
+    http.post(FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
 
-    req = http.post(BASE_FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
+    req = http.post(FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
     assert req.status_code == 400
 
 def test_post_another_succ(http):
-    http.post(BASE_FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
+    http.post(FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
 
-    req = http.post(BASE_FEATURES_URL, data={'name':'inbox', 'value':'false'})
+    req = http.post(FEATURES_URL, data={'name':'inbox', 'value':'false'})
     assert req.status_code == 200
     assert len(req.json()) == 2
     assert req.json() == [{'name':'override_originator', 'value':'empty'}, {'name':'inbox', 'value':'false'}]
 
 def test_get_all_succ(http):
-    http.post(BASE_FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
-    http.post(BASE_FEATURES_URL, data={'name':'inbox', 'value':'false'})
+    http.post(FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
+    http.post(FEATURES_URL, data={'name':'inbox', 'value':'false'})
 
-    req = http.get(BASE_FEATURES_URL)
+    req = http.get(FEATURES_URL)
     assert req.status_code == 200
     assert len(req.json()) == 2
     assert req.json() == [{'name':'override_originator', 'value':'empty'}, {'name':'inbox', 'value':'false'}]
 
 def test_get_existing_succ(http):
-    http.post(BASE_FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
-    http.post(BASE_FEATURES_URL, data={'name':'inbox', 'value':'false'})
+    http.post(FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
+    http.post(FEATURES_URL, data={'name':'inbox', 'value':'false'})
 
-    req = http.get(BASE_FEATURES_URL+'/inbox')
+    req = http.get(FEATURES_URL+'/inbox')
     assert req.json() == {'name':'inbox', 'value':'false'}
 
 def test_put_existing_succ(http):
-    http.post(BASE_FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
+    http.post(FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
 
-    req = http.put(BASE_FEATURES_URL+'/override_originator?value=any')
+    req = http.put(FEATURES_URL+'/override_originator?value=any')
     assert req.status_code == 200
     assert req.json() == [{'name':'override_originator', 'value':'any'}]
 
 def test_put_non_existing_fail(http):
-    req = http.put(BASE_FEATURES_URL+'/override_originator?value=any')
+    req = http.put(FEATURES_URL+'/override_originator?value=any')
     assert req.status_code == 404
 
 def test_delete_existing_succ(http):
-    http.post(BASE_FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
-    http.post(BASE_FEATURES_URL, data={'name':'inbox', 'value':'false'})
+    http.post(FEATURES_URL, data={'name':'override_originator', 'value':'empty'})
+    http.post(FEATURES_URL, data={'name':'inbox', 'value':'false'})
 
-    req = http.delete(BASE_FEATURES_URL+'/override_originator')
+    req = http.delete(FEATURES_URL+'/override_originator')
     assert req.status_code == 200
     assert req.json() == [{'name':'inbox', 'value':'false'}]
 
 def test_delete_non_existing_succ(http):
-    req = http.delete(BASE_FEATURES_URL+'/unknown')
+    req = http.delete(FEATURES_URL+'/unknown')
     assert req.status_code == 200
     assert req.json() == []
