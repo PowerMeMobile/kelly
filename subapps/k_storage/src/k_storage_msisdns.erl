@@ -14,17 +14,13 @@
     get_assigned_to_user/2
 ]).
 
--include("storages.hrl").
--include("customer.hrl").
-
--type msisdn() :: addr().
--type state() :: all | free | used.
+-include("msisdn.hrl").
 
 %% ===================================================================
 %% API
 %% ===================================================================
 
--spec get_one(msisdn()) -> {ok, {msisdn(), customer_uuid()}} | {error, not_found}.
+-spec get_one(msisdn()) -> {ok, #msisdn_info{}} | {error, not_found}.
 get_one(Msisdn) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
@@ -33,10 +29,10 @@ get_one(Msisdn) ->
         {ok, []} ->
             {error, not_found};
         {ok, [{_, Doc}]} ->
-            {ok, doc_to_tuple(Doc)}
+            {ok, doc_to_info(Doc)}
     end.
 
--spec get_many(msisdn(), customer_uuid(), state()) -> {ok, [{msisdn(), customer_uuid()}]}.
+-spec get_many(msisdn(), customer_uuid(), state()) -> {ok, [#msisdn_info{}]}.
 get_many(Msisdn, CustomerUuid, State) ->
     Selector = bson:document(lists:flatten([
         [{'msisdn', {'$exists', true}}],
@@ -46,7 +42,7 @@ get_many(Msisdn, CustomerUuid, State) ->
         [{'customer_uuid', {'$ne', undefined}} || State =:= used]
     ])),
     {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
-    {ok, [doc_to_tuple(Doc) || {_, Doc} <- Docs]}.
+    {ok, [doc_to_info(D) || {_, D} <- Docs]}.
 
 -spec get_assigned_to_customer(customer_uuid()) -> {ok, [msisdn()]}.
 get_assigned_to_customer(CustomerUuid) ->
@@ -64,7 +60,6 @@ get_assigned_to_user(CustomerUuid, UserId) ->
     },
     {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
     {ok, [k_storage_utils:doc_to_addr(bsondoc:at(msisdn, D)) || {_, D} <- Docs]}.
-
 
 -spec delete(msisdn()) -> ok.
 delete(Msisdn) ->
@@ -130,8 +125,12 @@ unassign_from_user(Msisdn) ->
 %% Internal
 %% ===================================================================
 
-doc_to_tuple(Doc) ->
+doc_to_info(Doc) ->
     Msisdn = k_storage_utils:doc_to_addr(bsondoc:at(msisdn, Doc)),
     CustomerUuid = bsondoc:at(customer_uuid, Doc),
     UserId = bsondoc:at(user_id, Doc),
-    {Msisdn, CustomerUuid, UserId}.
+    #msisdn_info{
+        msisdn = Msisdn,
+        customer_uuid = CustomerUuid,
+        user_id = UserId
+    }.

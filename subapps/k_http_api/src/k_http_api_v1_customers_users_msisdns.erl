@@ -13,7 +13,7 @@
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
--include_lib("k_storage/include/customer.hrl").
+-include_lib("k_storage/include/msisdn.hrl").
 
 %% ===================================================================
 %% Callback Functions
@@ -56,15 +56,23 @@ create(Params) ->
                     case k_storage_msisdns:get_one(Msisdn) of
                         {error, not_found} ->
                             {exception, 'svc0003'};
-                        {ok, {Msisdn, undefined, undefined}} ->
+                        {ok, #msisdn_info{
+                                msisdn = Msisdn,
+                                customer_uuid = undefined,
+                                user_id = undefined
+                        }} ->
                             ok = k_storage_msisdns:assign_to_user(
                                 Msisdn, CustomerUuid, UserId),
                             {ok, [Plist]} = prepare_msisdns([Msisdn]),
                             ?log_debug("Msisdn: ~p", [Plist]),
                             {http_code, 201, Plist};
-                        {ok, {Msisdn, CustomerUuid, UserId}} ->
+                        {ok, #msisdn_info{
+                                msisdn = Msisdn,
+                                customer_uuid = CustomerUuid,
+                                user_id = UserId
+                        }} ->
                             {exception, 'svc0004'};
-                        {ok, {Msisdn, _, _}} ->
+                        {ok, #msisdn_info{msisdn = Msisdn}} ->
                             {http_code, 409, <<"Msisdn already assigned">>}
                     end
             end;

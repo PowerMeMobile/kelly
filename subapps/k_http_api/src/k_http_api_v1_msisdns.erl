@@ -13,7 +13,7 @@
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
--include_lib("k_storage/include/mailbox.hrl").
+-include_lib("k_storage/include/msisdn.hrl").
 
 %% ===================================================================
 %% Callback Functions
@@ -47,7 +47,15 @@ read(Params) ->
     Msisdn = ?gv(msisdn, Params),
     CustomerUuid = ?gv(customer_uuid, Params),
     State = ?gv(state, Params, all),
-    read_many(Msisdn, CustomerUuid, State).
+    {ok, Infos} = k_storage_msisdns:get_many(Msisdn, CustomerUuid, State),
+    Uuids = [Uuid || I <- Infos,
+             begin
+                Uuid = I#msisdn_info.customer_uuid,
+                Uuid =/= undefined
+             end],
+    Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
+    Resp = [build_resp(I, Dict) || I <- Infos],
+    {http_code, 200, Resp}.
 
 create(Params) ->
     Msisdn = ?gv(msisdn, Params),
@@ -67,8 +75,7 @@ update(Params) ->
             {exception, 'svc0003'};
         {ok, _} ->
             ok = k_storage_msisdns:assign_to_customer(Msisdn, CustomerUuid),
-            Resp = prepare(Msisdn, CustomerUuid),
-            {http_code, 200, Resp}
+            {http_code, 200, <<"">>}
     end.
 
 delete(Params) ->
@@ -80,23 +87,21 @@ delete(Params) ->
 %% Local Functions
 %% ===================================================================
 
-read_many(Msisdn, CustomerUuid, State) ->
-    {ok, Values} = k_storage_msisdns:get_many(Msisdn, CustomerUuid, State),
-    Resp = prepare_values(Values),
-    {http_code, 200, Resp}.
-
-prepare(Msisdn, CustomerUuid) ->
+build_resp(Info, Dict) ->
+    Msisdn = Info#msisdn_info.msisdn,
+    CustomerUuid = Info#msisdn_info.customer_uuid,
+    {CustomerId, CustomerName} =
+        case CustomerUuid of
+            undefined ->
+                {undefined, undefined};
+            _ ->
+                Customer = dict:fetch(CustomerUuid, Dict),
+                {Customer#customer.customer_id, Customer#customer.name}
+        end,
     [{msisdn, msisdn2addr(Msisdn)},
-     {customer_uuid, CustomerUuid}].
-
-prepare_values(Values) ->
-    prepare_values(Values, []).
-
-prepare_values([], Acc) ->
-    lists:reverse(Acc);
-prepare_values([{Msisdn, CustomerUuid, _UserId} | Values], Acc) ->
-    Res = [{msisdn, msisdn2addr(Msisdn)}, {customer_uuid, CustomerUuid}],
-    prepare_values(Values, [Res | Acc]).
+     {customer_uuid, CustomerUuid},
+     {customer_id, CustomerId},
+     {customer_name, CustomerName}].
 
 decode_msisdn(AddrBin) ->
     AddrString = binary_to_list(AddrBin),
