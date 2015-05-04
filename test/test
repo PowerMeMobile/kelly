@@ -55,5 +55,6 @@ if [[ ${EUNIT_RES} == 0 && ${PYTEST_RES} == 0 ]]; then
     exit 0
 else
     echo Failure
+    cat ${KELLY_BASE}/log/debug.log
     exit 1
 fi
