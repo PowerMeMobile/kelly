@@ -16,6 +16,8 @@ if KELLY_PORT == None or KELLY_PORT == '':
 CUSTOMER_UUID = '2dca065f-c328-4a19-bc92-b222f48764e1'
 BAD_CUSTOMER_UUID = '00000000-0000-0000-0000-000000000000'
 
+USER_ID = 'user'
+
 ADDR = '999887776655'
 TON = '1'
 NPI = '1'
@@ -26,6 +28,8 @@ MSISDNS_URL = BASE_URL+'/msisdns'
 CUSTOMERS_URL = BASE_URL+'/customers'
 CUSTOMERS_MSISDNS_URL = CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/msisdns'
 CUSTOMERS_ORIGINATORS_URL = CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/originators'
+CUSTOMERS_USERS_URL = CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users'
+CUSTOMERS_USERS_MSISDNS_URL = CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/users'+'/'+USER_ID+'/msisdns'
 
 @pytest.fixture(scope="module")
 def http(request):
@@ -52,9 +56,25 @@ def http(request):
              'state':'active'}
     req2 = http.post(CUSTOMERS_URL, data=data2)
 
+    data3 = {'user_id':USER_ID,
+             'password':'secret',
+             'interfaces':'transmitter;receiver',
+             'mobile_phone':'375290000000',
+             'first_name':'fn',
+             'last_name':'ln',
+             'company':'com',
+             'occupation':'oc',
+             'email':'u@m.c',
+             'country':'cou',
+             'language':'en',
+             'state':'active'}
+    req3 = http.post(CUSTOMERS_USERS_URL, data=data3)
+
     def fin():
         print ("finalizing...")
+        http.delete(CUSTOMERS_USERS_MSISDNS_URL+'/'+MSISDN)
         http.delete(CUSTOMERS_MSISDNS_URL+'/'+MSISDN)
+        http.delete(CUSTOMERS_USERS_URL+'/'+USER_ID)
         http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
         http.delete(MSISDNS_URL+'/'+MSISDN)
 
@@ -83,12 +103,53 @@ def test_read_msisdns_non_empty_succ(http):
     resp_data = req.json()
     assert resp_data == [{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}]
 
+def test_read_msisdns_all_non_empty_succ(http):
+    req = http.get(CUSTOMERS_MSISDNS_URL+'?state=all')
+    assert req.status_code == 200
+    resp_data = req.json()
+    assert resp_data == [{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}]
+
+def test_read_msisdns_free_non_empty_succ(http):
+    req = http.get(CUSTOMERS_MSISDNS_URL+'?state=free')
+    assert req.status_code == 200
+    resp_data = req.json()
+    assert resp_data == [{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}]
+
+def test_read_msisdns_used_empty_succ(http):
+    req = http.get(CUSTOMERS_MSISDNS_URL+'?state=used')
+    assert req.status_code == 200
+    resp_data = req.json()
+    assert resp_data == []
+
 def test_should_exist_originator_succ(http):
     req = http.get(CUSTOMERS_ORIGINATORS_URL)
     assert req.status_code == 200
     orig = req.json()[0]
     assert orig['msisdn'] == {'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}
     assert orig['state'] == 'approved'
+
+def test_assign_msisdn_to_user_succ(http):
+    req_data = {'msisdn':MSISDN}
+    req = http.post(CUSTOMERS_USERS_MSISDNS_URL, data=req_data)
+    assert req.status_code == 201
+
+def test_read_msisdns_all_2_non_empty_succ(http):
+    req = http.get(CUSTOMERS_MSISDNS_URL+'?state=all')
+    assert req.status_code == 200
+    resp_data = req.json()
+    assert resp_data == [{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}]
+
+def test_read_msisdns_free_2_empty_succ(http):
+    req = http.get(CUSTOMERS_MSISDNS_URL+'?state=free')
+    assert req.status_code == 200
+    resp_data = req.json()
+    assert resp_data == []
+
+def test_read_msisdns_used_2_non_empty_succ(http):
+    req = http.get(CUSTOMERS_MSISDNS_URL+'?state=used')
+    assert req.status_code == 200
+    resp_data = req.json()
+    assert resp_data == [{'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}]
 
 def test_delete_msisdn_succ(http):
     req = http.delete(CUSTOMERS_MSISDNS_URL+'/'+MSISDN)

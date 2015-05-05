@@ -10,7 +10,7 @@
     assign_to_user/3,
     unassign_from_customer/1,
     unassign_from_user/1,
-    get_assigned_to_customer/1,
+    get_assigned_to_customer/2,
     get_assigned_to_user/2
 ]).
 
@@ -43,11 +43,13 @@ get_many(Msisdn, CustomerUuid, State) ->
     {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
     {ok, [doc_to_info(D) || {_, D} <- Docs]}.
 
--spec get_assigned_to_customer(customer_uuid()) -> {ok, [msisdn()]}.
-get_assigned_to_customer(CustomerUuid) ->
-    Selector = {
-        'customer_uuid', CustomerUuid
-    },
+-spec get_assigned_to_customer(customer_uuid(), state()) -> {ok, [msisdn()]}.
+get_assigned_to_customer(CustomerUuid, State) ->
+    Selector = bson:document(lists:flatten([
+        [{'customer_uuid', CustomerUuid}],
+        [{'user_id', undefined} || State =:= free],
+        [{'user_id', {'$ne', undefined}} || State =:= used]
+    ])),
     {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
     {ok, [k_storage_utils:doc_to_addr(bsondoc:at(msisdn, D)) || {_, D} <- Docs]}.
 

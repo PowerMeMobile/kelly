@@ -21,7 +21,8 @@
 
 init() ->
     Read = [
-        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid}
+        #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
+        #param{name = state, mandatory = false, repeated = false, type = {custom, fun decode_state/1}}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
@@ -81,10 +82,11 @@ create(Params) ->
 
 read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
+    State = ?gv(state, Params, all),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, #customer{}} ->
             {ok, Msisdns} =
-                k_storage_msisdns:get_assigned_to_customer(CustomerUuid),
+                k_storage_msisdns:get_assigned_to_customer(CustomerUuid, State),
             {ok, Plist} = prepare_msisdns(Msisdns),
             ?log_debug("Msisdns: ~p", [Plist]),
             {http_code, 200, Plist};
@@ -122,3 +124,7 @@ decode_msisdn(AddrBin) ->
         ton = list_to_integer(Ton),
         npi = list_to_integer(Npi)
     }.
+
+decode_state(<<"all">>)  -> all;
+decode_state(<<"free">>) -> free;
+decode_state(<<"used">>)  -> used.
