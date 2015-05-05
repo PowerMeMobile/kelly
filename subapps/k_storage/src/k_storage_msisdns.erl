@@ -35,7 +35,6 @@ get_one(Msisdn) ->
 -spec get_many(msisdn(), customer_uuid(), state()) -> {ok, [#msisdn_info{}]}.
 get_many(Msisdn, CustomerUuid, State) ->
     Selector = bson:document(lists:flatten([
-        [{'msisdn', {'$exists', true}}],
         [{'msisdn', k_storage_utils:addr_to_doc(Msisdn)} || Msisdn =/= undefined],
         [{'customer_uuid', CustomerUuid} || CustomerUuid =/= undefined],
         [{'customer_uuid', undefined} || State =:= free],

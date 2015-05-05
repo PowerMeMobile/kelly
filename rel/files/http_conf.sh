@@ -181,20 +181,34 @@ post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user4&password=p
 post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user5&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
 
 #
-# Addr2Cust
+# MSISDNs Pool
 #
 
+post "v1/msisdns" "msisdn=375296660001,1,1"
+post "v1/msisdns" "msisdn=375296660002,1,1"
+post "v1/msisdns" "msisdn=375296660003,1,1"
+post "v1/msisdns" "msisdn=375296660004,1,1"
+post "v1/msisdns" "msisdn=375296660005,1,1"
+post "v1/msisdns" "msisdn=375296660006,1,1"
+post "v1/msisdns" "msisdn=375296660007,1,1"
+
 # smppload postpaid
-post "addr2cust" 'msisdn=375296660001,1,1&customer=493b3678-9dc8-11e2-8cce-00269e42f7a5&user=user'
+post "v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/msisdns" "msisdn=375296660001,1,1"
+post "v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users/user/msisdns" "msisdn=375296660001,1,1"
 # smppload prepaid
-post "addr2cust" 'msisdn=375296660002,1,1&customer=50cec0fa-ea33-11e2-8cb1-00269e42f7a&user=user'
+post "v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/msisdns" "msisdn=375296660002,1,1"
+post "v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users/user/msisdns" "msisdn=375296660002,1,1"
 # oneapi postpaid
-post "addr2cust" 'msisdn=375296660003,1,1&customer=a3ddc34a-1793-11e2-9602-00269e42f7a5&user=user'
+post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/msisdns" "msisdn=375296660003,1,1"
+post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users/user/msisdns" "msisdn=375296660003,1,1"
 # oneapi prepaid
-post "addr2cust" 'msisdn=375296660004,1,1&customer=16f87550-1794-11e2-ade6-00269e42f7a5&user=user'
+post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/msisdns" "msisdn=375296660004,1,1"
+post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users/user/msisdns" "msisdn=375296660004,1,1"
 # soap postpaid
-post "addr2cust" 'msisdn=375296660005,1,1&customer=c173786e-63ce-11e2-8740-001d0947ec73&user=user'
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns" "msisdn=375296660005,1,1"
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns" "msisdn=375296660005,1,1"
 # mm postpaid
-post "addr2cust" 'msisdn=375296660007,1,1&customer=8032706a-b4ec-11e3-b3d7-00269e42f7a5&user=user'
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns" "msisdn=375296660007,1,1"
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns" "msisdn=375296660007,1,1"
 
 exit 0

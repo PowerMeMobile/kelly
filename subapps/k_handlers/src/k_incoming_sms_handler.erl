@@ -7,6 +7,7 @@
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/mailbox.hrl").
 -include_lib("k_storage/include/msg_info.hrl").
+-include_lib("k_storage/include/msisdn.hrl").
 
 %% ===================================================================
 %% API
@@ -56,8 +57,11 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
     %% {customer_uuid, user_id} | {customer_uuid, undefined} | {undefined, undefined}.
     %% i think it makes sense to store even partly filled message.
     {CustomerUuid, UserId} =
-        case k_storage_customers:addr2cust_resolve(DstAddr) of
-            {ok, CID, UID} ->
+        case k_storage_msisdns:get_one(DstAddr) of
+            {ok, #msisdn_info{
+                customer_uuid = CID,
+                user_id = UID
+            }} ->
                 ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
                     [DstAddr, CID, UID]),
                 Item = #k_mb_incoming_sms{

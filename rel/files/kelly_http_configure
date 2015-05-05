@@ -178,18 +178,44 @@ curl -s -D - -X 'POST' 127.0.0.1:8080/customers/50cec0fa-ea33-11e2-8cb1-00269e42
 
 
 #
-# Addr2Cust
+# MSISDNs Pool
 #
 
 # smppload postpaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660001,1,1&customer=493b3678-9dc8-11e2-8cce-00269e42f7a5&user=user'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/msisdns -d 'msisdn=375296660001,1,1'; echo; echo
 # smppload prepaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660002,1,1&customer=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&user=user'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/msisdns -d 'msisdn=375296660002,1,1'; echo; echo
 # oneapi postpaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660003,1,1&customer=a3ddc34a-1793-11e2-9602-00269e42f7a5&user=user'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/msisdns -d 'msisdn=375296660003,1,1'; echo; echo
 # oneapi prepaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660004,1,1&customer=16f87550-1794-11e2-ade6-00269e42f7a5&user=user'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/msisdns -d 'msisdn=375296660004,1,1'; echo; echo
 # soap postpaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660005,1,1&customer=c173786e-63ce-11e2-8740-001d0947ec73&user=user'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/msisdns -d 'msisdn=375296660005,1,1'; echo; echo
 # mm postpaid
-curl -s -D - -X 'POST' 127.0.0.1:8080/addr2cust -d 'msisdn=375296660007,1,1&customer=8032706a-b4ec-11e3-b3d7-00269e42f7a5&user=user'; echo; echo
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/msisdns -d 'msisdn=375296660007,1,1'; echo; echo
+
+# smppload postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/msisdns -d 'msisdn=375296660001,1,1'; echo; echo
+# smppload prepaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/msisdns -d 'msisdn=375296660002,1,1'; echo; echo
+# oneapi postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/msisdns -d 'msisdn=375296660003,1,1'; echo; echo
+# oneapi prepaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/msisdns -d 'msisdn=375296660004,1,1'; echo; echo
+# soap postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns -d 'msisdn=375296660005,1,1'; echo; echo
+# mm postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns -d 'msisdn=375296660007,1,1'; echo; echo
+
+# smppload postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users/user/msisdns -d 'msisdn=375296660001,1,1'; echo; echo
+# smppload prepaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users/user/msisdns -d 'msisdn=375296660002,1,1'; echo; echo
+# oneapi postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users/user/msisdns -d 'msisdn=375296660003,1,1'; echo; echo
+# oneapi prepaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users/user/msisdns -d 'msisdn=375296660004,1,1'; echo; echo
+# soap postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns -d 'msisdn=375296660005,1,1'; echo; echo
+# mm postpaid
+curl -s -D - -X 'POST' 127.0.0.1:8080/v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns -d 'msisdn=375296660007,1,1'; echo; echo

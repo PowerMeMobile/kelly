@@ -94,7 +94,6 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_providers,
         k_http_api_handler_networks,
         k_http_api_handler_network_maps,
-        k_http_api_handler_addr2cust,
 
         %% Statistic API
         k_http_api_handler_statuses_stats,

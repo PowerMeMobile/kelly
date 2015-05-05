@@ -20,14 +20,6 @@
     change_credit/2
 ]).
 
-%% Deprecated addr2cust API
--export([
-    addr2cust_link/3,
-    addr2cust_unlink/1,
-    addr2cust_resolve/1,
-    addr2cust_available_addresses/2
-]).
-
 -include("storages.hrl").
 -include("customer.hrl").
 
@@ -304,57 +296,6 @@ doc_to_record(Doc) ->
         language = Language,
         state = State
     }.
-
-%% ===================================================================
-%% Deprecated addr2cust API
-%% ===================================================================
-
--spec addr2cust_resolve(addr()) -> {ok, customer_id(), user_id()} |
-                         {error, addr_not_used}.
-addr2cust_resolve(Address = #addr{}) ->
-    Selector = {
-        'address', k_storage_utils:addr_to_doc(Address)
-    },
-    case mongodb_storage:find(static_storage, msisdns, Selector) of
-        {ok, []} -> {error, addr_not_used};
-        {ok, [{_, Doc}]} ->
-            CustID = bsondoc:at(customer_id, Doc),
-            UserID = bsondoc:at(user_id, Doc),
-            {ok, CustID, UserID}
-    end.
-
--spec addr2cust_link(addr(), customer_id(), user_id()) -> ok | {error, addr_in_use}.
-addr2cust_link(Address = #addr{}, CustID, UserID) ->
-    Modifier = {
-        'address'    , k_storage_utils:addr_to_doc(Address),
-        'customer_id', CustID,
-        'user_id'    , UserID
-    },
-    case addr2cust_resolve(Address) of
-        {error, addr_not_used} ->
-            {ok, _ID} = mongodb_storage:insert(static_storage, msisdns, Modifier),
-            ok;
-        _ -> {error, addr_in_use}
-    end.
-
--spec addr2cust_unlink(addr()) -> ok | {error, addr_not_used}.
-addr2cust_unlink(Address = #addr{}) ->
-    Selector = {
-        'address' , k_storage_utils:addr_to_doc(Address)
-    },
-    ok = mongodb_storage:delete(static_storage, msisdns, Selector).
-
--spec addr2cust_available_addresses(customer_id(), user_id()) ->
-    {ok, [addr()]}.
-addr2cust_available_addresses(CustID, UserID) ->
-    Selector = {
-        'customer_id', CustID,
-        'user_id'    , UserID
-    },
-    {ok, Docs} = mongodb_storage:find(static_storage, msisdns, Selector),
-    AddrDocs = [bsondoc:at(address, Doc) || {_, Doc} <- Docs],
-    Items = [k_storage_utils:doc_to_addr(Doc) || Doc <- AddrDocs],
-    {ok, Items}.
 
 %% ===================================================================
 %% Internal
