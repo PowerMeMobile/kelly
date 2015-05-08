@@ -235,26 +235,36 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"UnsubscribeIncomingSmsReq">> ->
             {ReqCT, <<>>}
     end;
 
-process(ReqCT, ReqBin) when ReqCT =:= <<"ProcessInboxReq">> ->
-    case adto:decode(#k1api_process_inbox_request_dto{}, ReqBin) of
-        {ok, ReqDTO} ->
-            ?log_debug("Got process inbox request: ~p", [ReqDTO]),
-            case k_inbox_processor:process(ReqDTO) of
-                {ok, RespDTO} ->
-                    ?log_debug("Built process inbox response: ~p", [RespDTO]),
-                    case adto:encode(RespDTO) of
+process(ReqCT, ReqBin) when ReqCT =:= <<"InboxReqV1">> ->
+    case adto:decode(#inbox_req_v1{}, ReqBin) of
+        {ok, #inbox_req_v1{req_id = ReqId} = Req} ->
+            ?log_debug("Got inbox request: ~p", [Req]),
+            case k_inbox_processor:process(Req) of
+                {ok, Resp} ->
+                    ?log_debug("Built inbox response: ~p", [Resp]),
+                    case adto:encode(Resp) of
                         {ok, RespBin} ->
-                            {<<"ProcessInboxResp">>, RespBin};
+                            {<<"InboxRespV1">>, RespBin};
                         {error, Error} ->
-                            ?log_error("Process inbox response decode error: ~p", [Error]),
-                            {ReqCT, <<>>}
+                            ?log_error("Inbox response decode error: ~p", [Error]),
+                            ErrResp = #error_resp_v1{
+                                req_id = ReqId,
+                                error = Error
+                            },
+                            {ok, ErrRespBin} = adto:encode(ErrResp),
+                            {<<"ErrorRespV1">>, ErrRespBin}
                     end;
                 {error, Error} ->
-                    ?log_error("Process inbox request process error: ~p", [Error]),
-                    {ReqCT, <<>>}
+                    ?log_error("Inbox request process error: ~p", [Error]),
+                    ErrResp = #error_resp_v1{
+                        req_id = ReqId,
+                        error = Error
+                    },
+                    {ok, ErrRespBin} = adto:encode(ErrResp),
+                    {<<"ErrorRespV1">>, ErrRespBin}
             end;
         {error, Error} ->
-            ?log_error("Process inbox request decode error: ~p", [Error]),
+            ?log_error("Inbox request decode error: ~p", [Error]),
             {ReqCT, <<>>}
     end;
 

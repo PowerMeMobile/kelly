@@ -64,7 +64,8 @@ save(#k_mb_incoming_sms{} = Sms) ->
             'body'            , Sms#k_mb_incoming_sms.body,
             'encoding'        , bsondoc:atom_to_binary(Sms#k_mb_incoming_sms.encoding),
             'delivery_attempt', Sms#k_mb_incoming_sms.delivery_attempt,
-            'created_at'      , Sms#k_mb_incoming_sms.created_at
+            'created_at'      , Sms#k_mb_incoming_sms.created_at,
+            'state'           , bsondoc:atom_to_binary(new)
         }
     },
     ok = mongodb_storage:upsert(mailbox_storage, incoming_sms, Selector, Modifier);

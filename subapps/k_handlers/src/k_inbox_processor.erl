@@ -9,26 +9,26 @@
 %% API
 %% ===================================================================
 
--spec process(#k1api_process_inbox_request_dto{}) ->
-    {ok, #k1api_process_inbox_response_dto{}} | {error, term()}.
+-spec process(#inbox_req_v1{}) ->
+    {ok, #inbox_resp_v1{}} | {error, term()}.
 process(ReqDTO) ->
-    ReqId      = ReqDTO#k1api_process_inbox_request_dto.id,
-    CustomerId = ReqDTO#k1api_process_inbox_request_dto.customer_id,
-    UserId     = ReqDTO#k1api_process_inbox_request_dto.user_id,
-    Operation  = ReqDTO#k1api_process_inbox_request_dto.operation,
-    MessageIds = ReqDTO#k1api_process_inbox_request_dto.message_ids,
-    ?log_debug("CID: ~p, UID: ~p, Op: ~p, MIDs: ~p",
-        [CustomerId, UserId, Operation, MessageIds]),
+    ReqId      = ReqDTO#inbox_req_v1.req_id,
+    CustomerUuid = ReqDTO#inbox_req_v1.customer_uuid,
+    UserId     = ReqDTO#inbox_req_v1.user_id,
+    Operation  = ReqDTO#inbox_req_v1.operation,
+    MsgIds     = ReqDTO#inbox_req_v1.msg_ids,
+    ?log_debug("CustomerUuid: ~p, UserId: ~p, Operation: ~p, MsgIds: ~p",
+        [CustomerUuid, UserId, Operation, MsgIds]),
 
-    case process(CustomerId, UserId, Operation, MessageIds) of
+    case process(CustomerUuid, UserId, Operation, MsgIds) of
         {ok, Result} ->
-            {ok, #k1api_process_inbox_response_dto{
-                id = ReqId,
+            {ok, #inbox_resp_v1{
+                req_id = ReqId,
                 result = Result
             }};
         {error, Reason} ->
-            {ok, #k1api_process_inbox_response_dto{
-                id = ReqId,
+            {ok, #inbox_resp_v1{
+                req_id = ReqId,
                 result = {error, Reason}
             }}
     end.
@@ -37,75 +37,149 @@ process(ReqDTO) ->
 %% Internal
 %% ===================================================================
 
-process(CustomerId, UserId, list_all, _) ->
+process(CustomerUuid, UserId, list_all, undefined) ->
     Selector = {
-        'customer_id', CustomerId,
+        'customer_id', CustomerUuid,
         'user_id'    , UserId
     },
-    case mongodb_storage:find(static_storage, mb_incoming_sms, Selector) of
-        {ok, []} ->
-            Selector2 = {
-                'customer_id', CustomerId
-            },
-            case mongodb_storage:find(static_storage, mb_incoming_sms, Selector2) of
-                {ok, Docs} ->
-                    {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
-                Error ->
-                    Error
-            end;
-        Error ->
-            Error
-    end;
-process(CustomerId, UserId, list_new, _) ->
-    Selector = {
-        'customer_id', CustomerId,
-        'user_id'    , UserId
-        %% state =:= new
-    },
-    case mongodb_storage:find(static_storage, mb_incoming_sms, Selector) of
-        {ok, []} ->
-            Selector2 = {
-                'customer_id', CustomerId
-            },
-            case mongodb_storage:find(static_storage, mb_incoming_sms, Selector2) of
-                {ok, Docs} ->
-                    {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
-                Error ->
-                    Error
-            end;
-        Error ->
-            Error
-    end;
-process(_CustomerId, _UserId, fetch_all, _) ->
-    {ok, {error, <<"Not implemented">>}};
-process(_CustomerId, _UserId, fetch_new, _) ->
-    {ok, {error, <<"Not implemented">>}};
-process(_CustomerId, _UserId, fetch_id, MessageIds) ->
-    Selector = {
-        '_id', {'$in', [MessageIds]}
-    },
-    case mongodb_storage:find(static_storage, mb_incoming_sms, Selector) of
+    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
             {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
         Error ->
             Error
     end;
-process(_CustomerId, _UserId, kill_all, _) ->
-    {ok, {error, <<"Not implemented">>}};
-process(_CustomerId, _UserId, kill_old, _) ->
-    {ok, {error, <<"Not implemented">>}};
-process(_CustomerId, _UserId, kill_id, _MessageIds) ->
-    {ok, {error, <<"_Not implemented">>}};
-process(_CustomerId, _UserId, _, _) ->
-    {ok, {error, <<"Not implemented">>}}.
+process(CustomerUuid, UserId, list_new, undefined) ->
+    Selector = {
+        'customer_id', CustomerUuid,
+        'user_id'    , UserId,
+        'state'      , bsondoc:atom_to_binary(new)
+    },
+    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+        {ok, Docs} ->
+            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+        Error ->
+            Error
+    end;
+process(CustomerUuid, UserId, featch_all, undefined) ->
+    Selector = {
+        'customer_id', CustomerUuid,
+        'user_id'    , UserId
+    },
+    Modifier = {
+        '$set', {
+            'state', bsondoc:atom_to_binary(read)
+        }
+    },
+    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+        {ok, Docs} ->
+            ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
+            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+        Error ->
+            Error
+    end;
+process(CustomerUuid, UserId, fetch_new, undefined) ->
+    Selector = {
+        'customer_id', CustomerUuid,
+        'user_id'    , UserId,
+        'state'      , bsondoc:atom_to_binary(new)
+    },
+    Modifier = {
+        '$set', {
+            'state', bsondoc:atom_to_binary(read)
+        }
+    },
+    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+        {ok, Docs} ->
+            ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
+            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+        Error ->
+            Error
+    end;
+process(_CustomerUuid, _UserId, fetch_id, MsgIds) ->
+    Selector = {
+        '_id', {'$in', MsgIds}
+    },
+    Modifier = {
+        '$set', {
+            'state', bsondoc:atom_to_binary(read)
+        }
+    },
+    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+        {ok, Docs} ->
+            ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
+            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+        Error ->
+            Error
+    end;
+process(CustomerUuid, UserId, delete_all, undefined) ->
+    Selector = {
+        'customer_id', CustomerUuid,
+        'user_id'    , UserId
+    },
+    Command = {
+        'count', atom_to_binary(incoming_sms, latin1),
+        'query', Selector
+    },
+    {ok, CountToDelete} =
+        case mongodb_storage:command(mailbox_storage, Command) of
+            {ok, {missing, true, n, 0.0, ok, 1.0}} ->
+                {ok, 0};
+            {ok, {n, 0.0, ok, 1.0}} ->
+                {ok, 0};
+            {ok, {n, Count, ok, 1.0}} ->
+                {ok, round(Count)}
+        end,
+    case mongodb_storage:delete(mailbox_storage, incoming_sms, Selector) of
+        ok ->
+            {ok, {deleted, CountToDelete}};
+        Error ->
+            Error
+    end;
+process(CustomerUuid, UserId, delete_read, undefined) ->
+    Selector = {
+        'customer_id', CustomerUuid,
+        'user_id'    , UserId,
+        'state'      , bsondoc:atom_to_binary(read)
+    },
+    Command = {
+        'count', atom_to_binary(incoming_sms, latin1),
+        'query', Selector
+    },
+    {ok, CountToDelete} =
+        case mongodb_storage:command(mailbox_storage, Command) of
+            {ok, {missing, true, n, 0.0, ok, 1.0}} ->
+                {ok, 0};
+            {ok, {n, 0.0, ok, 1.0}} ->
+                {ok, 0};
+            {ok, {n, Count, ok, 1.0}} ->
+                {ok, round(Count)}
+        end,
+    case mongodb_storage:delete(mailbox_storage, incoming_sms, Selector) of
+        ok ->
+            {ok, {deleted, CountToDelete}};
+        Error ->
+            Error
+    end;
+process(_CustomerUuid, _UserId, delete_id, MsgIds) ->
+    Selector = {
+        '_id', {'$in', MsgIds}
+    },
+    case mongodb_storage:delete(mailbox_storage, incoming_sms, Selector) of
+        ok ->
+            {ok, {deleted, length(MsgIds)}};
+        Error ->
+            Error
+    end;
+process(_CustomerUuid, _UserId, _, _) ->
+    {ok, {error, not_implemented}}.
 
 doc2msg(Doc) ->
-    #k1api_process_inbox_response_message_dto{
+    #inbox_msg_info_v1{
         id = bsondoc:at('_id', Doc),
         new = true,
-        from = k_storage_utils:doc_to_addr(bsondoc:at('source_addr', Doc)),
-        to = k_storage_utils:doc_to_addr(bsondoc:at('dest_addr', Doc)),
+        from = k_storage_utils:doc_to_addr(bsondoc:at('src_addr', Doc)),
+        to = k_storage_utils:doc_to_addr(bsondoc:at('dst_addr', Doc)),
         timestamp = bsondoc:at('received', Doc),
-        size = size(bsondoc:at('message_body', Doc)),
-        text = bsondoc:at('message_body', Doc)
+        size = size(bsondoc:at('body', Doc)),
+        text = bsondoc:at('body', Doc)
     }.
