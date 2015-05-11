@@ -104,14 +104,13 @@ post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/originators" 'id=5f3a9330-f
 post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/users" 'id=user&password=password&connection_types=oneapi&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
 
 #
-# Soap
+# SOAP
 
 # postpaid customer
 post "customers" 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=10003&name=soap-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
 
 # postpaid originators
-post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=8cb7aa6e-f2d4-11e3-9a73-00269e42f7a5&address=999,6,0&description=&is_default=true&state=approved'
-post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=e1783f42-11b9-11e4-9166-0015588e6deb&address=SMS,5,0&description=&is_default=false&state=approved'
+post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=8cb7aa6e-f2d4-11e3-9a73-00269e42f7a5&address=375296660005,1,1&description=&is_default=true&state=approved'
 
 # postpaid users
 post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
@@ -120,21 +119,19 @@ post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&password=pa
 post "customers" 'customer_uuid=f9251298-381e-49c4-a60d-ff51e66c4f1c&customer_id=10004&name=soap-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
 
 # prepaid originators
-post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators" 'id=5220e2fa-c794-4387-ad92-29d4243a6e29&address=999,6,0&description=&is_default=true&state=approved'
-post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators" 'id=f67fe174-11b9-11e4-a395-0015588e6deb&address=SMS,5,0&description=&is_default=false&state=approved'
+post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators" 'id=5220e2fa-c794-4387-ad92-29d4243a6e29&address=375296660006,1,1&description=&is_default=true&state=approved'
 
 # prepaid users
 post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/users" 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
 
 #
-# MM-client
+# MM
 
 # postpaid customer
 post "customers" 'customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=10001&name=mm-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
 
 # postpaid originators
-post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators" 'id=d8372096-f2d4-11e3-950a-00269e42f7a5&address=375296660004,1,1&description=&is_default=true&state=approved'
-post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators" 'id=1165be86-f2d5-11e3-950a-00269e42f7a5&address=AlfaOrig,5,0&description=&is_default=false&state=approved'
+post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators" 'id=d8372096-f2d4-11e3-950a-00269e42f7a5&address=375296660007,1,1&description=&is_default=true&state=approved'
 
 # postpaid users
 post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users" "id=user&password=password&connection_types=mm&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
@@ -143,8 +140,7 @@ post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users" "id=user&password=pa
 post "customers" 'customer_uuid=77005b1e-d84b-4053-8917-fe91a19eb35d&customer_id=10002&name=mm-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
 
 # prepaid originators
-post "customers/77005b1e-d84b-4053-8917-fe91a19eb35d/originators" 'id=d0787e41-0bbd-4ec3-a2b9-318c7fd92373&address=375296660004,1,1&description=&is_default=true&state=approved'
-post "customers/77005b1e-d84b-4053-8917-fe91a19eb35d/originators" 'id=64f5e633-c94f-4aef-a57b-153622d2bc6e&address=AlfaOrig,5,0&description=&is_default=false&state=approved'
+post "customers/77005b1e-d84b-4053-8917-fe91a19eb35d/originators" 'id=d0787e41-0bbd-4ec3-a2b9-318c7fd92373&address=375296660008,1,1&description=&is_default=true&state=approved'
 
 # prepaid users
 post "customers/77005b1e-d84b-4053-8917-fe91a19eb35d/users" 'id=user&password=password&connection_types=mm&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
@@ -157,7 +153,6 @@ post "customers" 'customer_uuid=493b3678-9dc8-11e2-8cce-00269e42f7a5&customer_id
 
 # postpaid originators
 post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/originators" 'id=c71175cc-f091-11e3-8ee4-00269e42f7a5&address=375296660001,1,1&description=&is_default=true&state=approved'
-post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/originators" 'id=cfefe958-f091-11e3-8ee4-00269e42f7a5&address=375296660002,1,1&description=&is_default=false&state=approved'
 
 # postpaid users
 post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
@@ -170,7 +165,6 @@ post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user5&password=p
 post "customers" "customer_uuid=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&customer_id=prepaid&name=smppload-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active"
 
 # prepaid originators
-post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/originators" 'id=e3bcab38-51ac-499b-a7a6-79b86300cf0c&address=375296660001,1,1&description=&is_default=true&state=approved'
 post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/originators" 'id=a1f1b0e0-f2d5-11e3-950a-00269e42f7a5&address=375296660002,1,1&description=&is_default=true&state=approved'
 
 # prepaid users
@@ -184,31 +178,38 @@ post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user5&password=p
 # MSISDNs Pool
 #
 
-post "v1/msisdns" "msisdn=375296660001,1,1"
-post "v1/msisdns" "msisdn=375296660002,1,1"
-post "v1/msisdns" "msisdn=375296660003,1,1"
-post "v1/msisdns" "msisdn=375296660004,1,1"
-post "v1/msisdns" "msisdn=375296660005,1,1"
-post "v1/msisdns" "msisdn=375296660006,1,1"
-post "v1/msisdns" "msisdn=375296660007,1,1"
+post "v1/msisdns" "msisdn=0011,6,0"
+post "v1/msisdns" "msisdn=0021,6,0"
+post "v1/msisdns" "msisdn=0031,6,0"
+post "v1/msisdns" "msisdn=0041,6,0"
+post "v1/msisdns" "msisdn=0051,6,0"
+post "v1/msisdns" "msisdn=0061,6,0"
+post "v1/msisdns" "msisdn=0071,6,0"
+post "v1/msisdns" "msisdn=0081,6,0"
 
 # smppload postpaid
-post "v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/msisdns" "msisdn=375296660001,1,1"
-post "v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users/user/msisdns" "msisdn=375296660001,1,1"
+post "v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/msisdns" "msisdn=0011,6,0"
+post "v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users/user/msisdns" "msisdn=0011,6,0"
 # smppload prepaid
-post "v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/msisdns" "msisdn=375296660002,1,1"
-post "v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users/user/msisdns" "msisdn=375296660002,1,1"
+post "v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/msisdns" "msisdn=0021,6,0"
+post "v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users/user/msisdns" "msisdn=0021,6,0"
 # oneapi postpaid
-post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/msisdns" "msisdn=375296660003,1,1"
-post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users/user/msisdns" "msisdn=375296660003,1,1"
+post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/msisdns" "msisdn=0031,6,0"
+post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users/user/msisdns" "msisdn=0031,6,0"
 # oneapi prepaid
-post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/msisdns" "msisdn=375296660004,1,1"
-post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users/user/msisdns" "msisdn=375296660004,1,1"
+post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/msisdns" "msisdn=0041,6,0"
+post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users/user/msisdns" "msisdn=0041,6,0"
 # soap postpaid
-post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns" "msisdn=375296660005,1,1"
-post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns" "msisdn=375296660005,1,1"
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns" "msisdn=0051,6,0"
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns" "msisdn=0051,6,0"
+# soap prepaid
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns" "msisdn=0061,6,0"
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns" "msisdn=0061,6,0"
 # mm postpaid
-post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns" "msisdn=375296660007,1,1"
-post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns" "msisdn=375296660007,1,1"
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns" "msisdn=0071,6,0"
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns" "msisdn=0071,6,0"
+# mm prepaid
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns" "msisdn=0081,6,0"
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns" "msisdn=0081,6,0"
 
 exit 0
