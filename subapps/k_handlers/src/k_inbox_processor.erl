@@ -44,7 +44,7 @@ process(CustomerUuid, UserId, get_info, undefined) ->
     },
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
-            Msgs = [doc2msg(D) || {_Id, D} <- Docs],
+            Msgs = [doc2msg(D, false) || {_Id, D} <- Docs],
             New = length([1 || #inbox_msg_info_v1{new = true} <- Msgs]),
             Total = length(Msgs),
             Info = #inbox_info_v1{
@@ -62,7 +62,7 @@ process(CustomerUuid, UserId, list_all, undefined) ->
     },
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
-            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+            {ok, {messages, [doc2msg(D, false) || {_Id, D} <- Docs]}};
         Error ->
             Error
     end;
@@ -74,7 +74,7 @@ process(CustomerUuid, UserId, list_new, undefined) ->
     },
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
-            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+            {ok, {messages, [doc2msg(D, false) || {_Id, D} <- Docs]}};
         Error ->
             Error
     end;
@@ -91,7 +91,7 @@ process(CustomerUuid, UserId, featch_all, undefined) ->
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
             ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
-            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+            {ok, {messages, [doc2msg(D, true) || {_Id, D} <- Docs]}};
         Error ->
             Error
     end;
@@ -109,7 +109,7 @@ process(CustomerUuid, UserId, fetch_new, undefined) ->
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
             ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
-            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+            {ok, {messages, [doc2msg(D, true) || {_Id, D} <- Docs]}};
         Error ->
             Error
     end;
@@ -125,7 +125,7 @@ process(_CustomerUuid, _UserId, fetch_id, MsgIds) ->
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
             ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
-            {ok, {messages, [doc2msg(D) || {_Id, D} <- Docs]}};
+            {ok, {messages, [doc2msg(D, true) || {_Id, D} <- Docs]}};
         Error ->
             Error
     end;
@@ -191,7 +191,7 @@ process(_CustomerUuid, _UserId, delete_id, MsgIds) ->
 process(_CustomerUuid, _UserId, _, _) ->
     {ok, {error, not_implemented}}.
 
-doc2msg(Doc) ->
+doc2msg(Doc, ReturnBody) ->
     State = bsondoc:binary_to_atom(bsondoc:at('state', Doc)),
     #inbox_msg_info_v1{
         id = bsondoc:at('_id', Doc),
@@ -200,5 +200,5 @@ doc2msg(Doc) ->
         to = k_storage_utils:doc_to_addr(bsondoc:at('dst_addr', Doc)),
         timestamp = bsondoc:at('received', Doc),
         size = size(bsondoc:at('body', Doc)),
-        text = bsondoc:at('body', Doc)
+        text = if ReturnBody -> bsondoc:at('body', Doc); true -> <<>> end
     }.
