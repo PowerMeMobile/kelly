@@ -78,7 +78,7 @@ process(CustomerUuid, UserId, list_new, undefined) ->
         Error ->
             Error
     end;
-process(CustomerUuid, UserId, featch_all, undefined) ->
+process(CustomerUuid, UserId, fetch_all, undefined) ->
     Selector = {
         'customer_id', CustomerUuid,
         'user_id'    , UserId
