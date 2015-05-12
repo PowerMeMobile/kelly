@@ -37,6 +37,24 @@ process(ReqDTO) ->
 %% Internal
 %% ===================================================================
 
+process(CustomerUuid, UserId, get_info, undefined) ->
+    Selector = {
+        'customer_id', CustomerUuid,
+        'user_id'    , UserId
+    },
+    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+        {ok, Docs} ->
+            Msgs = [doc2msg(D) || {_Id, D} <- Docs],
+            New = length([1 || #inbox_msg_info_v1{new = true} <- Msgs]),
+            Total = length(Msgs),
+            Info = #inbox_info_v1{
+                new = New,
+                total = Total
+            },
+            {ok, {info, Info}};
+        Error ->
+            Error
+    end;
 process(CustomerUuid, UserId, list_all, undefined) ->
     Selector = {
         'customer_id', CustomerUuid,
@@ -174,9 +192,10 @@ process(_CustomerUuid, _UserId, _, _) ->
     {ok, {error, not_implemented}}.
 
 doc2msg(Doc) ->
+    State = bsondoc:binary_to_atom(bsondoc:at('state', Doc)),
     #inbox_msg_info_v1{
         id = bsondoc:at('_id', Doc),
-        new = true,
+        new = (State =:= new),
         from = k_storage_utils:doc_to_addr(bsondoc:at('src_addr', Doc)),
         to = k_storage_utils:doc_to_addr(bsondoc:at('dst_addr', Doc)),
         timestamp = bsondoc:at('received', Doc),
