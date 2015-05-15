@@ -34,7 +34,7 @@ process(<<"BindRequest">>, ReqBin) ->
             ReqId      = AuthReq#funnel_auth_request_dto.connection_id,
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}} ->
-                    {ok, Networks, Providers} = build_networks_and_providers(Customer),
+                    {ok, Networks, Providers} = get_networks_and_providers(Customer),
                     Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
@@ -67,7 +67,7 @@ process(<<"AuthReqV1">>, ReqBin) ->
             ReqId      = AuthReq#auth_req_v1.req_id,
             case authenticate(CustomerId, UserId, Password, Interface) of
                 {allow, Customer = #customer{}} ->
-                    {ok, Networks, Providers} = build_networks_and_providers(Customer),
+                    {ok, Networks, Providers} = get_networks_and_providers(Customer),
                     Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
@@ -193,6 +193,17 @@ check_credit_limit(Customer) ->
             {deny, credit_limit_exceeded};
         false ->
             allow
+    end.
+
+get_networks_and_providers(Customer) ->
+    CustomerUuid = Customer#customer.customer_uuid,
+    case k_handlers_auth_cache:get(CustomerUuid) of
+        {ok, {Ns, Ps}} ->
+            {ok, Ns, Ps};
+        {error, not_found} ->
+            {ok, Ns, Ps} = build_networks_and_providers(Customer),
+            k_handlers_auth_cache:set(CustomerUuid, {Ns, Ps}),
+            {ok, Ns, Ps}
     end.
 
 build_networks_and_providers(Customer) ->

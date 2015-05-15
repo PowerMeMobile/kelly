@@ -33,7 +33,12 @@ set_network(NetworkId, Network)->
             'sms_mult_points', Network#network.sms_mult_points
         }
     },
-    mongodb_storage:upsert(static_storage, networks, {'_id', NetworkId}, Modifier).
+    case mongodb_storage:upsert(static_storage, networks, {'_id', NetworkId}, Modifier) of
+        ok ->
+            ok = k_event_manager:notify_network_changed(NetworkId);
+        {error, Error} ->
+            {error, Error}
+    end.
 
 -spec get_network(network_id()) -> {ok, #network{}} | {error, no_entry} | {error, term()}.
 get_network(NetworkId) ->
@@ -55,7 +60,12 @@ get_networks() ->
 
 -spec del_network(network_id()) -> ok | {error, no_entry} | {error, term()}.
 del_network(NetworkId) ->
-    mongodb_storage:delete(static_storage, networks, {'_id', NetworkId}).
+    case mongodb_storage:delete(static_storage, networks, {'_id', NetworkId}) of
+        ok ->
+            ok = k_event_manager:notify_network_changed(NetworkId);
+        {error, Error} ->
+            {error, Error}
+    end.
 
 %% ===================================================================
 %% Internals

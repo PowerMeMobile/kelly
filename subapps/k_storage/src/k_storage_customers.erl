@@ -87,8 +87,7 @@ set_customer(CustomerUuid, Customer) ->
     },
     case mongodb_storage:upsert(static_storage, customers, {'_id', CustomerUuid}, Modifier) of
         ok ->
-            k_event_manager:notify_customer_changed(CustomerUuid, Customer#customer.customer_id),
-            ok;
+            ok = k_event_manager:notify_customer_changed(CustomerUuid);
         {error, Reason} ->
             {error, Reason}
     end.
@@ -123,11 +122,10 @@ get_customer_by_id(CustomerId) ->
 -spec del_customer(customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
 del_customer(CustomerUuid) ->
     case get_customer_by_uuid(CustomerUuid) of
-        {ok, #customer{customer_id = CustomerId}} ->
+        {ok, #customer{}} ->
             case mongodb_storage:delete(static_storage, customers, {'_id', CustomerUuid}) of
                 ok ->
-                    k_event_manager:notify_customer_changed(CustomerUuid, CustomerId),
-                    ok;
+                    ok = k_event_manager:notify_customer_changed(CustomerUuid);
                 {error, Reason} ->
                     {error, Reason}
             end;
@@ -212,6 +210,8 @@ change_credit(CustomerUuid, Amount) ->
                 undefined ->
                     {error, no_entry};
                 Value ->
+                    %% Do not notify customer changed here.
+                    %% It will clear the auth cache on every change.
                     {ok, bsondoc:at(credit, Value)}
             end;
         {error, Error} ->

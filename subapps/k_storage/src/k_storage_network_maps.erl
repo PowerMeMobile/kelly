@@ -24,7 +24,12 @@ set_network_map(NetworkMapId, NetworkMap)->
             'network_ids' , NetworkMap#network_map.network_ids
         }
     },
-    mongodb_storage:upsert(static_storage, network_maps, {'_id', NetworkMapId}, Modifier).
+    case mongodb_storage:upsert(static_storage, network_maps, {'_id', NetworkMapId}, Modifier) of
+        ok ->
+            ok = k_event_manager:notify_network_map_changed(NetworkMapId);
+        {error, Error} ->
+            {error, Error}
+    end.
 
 -spec get_network_map(network_map_id()) ->
     {ok, #network_map{}} | {error, no_entry} | {error, term()}.
@@ -49,7 +54,12 @@ get_network_maps() ->
 -spec del_network_map(network_map_id()) ->
     ok | {error, no_entry} | {error, term()}.
 del_network_map(NetworkMapId) ->
-    mongodb_storage:delete(static_storage, network_maps, {'_id', NetworkMapId}).
+    case mongodb_storage:delete(static_storage, network_maps, {'_id', NetworkMapId}) of
+        ok ->
+            ok = k_event_manager:notify_network_map_changed(NetworkMapId);
+        {error, Error} ->
+            {error, Error}
+    end.
 
 %% ===================================================================
 %% Internals
