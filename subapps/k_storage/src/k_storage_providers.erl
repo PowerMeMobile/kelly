@@ -27,7 +27,12 @@ set_provider(ProviderId, Provider)->
             'sms_add_points'    , Provider#provider.sms_add_points
         }
     },
-    mongodb_storage:upsert(static_storage, providers, {'_id', ProviderId}, Modifier).
+    case mongodb_storage:upsert(static_storage, providers, {'_id', ProviderId}, Modifier) of
+        ok ->
+            ok = k_event_manager:notify_provider_changed(ProviderId);
+        {error, Error} ->
+            {error, Error}
+    end.
 
 -spec get_provider(provider_id()) -> {ok, #provider{}} | {error, no_entry} | {error, term()}.
 get_provider(ProviderId) ->
@@ -49,7 +54,12 @@ get_providers() ->
 
 -spec del_provider(provider_id()) -> ok | {error, no_entry} | {error, term()}.
 del_provider(ProviderId) ->
-    mongodb_storage:delete(static_storage, providers, {'_id', ProviderId}).
+    case mongodb_storage:delete(static_storage, providers, {'_id', ProviderId}) of
+        ok ->
+            ok = k_event_manager:notify_provider_changed(ProviderId);
+        {error, Error} ->
+            {error, Error}
+    end.
 
 %% ===================================================================
 %% Internals

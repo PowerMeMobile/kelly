@@ -4,7 +4,10 @@
 -export([
     start_link/0,
     notify_blacklist_changed/0,
-    notify_customer_changed/2
+    notify_customer_changed/1,
+    notify_network_changed/1,
+    notify_network_map_changed/1,
+    notify_provider_changed/1
 ]).
 
 %% gen_server callbacks
@@ -20,6 +23,9 @@
 -include("application.hrl").
 -include_lib("alley_common/include/gen_server_spec.hrl").
 -include_lib("k_storage/include/customer.hrl").
+-include_lib("k_storage/include/network.hrl").
+-include_lib("k_storage/include/network_map.hrl").
+-include_lib("k_storage/include/provider.hrl").
 
 -record(state, {
     connection,
@@ -49,20 +55,21 @@ notify_blacklist_changed() ->
             {error, Reason}
     end.
 
--spec notify_customer_changed(customer_uuid(), customer_id()) -> ok | {error, any()}.
-notify_customer_changed(CustomerUuid, CustomerId) ->
-    case gen_server:call(?MODULE, get_channel) of
-        {ok, Channel} ->
-            {ok, Exchange} = application:get_env(?APP, kelly_events_exchange),
-            Payload = <<"CustomerChanged", ":", CustomerUuid/binary, ":", CustomerId/binary>>,
-            Props = [
-                {content_type, <<"text/plain">>},
-                {delivery_mode, 2}
-            ],
-            rmql:basic_publish(Channel, Exchange, Exchange, Payload, Props);
-        {error, Reason} ->
-            {error, Reason}
-    end.
+-spec notify_customer_changed(customer_uuid()) -> ok | {error, any()}.
+notify_customer_changed(_CustomerUuid) ->
+    ok = k_handlers_auth_cache:clear().
+
+-spec notify_network_changed(network_id()) -> ok | {error, any()}.
+notify_network_changed(_NetworkId) ->
+    ok = k_handlers_auth_cache:clear().
+
+-spec notify_network_map_changed(network_map_id()) -> ok | {error, any()}.
+notify_network_map_changed(_NetworkMapId) ->
+    ok = k_handlers_auth_cache:clear().
+
+-spec notify_provider_changed(provider_id()) -> ok | {error, any()}.
+notify_provider_changed(_ProviderId) ->
+    ok = k_handlers_auth_cache:clear().
 
 %% ===================================================================
 %% gen_server callbacks
