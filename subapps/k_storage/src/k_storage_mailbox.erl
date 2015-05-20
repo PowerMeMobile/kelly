@@ -69,7 +69,7 @@ save(#k_mb_incoming{} = I) ->
             'state'           , bsondoc:atom_to_binary(new)
         }
     },
-    ok = mongodb_storage:upsert(mailbox_storage, incoming_sms, Selector, Modifier);
+    ok = mongodb_storage:upsert(mailbox_storage, incomings, Selector, Modifier);
 save(#k_mb_oneapi_receipt{} = R) ->
     Selector = {
         '_id', R#k_mb_oneapi_receipt.id
@@ -203,7 +203,7 @@ delete_item(Item = #k_mb_oneapi_receipt{}) ->
     ok = mongodb_storage:delete(mailbox_storage, oneapi_receipt_subs, Selector3);
 delete_item(Item = #k_mb_incoming{}) ->
     Selector = {'_id', Item#k_mb_incoming.id},
-    ok = mongodb_storage:delete(mailbox_storage, incoming_sms, Selector).
+    ok = mongodb_storage:delete(mailbox_storage, incomings, Selector).
 
 -spec get_funnel_receipt_ids(customer_uuid(), user_id()) -> {ok, [{k_mb_funnel_receipt, uuid()}]}.
 get_funnel_receipt_ids(CustomerUuid, UserId) ->
@@ -232,7 +232,7 @@ get_incoming_ids(CustomerUuid, UserId) ->
         'customer_uuid', CustomerUuid,
         'user_id'      , UserId
     },
-    {ok, Docs} = mongodb_storage:find(mailbox_storage, incoming_sms, Selector),
+    {ok, Docs} = mongodb_storage:find(mailbox_storage, incomings, Selector),
     Items = [{k_mb_incoming, Id} || {Id, _Doc} <- Docs],
     {ok, Items}.
 
@@ -242,7 +242,7 @@ get_items() ->
     FunnelReceiptIds = [Id || {Id, _} <- FunnelReceiptDocs],
     {ok, OneapiReceiptDocs} = mongodb_storage:find(mailbox_storage, oneapi_receipts, {}, {'_id' , 1}),
     ONEAPIReceiptIds = [Id || {Id, _} <- OneapiReceiptDocs],
-    {ok, IncomingDocs} = mongodb_storage:find(mailbox_storage, incoming_sms, {}, {'_id' , 1}),
+    {ok, IncomingDocs} = mongodb_storage:find(mailbox_storage, incomings, {}, {'_id' , 1}),
     IncomingIds = [Id || {Id, _} <- IncomingDocs],
     {ok, [{k_mb_funnel_receipt, FunnelReceiptIds},
           {k_mb_oneapi_receipt, ONEAPIReceiptIds},
@@ -290,7 +290,7 @@ get_item(k_mb_funnel_receipt, ID) ->
             no_record
     end;
 get_item(k_mb_incoming, ID) ->
-    case mongodb_storage:find(mailbox_storage, incoming_sms, {'_id' , ID}) of
+    case mongodb_storage:find(mailbox_storage, incomings, {'_id' , ID}) of
         {ok, [{_, Doc}]} ->
             {ok, #k_mb_incoming{
                 id = ID,
@@ -422,7 +422,7 @@ get_incoming(CustomerUuid, UserId, DstAddr, Limit) ->
         'user_id'    , UserId,
         'dst_addr'   , k_storage_utils:addr_to_doc(DstAddr)
     },
-    {ok, Docs} = mongodb_storage:find(mailbox_storage, incoming_sms, Selector),
+    {ok, Docs} = mongodb_storage:find(mailbox_storage, incomings, Selector),
     AllItems =
         [#k_mb_incoming{
             id = bsondoc:at('_id', Doc),

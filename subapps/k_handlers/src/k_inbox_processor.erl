@@ -42,7 +42,7 @@ process(CustomerUuid, UserId, get_info, undefined) ->
         'customer_uuid', CustomerUuid,
         'user_id'      , UserId
     },
-    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:find(mailbox_storage, incomings, Selector) of
         {ok, Docs} ->
             Msgs = [doc2msg(D, false) || {_Id, D} <- Docs],
             New = length([1 || #inbox_msg_info_v1{new = true} <- Msgs]),
@@ -60,7 +60,7 @@ process(CustomerUuid, UserId, list_all, undefined) ->
         'customer_uuid', CustomerUuid,
         'user_id'      , UserId
     },
-    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:find(mailbox_storage, incomings, Selector) of
         {ok, Docs} ->
             {ok, {messages, [doc2msg(D, false) || {_Id, D} <- Docs]}};
         Error ->
@@ -72,7 +72,7 @@ process(CustomerUuid, UserId, list_new, undefined) ->
         'user_id'      , UserId,
         'state'        , bsondoc:atom_to_binary(new)
     },
-    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:find(mailbox_storage, incomings, Selector) of
         {ok, Docs} ->
             {ok, {messages, [doc2msg(D, false) || {_Id, D} <- Docs]}};
         Error ->
@@ -88,9 +88,9 @@ process(CustomerUuid, UserId, fetch_all, undefined) ->
             'state', bsondoc:atom_to_binary(read)
         }
     },
-    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:find(mailbox_storage, incomings, Selector) of
         {ok, Docs} ->
-            ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
+            ok = mongodb_storage:update(mailbox_storage, incomings, Selector, Modifier),
             {ok, {messages, [doc2msg(D, true) || {_Id, D} <- Docs]}};
         Error ->
             Error
@@ -106,9 +106,9 @@ process(CustomerUuid, UserId, fetch_new, undefined) ->
             'state', bsondoc:atom_to_binary(read)
         }
     },
-    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:find(mailbox_storage, incomings, Selector) of
         {ok, Docs} ->
-            ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
+            ok = mongodb_storage:update(mailbox_storage, incomings, Selector, Modifier),
             {ok, {messages, [doc2msg(D, true) || {_Id, D} <- Docs]}};
         Error ->
             Error
@@ -122,9 +122,9 @@ process(_CustomerUuid, _UserId, fetch_id, MsgIds) ->
             'state', bsondoc:atom_to_binary(read)
         }
     },
-    case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:find(mailbox_storage, incomings, Selector) of
         {ok, Docs} ->
-            ok = mongodb_storage:update(mailbox_storage, incoming_sms, Selector, Modifier),
+            ok = mongodb_storage:update(mailbox_storage, incomings, Selector, Modifier),
             {ok, {messages, [doc2msg(D, true) || {_Id, D} <- Docs]}};
         Error ->
             Error
@@ -135,7 +135,7 @@ process(CustomerUuid, UserId, delete_all, undefined) ->
         'user_id'      , UserId
     },
     Command = {
-        'count', atom_to_binary(incoming_sms, latin1),
+        'count', atom_to_binary(incomings, latin1),
         'query', Selector
     },
     {ok, CountToDelete} =
@@ -147,7 +147,7 @@ process(CustomerUuid, UserId, delete_all, undefined) ->
             {ok, {n, Count, ok, 1.0}} ->
                 {ok, round(Count)}
         end,
-    case mongodb_storage:delete(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:delete(mailbox_storage, incomings, Selector) of
         ok ->
             {ok, {deleted, CountToDelete}};
         Error ->
@@ -160,7 +160,7 @@ process(CustomerUuid, UserId, delete_read, undefined) ->
         'state'        , bsondoc:atom_to_binary(read)
     },
     Command = {
-        'count', atom_to_binary(incoming_sms, latin1),
+        'count', atom_to_binary(incomings, latin1),
         'query', Selector
     },
     {ok, CountToDelete} =
@@ -172,7 +172,7 @@ process(CustomerUuid, UserId, delete_read, undefined) ->
             {ok, {n, Count, ok, 1.0}} ->
                 {ok, round(Count)}
         end,
-    case mongodb_storage:delete(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:delete(mailbox_storage, incomings, Selector) of
         ok ->
             {ok, {deleted, CountToDelete}};
         Error ->
@@ -182,7 +182,7 @@ process(_CustomerUuid, _UserId, delete_id, MsgIds) ->
     Selector = {
         '_id', {'$in', MsgIds}
     },
-    case mongodb_storage:delete(mailbox_storage, incoming_sms, Selector) of
+    case mongodb_storage:delete(mailbox_storage, incomings, Selector) of
         ok ->
             {ok, {deleted, length(MsgIds)}};
         Error ->
