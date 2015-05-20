@@ -50,12 +50,12 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
     ?log_debug("Got incoming sms request: ~p ", [IncSmsRequest]),
 
     ItemId = uuid:unparse(uuid:generate_time()),
+    ?log_debug("Incoming message registered with id: ~p", [ItemId]),
+
     Timestamp = ac_datetime:utc_string_to_timestamp(UTCString),
 
-    %% try to determine customer uuid and user id,
-    %% this will return
+    %% try to determine customer uuid and user id, this can return
     %% {customer_uuid, user_id} | {customer_uuid, undefined} | {undefined, undefined}.
-    %% i think it makes sense to store even partly filled message.
     {CustomerUuid, UserId} =
         case k_storage_msisdns:get_one(DstAddr) of
             {ok, #msisdn_info{
@@ -64,24 +64,23 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
             }} ->
                 ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
                     [DstAddr, CUUID, UID]),
-                Item = #k_mb_incoming{
-                    id = ItemId,
-                    customer_uuid = CUUID,
-                    user_id = UID,
-                    src_addr = SrcAddr,
-                    dst_addr = DstAddr,
-                    received  = Timestamp,
-                    body = Body,
-                    encoding = DataCoding
-                },
-                k_mailbox:register_incoming_item(Item),
-                ?log_debug("Incoming message registered with id: ~p", [ItemId]),
                 {CUUID, UID};
             Error ->
                 ?log_debug("Address resolution failed with: ~p", [Error]),
                 ?log_debug("Couldn't resolve incoming message coming to: ~p", [DstAddr]),
                 {undefined, undefined}
         end,
+    Item = #k_mb_incoming{
+        id = ItemId,
+        customer_uuid = CustomerUuid,
+        user_id = UserId,
+        src_addr = SrcAddr,
+        dst_addr = DstAddr,
+        received  = Timestamp,
+        body = Body,
+        encoding = DataCoding
+    },
+    ok = k_mailbox:register_incoming_item(Item),
     MsgInfo = #msg_info{
         msg_id = ItemId,
         gateway_id = GatewayId,
