@@ -132,7 +132,7 @@ process(Item) ->
             ?log_debug("Found suitable subscription: ~p", [Subscription]),
             send_item(Item, Subscription);
         undefined ->
-            ?log_debug("Suitable subscription NOT FOUND. ", []),
+            ?log_debug("Suitable subscription NOT FOUND", []),
             ok
     end.
 
