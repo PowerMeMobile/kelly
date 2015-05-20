@@ -132,29 +132,9 @@ process(Item) ->
             ?log_debug("Found suitable subscription: ~p", [Subscription]),
             send_item(Item, Subscription);
         undefined ->
-            ?log_debug("Suitable subscription NOT FOUND. "
-                "Waiting for suitable subscription", []),
-            mark_as_pending(Item)
+            ?log_debug("Suitable subscription NOT FOUND. ", []),
+            ok
     end.
-
-mark_as_pending(Item = #k_mb_incoming_sms{}) ->
-    ItemType = k_mb_incoming_sms,
-    #k_mb_incoming_sms{
-        id = ItemID,
-        customer_id = CustomerID,
-        user_id = UserID
-    } = Item,
-    k_storage_mailbox:set_pending(ItemType, ItemID, CustomerID, UserID);
-mark_as_pending(Item = #k_mb_oneapi_receipt{}) ->
-    ItemType = k_mb_oneapi_receipt,
-    #k_mb_oneapi_receipt{
-        id = ItemID,
-        customer_id = CustomerID,
-        user_id = UserID
-    } = Item,
-    k_storage_mailbox:set_pending(ItemType, ItemID, CustomerID, UserID);
-mark_as_pending(_Item = #k_mb_funnel_receipt{}) ->
-    ok.
 
 send_item(Item, Subscription) ->
     {ok, ItemID, QName, Binary} = build_dto(Item, Subscription),

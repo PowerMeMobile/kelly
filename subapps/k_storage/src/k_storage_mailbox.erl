@@ -18,11 +18,13 @@
 
     get_items/0,
     get_item/2,
+
     get_funnel_receipts/2,
+    get_oneapi_receipts/2,
+
     delete_item/1,
 
-    set_pending/4,
-    get_pending/2,
+    get_incoming_ids/2,
 
     get_incoming_sms/4
 ]).
@@ -190,7 +192,6 @@ delete_item(Item = #k_mb_funnel_receipt{}) ->
 delete_item(Item = #k_mb_oneapi_receipt{}) ->
     Selector = {'_id', Item#k_mb_oneapi_receipt.id},
     ok = mongodb_storage:delete(mailbox_storage, oneapi_receipts, Selector),
-    ok = mongodb_storage:delete(mailbox_storage, pending_items, Selector),
     Selector2 = {
         'req_id', Item#k_mb_oneapi_receipt.req_id,
         'in_msg_ids', Item#k_mb_oneapi_receipt.in_msg_id
@@ -203,11 +204,20 @@ delete_item(Item = #k_mb_oneapi_receipt{}) ->
     ok = mongodb_storage:delete(mailbox_storage, oneapi_receipt_subs, Selector3);
 delete_item(Item = #k_mb_incoming_sms{}) ->
     Selector = {'_id', Item#k_mb_incoming_sms.id},
-    ok = mongodb_storage:delete(mailbox_storage, incoming_sms, Selector),
-    ok = mongodb_storage:delete(mailbox_storage, pending_items, Selector).
+    ok = mongodb_storage:delete(mailbox_storage, incoming_sms, Selector).
 
 -spec get_funnel_receipts(binary(), binary()) -> {ok, [{k_mb_funnel_receipt, ID::binary()}]}.
 get_funnel_receipts(CustomerID, UserID) ->
+    Selector = {
+        customer_id, CustomerID,
+        user_id, UserID
+    },
+    {ok, FunnelReceiptDocs} = mongodb_storage:find(mailbox_storage, funnel_receipts, Selector, {'_id' , 1}),
+    FunnelReceipts = [{k_mb_funnel_receipt, RID} || {RID, _} <- FunnelReceiptDocs],
+    {ok, FunnelReceipts}.
+
+-spec get_oneapi_receipts(binary(), binary()) -> {ok, [{k_mb_oneapi_receipt, ID::binary()}]}.
+get_oneapi_receipts(CustomerID, UserID) ->
     Selector = {
         customer_id, CustomerID,
         user_id, UserID
@@ -386,27 +396,15 @@ get_subscription_ids() ->
     IDs = [ID || {ID, _} <- Docs],
     {ok, IDs}.
 
--spec set_pending(atom(), binary(), binary(), binary()) -> ok.
-set_pending(ItemType, ItemID, CustomerID, UserID) ->
-    Selector = {'_id' , ItemID},
-    Modifier = {
-        '$set', {
-            'type'       , bsondoc:atom_to_binary(ItemType),
-            'customer_id', CustomerID,
-            'user_id'    , UserID
-        }
-    },
-    ok = mongodb_storage:upsert(mailbox_storage, pending_items, Selector, Modifier).
-
--spec get_pending(CustomerID::binary(), UserID::binary()) ->
-    {ok, []} | {ok, [{ItemType::atom(), ItemID::binary()}]}.
-get_pending(CustomerID, UserID) ->
+-spec get_incoming_ids(customer_uuid(), user_id()) ->
+    {ok, [{k_mb_incoming_sms, uuid()}]}.
+get_incoming_ids(CustomerUuid, UserId) ->
     Selector = {
-        'customer_id', CustomerID,
-        'user_id'    , UserID
+        'customer_id', CustomerUuid,
+        'user_id'    , UserId
     },
-    {ok, Docs} = mongodb_storage:find(mailbox_storage, pending_items, Selector),
-    Items = [{bsondoc:binary_to_atom(bsondoc:at(type, Doc)), ID} || {ID, Doc} <- Docs],
+    {ok, Docs} = mongodb_storage:find(mailbox_storage, incoming_sms, Selector),
+    Items = [{k_mb_incoming_sms, Id} || {Id, _Doc} <- Docs],
     {ok, Items}.
 
 -spec get_incoming_sms(binary(), binary(), addr(), integer() | undefined) ->

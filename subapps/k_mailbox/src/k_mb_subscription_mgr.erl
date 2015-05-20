@@ -134,13 +134,18 @@ code_change(_OldVsn, State, _Extra) ->
 
 process_pending_items(Sub = #k_mb_funnel_sub{}) ->
     {CustomerID, UserID} = get_customer_user(Sub),
-    {ok, Pendings} = k_storage_mailbox:get_pending(CustomerID, UserID),
     {ok, Receipts} = k_storage_mailbox:get_funnel_receipts(CustomerID, UserID),
-    [k_mb_wpool:process_incoming_item(Item) || Item <- Pendings ++ Receipts];
-process_pending_items(Subscription) ->
-    {CustomerID, UserID} = get_customer_user(Subscription),
-    {ok, Pendings} = k_storage_mailbox:get_pending(CustomerID, UserID),
-    [k_mb_wpool:process_incoming_item(Item) || Item <- Pendings].
+    [k_mb_wpool:process_incoming_item(Item) || Item <- Receipts],
+    {ok, Incomings} = k_storage_mailbox:get_incoming_ids(CustomerID, UserID),
+    [k_mb_wpool:process_incoming_item(Item) || Item <- Incomings];
+process_pending_items(Sub = #k_mb_oneapi_receipt_sub{}) ->
+    {CustomerID, UserID} = get_customer_user(Sub),
+    {ok, Receipts} = k_storage_mailbox:get_oneapi_receipts(CustomerID, UserID),
+    [k_mb_wpool:process_incoming_item(Item) || Item <- Receipts];
+process_pending_items(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
+    {CustomerID, UserID} = get_customer_user(Sub),
+    {ok, Incomings} = k_storage_mailbox:get_incoming_ids(CustomerID, UserID),
+    [k_mb_wpool:process_incoming_item(Item) || Item <- Incomings].
 
 process_get_suitable_sub_req(Item) ->
     Key = get_customer_user(Item), %% Key::{customer_id(), user_id()}
