@@ -9,7 +9,7 @@
 
 -type item_id() :: binary().
 
--type incoming_sms_encoding() ::
+-type incoming_encoding() ::
     default |
     gsm033 |
     ascii |
@@ -17,7 +17,7 @@
     ucs2 |
     integer().
 
--record(k_mb_incoming_sms, {
+-record(k_mb_incoming, {
     id                   :: uuid(),
     customer_uuid        :: customer_uuid(),
     user_id              :: user_id(),
@@ -25,7 +25,7 @@
     dst_addr             :: addr(),
     received             :: erlang:timestamp(), %% oneapi retrieve sms request
     body                 :: binary(),
-    encoding             :: incoming_sms_encoding(),
+    encoding             :: incoming_encoding(),
 
     delivery_attempt = 1 :: integer(),
     created_at           :: erlang:timestamp()
@@ -66,7 +66,7 @@
 -type k_mb_item() ::
     #k_mb_oneapi_receipt{} |
     #k_mb_funnel_receipt{} |
-    #k_mb_incoming_sms{}.
+    #k_mb_incoming{}.
 
 %% ===================================================================
 %% Subscriptions
@@ -85,7 +85,7 @@
     created_at      :: erlang:timestamp()
 }).
 
--record(k_mb_oneapi_incoming_sms_sub, {
+-record(k_mb_oneapi_incoming_sub, {
     id              :: uuid(),
     customer_uuid   :: customer_uuid(),
     user_id         :: user_id(),
@@ -109,7 +109,7 @@
 
 -type k_mb_subscription() ::
     #k_mb_oneapi_receipt_sub{} |
-    #k_mb_oneapi_incoming_sms_sub{} |
+    #k_mb_oneapi_incoming_sub{} |
     #k_mb_funnel_sub{}.
 
 -endif.

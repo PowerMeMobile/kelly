@@ -62,7 +62,7 @@ process(Request = #k1api_subscribe_incoming_sms_request_dto{}) ->
     } = Request,
     %% TODO: Ensure correct DstAddr for Customer:User
     {ok, QName} = application:get_env(k_handlers, oneapi_incoming_sms_queue),
-    Sub = #k_mb_oneapi_incoming_sms_sub{
+    Sub = #k_mb_oneapi_incoming_sub{
         id = Id,
         customer_uuid = CustomerUuid,
         user_id = UserId,

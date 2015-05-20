@@ -18,7 +18,7 @@ process(Req = #retrieve_sms_req_v1{}) ->
     DstAddr    = Req#retrieve_sms_req_v1.dst_addr,
     BatchSize  = Req#retrieve_sms_req_v1.batch_size,
     %% TODO: Ensure correct DestAddr for Customer:User
-    case k_mailbox:get_incoming_sms(CustomerUuid, UserId, DstAddr, BatchSize) of
+    case k_mailbox:get_incoming(CustomerUuid, UserId, DstAddr, BatchSize) of
         {ok, Messages, Pending} ->
             MessagesDTO = [incoming_sms_to_v1(M) || M <- Messages],
             Resp = #retrieve_sms_resp_v1{
@@ -37,7 +37,7 @@ process(Req = #retrieve_sms_req_v1{}) ->
 %% ===================================================================
 
 incoming_sms_to_v1(Msg) ->
-    #k_mb_incoming_sms{
+    #k_mb_incoming{
         id = ItemId,
         src_addr = SrcAddr,
         received = RecvTime,

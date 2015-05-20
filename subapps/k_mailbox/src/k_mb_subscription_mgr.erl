@@ -138,7 +138,7 @@ process_pending_items(Sub = #k_mb_oneapi_receipt_sub{}) ->
     {CustomerUuid, UserId} = get_customer_user(Sub),
     {ok, Receipts} = k_storage_mailbox:get_oneapi_receipt_ids(CustomerUuid, UserId),
     [k_mb_wpool:process_incoming_item(Item) || Item <- Receipts];
-process_pending_items(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
+process_pending_items(Sub = #k_mb_oneapi_incoming_sub{}) ->
     {CustomerUuid, UserId} = get_customer_user(Sub),
     {ok, Incomings} = k_storage_mailbox:get_incoming_ids(CustomerUuid, UserId),
     [k_mb_wpool:process_incoming_item(Item) || Item <- Incomings].
@@ -153,8 +153,8 @@ get_suitable_subscription(#k_mb_funnel_receipt{}, Subs) ->
         {value, Sub} -> {ok, Sub};
         false -> undefined
     end;
-get_suitable_subscription(Item = #k_mb_incoming_sms{}, Subs) ->
-    SuitableSubs = [Sub || Sub <- Subs, is_suitable_for_incoming_sms(Item, Sub)],
+get_suitable_subscription(Item = #k_mb_incoming{}, Subs) ->
+    SuitableSubs = [Sub || Sub <- Subs, is_suitable_for_incoming(Item, Sub)],
     resolve_subscription_priority(SuitableSubs);
 get_suitable_subscription(#k_mb_oneapi_receipt{src_addr = SrcAddr}, Subs) ->
     ?log_debug("Subscriptions: ~p", [Subs]),
@@ -168,21 +168,21 @@ get_suitable_subscription(#k_mb_oneapi_receipt{src_addr = SrcAddr}, Subs) ->
 get_suitable_subscription(_, _) ->
     undefined.
 
-is_suitable_for_incoming_sms(_Item, #k_mb_funnel_sub{}) ->
+is_suitable_for_incoming(_Item, #k_mb_funnel_sub{}) ->
     true;
-is_suitable_for_incoming_sms(Item, Sub = #k_mb_oneapi_incoming_sms_sub{}) when
-    Sub#k_mb_oneapi_incoming_sms_sub.dst_addr =:= Item#k_mb_incoming_sms.dst_addr
-    andalso Sub#k_mb_oneapi_incoming_sms_sub.criteria =:= undefined ->
+is_suitable_for_incoming(Item, Sub = #k_mb_oneapi_incoming_sub{}) when
+    Sub#k_mb_oneapi_incoming_sub.dst_addr =:= Item#k_mb_incoming.dst_addr
+    andalso Sub#k_mb_oneapi_incoming_sub.criteria =:= undefined ->
     true;
-is_suitable_for_incoming_sms(Item, Sub = #k_mb_oneapi_incoming_sms_sub{}) when
-    Sub#k_mb_oneapi_incoming_sms_sub.dst_addr =:= Item#k_mb_incoming_sms.dst_addr ->
-    Criteria = Sub#k_mb_oneapi_incoming_sms_sub.criteria,
-    Body = Item#k_mb_incoming_sms.body,
+is_suitable_for_incoming(Item, Sub = #k_mb_oneapi_incoming_sub{}) when
+    Sub#k_mb_oneapi_incoming_sub.dst_addr =:= Item#k_mb_incoming.dst_addr ->
+    Criteria = Sub#k_mb_oneapi_incoming_sub.criteria,
+    Body = Item#k_mb_incoming.body,
     case bstr:prefix(Body, Criteria) of
         true -> true;
         false -> false
     end;
-is_suitable_for_incoming_sms(_, _) ->
+is_suitable_for_incoming(_, _) ->
     false.
 
 resolve_subscription_priority([]) ->
@@ -199,8 +199,8 @@ resolve_subscription_priority([Subscription | RestSubs]) ->
     Subscription = lists:foldl(MaxFun, Subscription, RestSubs),
     {ok, Subscription}.
 
-priority(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
-    Sub#k_mb_oneapi_incoming_sms_sub.priority;
+priority(Sub = #k_mb_oneapi_incoming_sub{}) ->
+    Sub#k_mb_oneapi_incoming_sub.priority;
 priority(Sub = #k_mb_funnel_sub{}) ->
     Sub#k_mb_funnel_sub.priority.
 
@@ -239,9 +239,9 @@ get_customer_user(Sub = #k_mb_oneapi_receipt_sub{}) ->
     CustomerUuid = Sub#k_mb_oneapi_receipt_sub.customer_uuid,
     UserId = Sub#k_mb_oneapi_receipt_sub.user_id,
     {CustomerUuid, UserId};
-get_customer_user(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
-    CustomerUuid = Sub#k_mb_oneapi_incoming_sms_sub.customer_uuid,
-    UserId = Sub#k_mb_oneapi_incoming_sms_sub.user_id,
+get_customer_user(Sub = #k_mb_oneapi_incoming_sub{}) ->
+    CustomerUuid = Sub#k_mb_oneapi_incoming_sub.customer_uuid,
+    UserId = Sub#k_mb_oneapi_incoming_sub.user_id,
     {CustomerUuid, UserId};
 get_customer_user(Sub = #k_mb_funnel_sub{}) ->
     CustomerUuid = Sub#k_mb_funnel_sub.customer_uuid,
@@ -255,7 +255,7 @@ get_customer_user(Item = #k_mb_funnel_receipt{}) ->
     CustomerUuid = Item#k_mb_funnel_receipt.customer_uuid,
     UserId = Item#k_mb_funnel_receipt.user_id,
     {CustomerUuid, UserId};
-get_customer_user(Item = #k_mb_incoming_sms{}) ->
-    CustomerUuid = Item#k_mb_incoming_sms.customer_uuid,
-    UserId = Item#k_mb_incoming_sms.user_id,
+get_customer_user(Item = #k_mb_incoming{}) ->
+    CustomerUuid = Item#k_mb_incoming.customer_uuid,
+    UserId = Item#k_mb_incoming.user_id,
     {CustomerUuid, UserId}.

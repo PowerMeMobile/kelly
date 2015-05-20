@@ -12,7 +12,7 @@
     register_sms_req_receipts_subscription/1,
     unregister_subscription/3,
     register_incoming_item/1,
-    get_incoming_sms/4,
+    get_incoming/4,
     process_funnel_down_event/0,
     delete_item/1
 ]).
@@ -48,10 +48,10 @@ register_incoming_item(Item) ->
     k_storage_mailbox:save(Item),
     k_mb_wpool:process_incoming_item(Item).
 
--spec get_incoming_sms(customer_uuid(), user_id(), addr(), undefined | integer()) ->
-    {ok, [#k_mb_incoming_sms{}], Total::integer()}.
-get_incoming_sms(CustomerUuid, UserId, DestAddr, Limit) ->
-    k_storage_mailbox:get_incoming_sms(CustomerUuid, UserId, DestAddr, Limit).
+-spec get_incoming(customer_uuid(), user_id(), addr(), undefined | integer()) ->
+    {ok, [#k_mb_incoming{}], Total::integer()}.
+get_incoming(CustomerUuid, UserId, DestAddr, Limit) ->
+    k_storage_mailbox:get_incoming(CustomerUuid, UserId, DestAddr, Limit).
 
 -spec process_funnel_down_event() -> ok.
 process_funnel_down_event() ->

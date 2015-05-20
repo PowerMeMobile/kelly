@@ -64,7 +64,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
             }} ->
                 ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
                     [DstAddr, CUUID, UID]),
-                Item = #k_mb_incoming_sms{
+                Item = #k_mb_incoming{
                     id = ItemId,
                     customer_uuid = CUUID,
                     user_id = UID,

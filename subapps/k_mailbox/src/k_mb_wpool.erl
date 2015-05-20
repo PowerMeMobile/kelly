@@ -85,7 +85,7 @@ handle_fork_call( _Arg, _CallMess, _ReplyTo, _WP ) ->
     {noreply, bad_request}.
 
 handle_fork_cast(_Arg, {process_item, {ItemType, ItemID}}, _WP) when
-    ItemType == k_mb_incoming_sms orelse
+    ItemType == k_mb_incoming orelse
     ItemType == k_mb_oneapi_receipt orelse
     ItemType == k_mb_funnel_receipt ->
 
@@ -141,7 +141,7 @@ send_item(Item, Subscription) ->
     ?log_debug("Send item: ~p to queue: ~p", [ItemID, QName]),
     ContentType =
         case Item of
-            #k_mb_incoming_sms{}   -> <<"OutgoingBatch">>;
+            #k_mb_incoming{}       -> <<"OutgoingBatch">>;
             #k_mb_oneapi_receipt{} -> <<"ReceiptBatch">>;
             #k_mb_funnel_receipt{} -> <<"ReceiptBatch">>
         end,
@@ -195,8 +195,8 @@ build_dto(Item = #k_mb_funnel_receipt{}, Sub = #k_mb_funnel_sub{}) ->
     },
     {ok, Bin} = adto:encode(DTO),
     {ok, ItemID, QName, Bin};
-build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_funnel_sub{}) ->
-    #k_mb_incoming_sms{
+build_dto(Item = #k_mb_incoming{}, Sub = #k_mb_funnel_sub{}) ->
+    #k_mb_incoming{
         id = ItemID,
         src_addr = SrcAddr,
         dst_addr = DstAddr,
@@ -218,15 +218,15 @@ build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_funnel_sub{}) ->
     },
     {ok, Bin} = adto:encode(Batch),
     {ok, ItemID, QName, Bin};
-build_dto(Item = #k_mb_incoming_sms{}, Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
-    #k_mb_incoming_sms{
+build_dto(Item = #k_mb_incoming{}, Sub = #k_mb_oneapi_incoming_sub{}) ->
+    #k_mb_incoming{
         id = ItemID,
         src_addr = SrcAddr,
         dst_addr = DstAddr,
         received = Received,
         body = Body
     } = Item,
-    #k_mb_oneapi_incoming_sms_sub{
+    #k_mb_oneapi_incoming_sub{
         queue_name = QName,
         notify_url = NotifyURL,
         callback_data = CallbackData
