@@ -64,8 +64,9 @@ ensure_static_storage_indexes(ServerName) ->
         {key, {customer_id, 1}}).
 
 -spec ensure_mailbox_storage_indexes(server_name()) -> ok.
-ensure_mailbox_storage_indexes(_ServerName) ->
-    ok.
+ensure_mailbox_storage_indexes(ServerName) ->
+    ok = mongodb_storage:ensure_index(ServerName, incomings,
+        {key, {customer_uuid, 1, user_id, 1}}).
 
 -spec ensure_defers_storage_indexes(server_name()) -> ok.
 ensure_defers_storage_indexes(ServerName) ->
