@@ -39,8 +39,8 @@ process(ReqDTO) ->
 
 process(CustomerUuid, UserId, get_info, undefined) ->
     Selector = {
-        'customer_id', CustomerUuid,
-        'user_id'    , UserId
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId
     },
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
@@ -57,8 +57,8 @@ process(CustomerUuid, UserId, get_info, undefined) ->
     end;
 process(CustomerUuid, UserId, list_all, undefined) ->
     Selector = {
-        'customer_id', CustomerUuid,
-        'user_id'    , UserId
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId
     },
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
@@ -68,9 +68,9 @@ process(CustomerUuid, UserId, list_all, undefined) ->
     end;
 process(CustomerUuid, UserId, list_new, undefined) ->
     Selector = {
-        'customer_id', CustomerUuid,
-        'user_id'    , UserId,
-        'state'      , bsondoc:atom_to_binary(new)
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId,
+        'state'        , bsondoc:atom_to_binary(new)
     },
     case mongodb_storage:find(mailbox_storage, incoming_sms, Selector) of
         {ok, Docs} ->
@@ -80,8 +80,8 @@ process(CustomerUuid, UserId, list_new, undefined) ->
     end;
 process(CustomerUuid, UserId, fetch_all, undefined) ->
     Selector = {
-        'customer_id', CustomerUuid,
-        'user_id'    , UserId
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId
     },
     Modifier = {
         '$set', {
@@ -97,9 +97,9 @@ process(CustomerUuid, UserId, fetch_all, undefined) ->
     end;
 process(CustomerUuid, UserId, fetch_new, undefined) ->
     Selector = {
-        'customer_id', CustomerUuid,
-        'user_id'    , UserId,
-        'state'      , bsondoc:atom_to_binary(new)
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId,
+        'state'        , bsondoc:atom_to_binary(new)
     },
     Modifier = {
         '$set', {
@@ -131,8 +131,8 @@ process(_CustomerUuid, _UserId, fetch_id, MsgIds) ->
     end;
 process(CustomerUuid, UserId, delete_all, undefined) ->
     Selector = {
-        'customer_id', CustomerUuid,
-        'user_id'    , UserId
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId
     },
     Command = {
         'count', atom_to_binary(incoming_sms, latin1),
@@ -155,9 +155,9 @@ process(CustomerUuid, UserId, delete_all, undefined) ->
     end;
 process(CustomerUuid, UserId, delete_read, undefined) ->
     Selector = {
-        'customer_id', CustomerUuid,
-        'user_id'    , UserId,
-        'state'      , bsondoc:atom_to_binary(read)
+        'customer_uuid', CustomerUuid,
+        'user_id'      , UserId,
+        'state'        , bsondoc:atom_to_binary(read)
     },
     Command = {
         'count', atom_to_binary(incoming_sms, latin1),

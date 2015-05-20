@@ -68,18 +68,15 @@ process(Type, _Message) ->
 process_connection_down_event(ConnectionId, CustomerId, UserId) ->
     case get_customer_uuid_by_id(CustomerId) of
         {ok, CustomerUuid} ->
-            perform_unregister_connection(CustomerUuid, ConnectionId, UserId);
+            case k_mailbox:unregister_subscription(ConnectionId, CustomerUuid, UserId) of
+                ok ->
+                    {ok, []};
+                {error, Reason} ->
+                    ?log_error("Could not unregister ~p with: ~p", [{CustomerUuid, ConnectionId}, Reason]),
+                    {ok, []}
+            end;
         {error, Reason} ->
             ?log_error("Could not unregister customer_id: ~p with: ~p", [CustomerId, Reason]),
-            {ok, []}
-    end.
-
-perform_unregister_connection(CustomerUuid, ConnectionId, UserId) ->
-    case k_mailbox:unregister_subscription(ConnectionId, CustomerUuid, UserId) of
-        ok ->
-            {ok, []};
-        {error, Reason} ->
-            ?log_error("Could not unregister ~p with: ~p", [{CustomerUuid, ConnectionId}, Reason]),
             {ok, []}
     end.
 
@@ -93,7 +90,7 @@ process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType)
             ?log_debug("RMQ queue of new funnel connection: ~p", [QName]),
             Subscription = #k_mb_funnel_sub{
                     id = ConnectionId,
-                    customer_id = CustomerUuid,
+                    customer_uuid = CustomerUuid,
                     user_id = UserId,
                     priority = 0,
                     queue_name = QName,

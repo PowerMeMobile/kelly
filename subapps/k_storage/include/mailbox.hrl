@@ -18,10 +18,9 @@
     integer().
 
 -record(k_mb_incoming_sms, {
-    id                   :: binary(),
-    %% rename to customer_uuid
-    customer_id          :: uuid(),
-    user_id              :: binary(),
+    id                   :: uuid(),
+    customer_uuid        :: customer_uuid(),
+    user_id              :: user_id(),
     src_addr             :: addr(),
     dst_addr             :: addr(),
     received             :: erlang:timestamp(), %% oneapi retrieve sms request
@@ -33,10 +32,9 @@
 }).
 
 -record(k_mb_oneapi_receipt, {
-    id                   :: binary(),
-    %% rename to customer_uuid
-    customer_id          :: uuid(),
-    user_id              :: binary(),
+    id                   :: uuid(),
+    customer_uuid        :: customer_uuid(),
+    user_id              :: user_id(),
     src_addr             :: addr(),
     dst_addr             :: addr(),
     req_id               :: binary(),
@@ -50,10 +48,9 @@
 }).
 
 -record(k_mb_funnel_receipt, {
-    id                   :: binary(),
-    %% rename to customer_uuid
-    customer_id          :: uuid(),
-    user_id              :: binary(),
+    id                   :: uuid(),
+    customer_uuid        :: customer_uuid(),
+    user_id              :: user_id(),
     src_addr             :: addr(),
     dst_addr             :: addr(),
     req_id               :: binary(),
@@ -76,10 +73,9 @@
 %% ===================================================================
 
 -record(k_mb_oneapi_receipt_sub, {
-    id              :: binary(),
-    %% rename to customer_uuid
-    customer_id     :: uuid(),
-    user_id         :: binary(),
+    id              :: uuid(),
+    customer_uuid   :: customer_uuid(),
+    user_id         :: user_id(),
     queue_name      :: binary(),
     src_addr        :: addr(),
     notify_url      :: binary(),
@@ -90,10 +86,9 @@
 }).
 
 -record(k_mb_oneapi_incoming_sms_sub, {
-    id              :: binary(),
-    %% rename to customer_uuid
-    customer_id     :: uuid(),
-    user_id         :: binary(),
+    id              :: uuid(),
+    customer_uuid   :: customer_uuid(),
+    user_id         :: user_id(),
     priority        :: integer(),
     queue_name      :: binary(),
     dst_addr        :: addr(),
@@ -104,10 +99,9 @@
 }).
 
 -record(k_mb_funnel_sub, {
-    id              :: binary(),
-    %% rename to customer_uuid
-    customer_id     :: uuid(),
-    user_id         :: binary(),
+    id              :: uuid(),
+    customer_uuid   :: customer_uuid(),
+    user_id         :: user_id(),
     priority        :: integer(),
     queue_name      :: binary(),
     created_at      :: erlang:timestamp()

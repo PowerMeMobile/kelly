@@ -21,21 +21,17 @@
 %% API Functions Definitions
 %% ===================================================================
 
--spec register_subscription(Subscription::k_mb_subscription()) -> ok.
-register_subscription(Subscription) ->
-    k_mb_subscription_mgr:register(Subscription).
+-spec register_subscription(k_mb_subscription()) -> ok.
+register_subscription(Sub) ->
+    k_mb_subscription_mgr:register(Sub).
 
--spec register_sms_req_receipts_subscription(Subscription::#k_mb_oneapi_receipt_sub{}) -> ok.
-register_sms_req_receipts_subscription(Subscription = #k_mb_oneapi_receipt_sub{}) ->
-    k_storage_mailbox:save(Subscription).
+-spec register_sms_req_receipts_subscription(#k_mb_oneapi_receipt_sub{}) -> ok.
+register_sms_req_receipts_subscription(Sub = #k_mb_oneapi_receipt_sub{}) ->
+    k_storage_mailbox:save(Sub).
 
--spec unregister_subscription(
-    SubscriptionID::binary(),
-    CustomerID::customer_id(),
-    UserID::user_id()
-)-> ok.
-unregister_subscription(SubscriptionID, CustomerID, UserID) ->
-    k_mb_subscription_mgr:unregister(SubscriptionID, CustomerID, UserID).
+-spec unregister_subscription(uuid(), customer_uuid(), user_id()) -> ok.
+unregister_subscription(SubId, CustomerUuid, UserId) ->
+    k_mb_subscription_mgr:unregister(SubId, CustomerUuid, UserId).
 
 -spec register_incoming_item(Item::k_mb_item()) -> ok.
 register_incoming_item(Item = #k_mb_oneapi_receipt{}) ->
@@ -52,10 +48,10 @@ register_incoming_item(Item) ->
     k_storage_mailbox:save(Item),
     k_mb_wpool:process_incoming_item(Item).
 
--spec get_incoming_sms(binary(), binary(), addr(), undefined | integer()) ->
+-spec get_incoming_sms(customer_uuid(), user_id(), addr(), undefined | integer()) ->
     {ok, [#k_mb_incoming_sms{}], Total::integer()}.
-get_incoming_sms(CustomerID, UserID, DestAddr, Limit) ->
-    k_storage_mailbox:get_incoming_sms(CustomerID, UserID, DestAddr, Limit).
+get_incoming_sms(CustomerUuid, UserId, DestAddr, Limit) ->
+    k_storage_mailbox:get_incoming_sms(CustomerUuid, UserId, DestAddr, Limit).
 
 -spec process_funnel_down_event() -> ok.
 process_funnel_down_event() ->

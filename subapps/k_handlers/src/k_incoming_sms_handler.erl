@@ -52,21 +52,21 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
     ItemId = uuid:unparse(uuid:generate_time()),
     Timestamp = ac_datetime:utc_string_to_timestamp(UTCString),
 
-    %% try to determine customer id and user id,
+    %% try to determine customer uuid and user id,
     %% this will return
     %% {customer_uuid, user_id} | {customer_uuid, undefined} | {undefined, undefined}.
     %% i think it makes sense to store even partly filled message.
     {CustomerUuid, UserId} =
         case k_storage_msisdns:get_one(DstAddr) of
             {ok, #msisdn_info{
-                customer_uuid = CID,
+                customer_uuid = CUUID,
                 user_id = UID
             }} ->
                 ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
-                    [DstAddr, CID, UID]),
+                    [DstAddr, CUUID, UID]),
                 Item = #k_mb_incoming_sms{
                     id = ItemId,
-                    customer_id = CID,
+                    customer_uuid = CUUID,
                     user_id = UID,
                     src_addr = SrcAddr,
                     dst_addr = DstAddr,
@@ -76,7 +76,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
                 },
                 k_mailbox:register_incoming_item(Item),
                 ?log_debug("Incoming message registered with id: ~p", [ItemId]),
-                {CID, UID};
+                {CUUID, UID};
             Error ->
                 ?log_debug("Address resolution failed with: ~p", [Error]),
                 ?log_debug("Couldn't resolve incoming message coming to: ~p", [DstAddr]),

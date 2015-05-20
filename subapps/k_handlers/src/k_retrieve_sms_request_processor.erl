@@ -13,12 +13,12 @@
 -spec process(record()) -> {ok, record()} | {error, term()}.
 process(Req = #retrieve_sms_req_v1{}) ->
     ReqId      = Req#retrieve_sms_req_v1.req_id,
-    CustomerId = Req#retrieve_sms_req_v1.customer_id,
+    CustomerUuid = Req#retrieve_sms_req_v1.customer_uuid,
     UserId     = Req#retrieve_sms_req_v1.user_id,
     DstAddr    = Req#retrieve_sms_req_v1.dst_addr,
     BatchSize  = Req#retrieve_sms_req_v1.batch_size,
     %% TODO: Ensure correct DestAddr for Customer:User
-    case k_mailbox:get_incoming_sms(CustomerId, UserId, DstAddr, BatchSize) of
+    case k_mailbox:get_incoming_sms(CustomerUuid, UserId, DstAddr, BatchSize) of
         {ok, Messages, Pending} ->
             MessagesDTO = [incoming_sms_to_v1(M) || M <- Messages],
             Resp = #retrieve_sms_resp_v1{

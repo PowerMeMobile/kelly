@@ -125,7 +125,7 @@ build_receipt_item(#msg_info{
     ItemId = uuid:unparse(uuid:generate_time()),
     #k_mb_oneapi_receipt{
         id = ItemId,
-        customer_id = CustomerUuid,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         src_addr = SrcAddr,
         dst_addr = DstAddr,
@@ -150,7 +150,7 @@ build_receipt_item(#msg_info{
     ItemId = uuid:unparse(uuid:generate_time()),
     #k_mb_funnel_receipt{
         id = ItemId,
-        customer_id = CustomerUuid,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         src_addr = SrcAddr,
         dst_addr = DstAddr,

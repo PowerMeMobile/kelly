@@ -1,5 +1,5 @@
 %% @TODO convert subscription key
-%% SubscriptionID -> {CustomerID, UserID, SubscriptionID}
+%% SubscriptionID -> {CustomerUuid, UserId, SubId}
 %% to protect subscriptions of other users
 
 -module(k_mb_subscription_mgr).
@@ -33,7 +33,7 @@
 }).
 
 -record(subscriptions, {
-    key                 :: {customer_id(), user_id()},
+    key                 :: {customer_uuid(), user_id()},
     subscriptions = []  :: [k_mb_subscription()]
 }).
 
@@ -45,19 +45,15 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec register(Subscription::k_mb_subscription()) -> ok.
-register(Subscription) ->
-    ok = k_storage_mailbox:save_sub(Subscription),
-    gen_server:cast(?MODULE, {reg_sub, Subscription}).
+-spec register(k_mb_subscription()) -> ok.
+register(Sub) ->
+    ok = k_storage_mailbox:save_sub(Sub),
+    gen_server:cast(?MODULE, {reg_sub, Sub}).
 
--spec unregister(
-    SubscriptionID::binary(),
-    CustomerID::customer_id(),
-    UserID::user_id()
-) -> ok.
-unregister(SubscriptionID, CustomerID, UserID) ->
-    ok = k_storage_mailbox:delete_subscription(SubscriptionID),
-    gen_server:cast(?MODULE, {unreg_sub, SubscriptionID, CustomerID, UserID}).
+-spec unregister(uuid(), customer_uuid(), user_id()) -> ok.
+unregister(SubId, CustomerUuid, UserId) ->
+    ok = k_storage_mailbox:delete_subscription(SubId),
+    gen_server:cast(?MODULE, {unreg_sub, SubId, CustomerUuid, UserId}).
 
 -spec get_suitable_subscription(k_mb_item()) ->
     {ok, k_mb_subscription()} | undefined.
@@ -65,8 +61,8 @@ get_suitable_subscription(Item = #k_mb_oneapi_receipt{}) ->
     case k_storage_mailbox:get_subscription_for_oneapi_receipt(Item) of
         undefined ->
             process_get_suitable_sub_req(Item);
-        {ok, Subscription = #k_mb_oneapi_receipt_sub{}} ->
-            {ok, Subscription}
+        {ok, Sub = #k_mb_oneapi_receipt_sub{}} ->
+            {ok, Sub}
     end;
 get_suitable_subscription(Item) ->
     process_get_suitable_sub_req(Item).
@@ -77,7 +73,7 @@ process_funnel_down_event() ->
     Fun = fun(Sub) ->
         ?MODULE:unregister(
             Sub#k_mb_funnel_sub.id,
-            Sub#k_mb_funnel_sub.customer_id,
+            Sub#k_mb_funnel_sub.customer_uuid,
             Sub#k_mb_funnel_sub.user_id
         )
     end,
@@ -89,30 +85,30 @@ process_funnel_down_event() ->
 
 init([]) ->
     ?MODULE = ets:new(?MODULE, [set, named_table, {keypos, #subscriptions.key}]),
-    {ok, SubscriptionIDs} = k_storage_mailbox:get_subscription_ids(),
-    Insert = fun(SubscriptionID) ->
-        {ok, Subscription} = k_storage_mailbox:get_subscription(SubscriptionID),
-        ets_insert_sub(Subscription)
+    {ok, SubIds} = k_storage_mailbox:get_subscription_ids(),
+    Insert = fun(SubId) ->
+        {ok, Sub} = k_storage_mailbox:get_subscription(SubId),
+        ets_insert_sub(Sub)
     end,
-    lists:foreach(Insert, SubscriptionIDs),
+    lists:foreach(Insert, SubIds),
     {ok, #state{}}.
 
 handle_call({get_subscriptions, Key}, _From, State = #state{}) ->
-    {ok, Subscriptions} = ets_lookup_subs(Key), %% Key::{customer_id(), user_id()}
-    {reply, {ok, Subscriptions}, State};
+    {ok, Subs} = ets_lookup_subs(Key), %% Key::{customer_uuid(), user_id()}
+    {reply, {ok, Subs}, State};
 
 handle_call(_Request, _From, State) ->
     {noreply, ok, State}.
 
-handle_cast({reg_sub, Subscription}, State = #state{}) ->
-    ets_insert_sub(Subscription),
-    process_pending_items(Subscription),
+handle_cast({reg_sub, Sub}, State = #state{}) ->
+    ets_insert_sub(Sub),
+    process_pending_items(Sub),
     {noreply, State};
 
-handle_cast({unreg_sub, SubscriptionID, CustomerID, UserID}, State = #state{}) ->
-    Key = {CustomerID, UserID},
+handle_cast({unreg_sub, SubId, CustomerUuid, UserId}, State = #state{}) ->
+    Key = {CustomerUuid, UserId},
     {ok, CurrentUserSubs} = ets_lookup_subs(Key),
-    NewUserSubs = lists:keydelete(SubscriptionID, 2, CurrentUserSubs),
+    NewUserSubs = lists:keydelete(SubId, 2, CurrentUserSubs),
     ets_insert(Key, NewUserSubs),
     {noreply, State};
 
@@ -133,41 +129,41 @@ code_change(_OldVsn, State, _Extra) ->
 %% ===================================================================
 
 process_pending_items(Sub = #k_mb_funnel_sub{}) ->
-    {CustomerID, UserID} = get_customer_user(Sub),
-    {ok, Receipts} = k_storage_mailbox:get_funnel_receipts(CustomerID, UserID),
+    {CustomerUuid, UserId} = get_customer_user(Sub),
+    {ok, Receipts} = k_storage_mailbox:get_funnel_receipt_ids(CustomerUuid, UserId),
     [k_mb_wpool:process_incoming_item(Item) || Item <- Receipts],
-    {ok, Incomings} = k_storage_mailbox:get_incoming_ids(CustomerID, UserID),
+    {ok, Incomings} = k_storage_mailbox:get_incoming_ids(CustomerUuid, UserId),
     [k_mb_wpool:process_incoming_item(Item) || Item <- Incomings];
 process_pending_items(Sub = #k_mb_oneapi_receipt_sub{}) ->
-    {CustomerID, UserID} = get_customer_user(Sub),
-    {ok, Receipts} = k_storage_mailbox:get_oneapi_receipts(CustomerID, UserID),
+    {CustomerUuid, UserId} = get_customer_user(Sub),
+    {ok, Receipts} = k_storage_mailbox:get_oneapi_receipt_ids(CustomerUuid, UserId),
     [k_mb_wpool:process_incoming_item(Item) || Item <- Receipts];
 process_pending_items(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
-    {CustomerID, UserID} = get_customer_user(Sub),
-    {ok, Incomings} = k_storage_mailbox:get_incoming_ids(CustomerID, UserID),
+    {CustomerUuid, UserId} = get_customer_user(Sub),
+    {ok, Incomings} = k_storage_mailbox:get_incoming_ids(CustomerUuid, UserId),
     [k_mb_wpool:process_incoming_item(Item) || Item <- Incomings].
 
 process_get_suitable_sub_req(Item) ->
-    Key = get_customer_user(Item), %% Key::{customer_id(), user_id()}
-    {ok, Subscriptions} = gen_server:call(?MODULE, {get_subscriptions, Key}),
-    get_suitable_subscription(Item, Subscriptions).
+    Key = get_customer_user(Item),
+    {ok, Subs} = gen_server:call(?MODULE, {get_subscriptions, Key}),
+    get_suitable_subscription(Item, Subs).
 
-get_suitable_subscription(#k_mb_funnel_receipt{}, Subscriptions) ->
-    case lists:keysearch(k_mb_funnel_sub, 1, Subscriptions) of
-        {value, Subscription} -> {ok, Subscription};
+get_suitable_subscription(#k_mb_funnel_receipt{}, Subs) ->
+    case lists:keysearch(k_mb_funnel_sub, 1, Subs) of
+        {value, Sub} -> {ok, Sub};
         false -> undefined
     end;
-get_suitable_subscription(Item = #k_mb_incoming_sms{}, Subscriptions) ->
-    SuitableSubs = [Sub || Sub <- Subscriptions, is_suitable_for_incoming_sms(Item, Sub)],
+get_suitable_subscription(Item = #k_mb_incoming_sms{}, Subs) ->
+    SuitableSubs = [Sub || Sub <- Subs, is_suitable_for_incoming_sms(Item, Sub)],
     resolve_subscription_priority(SuitableSubs);
-get_suitable_subscription(#k_mb_oneapi_receipt{src_addr = SrcAddr}, Subscriptions) ->
-    ?log_debug("Subscriptions: ~p", [Subscriptions]),
+get_suitable_subscription(#k_mb_oneapi_receipt{src_addr = SrcAddr}, Subs) ->
+    ?log_debug("Subscriptions: ~p", [Subs]),
     ?log_debug("SrcAddr: ~p", [SrcAddr]),
-    case lists:keyfind(SrcAddr, #k_mb_oneapi_receipt_sub.src_addr, Subscriptions) of
+    case lists:keyfind(SrcAddr, #k_mb_oneapi_receipt_sub.src_addr, Subs) of
         false ->
             undefined;
-        Subscription ->
-            {ok, Subscription}
+        Sub ->
+            {ok, Sub}
     end;
 get_suitable_subscription(_, _) ->
     undefined.
@@ -208,11 +204,10 @@ priority(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
 priority(Sub = #k_mb_funnel_sub{}) ->
     Sub#k_mb_funnel_sub.priority.
 
-
-ets_insert_sub(Subscription) ->
-    Key = get_customer_user(Subscription), %% Key::{customer_id(), user_id()}
+ets_insert_sub(Sub) ->
+    Key = get_customer_user(Sub),
     {ok, CurrentUserSubs} = ets_lookup_subs(Key),
-    {ok, NewSubs} = join_subscriptions(Subscription, CurrentUserSubs),
+    {ok, NewSubs} = join_subscriptions(Sub, CurrentUserSubs),
     ets_insert(Key, NewSubs).
 
 join_subscriptions(NewSub = #k_mb_funnel_sub{}, CurrentUserSubs) ->
@@ -229,38 +224,38 @@ join_subscriptions(NewSub, CurrentUserSubs) ->
     NewSubs = [NewSub] ++ CurrentUserSubs,
     {ok, NewSubs}.
 
-ets_insert(Key, Subscriptions) ->
-    true = ets:insert(?MODULE, #subscriptions{key = Key, subscriptions = Subscriptions}).
+ets_insert(Key, Subs) ->
+    true = ets:insert(?MODULE, #subscriptions{key = Key, subscriptions = Subs}).
 
 ets_lookup_subs(Key) ->
     Subscriptions =
-    case ets:lookup(?MODULE, Key) of
-        [Subs = #subscriptions{}] -> Subs#subscriptions.subscriptions;
-        [] -> []
-    end,
+        case ets:lookup(?MODULE, Key) of
+            [Subs = #subscriptions{}] -> Subs#subscriptions.subscriptions;
+            [] -> []
+        end,
     {ok, Subscriptions}.
 
 get_customer_user(Sub = #k_mb_oneapi_receipt_sub{}) ->
-    CustomerID = Sub#k_mb_oneapi_receipt_sub.customer_id,
-    UserID = Sub#k_mb_oneapi_receipt_sub.user_id,
-    {CustomerID, UserID};
+    CustomerUuid = Sub#k_mb_oneapi_receipt_sub.customer_uuid,
+    UserId = Sub#k_mb_oneapi_receipt_sub.user_id,
+    {CustomerUuid, UserId};
 get_customer_user(Sub = #k_mb_oneapi_incoming_sms_sub{}) ->
-    CustomerID = Sub#k_mb_oneapi_incoming_sms_sub.customer_id,
-    UserID = Sub#k_mb_oneapi_incoming_sms_sub.user_id,
-    {CustomerID, UserID};
+    CustomerUuid = Sub#k_mb_oneapi_incoming_sms_sub.customer_uuid,
+    UserId = Sub#k_mb_oneapi_incoming_sms_sub.user_id,
+    {CustomerUuid, UserId};
 get_customer_user(Sub = #k_mb_funnel_sub{}) ->
-    CustomerID = Sub#k_mb_funnel_sub.customer_id,
-    UserID = Sub#k_mb_funnel_sub.user_id,
-    {CustomerID, UserID};
+    CustomerUuid = Sub#k_mb_funnel_sub.customer_uuid,
+    UserId = Sub#k_mb_funnel_sub.user_id,
+    {CustomerUuid, UserId};
 get_customer_user(Item = #k_mb_oneapi_receipt{}) ->
-    CustomerID = Item#k_mb_oneapi_receipt.customer_id,
-    UserID = Item#k_mb_oneapi_receipt.user_id,
-    {CustomerID, UserID};
+    CustomerUuid = Item#k_mb_oneapi_receipt.customer_uuid,
+    UserId = Item#k_mb_oneapi_receipt.user_id,
+    {CustomerUuid, UserId};
 get_customer_user(Item = #k_mb_funnel_receipt{}) ->
-    CustomerID = Item#k_mb_funnel_receipt.customer_id,
-    UserID = Item#k_mb_funnel_receipt.user_id,
-    {CustomerID, UserID};
+    CustomerUuid = Item#k_mb_funnel_receipt.customer_uuid,
+    UserId = Item#k_mb_funnel_receipt.user_id,
+    {CustomerUuid, UserId};
 get_customer_user(Item = #k_mb_incoming_sms{}) ->
-    CustomerID = Item#k_mb_incoming_sms.customer_id,
-    UserID = Item#k_mb_incoming_sms.user_id,
-    {CustomerID, UserID}.
+    CustomerUuid = Item#k_mb_incoming_sms.customer_uuid,
+    UserId = Item#k_mb_incoming_sms.user_id,
+    {CustomerUuid, UserId}.

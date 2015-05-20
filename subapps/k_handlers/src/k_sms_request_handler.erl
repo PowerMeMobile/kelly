@@ -636,7 +636,7 @@ create_oneapi_receipt_subscription(CustomerUuid, UserId, SrcAddr,
     SubId = uuid:unparse(uuid:generate_time()),
     Sub = #k_mb_oneapi_receipt_sub{
         id = SubId,
-        customer_id = CustomerUuid,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         queue_name = QName,
         src_addr = SrcAddr,
