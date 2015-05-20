@@ -419,8 +419,8 @@ get_subscription_ids() ->
 get_incoming(CustomerUuid, UserId, DstAddr, Limit) ->
     Selector = {
         'customer_uuid', CustomerUuid,
-        'user_id'    , UserId,
-        'dst_addr'   , k_storage_utils:addr_to_doc(DstAddr)
+        'user_id'      , UserId,
+        'dst_addr'     , k_storage_utils:addr_to_doc(DstAddr)
     },
     {ok, Docs} = mongodb_storage:find(mailbox_storage, incomings, Selector),
     AllItems =
