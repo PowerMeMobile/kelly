@@ -182,7 +182,7 @@ save_delivery_status(#k_mb_incoming{
 
 -spec delete_subscription(uuid()) -> ok.
 delete_subscription(SubId) ->
-    ok = mongodb_storage:delete(mailbox_storage, subscriptions, {'_id' , SubId}).
+    ok = mongodb_storage:delete(mailbox_storage, subscriptions, {'_id', SubId}).
 
 -spec delete_item(k_mb_item()) -> ok.
 delete_item(Item = #k_mb_funnel_receipt{}) ->
@@ -211,7 +211,7 @@ get_funnel_receipt_ids(CustomerUuid, UserId) ->
         'customer_uuid', CustomerUuid,
         'user_id'      , UserId
     },
-    {ok, Docs} = mongodb_storage:find(mailbox_storage, funnel_receipts, Selector, {'_id' , 1}),
+    {ok, Docs} = mongodb_storage:find(mailbox_storage, funnel_receipts, Selector, {'_id', 1}),
     Items = [{k_mb_funnel_receipt, Id} || {Id, _Doc} <- Docs],
     {ok, Items}.
 
@@ -221,7 +221,7 @@ get_oneapi_receipt_ids(CustomerUuid, UserId) ->
         'customer_uuid', CustomerUuid,
         'user_id'      , UserId
     },
-    {ok, Docs} = mongodb_storage:find(mailbox_storage, funnel_receipts, Selector, {'_id' , 1}),
+    {ok, Docs} = mongodb_storage:find(mailbox_storage, funnel_receipts, Selector, {'_id', 1}),
     Items = [{k_mb_funnel_receipt, Id} || {Id, _Doc} <- Docs],
     {ok, Items}.
 
@@ -232,28 +232,28 @@ get_incoming_ids(CustomerUuid, UserId) ->
         'customer_uuid', CustomerUuid,
         'user_id'      , UserId
     },
-    {ok, Docs} = mongodb_storage:find(mailbox_storage, incomings, Selector),
+    {ok, Docs} = mongodb_storage:find(mailbox_storage, incomings, Selector, {'_id', 1}),
     Items = [{k_mb_incoming, Id} || {Id, _Doc} <- Docs],
     {ok, Items}.
 
 -spec get_items() -> {ok, [binary()]}.
 get_items() ->
-    {ok, FunnelReceiptDocs} = mongodb_storage:find(mailbox_storage, funnel_receipts, {}, {'_id' , 1}),
+    {ok, FunnelReceiptDocs} = mongodb_storage:find(mailbox_storage, funnel_receipts, {}, {'_id', 1}),
     FunnelReceiptIds = [Id || {Id, _} <- FunnelReceiptDocs],
-    {ok, OneapiReceiptDocs} = mongodb_storage:find(mailbox_storage, oneapi_receipts, {}, {'_id' , 1}),
+    {ok, OneapiReceiptDocs} = mongodb_storage:find(mailbox_storage, oneapi_receipts, {}, {'_id', 1}),
     ONEAPIReceiptIds = [Id || {Id, _} <- OneapiReceiptDocs],
-    {ok, IncomingDocs} = mongodb_storage:find(mailbox_storage, incomings, {}, {'_id' , 1}),
+    {ok, IncomingDocs} = mongodb_storage:find(mailbox_storage, incomings, {}, {'_id', 1}),
     IncomingIds = [Id || {Id, _} <- IncomingDocs],
     {ok, [{k_mb_funnel_receipt, FunnelReceiptIds},
           {k_mb_oneapi_receipt, ONEAPIReceiptIds},
           {k_mb_incoming, IncomingIds}]}.
 
--spec get_item(ItemType::atom(), ItemID::binary()) -> {ok, Item::tuple()} | no_record.
-get_item(k_mb_oneapi_receipt, ID) ->
-    case mongodb_storage:find(mailbox_storage, oneapi_receipts, {'_id' , ID}) of
+-spec get_item(ItemType::atom(), ItemId::binary()) -> {ok, Item::tuple()} | no_record.
+get_item(k_mb_oneapi_receipt, Id) ->
+    case mongodb_storage:find(mailbox_storage, oneapi_receipts, {'_id', Id}) of
         {ok, [{_, Doc}]} ->
             {ok, #k_mb_oneapi_receipt{
-                id = ID,
+                id = Id,
                 customer_uuid = bsondoc:at(customer_uuid, Doc),
                 user_id = bsondoc:at(user_id, Doc),
                 src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
@@ -269,11 +269,11 @@ get_item(k_mb_oneapi_receipt, ID) ->
         _ ->
             no_record
     end;
-get_item(k_mb_funnel_receipt, ID) ->
-    case mongodb_storage:find(mailbox_storage, funnel_receipts, {'_id' , ID}) of
+get_item(k_mb_funnel_receipt, Id) ->
+    case mongodb_storage:find(mailbox_storage, funnel_receipts, {'_id', Id}) of
         {ok, [{_, Doc}]} ->
             {ok, #k_mb_funnel_receipt{
-                id = ID,
+                id = Id,
                 customer_uuid = bsondoc:at(customer_uuid, Doc),
                 user_id = bsondoc:at(user_id, Doc),
                 src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
@@ -289,11 +289,11 @@ get_item(k_mb_funnel_receipt, ID) ->
         _ ->
             no_record
     end;
-get_item(k_mb_incoming, ID) ->
-    case mongodb_storage:find(mailbox_storage, incomings, {'_id' , ID}) of
+get_item(k_mb_incoming, Id) ->
+    case mongodb_storage:find(mailbox_storage, incomings, {'_id', Id}) of
         {ok, [{_, Doc}]} ->
             {ok, #k_mb_incoming{
-                id = ID,
+                id = Id,
                 customer_uuid = bsondoc:at(customer_uuid, Doc),
                 user_id = bsondoc:at(user_id, Doc),
                 src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
@@ -360,15 +360,15 @@ get_subscription_for_oneapi_receipt(R = #k_mb_oneapi_receipt{}) ->
             {ok, Sub}
     end.
 
--spec get_subscription(SubscriptionID::binary()) ->
+-spec get_subscription(SubId::binary()) ->
     {ok, k_mb_subscription()}.
-get_subscription(SubscriptionID) ->
-    {ok, [{_, Doc}]} = mongodb_storage:find(mailbox_storage, subscriptions, {'_id' , SubscriptionID}),
-    {ok, get_subscription(bsondoc:binary_to_atom(bsondoc:at(type, Doc)), SubscriptionID, Doc)}.
+get_subscription(SubId) ->
+    {ok, [{_, Doc}]} = mongodb_storage:find(mailbox_storage, subscriptions, {'_id', SubId}),
+    {ok, get_subscription(bsondoc:binary_to_atom(bsondoc:at(type, Doc)), SubId, Doc)}.
 
-get_subscription(k_mb_oneapi_receipt_sub, ID, Doc) ->
+get_subscription(k_mb_oneapi_receipt_sub, Id, Doc) ->
     #k_mb_oneapi_receipt_sub{
-        id = ID,
+        id = Id,
         customer_uuid = bsondoc:at(customer_uuid, Doc),
         user_id = bsondoc:at(user_id, Doc),
         queue_name = bsondoc:at(queue_name, Doc),
@@ -377,9 +377,9 @@ get_subscription(k_mb_oneapi_receipt_sub, ID, Doc) ->
         callback_data = bsondoc:at(callback_data, Doc),
         created_at = bsondoc:at(created_at, Doc)
     };
-get_subscription(k_mb_oneapi_incoming_sub, ID, Doc) ->
+get_subscription(k_mb_oneapi_incoming_sub, Id, Doc) ->
     #k_mb_oneapi_incoming_sub{
-        id = ID,
+        id = Id,
         customer_uuid = bsondoc:at(customer_uuid, Doc),
         user_id = bsondoc:at(user_id, Doc),
         priority = bsondoc:at(priority, Doc),
@@ -390,9 +390,9 @@ get_subscription(k_mb_oneapi_incoming_sub, ID, Doc) ->
         callback_data = bsondoc:at(callback_data, Doc),
         created_at = bsondoc:at(created_at, Doc)
     };
-get_subscription(k_mb_funnel_sub, ID, Doc) ->
+get_subscription(k_mb_funnel_sub, Id, Doc) ->
     #k_mb_funnel_sub{
-        id = ID,
+        id = Id,
         customer_uuid = bsondoc:at(customer_uuid, Doc),
         user_id = bsondoc:at(user_id, Doc),
         priority = bsondoc:at(priority, Doc),
@@ -402,17 +402,17 @@ get_subscription(k_mb_funnel_sub, ID, Doc) ->
 
 -spec get_funnel_subscriptions() -> {ok, [#k_mb_funnel_sub{}]}.
 get_funnel_subscriptions() ->
-    Selector = {'type' , bsondoc:atom_to_binary(k_mb_funnel_sub)},
+    Selector = {'type', bsondoc:atom_to_binary(k_mb_funnel_sub)},
     {ok, Docs} =
         mongodb_storage:find(mailbox_storage, subscriptions, Selector),
-    Subs = [get_subscription(k_mb_funnel_sub, ID, Doc) || {ID, Doc} <- Docs],
+    Subs = [get_subscription(k_mb_funnel_sub, Id, Doc) || {Id, Doc} <- Docs],
     {ok, Subs}.
 
 -spec get_subscription_ids() -> {ok, [binary()]}.
 get_subscription_ids() ->
     {ok, Docs} = mongodb_storage:find(mailbox_storage, subscriptions, {}, {'_id', 1}),
-    IDs = [ID || {ID, _} <- Docs],
-    {ok, IDs}.
+    Ids = [Id || {Id, _} <- Docs],
+    {ok, Ids}.
 
 -spec get_incoming(customer_uuid(), user_id(), addr(), integer() | undefined) ->
     {ok, [#k_mb_incoming{}], Total::integer()}.
