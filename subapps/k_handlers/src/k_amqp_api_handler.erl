@@ -97,26 +97,26 @@ process(ReqCT, ReqBin) when ReqCT =:= <<"SmsStatusReqV1">> ->
             {ReqCT, <<>>}
     end;
 
-process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveSmsReqV1">> ->
-    case adto:decode(#retrieve_sms_req_v1{}, ReqBin) of
+process(ReqCT, ReqBin) when ReqCT =:= <<"RetrieveIncomingReqV1">> ->
+    case adto:decode(#retrieve_incoming_req_v1{}, ReqBin) of
         {ok, ReqDTO} ->
-            ?log_debug("Got retrieve sms request: ~p", [ReqDTO]),
-            case k_retrieve_sms_request_processor:process(ReqDTO) of
+            ?log_debug("Got retrieve incoming request: ~p", [ReqDTO]),
+            case k_retrieve_incoming_request_processor:process(ReqDTO) of
                 {ok, RespDTO} ->
-                    ?log_debug("Built retrieve sms response: ~p", [RespDTO]),
+                    ?log_debug("Built retrieve incoming response: ~p", [RespDTO]),
                     case adto:encode(RespDTO) of
                         {ok, RespBin} ->
-                            {<<"RetrieveSmsRespV1">>, RespBin};
+                            {<<"RetrieveIncomingRespV1">>, RespBin};
                         {error, Error} ->
-                            ?log_error("Retrieve sms response decode error: ~p", [Error]),
+                            ?log_error("Retrieve incoming response decode error: ~p", [Error]),
                             {ReqCT, <<>>}
                     end;
                 {error, Error} ->
-                    ?log_error("Retrieve sms request process error: ~p", [Error]),
+                    ?log_error("Retrieve incoming request process error: ~p", [Error]),
                     {ReqCT, <<>>}
             end;
         {error, Error} ->
-            ?log_error("Retrieve sms request decode error: ~p", [Error]),
+            ?log_error("Retrieve incoming request decode error: ~p", [Error]),
             {ReqCT, <<>>}
     end;
 

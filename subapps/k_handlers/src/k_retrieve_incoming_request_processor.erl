@@ -1,4 +1,4 @@
--module(k_retrieve_sms_request_processor).
+-module(k_retrieve_incoming_request_processor).
 
 -export([process/1]).
 
@@ -11,17 +11,17 @@
 %% ===================================================================
 
 -spec process(record()) -> {ok, record()} | {error, term()}.
-process(Req = #retrieve_sms_req_v1{}) ->
-    ReqId      = Req#retrieve_sms_req_v1.req_id,
-    CustomerUuid = Req#retrieve_sms_req_v1.customer_uuid,
-    UserId     = Req#retrieve_sms_req_v1.user_id,
-    DstAddr    = Req#retrieve_sms_req_v1.dst_addr,
-    BatchSize  = Req#retrieve_sms_req_v1.batch_size,
+process(Req = #retrieve_incoming_req_v1{}) ->
+    ReqId      = Req#retrieve_incoming_req_v1.req_id,
+    CustomerUuid = Req#retrieve_incoming_req_v1.customer_uuid,
+    UserId     = Req#retrieve_incoming_req_v1.user_id,
+    DstAddr    = Req#retrieve_incoming_req_v1.dst_addr,
+    BatchSize  = Req#retrieve_incoming_req_v1.batch_size,
     %% TODO: Ensure correct DestAddr for Customer:User
     case k_mailbox:get_incoming(CustomerUuid, UserId, DstAddr, BatchSize) of
         {ok, Messages, Pending} ->
-            MessagesDTO = [incoming_sms_to_v1(M) || M <- Messages],
-            Resp = #retrieve_sms_resp_v1{
+            MessagesDTO = [incoming_to_v1(M) || M <- Messages],
+            Resp = #retrieve_incoming_resp_v1{
                 req_id = ReqId,
                 messages = MessagesDTO,
                 pending = Pending
@@ -36,18 +36,23 @@ process(Req = #retrieve_sms_req_v1{}) ->
 %% Interal
 %% ===================================================================
 
-incoming_sms_to_v1(Msg) ->
+incoming_to_v1(Msg) ->
     #k_mb_incoming{
         id = ItemId,
         src_addr = SrcAddr,
-        received = RecvTime,
-        body = Body
+        dst_addr = DstAddr,
+        body = Body,
+        rcv_time = RcvTime,
+        state = State
     } = Msg,
-    #msg_info_v1{
+    #inbox_msg_info_v1{
         msg_id = ItemId,
         src_addr = SrcAddr,
+        dst_addr = DstAddr,
         body = Body,
-        recv_time = RecvTime
+        size = size(Body),
+        rcv_time = RcvTime,
+        state = State
      }.
 
 delete_retrieved(Messages) ->

@@ -45,7 +45,7 @@ process(CustomerUuid, UserId, get_info, undefined) ->
     case mongodb_storage:find(mailbox_storage, incomings, Selector) of
         {ok, Docs} ->
             Msgs = [doc2msg(D, false) || {_Id, D} <- Docs],
-            New = length([1 || #inbox_msg_info_v1{new = true} <- Msgs]),
+            New = length([1 || #inbox_msg_info_v1{state = new} <- Msgs]),
             Total = length(Msgs),
             Info = #inbox_info_v1{
                 new = New,
@@ -192,13 +192,12 @@ process(_CustomerUuid, _UserId, _, _) ->
     {ok, {error, not_implemented}}.
 
 doc2msg(Doc, ReturnBody) ->
-    State = bsondoc:binary_to_atom(bsondoc:at('state', Doc)),
     #inbox_msg_info_v1{
-        id = bsondoc:at('_id', Doc),
-        new = (State =:= new),
-        from = k_storage_utils:doc_to_addr(bsondoc:at('src_addr', Doc)),
-        to = k_storage_utils:doc_to_addr(bsondoc:at('dst_addr', Doc)),
-        timestamp = bsondoc:at('received', Doc),
+        msg_id = bsondoc:at('_id', Doc),
+        src_addr = k_storage_utils:doc_to_addr(bsondoc:at('src_addr', Doc)),
+        dst_addr = k_storage_utils:doc_to_addr(bsondoc:at('dst_addr', Doc)),
         size = size(bsondoc:at('body', Doc)),
-        text = if ReturnBody -> bsondoc:at('body', Doc); true -> <<>> end
+        body = if ReturnBody -> bsondoc:at('body', Doc); true -> <<>> end,
+        rcv_time = bsondoc:at('rcv_time', Doc),
+        state = bsondoc:binary_to_atom(bsondoc:at('state', Doc))
     }.
