@@ -76,9 +76,10 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
         user_id = UserId,
         src_addr = SrcAddr,
         dst_addr = DstAddr,
-        received  = Timestamp,
+        rcv_time  = Timestamp,
         body = Body,
-        encoding = DataCoding
+        encoding = DataCoding,
+        state = new
     },
     ok = k_mailbox:register_incoming_item(Item),
     MsgInfo = #msg_info{

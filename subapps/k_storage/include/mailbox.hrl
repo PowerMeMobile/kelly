@@ -9,13 +9,16 @@
 
 -type item_id() :: binary().
 
--type incoming_encoding() ::
-    default |
-    gsm033 |
-    ascii |
-    latin1 |
-    ucs2 |
-    integer().
+-type incoming_encoding() :: default
+                           | gsm033
+                           | ascii
+                           | latin1
+                           | ucs2
+                           | integer().
+
+-type incoming_state() :: all
+                        | new
+                        | read.
 
 -record(k_mb_incoming, {
     id                   :: uuid(),
@@ -23,9 +26,10 @@
     user_id              :: user_id(),
     src_addr             :: addr(),
     dst_addr             :: addr(),
-    received             :: erlang:timestamp(), %% oneapi retrieve sms request
+    rcv_time             :: erlang:timestamp(), %% oneapi retrieve sms request
     body                 :: binary(),
     encoding             :: incoming_encoding(),
+    state                :: incoming_state(),
 
     delivery_attempt = 1 :: integer()
 }).

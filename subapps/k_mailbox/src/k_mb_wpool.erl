@@ -223,7 +223,7 @@ build_dto(Item = #k_mb_incoming{}, Sub = #k_mb_oneapi_incoming_sub{}) ->
         id = ItemID,
         src_addr = SrcAddr,
         dst_addr = DstAddr,
-        received = Received,
+        rcv_time = RcvTime,
         body = Body
     } = Item,
     #k_mb_oneapi_incoming_sub{
@@ -233,7 +233,7 @@ build_dto(Item = #k_mb_incoming{}, Sub = #k_mb_oneapi_incoming_sub{}) ->
     } = Sub,
     DTO = #k1api_sms_notification_request_dto{
         callback_data = CallbackData,
-        datetime = Received,
+        datetime = RcvTime,
         dest_addr = DstAddr,
         message_id = ItemID,
         message = Body,

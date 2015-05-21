@@ -61,11 +61,11 @@ save(#k_mb_incoming{} = I) ->
             'user_id'         , I#k_mb_incoming.user_id,
             'src_addr'        , k_storage_utils:addr_to_doc(I#k_mb_incoming.src_addr),
             'dst_addr'        , k_storage_utils:addr_to_doc(I#k_mb_incoming.dst_addr),
-            'received'        , I#k_mb_incoming.received,
+            'rcv_time'        , I#k_mb_incoming.rcv_time,
             'body'            , I#k_mb_incoming.body,
             'encoding'        , bsondoc:atom_to_binary(I#k_mb_incoming.encoding),
             'delivery_attempt', I#k_mb_incoming.delivery_attempt,
-            'state'           , bsondoc:atom_to_binary(new)
+            'state'           , bsondoc:atom_to_binary(I#k_mb_incoming.state)
         }
     },
     ok = mongodb_storage:upsert(mailbox_storage, incomings, Selector, Modifier);
@@ -287,17 +287,7 @@ get_item(k_mb_funnel_receipt, Id) ->
 get_item(k_mb_incoming, Id) ->
     case mongodb_storage:find(mailbox_storage, incomings, {'_id', Id}) of
         {ok, [{_, Doc}]} ->
-            {ok, #k_mb_incoming{
-                id = Id,
-                customer_uuid = bsondoc:at(customer_uuid, Doc),
-                user_id = bsondoc:at(user_id, Doc),
-                src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
-                dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
-                received = bsondoc:at(received, Doc),
-                body = bsondoc:at(body, Doc),
-                encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
-                delivery_attempt = bsondoc:at(delivery_attempt, Doc)
-            }};
+            {ok, doc_to_incoming(Doc)};
         _ ->
             no_record
     end.
@@ -416,21 +406,10 @@ get_incoming(CustomerUuid, UserId, DstAddr, Limit) ->
         'user_id'      , UserId,
         'dst_addr'     , k_storage_utils:addr_to_doc(DstAddr)
     },
-    {ok, Docs} = mongodb_storage:find(mailbox_storage, incomings, Selector),
-    AllItems =
-        [#k_mb_incoming{
-            id = bsondoc:at('_id', Doc),
-            customer_uuid = bsondoc:at(customer_uuid, Doc),
-            user_id = bsondoc:at(user_id, Doc),
-            src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
-            dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
-            received = bsondoc:at(received, Doc),
-            body = bsondoc:at(body, Doc),
-            encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
-            delivery_attempt = bsondoc:at(delivery_attempt, Doc)
-        } || {_, Doc} <- Docs],
-    Items = head(Limit, AllItems),
-    Pending = length(AllItems) - length(Items),
+    {ok, AllDocs} = mongodb_storage:find(mailbox_storage, incomings, Selector),
+    Docs = head(Limit, AllDocs),
+    Items = [doc_to_incoming(D) || {_, D} <- Docs],
+    Pending = length(AllDocs) - length(Docs),
     {ok, Items, Pending}.
 
 %% ===================================================================
@@ -441,3 +420,17 @@ head(undefined, List) ->
     head(100, List);
 head(N, List) ->
     lists:sublist(List, N).
+
+doc_to_incoming(Doc) ->
+    #k_mb_incoming{
+        id = bsondoc:at('_id', Doc),
+        customer_uuid = bsondoc:at(customer_uuid, Doc),
+        user_id = bsondoc:at(user_id, Doc),
+        src_addr = k_storage_utils:doc_to_addr(bsondoc:at(src_addr, Doc)),
+        dst_addr = k_storage_utils:doc_to_addr(bsondoc:at(dst_addr, Doc)),
+        rcv_time = bsondoc:at(rcv_time, Doc),
+        body = bsondoc:at(body, Doc),
+        encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
+        delivery_attempt = bsondoc:at(delivery_attempt, Doc),
+        state = bsondoc:binary_to_atom(bsondoc:at(state, Doc))
+    }.
