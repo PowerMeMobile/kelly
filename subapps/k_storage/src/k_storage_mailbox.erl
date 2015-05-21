@@ -33,21 +33,21 @@
 %% ===================================================================
 
 -spec save(tuple()) -> ok.
-save(#k_mb_oneapi_receipt_sub{} = Sub) ->
+save(#k_mb_oneapi_receipt_sub{} = S) ->
     Selector = {
-        '_id', Sub#k_mb_oneapi_receipt_sub.id
+        '_id', S#k_mb_oneapi_receipt_sub.id
     },
     Modifier = {
         '$set', {
-            'customer_uuid'    , Sub#k_mb_oneapi_receipt_sub.customer_uuid,
-            'user_id'          , Sub#k_mb_oneapi_receipt_sub.user_id,
-            'queue_name'       , Sub#k_mb_oneapi_receipt_sub.queue_name,
-            'src_addr'         , k_storage_utils:addr_to_doc(Sub#k_mb_oneapi_receipt_sub.src_addr),
-            'notify_url'       , Sub#k_mb_oneapi_receipt_sub.notify_url,
-            'callback_data'    , Sub#k_mb_oneapi_receipt_sub.callback_data,
-            'req_id'           , Sub#k_mb_oneapi_receipt_sub.req_id,
-            'in_msg_ids'       , Sub#k_mb_oneapi_receipt_sub.in_msg_ids,
-            'created_at'       , Sub#k_mb_oneapi_receipt_sub.created_at
+            'customer_uuid'    , S#k_mb_oneapi_receipt_sub.customer_uuid,
+            'user_id'          , S#k_mb_oneapi_receipt_sub.user_id,
+            'queue_name'       , S#k_mb_oneapi_receipt_sub.queue_name,
+            'src_addr'         , k_storage_utils:addr_to_doc(S#k_mb_oneapi_receipt_sub.src_addr),
+            'notify_url'       , S#k_mb_oneapi_receipt_sub.notify_url,
+            'callback_data'    , S#k_mb_oneapi_receipt_sub.callback_data,
+            'req_id'           , S#k_mb_oneapi_receipt_sub.req_id,
+            'in_msg_ids'       , S#k_mb_oneapi_receipt_sub.in_msg_ids,
+            'created_at'       , S#k_mb_oneapi_receipt_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(mailbox_storage, oneapi_receipt_subs, Selector, Modifier);
@@ -109,54 +109,54 @@ save(#k_mb_funnel_receipt{} = R) ->
     ok = mongodb_storage:upsert(mailbox_storage, funnel_receipts, Selector, Modifier).
 
 -spec save_sub(tuple()) -> ok.
-save_sub(#k_mb_oneapi_receipt_sub{} = Sub) ->
+save_sub(#k_mb_oneapi_receipt_sub{} = S) ->
     Selector = {
-        '_id', Sub#k_mb_oneapi_receipt_sub.id
+        '_id', S#k_mb_oneapi_receipt_sub.id
     },
     Modifier = {
         '$set', {
             'type'             , bsondoc:atom_to_binary(k_mb_oneapi_receipt_sub),
-            'customer_uuid'    , Sub#k_mb_oneapi_receipt_sub.customer_uuid,
-            'user_id'          , Sub#k_mb_oneapi_receipt_sub.user_id,
-            'queue_name'       , Sub#k_mb_oneapi_receipt_sub.queue_name,
-            'src_addr'         , k_storage_utils:addr_to_doc(Sub#k_mb_oneapi_receipt_sub.src_addr),
-            'notify_url'       , Sub#k_mb_oneapi_receipt_sub.notify_url,
-            'callback_data'    , Sub#k_mb_oneapi_receipt_sub.callback_data,
-            'created_at'       , Sub#k_mb_oneapi_receipt_sub.created_at
+            'customer_uuid'    , S#k_mb_oneapi_receipt_sub.customer_uuid,
+            'user_id'          , S#k_mb_oneapi_receipt_sub.user_id,
+            'queue_name'       , S#k_mb_oneapi_receipt_sub.queue_name,
+            'src_addr'         , k_storage_utils:addr_to_doc(S#k_mb_oneapi_receipt_sub.src_addr),
+            'notify_url'       , S#k_mb_oneapi_receipt_sub.notify_url,
+            'callback_data'    , S#k_mb_oneapi_receipt_sub.callback_data,
+            'created_at'       , S#k_mb_oneapi_receipt_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(mailbox_storage, subscriptions, Selector, Modifier);
-save_sub(#k_mb_oneapi_incoming_sub{} = Sub) ->
+save_sub(#k_mb_oneapi_incoming_sub{} = S) ->
     Selector = {
-        '_id', Sub#k_mb_oneapi_incoming_sub.id
+        '_id', S#k_mb_oneapi_incoming_sub.id
     },
     Modifier = {
         '$set', {
             'type'         , bsondoc:atom_to_binary(k_mb_oneapi_incoming_sub),
-            'customer_uuid', Sub#k_mb_oneapi_incoming_sub.customer_uuid,
-            'user_id'      , Sub#k_mb_oneapi_incoming_sub.user_id,
-            'priority'     , Sub#k_mb_oneapi_incoming_sub.priority,
-            'queue_name'   , Sub#k_mb_oneapi_incoming_sub.queue_name,
-            'dst_addr'     , k_storage_utils:addr_to_doc(Sub#k_mb_oneapi_incoming_sub.dst_addr),
-            'notify_url'   , Sub#k_mb_oneapi_incoming_sub.notify_url,
-            'criteria'     , Sub#k_mb_oneapi_incoming_sub.criteria,
-            'callback_data', Sub#k_mb_oneapi_incoming_sub.callback_data,
-            'created_at'   , Sub#k_mb_oneapi_incoming_sub.created_at
+            'customer_uuid', S#k_mb_oneapi_incoming_sub.customer_uuid,
+            'user_id'      , S#k_mb_oneapi_incoming_sub.user_id,
+            'priority'     , S#k_mb_oneapi_incoming_sub.priority,
+            'queue_name'   , S#k_mb_oneapi_incoming_sub.queue_name,
+            'dst_addr'     , k_storage_utils:addr_to_doc(S#k_mb_oneapi_incoming_sub.dst_addr),
+            'notify_url'   , S#k_mb_oneapi_incoming_sub.notify_url,
+            'criteria'     , S#k_mb_oneapi_incoming_sub.criteria,
+            'callback_data', S#k_mb_oneapi_incoming_sub.callback_data,
+            'created_at'   , S#k_mb_oneapi_incoming_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(mailbox_storage, subscriptions, Selector, Modifier);
-save_sub(#k_mb_funnel_sub{} = Sub) ->
+save_sub(#k_mb_funnel_sub{} = S) ->
     Selector = {
-        '_id', Sub#k_mb_funnel_sub.id
+        '_id', S#k_mb_funnel_sub.id
     },
     Modifier = {
         '$set', {
             'type'         , bsondoc:atom_to_binary(k_mb_funnel_sub),
-            'customer_uuid', Sub#k_mb_funnel_sub.customer_uuid,
-            'user_id'      , Sub#k_mb_funnel_sub.user_id,
-            'priority'     , Sub#k_mb_funnel_sub.priority,
-            'queue_name'   , Sub#k_mb_funnel_sub.queue_name,
-            'created_at'   , Sub#k_mb_funnel_sub.created_at
+            'customer_uuid', S#k_mb_funnel_sub.customer_uuid,
+            'user_id'      , S#k_mb_funnel_sub.user_id,
+            'priority'     , S#k_mb_funnel_sub.priority,
+            'queue_name'   , S#k_mb_funnel_sub.queue_name,
+            'created_at'   , S#k_mb_funnel_sub.created_at
         }
     },
     ok = mongodb_storage:upsert(mailbox_storage, subscriptions, Selector, Modifier).
