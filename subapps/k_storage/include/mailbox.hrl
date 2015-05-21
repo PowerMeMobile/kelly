@@ -27,8 +27,7 @@
     body                 :: binary(),
     encoding             :: incoming_encoding(),
 
-    delivery_attempt = 1 :: integer(),
-    created_at           :: erlang:timestamp()
+    delivery_attempt = 1 :: integer()
 }).
 
 -record(k_mb_oneapi_receipt, {
@@ -43,8 +42,7 @@
     done_date            :: erlang:timestamp(),
     status               :: status(),
 
-    delivery_attempt = 1 :: integer(),
-    created_at           :: erlang:timestamp()
+    delivery_attempt = 1 :: integer()
 }).
 
 -record(k_mb_funnel_receipt, {
@@ -59,8 +57,7 @@
     done_date            :: erlang:timestamp(),
     status               :: status(),
 
-    delivery_attempt = 1 :: integer(),
-    created_at           :: erlang:timestamp()
+    delivery_attempt = 1 :: integer()
 }).
 
 -type k_mb_item() ::

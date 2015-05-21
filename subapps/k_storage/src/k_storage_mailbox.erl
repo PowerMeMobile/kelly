@@ -65,7 +65,6 @@ save(#k_mb_incoming{} = I) ->
             'body'            , I#k_mb_incoming.body,
             'encoding'        , bsondoc:atom_to_binary(I#k_mb_incoming.encoding),
             'delivery_attempt', I#k_mb_incoming.delivery_attempt,
-            'created_at'      , I#k_mb_incoming.created_at,
             'state'           , bsondoc:atom_to_binary(new)
         }
     },
@@ -85,8 +84,7 @@ save(#k_mb_oneapi_receipt{} = R) ->
             'submit_date'     , R#k_mb_oneapi_receipt.submit_date,
             'done_date'       , R#k_mb_oneapi_receipt.done_date,
             'status'          , bsondoc:atom_to_binary(R#k_mb_oneapi_receipt.status),
-            'delivery_attempt', R#k_mb_oneapi_receipt.delivery_attempt,
-            'created_at'      , R#k_mb_oneapi_receipt.created_at
+            'delivery_attempt', R#k_mb_oneapi_receipt.delivery_attempt
         }
     },
     ok = mongodb_storage:upsert(mailbox_storage, oneapi_receipts, Selector, Modifier);
@@ -105,8 +103,7 @@ save(#k_mb_funnel_receipt{} = R) ->
             'submit_date'     , R#k_mb_funnel_receipt.submit_date,
             'done_date'       , R#k_mb_funnel_receipt.done_date,
             'status'          , bsondoc:atom_to_binary(R#k_mb_funnel_receipt.status),
-            'delivery_attempt', R#k_mb_funnel_receipt.delivery_attempt,
-            'created_at'      , R#k_mb_funnel_receipt.created_at
+            'delivery_attempt', R#k_mb_funnel_receipt.delivery_attempt
         }
     },
     ok = mongodb_storage:upsert(mailbox_storage, funnel_receipts, Selector, Modifier).
@@ -263,8 +260,7 @@ get_item(k_mb_oneapi_receipt, Id) ->
                 submit_date = bsondoc:at(submit_date, Doc),
                 done_date = bsondoc:at(done_date, Doc),
                 status = bsondoc:binary_to_atom(bsondoc:at(status, Doc)),
-                delivery_attempt = bsondoc:at(delivery_attempt, Doc),
-                created_at = bsondoc:at(created_at, Doc)
+                delivery_attempt = bsondoc:at(delivery_attempt, Doc)
             }};
         _ ->
             no_record
@@ -283,8 +279,7 @@ get_item(k_mb_funnel_receipt, Id) ->
                 submit_date = bsondoc:at(submit_date, Doc),
                 done_date = bsondoc:at(done_date, Doc),
                 status = bsondoc:binary_to_atom(bsondoc:at(status, Doc)),
-                delivery_attempt = bsondoc:at(delivery_attempt, Doc),
-                created_at = bsondoc:at(created_at, Doc)
+                delivery_attempt = bsondoc:at(delivery_attempt, Doc)
             }};
         _ ->
             no_record
@@ -301,8 +296,7 @@ get_item(k_mb_incoming, Id) ->
                 received = bsondoc:at(received, Doc),
                 body = bsondoc:at(body, Doc),
                 encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
-                delivery_attempt = bsondoc:at(delivery_attempt, Doc),
-                created_at = bsondoc:at(created_at, Doc)
+                delivery_attempt = bsondoc:at(delivery_attempt, Doc)
             }};
         _ ->
             no_record
@@ -433,8 +427,7 @@ get_incoming(CustomerUuid, UserId, DstAddr, Limit) ->
             received = bsondoc:at(received, Doc),
             body = bsondoc:at(body, Doc),
             encoding = bsondoc:binary_to_atom(bsondoc:at(encoding, Doc)),
-            delivery_attempt = bsondoc:at(delivery_attempt, Doc),
-            created_at = bsondoc:at(created_at, Doc)
+            delivery_attempt = bsondoc:at(delivery_attempt, Doc)
         } || {_, Doc} <- Docs],
     Items = head(Limit, AllItems),
     Pending = length(AllItems) - length(Items),
