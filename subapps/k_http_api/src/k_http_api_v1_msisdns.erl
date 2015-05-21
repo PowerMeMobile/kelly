@@ -112,9 +112,12 @@ decode_msisdn(AddrBin) ->
         npi = list_to_integer(Npi)
     }.
 
-decode_state(<<"all">>)  -> all;
-decode_state(<<"free">>) -> free;
-decode_state(<<"used">>)  -> used.
+decode_state(State) ->
+    case bstr:lower(State) of
+        <<"all">>  -> all;
+        <<"free">> -> free;
+        <<"used">> -> used
+    end.
 
 msisdn2addr(Msisdn) ->
     [{addr, Msisdn#addr.addr},
