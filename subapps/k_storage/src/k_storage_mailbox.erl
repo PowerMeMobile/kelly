@@ -25,8 +25,14 @@
 
     delete_item/1,
 
-    get_incoming/4
+    get_incoming/4,
+    get_incomings/7
 ]).
+
+-type state() :: all | new | read.
+-type skip() :: non_neg_integer().
+-type limit() :: non_neg_integer().
+-type reason() :: term().
 
 %% ===================================================================
 %% API
@@ -398,7 +404,7 @@ get_subscription_ids() ->
     Ids = [Id || {Id, _} <- Docs],
     {ok, Ids}.
 
--spec get_incoming(customer_uuid(), user_id(), addr(), integer() | undefined) ->
+-spec get_incoming(customer_uuid(), user_id(), addr(), limit() | undefined) ->
     {ok, [#k_mb_incoming{}], Total::integer()}.
 get_incoming(CustomerUuid, UserId, DstAddr, Limit) ->
     Selector = {
@@ -411,6 +417,22 @@ get_incoming(CustomerUuid, UserId, DstAddr, Limit) ->
     Items = [doc_to_incoming(D) || {_, D} <- Docs],
     Pending = length(AllDocs) - length(Docs),
     {ok, Items, Pending}.
+
+-spec get_incomings(timestamp(), timestamp(), customer_uuid(), user_id(), state(), skip(), limit()) ->
+    {ok, [#k_mb_incoming{}]} | {error, reason()}.
+get_incomings(From, To, CustomerUuid, UserId, State, Skip, Limit) ->
+    Selector = bson:document(lists:flatten([
+        [{'customer_uuid', CustomerUuid} || CustomerUuid =/= undefined],
+        [{'user_id', UserId} || CustomerUuid =/= undefined andalso UserId =/= undefined],
+        [{'rcv_time', {'$gte', From, '$lt', To}}],
+        [{'state', State} || State =/= all]
+    ])),
+   case mongodb_storage:find(mailbox_storage, incomings, Selector, {}, Skip, Limit) of
+        {ok, Docs} ->
+            {ok, [doc_to_incoming(D) || {_, D} <- Docs]};
+        {error, Error} ->
+            {error, Error}
+    end.
 
 %% ===================================================================
 %% Internal

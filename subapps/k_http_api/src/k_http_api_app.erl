@@ -121,19 +121,24 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_v1_customers_users_msisdns,
         k_http_api_v1_customers,
 
+        %% Inbox API
+        k_http_api_v1_incomings,
         k_http_api_v1_msisdns,
 
+        %% Batches API
         % keep batches details above batches
         k_http_api_v1_batches_details,
         k_http_api_v1_batches,
         k_http_api_v1_batches_block,
         k_http_api_v1_batches_recipients,
 
+        %% Defers API
         % keep defers details above defers
         k_http_api_v1_defers_details,
         k_http_api_v1_defers,
         k_http_api_v1_defers_recipients,
 
+        %% Reports API
         k_http_api_v1_reports_mt_aggr_by_country,
         k_http_api_v1_reports_mt_aggr_by_country_and_network,
         k_http_api_v1_reports_mt_aggr_by_gateway,
