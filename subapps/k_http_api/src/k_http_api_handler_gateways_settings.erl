@@ -84,15 +84,15 @@ init() ->
 
 read(Params) ->
     ?log_debug("Read gtw settings (params: ~p)", [Params]),
-    SettingID = ?gv(name, Params),
-    case SettingID of
+    SettingId = ?gv(name, Params),
+    case SettingId of
         undefined -> read_all(?gv(gateway_id, Params));
-        _ -> read_id(?gv(gateway_id, Params), SettingID)
+        _ -> read_id(?gv(gateway_id, Params), SettingId)
     end.
 
 create(Params) ->
-    GtwID = ?gv(gateway_id, Params),
-    case k_storage_gateways:get_gateway(GtwID) of
+    GtwId = ?gv(gateway_id, Params),
+    case k_storage_gateways:get_gateway(GtwId) of
         {ok, Gtw = #gateway{}} ->
             create_setting(validate, Gtw, Params);
         {error, no_entry} ->
@@ -100,8 +100,8 @@ create(Params) ->
     end.
 
 update(Params) ->
-    GtwID = ?gv(gateway_id, Params),
-    case k_storage_gateways:get_gateway(GtwID) of
+    GtwId = ?gv(gateway_id, Params),
+    case k_storage_gateways:get_gateway(GtwId) of
         {ok, Gtw = #gateway{}} ->
             update_setting(validate, Gtw, Params);
         {error, no_entry} ->
@@ -109,13 +109,13 @@ update(Params) ->
     end.
 
 delete(Params) ->
-    GtwID = ?gv(gateway_id, Params),
-    SettingID = ?gv(name, Params),
-    case k_storage_gateways:get_gateway(GtwID) of
+    GtwId = ?gv(gateway_id, Params),
+    SettingId = ?gv(name, Params),
+    case k_storage_gateways:get_gateway(GtwId) of
         {ok, Gtw = #gateway{settings = Settings}} ->
-            NewSettings = lists:keydelete(SettingID, #setting.name, Settings),
-            ok = k_control_just:delete_setting(GtwID, SettingID),
-            ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
+            NewSettings = lists:keydelete(SettingId, #setting.name, Settings),
+            ok = k_control_just:delete_setting(GtwId, SettingId),
+            ok = k_storage_gateways:set_gateway(GtwId, Gtw#gateway{settings = NewSettings}),
             {ok, StsPropList} = prepare_settings(Settings),
             ?log_debug("StsPropList: ~p", [StsPropList]),
             {http_code, 204};
@@ -124,12 +124,12 @@ delete(Params) ->
     end.
 
 %% ===================================================================
-%% Local Functions
+%% Internal
 %% ===================================================================
 
-read_all(GatewayID) ->
-    ?log_debug("Try to search gtw ~p", [GatewayID]),
-    case k_storage_gateways:get_gateway(GatewayID) of
+read_all(GatewayId) ->
+    ?log_debug("Try to search gtw ~p", [GatewayId]),
+    case k_storage_gateways:get_gateway(GatewayId) of
         {ok, #gateway{settings = Settings}} ->
             {ok, StsPropList} = prepare_settings(Settings),
             ?log_debug("StsPropList: ~p", [StsPropList]),
@@ -138,8 +138,8 @@ read_all(GatewayID) ->
             {exception, 'svc0003'}
     end.
 
-read_id(GatewayID, StsName) ->
-    case k_storage_gateways:get_gateway(GatewayID) of
+read_id(GatewayId, StsName) ->
+    case k_storage_gateways:get_gateway(GatewayId) of
         {ok, #gateway{settings = Settings}} ->
             case get_setting(StsName, Settings) of
                 false ->
@@ -160,20 +160,20 @@ update_setting(validate, Gtw, Params) ->
         _ -> update_setting(update, Gtw, Params)
     end;
 update_setting(update, Gtw, Params) ->
-    SettingID = ?gv(name, Params),
-    GtwID = ?gv(gateway_id, Params),
+    SettingId = ?gv(name, Params),
+    GtwId = ?gv(gateway_id, Params),
     #gateway{settings = Settings} = Gtw,
-    case get_setting(SettingID, Settings) of
+    case get_setting(SettingId, Settings) of
         false -> {exception, 'svc0003'};
         Setting = #setting{} ->
             NewValue = ?resolve(value, Params, Setting#setting.value),
             NewSetting = #setting{
-                name = SettingID,
+                name = SettingId,
                 value = NewValue
             },
-            NewSettings = lists:keyreplace(SettingID, #setting.name, Settings, NewSetting),
-            ok = k_control_just:set_setting(GtwID, NewSetting),
-            ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{settings = NewSettings}),
+            NewSettings = lists:keyreplace(SettingId, #setting.name, Settings, NewSetting),
+            ok = k_control_just:set_setting(GtwId, NewSetting),
+            ok = k_storage_gateways:set_gateway(GtwId, Gtw#gateway{settings = NewSettings}),
             {ok, [StsPropList]} = prepare_settings(NewSetting),
             ?log_debug("StsPropList: ~p", [StsPropList]),
             {http_code, 200, StsPropList}
@@ -188,10 +188,10 @@ create_setting(validate, Gtw, Params) ->
         _ -> create_setting(is_exist, Gtw, Params)
     end;
 create_setting(is_exist, GTW = #gateway{settings = Settings}, Params) ->
-    SettingID = ?gv(name, Params),
-    case get_setting(SettingID, Settings) of
+    SettingId = ?gv(name, Params),
+    case get_setting(SettingId, Settings) of
         #setting{} ->
-            ?log_debug("Setting [~p] already exist", [SettingID]),
+            ?log_debug("Setting [~p] already exist", [SettingId]),
             {exception, 'svc0004'};
         false ->
             create_setting(create, GTW, Params)
@@ -203,9 +203,9 @@ create_setting(create, GTW, Params) ->
         name = Name,
         value = Value
     },
-    GtwID = ?gv(gateway_id, Params),
-    ok = k_control_just:set_setting(GtwID, Setting),
-    ok = k_storage_gateways:set_gateway(GtwID, GTW#gateway{settings = [Setting | GTW#gateway.settings]}),
+    GtwId = ?gv(gateway_id, Params),
+    ok = k_control_just:set_setting(GtwId, Setting),
+    ok = k_storage_gateways:set_gateway(GtwId, GTW#gateway{settings = [Setting | GTW#gateway.settings]}),
     {ok, [StsPropList]} = prepare_settings(Setting),
     ?log_debug("StsPropList: ~p", [StsPropList]),
     {http_code, 201, StsPropList}.

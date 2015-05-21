@@ -83,8 +83,8 @@ create(Params) ->
     end.
 
 update(Params) ->
-    ID = ?gv(id, Params),
-    case k_storage_networks:get_network(ID) of
+    Id = ?gv(id, Params),
+    case k_storage_networks:get_network(Id) of
         {ok, Entry = #network{}} ->
             update_network(Entry, Params);
         {error, no_entry} ->
@@ -97,7 +97,7 @@ delete(Params) ->
     {http_code, 204}.
 
 %% ===================================================================
-%% Local Functions
+%% Internal
 %% ===================================================================
 
 read_all() ->

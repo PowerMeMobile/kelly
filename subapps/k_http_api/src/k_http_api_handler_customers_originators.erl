@@ -122,7 +122,7 @@ prepare_originators(Originators) when is_list(Originators) ->
     {ok, [prepare_originators(Originator) || Originator <- Originators]}.
 
 %% ===================================================================
-%% Local Functions
+%% Internal
 %% ===================================================================
 
 create_originator(Customer, Params) ->

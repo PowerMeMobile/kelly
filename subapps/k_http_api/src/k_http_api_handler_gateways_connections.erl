@@ -63,10 +63,10 @@ init() ->
     }}.
 
 read(Params) ->
-    ConnectionID = ?gv(id, Params),
-    case ConnectionID of
+    ConnectionId = ?gv(id, Params),
+    case ConnectionId of
         undefined -> read_all(?gv(gateway_id, Params));
-        _ -> read_id(?gv(gateway_id, Params), ConnectionID)
+        _ -> read_id(?gv(gateway_id, Params), ConnectionId)
     end.
 
 create(Params) ->
@@ -89,17 +89,17 @@ update(Params) ->
 
 delete(Params) ->
     GtwUuid = ?gv(gateway_id, Params),
-    ConnectionID = ?gv(id, Params),
-    ok = k_control_just:delete_connection(GtwUuid, ConnectionID),
-    ok = k_storage_gateways:del_gateway_connection(GtwUuid, ConnectionID),
+    ConnectionId = ?gv(id, Params),
+    ok = k_control_just:delete_connection(GtwUuid, ConnectionId),
+    ok = k_storage_gateways:del_gateway_connection(GtwUuid, ConnectionId),
     {http_code, 204}.
 
 %% ===================================================================
-%% Local Functions
+%% Internal
 %% ===================================================================
 
-read_all(GatewayID) ->
-    case k_storage_gateways:get_gateway(GatewayID) of
+read_all(GatewayId) ->
+    case k_storage_gateways:get_gateway(GatewayId) of
         {ok, #gateway{connections = Connections}} ->
             {ok, Plists} = prepare_connections(Connections),
             ?log_debug("Connections: ~p", [Plists]),
@@ -108,12 +108,12 @@ read_all(GatewayID) ->
             {exception, 'svc0003'}
     end.
 
-read_id(GatewayID, ConnectionID) ->
-    case k_storage_gateways:get_gateway(GatewayID) of
+read_id(GatewayId, ConnectionId) ->
+    case k_storage_gateways:get_gateway(GatewayId) of
         {ok, #gateway{connections = Connections}} ->
-            case get_connection(ConnectionID, Connections) of
+            case get_connection(ConnectionId, Connections) of
                 undefined ->
-                    ?log_debug("Connection [~p] not found", [ConnectionID]),
+                    ?log_debug("Connection [~p] not found", [ConnectionId]),
                     {exception, 'svc0003'};
                 Connection = #connection{} ->
                     {ok, [Plist]} = prepare_connections(Connection),
@@ -125,27 +125,27 @@ read_id(GatewayID, ConnectionID) ->
     end.
 
 update_connection(Gtw, Params) ->
-    GtwID = ?gv(gateway_id, Params),
-    ConnectionID = ?gv(id, Params),
+    GtwId = ?gv(gateway_id, Params),
+    ConnectionId = ?gv(id, Params),
     #gateway{connections = Connections} = Gtw,
-    case get_connection(ConnectionID, Connections) of
+    case get_connection(ConnectionId, Connections) of
         undefined -> {exception, 'svc0003'};
         Conn = #connection{} ->
             NewHost = ?gv(host, Params, Conn#connection.host),
             NewPort = ?gv(port, Params, Conn#connection.port),
             NewBindType = ?gv(bind_type, Params, Conn#connection.bind_type),
-            NewSystemID = ?gv(system_id, Params, Conn#connection.system_id),
+            NewSystemId = ?gv(system_id, Params, Conn#connection.system_id),
             NewPassword = ?gv(password, Params, Conn#connection.password),
             NewSystemType = ?gv(system_type, Params, Conn#connection.system_type),
             NewAddrTon = ?gv(addr_ton, Params, Conn#connection.addr_ton),
             NewAddrNpi = ?gv(addr_npi, Params, Conn#connection.addr_npi),
             NewAddrRange = ?gv(addr_range, Params, Conn#connection.addr_range),
             NewConnection = #connection{
-                id = ConnectionID,
+                id = ConnectionId,
                 host = NewHost,
                 port = NewPort,
                 bind_type = NewBindType,
-                system_id = NewSystemID,
+                system_id = NewSystemId,
                 password = NewPassword,
                 system_type = NewSystemType,
                 addr_ton = NewAddrTon,
@@ -153,8 +153,8 @@ update_connection(Gtw, Params) ->
                 addr_range = NewAddrRange
             },
             {ok, NewConnections} = replace_connection(NewConnection, Connections),
-            ok = k_control_just:set_connection(GtwID, NewConnection),
-            ok = k_storage_gateways:set_gateway(GtwID, Gtw#gateway{connections = NewConnections}),
+            ok = k_control_just:set_connection(GtwId, NewConnection),
+            ok = k_storage_gateways:set_gateway(GtwId, Gtw#gateway{connections = NewConnections}),
             {ok, [Plist]} = prepare_connections(NewConnection),
             ?log_debug("Connection: ~p", [Plist]),
             {http_code, 200, Plist}
@@ -164,7 +164,7 @@ replace_connection(NewConnection, Connections) ->
     replace_connection(NewConnection, Connections, []).
 replace_connection(_, [], Connections) ->
     {ok, Connections};
-replace_connection(NewConn = #connection{id = ID}, [#connection{id = ID} | Tail], Acc) ->
+replace_connection(NewConn = #connection{id = Id}, [#connection{id = Id} | Tail], Acc) ->
     replace_connection(NewConn, Tail, [NewConn | Acc]);
 replace_connection(NewConn, [Conn | Tail], Acc) ->
     replace_connection(NewConn, Tail, [Conn | Acc]).
@@ -172,58 +172,58 @@ replace_connection(NewConn, [Conn | Tail], Acc) ->
 
 get_next_connection_id(Connections) ->
     get_next_connection_id(Connections, 0).
-get_next_connection_id([], MaxID) ->
-    {ok, MaxID + 1};
-get_next_connection_id([#connection{id = ID} | Tail], MaxID) when ID > MaxID ->
-    get_next_connection_id(Tail, ID);
-get_next_connection_id([_ | Tail], MaxID) ->
-    get_next_connection_id(Tail, MaxID).
+get_next_connection_id([], MaxId) ->
+    {ok, MaxId + 1};
+get_next_connection_id([#connection{id = Id} | Tail], MaxId) when Id > MaxId ->
+    get_next_connection_id(Tail, Id);
+get_next_connection_id([_ | Tail], MaxId) ->
+    get_next_connection_id(Tail, MaxId).
 
 check_connection_id(Gtw = #gateway{connections = Connections}, Params) ->
     case ?gv(id, Params) of
         undefined ->
-            {ok, NextID} = get_next_connection_id(Connections),
-            ?log_debug("Next connection id: ~p", [NextID]),
-            create_connection(lists:keyreplace(id, 1, Params, {id, NextID}));
+            {ok, NextId} = get_next_connection_id(Connections),
+            ?log_debug("Next connection id: ~p", [NextId]),
+            create_connection(lists:keyreplace(id, 1, Params, {id, NextId}));
         _ ->
             is_connections_exist(Gtw, Params)
     end.
 
 is_connections_exist(#gateway{connections = Connections}, Params) ->
-    ConnectionID = ?gv(id, Params),
-    case get_connection(ConnectionID, Connections) of
+    ConnectionId = ?gv(id, Params),
+    case get_connection(ConnectionId, Connections) of
         #connection{} ->
-            ?log_debug("Connection [~p] already exist", [ConnectionID]),
+            ?log_debug("Connection [~p] already exist", [ConnectionId]),
             {exception, 'svc0004'};
         undefined ->
             create_connection(Params)
     end.
 
 
-get_connection(_ID, []) ->
+get_connection(_Id, []) ->
     undefined;
-get_connection(ID, [Conn = #connection{id = ID} | _Tail]) ->
+get_connection(Id, [Conn = #connection{id = Id} | _Tail]) ->
     Conn;
-get_connection(ID, [_Conn | Tail]) ->
-    get_connection(ID, Tail).
+get_connection(Id, [_Conn | Tail]) ->
+    get_connection(Id, Tail).
 
 create_connection(Params) ->
-    ConnectionID = ?gv(id, Params),
+    ConnectionId = ?gv(id, Params),
     Host = ?gv(host, Params),
     Port = ?gv(port, Params),
     BindType = ?gv(bind_type, Params),
-    SystemID = ?gv(system_id, Params),
+    SystemId = ?gv(system_id, Params),
     Password = ?gv(password, Params),
     SystemType = ?gv(system_type, Params),
     AddrTON = ?gv(addr_ton, Params),
     AddrNPI= ?gv(addr_npi, Params),
     AddrRange = ?gv(addr_range, Params),
     Connection = #connection{
-        id          = ConnectionID,
+        id          = ConnectionId,
         host        = Host,
         port        = Port,
         bind_type   = BindType,
-        system_id   = SystemID,
+        system_id   = SystemId,
         password    = Password,
         system_type = SystemType,
         addr_ton    = AddrTON,
