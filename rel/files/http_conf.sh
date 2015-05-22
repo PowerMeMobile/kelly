@@ -19,7 +19,7 @@ post() {
     BODY=$2
     echo -n "Creating $TARGET..."
     CODE=`curl -s -D - -X "POST" http://$KELLY_HOST:$KELLY_PORT/$TARGET -d $BODY -l -o /dev/null | grep -i http | awk '{ print $2 }'`
-    if [ "$CODE" != "201" ]; then
+    if [[ "$CODE" != "201" ]] && [[ "$CODE" != "200" ]]; then
         echo -e "\nUnexpected return code [$TARGET:$BODY:$CODE]"
         exit 1
     fi
@@ -114,6 +114,10 @@ post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=8cb7aa6e-f
 
 # postpaid users
 post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
+post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user_no_inbox&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
+
+# postpaid features
+post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/features" 'name=inbox&value=true'
 
 # prepaid customer
 post "customers" 'customer_uuid=f9251298-381e-49c4-a60d-ff51e66c4f1c&customer_id=10004&name=soap-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
@@ -135,6 +139,10 @@ post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators" 'id=d8372096-f
 
 # postpaid users
 post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users" "id=user&password=password&connection_types=mm&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users" "id=user_no_inbox&password=password&connection_types=mm&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+
+# postpaid features
+post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/features" 'name=inbox&value=true'
 
 # prepaid customer
 post "customers" 'customer_uuid=77005b1e-d84b-4053-8917-fe91a19eb35d&customer_id=10002&name=mm-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
