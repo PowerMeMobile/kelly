@@ -425,7 +425,7 @@ v1_build_short_req_info(#sms_req_v1{
     req_id = ReqId,
     req_time = ReqTime,
     interface = ClientType,
-    customer_id = CustomerUuid,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     gateway_id = GatewayId,
     type = Type,
@@ -457,7 +457,7 @@ v1_build_short_req_info(#sms_req_v1{
 v1_build_part_req_info(#sms_req_v1{
     req_id = ReqId,
     req_time = ReqTime,
-    customer_id = CustomerUuid,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     interface = ClientType,
     gateway_id = GatewayId,
@@ -520,7 +520,7 @@ v1_build_long_part_req_info(#sms_req_v1{
     req_id = ReqId,
     req_time = ReqTime,
     interface = ClientType,
-    customer_id = CustomerUuid,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     gateway_id = GatewayId,
     src_addr = SrcAddr
@@ -555,7 +555,7 @@ v1_build_long_part_req_info(#sms_req_v1{
 v1_process_oneapi_req(#sms_req_v1{
     req_id = ReqId,
     interface = oneapi,
-    customer_id = CustomerUuid,
+    customer_uuid = CustomerUuid,
     user_id = UserId,
     params = Params,
     src_addr = SrcAddr
@@ -579,7 +579,7 @@ v1_build_batch_info(SmsReq, ReqInfos) ->
     #sms_req_v1{
         req_id = ReqId,
         req_time = ReqTime,
-        customer_id = CustomerUuid,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         interface = ClientType,
         def_time = DefTime,
