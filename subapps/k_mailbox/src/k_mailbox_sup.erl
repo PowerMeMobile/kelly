@@ -33,7 +33,7 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, {{rest_for_one, 5, 10}, [
+    {ok, {{rest_for_one, 10, 1}, [
         ?SUPERVISOR(k_mb_amqp_sup),
         ?WORKER(k_mb_subscription_mgr),
         ?WORKER(k_mb_postponed_queue),

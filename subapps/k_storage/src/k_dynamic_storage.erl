@@ -118,7 +118,9 @@ set_mt_dlr_info_and_get_msg_info(#dlr_info{
         'gi' , GatewayId,
         'omi', OutMsgId,
         'rd' , true,
-        's'  , <<"submitted">>
+        %% check delivered state in case if the receipt was already stored to dynamic storage,
+        %% but failed to be stored to mailbox.
+        '$or', [{s,<<"submitted">>}, {s,<<"delivered">>}]
     },
     Sort = {
         'rqt', -1

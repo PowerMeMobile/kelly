@@ -65,7 +65,7 @@ process_incoming_sms_request(IncSmsRequest = #just_incoming_sms_dto{
                 ?log_debug("Got incoming message from dest_addr: ~p for customer uuid: ~p, user id: ~p",
                     [DstAddr, CUUID, UID]),
                 {CUUID, UID};
-            Error ->
+            {error, Error} ->
                 ?log_debug("Address resolution failed with: ~p", [Error]),
                 ?log_debug("Couldn't resolve incoming message coming to: ~p", [DstAddr]),
                 {undefined, undefined}

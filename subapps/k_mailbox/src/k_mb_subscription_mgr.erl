@@ -71,7 +71,7 @@ get_suitable_subscription(Item) ->
 process_funnel_down_event() ->
     {ok, Subs} = k_storage_mailbox:get_funnel_subscriptions(),
     Fun = fun(Sub) ->
-        ?MODULE:unregister(
+        ok = ?MODULE:unregister(
             Sub#k_mb_funnel_sub.id,
             Sub#k_mb_funnel_sub.customer_uuid,
             Sub#k_mb_funnel_sub.user_id

@@ -34,7 +34,7 @@ process(<<"ConnectionDownEvent">>, Message) ->
             process_connection_down_event(ConnectionId, CustomerId, UserId);
         {error, Error} ->
             ?log_warn("Failed to decode funnel client offline event: ~p with error: ~p", [Message, Error]),
-            {ok, []}
+            {error, Error}
     end;
 
 process(<<"ConnectionUpEvent">>, Message) ->
@@ -49,7 +49,7 @@ process(<<"ConnectionUpEvent">>, Message) ->
             process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType);
         {error, Error} ->
             ?log_warn("Failed to decode funnel client online event: ~p with: ~p", [Message, Error]),
-            {ok, []}
+            {error, Error}
     end;
 
 process(<<"ServerUpEvent">>, _Message) ->
@@ -71,18 +71,17 @@ process_connection_down_event(ConnectionId, CustomerId, UserId) ->
             case k_mailbox:unregister_subscription(ConnectionId, CustomerUuid, UserId) of
                 ok ->
                     {ok, []};
-                {error, Reason} ->
-                    ?log_error("Could not unregister ~p with: ~p", [{CustomerUuid, ConnectionId}, Reason]),
-                    {ok, []}
+                {error, Error} ->
+                    ?log_error("Could not unregister ~p with: ~p", [{CustomerUuid, ConnectionId}, Error]),
+                    {error, Error}
             end;
-        {error, Reason} ->
-            ?log_error("Could not unregister customer_id: ~p with: ~p", [CustomerId, Reason]),
-            {ok, []}
+        {error, Error} ->
+            ?log_error("Could not unregister customer_id: ~p with: ~p", [CustomerId, Error]),
+            {error, Error}
     end.
 
 process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType)
-    when ConnType == receiver orelse ConnType == transceiver
-->
+        when ConnType == receiver orelse ConnType == transceiver ->
     case get_customer_uuid_by_id(CustomerId) of
         {ok, CustomerUuid} ->
             {ok, QNameFmt} = application:get_env(k_handlers, funnel_node_queue_fmt),
@@ -96,11 +95,16 @@ process_connection_up_event(ConnectionId, CustomerId, UserId, ConnType)
                     queue_name = QName,
                     created_at = ac_datetime:utc_timestamp()
             },
-            k_mailbox:register_subscription(Subscription),
-            {ok, []};
-        {error, Reason} ->
-            ?log_error("Could not register customer_id: ~p with: ~p", [CustomerId, Reason]),
-            {ok, []}
+            case k_mailbox:register_subscription(Subscription) of
+                ok ->
+                    {ok, []};
+                {error, Error} ->
+                    ?log_error("Could not register ~p with: ~p", [{CustomerUuid, ConnectionId}, Error]),
+                    {error, Error}
+            end;
+        {error, Error} ->
+            ?log_error("Could not register customer_id: ~p with: ~p", [CustomerId, Error]),
+            {error, Error}
     end;
 process_connection_up_event(_ConnectionId, _CustomerId, _UserId, _ConnType) ->
     %% got transmitter connection up event. nothing to do.
@@ -110,6 +114,6 @@ get_customer_uuid_by_id(CustomerId) ->
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, #customer{customer_uuid = CustomerUuid}} ->
             {ok, CustomerUuid};
-        Error ->
-            Error
+        {error, Error} ->
+            {error, Error}
     end.

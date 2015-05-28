@@ -137,9 +137,9 @@ authenticate(CustomerId, UserId, Password, Interface) ->
                         {error, no_entry} ->
                             ?log_debug("Customer id: ~p User id: ~p not found", [CustomerId, UserId]),
                             {deny, unknown_user};
-                        Error ->
+                        {error, Error} ->
                             ?log_error("Unexpected error: ~p", [Error]),
-                            Error
+                            {error, Error}
                     end;
                 Deny ->
                     Deny
@@ -147,9 +147,9 @@ authenticate(CustomerId, UserId, Password, Interface) ->
         {error, no_entry} ->
             ?log_info("Customer id: ~p not found", [CustomerId]),
             {deny, unknown_customer};
-        Error ->
+        {error, Error} ->
             ?log_error("Unexpected error: ~p.", [Error]),
-            Error
+            {error, Error}
     end.
 
 check_password(PasswHash, PasswHash) ->

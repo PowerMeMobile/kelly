@@ -261,17 +261,21 @@ mongo_do(ServerName, WriteMode, ReadMode, ActionFun) ->
                         {failure, Reason} ->
                             ?log_error("MongoDB failure: ~p", [Reason]),
                             {error, Reason};
-                        {'EXIT', {{bad_command, Reason}, Stacktrace}} ->
-                            ?log_error("MongoDB error: ~p, stacktrace: ~p", [Reason, Stacktrace]),
+                        {'EXIT', Reason, Stacktrace} ->
+                            ?log_error("MongoDB EXIT error: ~p, self: ~p, stacktrace: ~p",
+                                [Reason, self(), Stacktrace]),
                             {error, Reason};
                         {'EXIT', Reason} ->
-                            ?log_error("MongoDB error: ~p self: ~p", [Reason, self()]),
+                            ?log_error("MongoDB EXIT error: ~p self: ~p", [Reason, self()]),
                             %% mvar timeouted? show clients down?
                             {error, Reason}
                     end;
                 {error, Reason} ->
-                    {error, Reason}
+                    ?log_error("MongoDB pool error: ~p", [Reason]),
+                    %% slow down clients?
+                    {error, {database_connection_failure, Reason}}
             end;
         {error, Reason} ->
+            ?log_error("MongoDB error: ~p", [Reason]),
             {error, Reason}
     end.
