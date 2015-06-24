@@ -58,10 +58,6 @@ process(<<"SmsRequest">>, ReqBin) ->
 process(<<"SmsRequest2">>, ReqBin) ->
     {ok, SmsReq} = adto:decode(#just_sms_request_dto{}, ReqBin),
     process_sms_req(SmsReq);
-%% deprecated since 2.6.0
-process(<<"OneAPISmsRequest">>, ReqBin) ->
-    {ok, SmsReq} = adto:decode(#just_sms_request_dto{}, ReqBin),
-    process_sms_req(SmsReq);
 process(<<"SmsReqV1">>, ReqBin) ->
     {ok, SmsReq} = adto:decode(#sms_req_v1{}, ReqBin),
     process_sms_req(SmsReq);
@@ -75,20 +71,13 @@ process(ReqCT, ReqBin) ->
 
 -spec process_sms_req(#just_sms_request_dto{} | #sms_req_v1{}) ->
     {ok, [#worker_reply{}]} | {error, any()}.
-process_sms_req(#just_sms_request_dto{client_type = ClientType} = SmsReq) ->
+process_sms_req(#just_sms_request_dto{} = SmsReq) ->
     ?log_debug("Got sms request: ~p", [SmsReq]),
     ReqTime = ac_datetime:utc_timestamp(),
     ReqInfos = dto_sms_req_to_req_infos(SmsReq, ReqTime),
     BatchInfo = dto_build_batch_info(SmsReq, ReqTime, ReqInfos),
     case k_dynamic_storage:set_mt_batch_info(BatchInfo) of
         ok ->
-            case ClientType of
-                oneapi ->
-                    InMsgIds = [InMsgId || #req_info{in_msg_id = InMsgId} <- ReqInfos],
-                    dto_process_oneapi_req(SmsReq, InMsgIds);
-                _ ->
-                    nop
-            end,
             case ac_utils:safe_foreach(
                 fun k_dynamic_storage:set_mt_req_info/1, ReqInfos, ok, {error, '_'}
             ) of
@@ -310,27 +299,6 @@ dto_get_param(Name, Params, Default) ->
             Default;
         #just_sms_request_param_dto{value = {_, Value}} ->
             Value
-    end.
-
-dto_process_oneapi_req(#just_sms_request_dto{
-    client_type = oneapi,
-    id = ReqId,
-    customer_id = CustomerUuid,
-    user_id = UserId,
-    params = Params,
-    source_addr = SrcAddr
-}, InMsgIds) ->
-    NotifyURL = dto_get_param(<<"oneapi_notify_url">>, Params, undefined),
-    CallbackData = dto_get_param(<<"oneapi_callback_data">>, Params, undefined),
-    ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
-    case create_oneapi_receipt_subscription(CustomerUuid, UserId, SrcAddr,
-            NotifyURL, CallbackData, ReqId, InMsgIds) of
-        {ok, SubId} ->
-            ?log_debug("Create receipt subscription: ~p", [SubId]),
-            ok;
-        nop ->
-            ?log_debug("Receipt subscription didn't requested", []),
-            ok
     end.
 
 dto_build_batch_info(SmsReq, ReqTime, ReqInfos) ->
