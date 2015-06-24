@@ -528,8 +528,8 @@ v1_process_oneapi_req(#sms_req_v1{
     params = Params,
     src_addr = SrcAddr
 }, InMsgIds) ->
-    NotifyURL = ?gv(oneapi_notify_url, Params, undefined),
-    CallbackData = ?gv(oneapi_callback_data, Params, undefined),
+    NotifyURL = ?gv(x_oneapi_notify_url, Params, undefined),
+    CallbackData = ?gv(x_oneapi_callback_data, Params, undefined),
     ?log_debug("NotifyURL: ~p CallbackData: ~p", [NotifyURL, CallbackData]),
     case create_oneapi_receipt_subscription(CustomerUuid, UserId, SrcAddr,
             NotifyURL, CallbackData, ReqId, InMsgIds) of
