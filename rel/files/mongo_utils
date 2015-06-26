@@ -1,0 +1,14 @@
+#!/bin/bash
+
+HOST=${MONGO_HOST-127.0.0.1}
+PORT=${MONGO_PORT-27017}
+SCRIPT_DIR=$(dirname ${BASH_SOURCE[0]})
+SCRIPT_NAME=$(basename ${BASH_SOURCE[0]})
+
+if [ $# -ne 1 ]; then
+   echo "usage: $SCRIPT_NAME <config.count | config.remove | mailbox.count | mailbox.remove>"
+   exit 1
+fi
+
+command=$1
+mongo $HOST:$PORT --quiet --eval "var server=\"$HOST:$PORT\"; var command=\"$command\"" $SCRIPT_DIR/mongo_utils.js
