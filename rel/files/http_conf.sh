@@ -83,25 +83,32 @@ post "network_maps" "id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&networ
 #
 
 #
-# OneAPI
+# Funnel
 
 # postpaid customer
-post "customers" 'customer_uuid=a3ddc34a-1793-11e2-9602-00269e42f7a5&customer_id=oneapi-postpaid&name=oneapi-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
+post "customers" 'customer_uuid=493b3678-9dc8-11e2-8cce-00269e42f7a5&customer_id=10001&name=funnel-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
 
 # postpaid originators
-post "customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/originators" 'id=ede7b0a0-f2d3-11e3-aec1-00269e42f7a5&address=375296660003,1,1&description=&is_default=true&state=approved'
+post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/originators" 'id=c71175cc-f091-11e3-8ee4-00269e42f7a5&address=375296660001,1,1&description=&is_default=true&state=approved'
 
 # postpaid users
-post "customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users" 'id=user&password=password&connection_types=oneapi&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
-
+post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user2&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user3&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user4&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user5&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
 # prepaid customer
-post "customers" 'customer_uuid=16f87550-1794-11e2-ade6-00269e42f7a5&customer_id=oneapi-prepaid&name=oneapi-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
+post "customers" "customer_uuid=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&customer_id=10002&name=funnel-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active"
 
 # prepaid originators
-post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/originators" 'id=5f3a9330-f2d4-11e3-950a-00269e42f7a5&address=375296660004,1,1&description=&is_default=true&state=approved'
+post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/originators" 'id=a1f1b0e0-f2d5-11e3-950a-00269e42f7a5&address=375296660002,1,1&description=&is_default=true&state=approved'
 
 # prepaid users
-post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/users" 'id=user&password=password&connection_types=oneapi&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
+post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user2&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user3&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user4&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user5&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
 
 #
 # SOAP
@@ -110,7 +117,7 @@ post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/users" 'id=user&password=pa
 post "customers" 'customer_uuid=c173786e-63ce-11e2-8740-001d0947ec73&customer_id=10003&name=soap-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
 
 # postpaid originators
-post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=8cb7aa6e-f2d4-11e3-9a73-00269e42f7a5&address=375296660005,1,1&description=&is_default=true&state=approved'
+post "customers/c173786e-63ce-11e2-8740-001d0947ec73/originators" 'id=8cb7aa6e-f2d4-11e3-9a73-00269e42f7a5&address=375296660003,1,1&description=&is_default=true&state=approved'
 
 # postpaid users
 post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users" 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
@@ -123,7 +130,7 @@ post "customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/features" 'name=
 post "customers" 'customer_uuid=f9251298-381e-49c4-a60d-ff51e66c4f1c&customer_id=10004&name=soap-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
 
 # prepaid originators
-post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators" 'id=5220e2fa-c794-4387-ad92-29d4243a6e29&address=375296660006,1,1&description=&is_default=true&state=approved'
+post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/originators" 'id=5220e2fa-c794-4387-ad92-29d4243a6e29&address=375296660004,1,1&description=&is_default=true&state=approved'
 
 # prepaid users
 post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/users" 'id=user&password=password&connection_types=soap&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
@@ -132,10 +139,10 @@ post "customers/f9251298-381e-49c4-a60d-ff51e66c4f1c/users" 'id=user&password=pa
 # MM
 
 # postpaid customer
-post "customers" 'customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=10001&name=mm-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
+post "customers" 'customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=10005&name=mm-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
 
 # postpaid originators
-post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators" 'id=d8372096-f2d4-11e3-950a-00269e42f7a5&address=375296660007,1,1&description=&is_default=true&state=approved'
+post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators" 'id=d8372096-f2d4-11e3-950a-00269e42f7a5&address=375296660005,1,1&description=&is_default=true&state=approved'
 
 # postpaid users
 post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users" "id=user&password=password&connection_types=mm&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
@@ -145,42 +152,56 @@ post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users" "id=user_no_inbox&pa
 post "customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/features" 'name=inbox&value=true'
 
 # prepaid customer
-post "customers" 'customer_uuid=77005b1e-d84b-4053-8917-fe91a19eb35d&customer_id=10002&name=mm-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
+post "customers" 'customer_uuid=77005b1e-d84b-4053-8917-fe91a19eb35d&customer_id=10006&name=mm-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
 
 # prepaid originators
-post "customers/77005b1e-d84b-4053-8917-fe91a19eb35d/originators" 'id=d0787e41-0bbd-4ec3-a2b9-318c7fd92373&address=375296660008,1,1&description=&is_default=true&state=approved'
+post "customers/77005b1e-d84b-4053-8917-fe91a19eb35d/originators" 'id=d0787e41-0bbd-4ec3-a2b9-318c7fd92373&address=375296660006,1,1&description=&is_default=true&state=approved'
 
 # prepaid users
 post "customers/77005b1e-d84b-4053-8917-fe91a19eb35d/users" 'id=user&password=password&connection_types=mm&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
 
 #
-# smppload
+# OneAPI
 
 # postpaid customer
-post "customers" 'customer_uuid=493b3678-9dc8-11e2-8cce-00269e42f7a5&customer_id=&name=smppload-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
+post "customers" 'customer_uuid=a3ddc34a-1793-11e2-9602-00269e42f7a5&customer_id=10007&name=oneapi-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
 
 # postpaid originators
-post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/originators" 'id=c71175cc-f091-11e3-8ee4-00269e42f7a5&address=375296660001,1,1&description=&is_default=true&state=approved'
+post "customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/originators" 'id=ede7b0a0-f2d3-11e3-aec1-00269e42f7a5&address=375296660007,1,1&description=&is_default=true&state=approved'
 
 # postpaid users
-post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
-post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user2&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
-post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user3&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
-post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user4&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
-post "customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users" "id=user5&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users" 'id=user&password=password&connection_types=oneapi&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
 
 # prepaid customer
-post "customers" "customer_uuid=50cec0fa-ea33-11e2-8cb1-00269e42f7a5&customer_id=prepaid&name=smppload-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active"
+post "customers" 'customer_uuid=16f87550-1794-11e2-ade6-00269e42f7a5&customer_id=10008&name=oneapi-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
 
 # prepaid originators
-post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/originators" 'id=a1f1b0e0-f2d5-11e3-950a-00269e42f7a5&address=375296660002,1,1&description=&is_default=true&state=approved'
+post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/originators" 'id=5f3a9330-f2d4-11e3-950a-00269e42f7a5&address=375296660008,1,1&description=&is_default=true&state=approved'
 
 # prepaid users
-post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
-post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user2&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
-post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user3&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
-post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user4&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
-post "customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users" "id=user5&password=password&connection_types=transmitter;receiver;transceiver&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active"
+post "customers/16f87550-1794-11e2-ade6-00269e42f7a5/users" 'id=user&password=password&connection_types=oneapi&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
+
+#
+# Email
+
+# postpaid customer
+post "customers" 'customer_uuid=b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9&customer_id=10009&name=email-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active'
+
+# postpaid originators
+post "customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/originators" 'id=eca649a3-fb77-4800-ba5a-0c7c1c14c9fb&address=375296660009,1,1&description=&is_default=true&state=approved'
+
+# postpaid users
+post "customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/users" 'id=user&password=password&connection_types=email&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
+
+# prepaid customer
+post "customers" 'customer_uuid=01a2d05d-fd2d-4532-847c-16681302101e&customer_id=10010&name=email-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
+
+# prepaid originators
+post "customers/01a2d05d-fd2d-4532-847c-16681302101e/originators" 'id=192ebc79-0beb-4e51-be90-548bb1340b66&address=375296660010,1,1&description=&is_default=true&state=approved'
+
+# prepaid users
+post "customers/01a2d05d-fd2d-4532-847c-16681302101e/users" 'id=user&password=password&connection_types=email&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
+
 
 #
 # MSISDNs Pool
@@ -194,30 +215,38 @@ post "v1/msisdns" "msisdn=0051,6,0"
 post "v1/msisdns" "msisdn=0061,6,0"
 post "v1/msisdns" "msisdn=0071,6,0"
 post "v1/msisdns" "msisdn=0081,6,0"
+post "v1/msisdns" "msisdn=0091,6,0"
+post "v1/msisdns" "msisdn=0101,6,0"
 
-# smppload postpaid
+# funnel postpaid
 post "v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/msisdns" "msisdn=0011,6,0"
 post "v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users/user/msisdns" "msisdn=0011,6,0"
-# smppload prepaid
+# funnel prepaid
 post "v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/msisdns" "msisdn=0021,6,0"
 post "v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users/user/msisdns" "msisdn=0021,6,0"
-# oneapi postpaid
-post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/msisdns" "msisdn=0031,6,0"
-post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users/user/msisdns" "msisdn=0031,6,0"
-# oneapi prepaid
-post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/msisdns" "msisdn=0041,6,0"
-post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users/user/msisdns" "msisdn=0041,6,0"
 # soap postpaid
-post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns" "msisdn=0051,6,0"
-post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns" "msisdn=0051,6,0"
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns" "msisdn=0031,6,0"
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns" "msisdn=0031,6,0"
 # soap prepaid
-post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns" "msisdn=0061,6,0"
-post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns" "msisdn=0061,6,0"
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/msisdns" "msisdn=0041,6,0"
+post "v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users/user/msisdns" "msisdn=0041,6,0"
 # mm postpaid
-post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns" "msisdn=0071,6,0"
-post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns" "msisdn=0071,6,0"
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns" "msisdn=0051,6,0"
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns" "msisdn=0051,6,0"
 # mm prepaid
-post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns" "msisdn=0081,6,0"
-post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns" "msisdn=0081,6,0"
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/msisdns" "msisdn=0061,6,0"
+post "v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users/user/msisdns" "msisdn=0061,6,0"
+# oneapi postpaid
+post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/msisdns" "msisdn=0071,6,0"
+post "v1/customers/a3ddc34a-1793-11e2-9602-00269e42f7a5/users/user/msisdns" "msisdn=0071,6,0"
+# oneapi prepaid
+post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/msisdns" "msisdn=0081,6,0"
+post "v1/customers/16f87550-1794-11e2-ade6-00269e42f7a5/users/user/msisdns" "msisdn=0081,6,0"
+# email postpaid
+post "v1/customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/msisdns" "msisdn=0091,6,0"
+post "v1/customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/users/user/msisdns" "msisdn=0091,6,0"
+# email prepaid
+post "v1/customers/01a2d05d-fd2d-4532-847c-16681302101e/msisdns" "msisdn=0101,6,0"
+post "v1/customers/01a2d05d-fd2d-4532-847c-16681302101e/users/user/msisdns" "msisdn=0101,6,0"
 
 exit 0
