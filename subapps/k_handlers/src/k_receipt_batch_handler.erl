@@ -102,13 +102,13 @@ traverse_receipts(GatewayId, DlrTime, [Receipt | Receipts]) ->
 %% The function is called from k_sms_response_handler
 %% if a submit error is detected and a delivery receipt is requested.
 -spec register_delivery_receipt(#msg_info{}) -> ok.
-register_delivery_receipt(#msg_info{client_type = ClientType})
-    when ClientType =:= mm orelse ClientType =:= soap ->
-    %% no need to register receipts.
-    ok;
-register_delivery_receipt(MsgInfo) ->
+register_delivery_receipt(MsgInfo = #msg_info{client_type = ClientType})
+    when ClientType =:= funnel; ClientType =:= oneapi ->
     Item = build_receipt_item(MsgInfo),
-    ok = k_mailbox:register_incoming_item(Item).
+    ok = k_mailbox:register_incoming_item(Item);
+register_delivery_receipt(_MsgInfo) ->
+    %% no need to register receipts.
+    ok.
 
 build_receipt_item(#msg_info{
     client_type = oneapi,
