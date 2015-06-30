@@ -74,7 +74,7 @@ read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            get_customer_originator(Customer, ?gv(id, Params));
+            get_originator(Customer, ?gv(id, Params));
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
@@ -91,7 +91,7 @@ update(Params) ->
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     OriginatorId = ?gv(id, Params),
-    case k_storage_customers:del_customer_originator_by_id(CustomerUuid, OriginatorId) of
+    case k_storage_customers:del_originator_by_id(CustomerUuid, OriginatorId) of
         {error, no_entry} ->
             ?log_warn("Customer [~p] not found", [CustomerUuid]),
             {exception, 'svc0003'};
@@ -120,7 +120,7 @@ create_originator(Customer, Params) ->
         GivenId ->
             GivenId
     end,
-    case k_storage_customers:get_customer_originator(Customer, Id) of
+    case k_storage_customers:get_originator(Customer, Id) of
         {ok, #originator{}} ->
             {exception, 'svc0004'};
         {error, no_entry} ->
@@ -135,7 +135,7 @@ create_originator(Customer, Params) ->
                 is_default = IsDefault,
                 state = State
             },
-            ok = k_storage_customers:set_customer_originator(Originator, Customer#customer.customer_uuid),
+            ok = k_storage_customers:set_originator(Originator, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_originators([Originator]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 201, Plist}
@@ -143,7 +143,7 @@ create_originator(Customer, Params) ->
 
 update_originator(Customer, Params) ->
     Id = ?gv(id, Params),
-    case k_storage_customers:get_customer_originator(Customer, Id) of
+    case k_storage_customers:get_originator(Customer, Id) of
         {ok, Originator} ->
             Msisdn = ?gv(msisdn, Params, Originator#originator.address),
             Description = ?gv(description, Params, Originator#originator.description),
@@ -156,7 +156,7 @@ update_originator(Customer, Params) ->
                 is_default = IsDefault,
                 state = State
             },
-            ok = k_storage_customers:set_customer_originator(Updated, Customer#customer.customer_uuid),
+            ok = k_storage_customers:set_originator(Updated, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_originators([Updated]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
@@ -164,13 +164,13 @@ update_originator(Customer, Params) ->
             {exception, 'svc0003'}
     end.
 
-get_customer_originator(Customer, undefined) ->
+get_originator(Customer, undefined) ->
     #customer{originators = Originators} = Customer,
     {ok, Plist} = prepare_originators(Originators),
     ?log_debug("Originator: ~p", [Plist]),
     {http_code, 200, Plist};
-get_customer_originator(Customer, Id) ->
-    case k_storage_customers:get_customer_originator(Customer, Id) of
+get_originator(Customer, Id) ->
+    case k_storage_customers:get_originator(Customer, Id) of
         {ok, Originator} ->
             {ok, [Plist]} = prepare_originators([Originator]),
             ?log_debug("Originator: ~p", [Plist]),

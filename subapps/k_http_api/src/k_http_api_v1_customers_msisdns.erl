@@ -61,7 +61,7 @@ create(Params) ->
                         is_default = false,
                         state = approved
                     },
-                    ok = k_storage_customers:set_customer_originator(
+                    ok = k_storage_customers:set_originator(
                         Originator, CustomerUuid),
                     ok = k_storage_msisdns:assign_to_customer(
                         Msisdn, CustomerUuid),
@@ -101,7 +101,7 @@ delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     Msisdn = ?gv(msisdn, Params),
     ok = k_storage_msisdns:unassign_from_customer(Msisdn),
-    ok = k_storage_customers:del_customer_originator_by_msisdn(CustomerUuid, Msisdn),
+    ok = k_storage_customers:del_originator_by_msisdn(CustomerUuid, Msisdn),
     {http_code, 204}.
 
 %% ===================================================================

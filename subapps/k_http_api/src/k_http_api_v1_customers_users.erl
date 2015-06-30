@@ -108,7 +108,7 @@ update(Params) ->
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     UserId = ?gv(user_id, Params),
-    case k_storage_customers:del_customer_user(CustomerUuid, UserId) of
+    case k_storage_customers:del_user(CustomerUuid, UserId) of
         {error, no_entry} ->
             ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
             {exception, 'svc0003'};
@@ -140,7 +140,7 @@ prepare_users(Users) when is_list(Users) ->
 
 create_user(Customer, Params) ->
     UserId = ?gv(user_id, Params),
-    case k_storage_customers:get_user_id(Customer, UserId) of
+    case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, #user{}} ->
             ?log_error("User already exists: ~p", [UserId]),
             {exception, 'svc0004'};
@@ -171,7 +171,7 @@ create_user(Customer, Params) ->
                 language = Language,
                 state = State
             },
-            ok = k_storage_customers:set_customer_user(User, Customer#customer.customer_uuid),
+            ok = k_storage_customers:set_user(User, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_users([User]),
             ?log_debug("User: ~p", [Plist]),
             {http_code, 201, Plist}
@@ -179,7 +179,7 @@ create_user(Customer, Params) ->
 
 update_user(Customer, Params) ->
     UserId = ?gv(user_id, Params),
-    case k_storage_customers:get_user_id(Customer, UserId) of
+    case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, User} ->
             Password = resolve_pass(?gv(password, Params), User#user.password),
             Interfaces = ?gv(interfaces, Params, User#user.connection_types),
@@ -206,7 +206,7 @@ update_user(Customer, Params) ->
                 language = Language,
                 state = State
             },
-            ok = k_storage_customers:set_customer_user(Updated, Customer#customer.customer_uuid),
+            ok = k_storage_customers:set_user(Updated, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_users([Updated]),
             ?log_debug("User: ~p", [Plist]),
             {ok, Plist};
