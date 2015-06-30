@@ -191,7 +191,7 @@ post "customers" 'customer_uuid=b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9&customer_id
 post "customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/originators" 'id=eca649a3-fb77-4800-ba5a-0c7c1c14c9fb&address=375296660009,1,1&description=&is_default=true&state=approved'
 
 # postpaid users
-post "customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/users" 'id=user&password=password&connection_types=email&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
+post "customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/users" 'id=user&password=password&connection_types=email&mobile_phone=&first_name=&last_name=&company=&occupation=&email=email-postpaid@mail.com&country=&language=en&state=active'
 
 # prepaid customer
 post "customers" 'customer_uuid=01a2d05d-fd2d-4532-847c-16681302101e&customer_id=10010&name=email-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active'
@@ -200,7 +200,7 @@ post "customers" 'customer_uuid=01a2d05d-fd2d-4532-847c-16681302101e&customer_id
 post "customers/01a2d05d-fd2d-4532-847c-16681302101e/originators" 'id=192ebc79-0beb-4e51-be90-548bb1340b66&address=375296660010,1,1&description=&is_default=true&state=approved'
 
 # prepaid users
-post "customers/01a2d05d-fd2d-4532-847c-16681302101e/users" 'id=user&password=password&connection_types=email&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active'
+post "customers/01a2d05d-fd2d-4532-847c-16681302101e/users" 'id=user&password=password&connection_types=email&mobile_phone=&first_name=&last_name=&company=&occupation=&email=email-prepaid@mail.com&country=&language=en&state=active'
 
 
 #
