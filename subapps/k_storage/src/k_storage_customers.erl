@@ -5,10 +5,12 @@
     get_customers/0,
     get_customer_by_uuid/1,
     get_customer_by_id/1,
+    get_customer_by_email/1,
     set_customer/2,
     del_customer/1,
 
     get_user_by_id/2,
+    get_user_by_email/2,
     set_user/2,
     del_user/2,
 
@@ -119,6 +121,13 @@ get_customer_by_id(CustomerId) ->
             {error, Reason}
     end.
 
+-spec get_customer_by_email(email()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
+get_customer_by_email(Email) ->
+    case mongodb_storage:find_one(static_storage, customers, {'users.email', Email}) of
+        {ok, Doc} ->
+            {ok, doc_to_record(Doc)};
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 -spec del_customer(customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
@@ -140,6 +149,10 @@ del_customer(CustomerUuid) ->
 -spec get_user_by_id(#customer{}, user_id()) -> {ok, #user{}} | {error, no_entry}.
 get_user_by_id(#customer{users = Users}, UserId) ->
     find(UserId, #user.id, Users).
+
+-spec get_user_by_email(#customer{}, email()) -> {ok, #user{}} | {error, no_entry}.
+get_user_by_email(#customer{users = Users}, Email) ->
+    find(Email, #user.email, Users).
 
 -spec set_user(#user{}, customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
 set_user(User = #user{id = UserId}, CustomerUuid) ->

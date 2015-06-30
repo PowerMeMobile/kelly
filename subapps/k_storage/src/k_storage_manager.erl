@@ -62,6 +62,8 @@ get_storage_mode() ->
 ensure_static_storage_indexes(ServerName) ->
     ok = mongodb_storage:ensure_index(ServerName, customers,
         {key, {customer_id, 1}}),
+    ok = mongodb_storage:ensure_index(ServerName, customers,
+        {key, {'users.email', 1}}),
     ok = mongodb_storage:ensure_index(ServerName, msisdns,
         {key, {msisdn, 1}}).
 

@@ -13,6 +13,7 @@
 -type originator_state() :: pending | approved | rejected.
 -type user_state() :: active | blocked | deactivated.
 -type customer_state() :: active | blocked | deactivated.
+-type email() :: binary().
 
 -record(feature, {
     name :: binary(),
@@ -38,7 +39,7 @@
     last_name    = <<"">> :: binary(),
     company      = <<"">> :: binary(),
     occupation   = <<"">> :: binary(),
-    email        = <<"">> :: binary(),
+    email        = <<"">> :: email(),
     country      = <<"">> :: binary(),
     language     = <<"">> :: binary(),
     state                 :: user_state()

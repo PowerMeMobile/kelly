@@ -33,7 +33,7 @@ process(<<"BindRequest">>, ReqBin) ->
             ConnType   = AuthReq#funnel_auth_request_dto.type,
             ReqId      = AuthReq#funnel_auth_request_dto.connection_id,
             case authenticate(CustomerId, UserId, Password, ConnType) of
-                {allow, Customer = #customer{}} ->
+                {allow, Customer = #customer{}, #user{}} ->
                     {ok, Networks, Providers} = get_networks_and_providers(Customer),
                     Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(RespCT,
@@ -66,11 +66,42 @@ process(<<"AuthReqV1">>, ReqBin) ->
             Interface  = AuthReq#auth_req_v1.interface,
             ReqId      = AuthReq#auth_req_v1.req_id,
             case authenticate(CustomerId, UserId, Password, Interface) of
-                {allow, Customer = #customer{}} ->
+                {allow, Customer = #customer{}, #user{}} ->
                     {ok, Networks, Providers} = get_networks_and_providers(Customer),
                     Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
+                    ?log_debug("Auth allowed", []),
+                    encode_response(RespCT, Response);
+                {deny, Reason} ->
+                    {ok, Response} = build_error_response(RespCT,
+                        ReqId, {deny, Reason}),
+                    ?log_notice("Auth denied: ~p", [Reason]),
+                    encode_response(RespCT, Response);
+                {error, Reason} ->
+                    {ok, Response} = build_error_response(RespCT,
+                        ReqId, {error, Reason}),
+                    ?log_error("Auth error: ~p", [Reason]),
+                    encode_response(RespCT, Response)
+            end;
+        {error, Error} ->
+            ?log_error("Auth request decode error: ~p", [Error]),
+            noreply
+    end;
+process(<<"AuthReqV2">>, ReqBin) ->
+    RespCT = <<"AuthRespV2">>,
+    case adto:decode(#auth_req_v2{}, ReqBin) of
+        {ok, AuthReq} ->
+            ?log_debug("Got auth request: ~p", [AuthReq]),
+            Email      = AuthReq#auth_req_v2.email,
+            Interface  = AuthReq#auth_req_v2.interface,
+            ReqId      = AuthReq#auth_req_v2.req_id,
+            case authenticate_by_email(Email, Interface) of
+                {allow, Customer = #customer{}, User = #user{}} ->
+                    {ok, Networks, Providers} = get_networks_and_providers(Customer),
+                    Features = get_features(User#user.id, Customer),
+                    {ok, Response} = build_auth_response(RespCT,
+                        ReqId, Customer, User#user.id, Networks, Providers, Features),
                     ?log_debug("Auth allowed", []),
                     encode_response(RespCT, Response);
                 {deny, Reason} ->
@@ -93,7 +124,7 @@ process(ContentType, ReqBin) ->
     noreply.
 
 -spec authenticate(customer_uuid(), user_id(), binary(), atom()) ->
-    {allow, #customer{}} |
+    {allow, #customer{}, #user{}} |
     {error, term()} |
     {deny, unknown_customer} |
     {deny, unknown_user} |
@@ -121,7 +152,7 @@ authenticate(CustomerId, UserId, Password, Interface) ->
                                                 allow ->
                                                     case check_credit_limit(Customer) of
                                                         allow ->
-                                                            {allow, Customer};
+                                                            {allow, Customer, User};
                                                         Deny ->
                                                             Deny
                                                     end;
@@ -146,6 +177,61 @@ authenticate(CustomerId, UserId, Password, Interface) ->
             end;
         {error, no_entry} ->
             ?log_info("Customer id: ~p not found", [CustomerId]),
+            {deny, unknown_customer};
+        {error, Error} ->
+            ?log_error("Unexpected error: ~p.", [Error]),
+            {error, Error}
+    end.
+
+-spec authenticate_by_email(email(), atom()) ->
+    {allow, #customer{}, #user{}} |
+    {error, term()} |
+    {deny, unknown_customer} |
+    {deny, unknown_user} |
+    {deny, wrong_password} |
+    {deny, wrong_interface} |
+    {deny, blocked_customer} |
+    {deny, blocked_user} |
+    {deny, deactivated_customer} |
+    {deny, deactivated_user} |
+    {deny, credit_limit_exceeded}.
+authenticate_by_email(Email, Interface) ->
+    case k_storage_customers:get_customer_by_email(Email) of
+        {ok, Customer} ->
+            ?log_debug("Customer found: ~p", [Customer]),
+            case check_state(customer, Customer#customer.state) of
+                allow ->
+                    case k_storage_customers:get_user_by_email(Customer, Email) of
+                        {ok, User = #user{}} ->
+                            ?log_debug("User found: ~p", [User]),
+                            case check_state(user, User#user.state) of
+                                allow ->
+                                    case check_interface(Interface, User#user.connection_types) of
+                                        allow ->
+                                            case check_credit_limit(Customer) of
+                                                allow ->
+                                                    {allow, Customer, User};
+                                                Deny ->
+                                                    Deny
+                                            end;
+                                        Deny ->
+                                            Deny
+                                    end;
+                                Deny ->
+                                    Deny
+                            end;
+                        {error, no_entry} ->
+                            ?log_debug("User by email: ~p not found", [Email]),
+                            {deny, unknown_user};
+                        {error, Error} ->
+                            ?log_error("Unexpected error: ~p", [Error]),
+                            {error, Error}
+                    end;
+                Deny ->
+                    Deny
+            end;
+        {error, no_entry} ->
+            ?log_info("Customer by email: ~p not found", [Email]),
             {deny, unknown_customer};
         {error, Error} ->
             ?log_error("Unexpected error: ~p.", [Error]),
@@ -326,6 +412,45 @@ build_auth_response(<<"AuthRespV1">>, ReqId, Customer, UserId, Networks, Provide
         result = CustomerDTO
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
+    {ok, ResponseDTO};
+build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Providers, Features) ->
+    #customer{
+        customer_uuid = CustomerUuid,
+        customer_id = CustomerId,
+        originators = Originators,
+        default_provider_id = DP,
+        receipts_allowed = RA,
+        no_retry = NR,
+        default_validity = _DV,
+        max_validity = MV,
+        pay_type = PayType,
+        credit = Credit,
+        credit_limit = CreditLimit
+    } = Customer,
+
+    CustomerDTO = #auth_customer_v1{
+        customer_uuid = CustomerUuid,
+        customer_id = CustomerId,
+        user_id = UserId,
+        pay_type = PayType,
+        credit = Credit + CreditLimit,
+        allowed_sources = allowed_sources(Originators),
+        default_source = default_source(Originators),
+        networks = [network_to_v1(N) || N <- Networks],
+        providers = [provider_to_v1(P) || P <- Providers],
+        default_provider_id = DP,
+        receipts_allowed = RA,
+        no_retry = NR,
+        default_validity = MV,
+        max_validity = MV,
+        features = [feature_to_v1(F) || F <- Features]
+    },
+
+    ResponseDTO = #auth_resp_v2{
+        req_id = ReqId,
+        result = CustomerDTO
+    },
+    ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO}.
 
 build_error_response(<<"BindResponse">>, ReqId, {_, Reason}) ->
@@ -353,6 +478,14 @@ build_error_response(<<"AuthRespV1">>, ReqId, {error, Reason}) ->
             code = Reason,
             message = "Request error: " ++ atom_to_list(Reason)
         }
+    },
+
+    ?log_debug("Built auth response: ~p", [Response]),
+    {ok, Response};
+build_error_response(<<"AuthRespV2">>, ReqId, {_, Reason}) ->
+    Response = #auth_resp_v2{
+        req_id = ReqId,
+        result = #auth_error_v2{code = Reason}
     },
 
     ?log_debug("Built auth response: ~p", [Response]),
