@@ -92,7 +92,7 @@ read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            get_customer_user(Customer, ?gv(id, Params));
+            get_user_by_id(Customer, ?gv(id, Params));
         {error, no_entry} ->
             ?log_warn("Customer not found: ~p", [CustomerUuid]),
             {exception, 'svc0003'};
@@ -117,7 +117,7 @@ update(Params) ->
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     UserId = ?gv(id, Params),
-    case k_storage_customers:del_customer_user(CustomerUuid, UserId) of
+    case k_storage_customers:del_user(CustomerUuid, UserId) of
         {error, no_entry} ->
             ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
             {exception, 'svc0003'};
@@ -150,7 +150,7 @@ prepare_users(Users) when is_list(Users) ->
 
 create_user(Customer, Params) ->
     UserId = ?gv(id, Params),
-    case k_storage_customers:get_customer_user(Customer, UserId) of
+    case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, #user{}} ->
             ?log_error("User already exists: ~p", [UserId]),
             {exception, 'svc0004'};
@@ -181,7 +181,7 @@ create_user(Customer, Params) ->
                 language = Language,
                 state = State
             },
-            ok = k_storage_customers:set_customer_user(User, Customer#customer.customer_uuid),
+            ok = k_storage_customers:set_user(User, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_users([User]),
             ?log_debug("User: ~p", [Plist]),
             {http_code, 201, Plist};
@@ -192,7 +192,7 @@ create_user(Customer, Params) ->
 
 update_user(Customer, Params) ->
     UserId = ?gv(id, Params),
-    case k_storage_customers:get_customer_user(Customer, UserId) of
+    case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, User} ->
             Password = resolve_pass(?gv(password, Params), User#user.password),
             ConnectionTypes = ?gv(connection_types, Params, User#user.connection_types),
@@ -219,7 +219,7 @@ update_user(Customer, Params) ->
                 language = Language,
                 state = State
             },
-            ok = k_storage_customers:set_customer_user(Updated, Customer#customer.customer_uuid),
+            ok = k_storage_customers:set_user(Updated, Customer#customer.customer_uuid),
             {ok, [Plist]} = prepare_users([Updated]),
             ?log_debug("User: ~p", [Plist]),
             {ok, Plist};
@@ -232,13 +232,13 @@ update_user(Customer, Params) ->
             {http_code, 500}
     end.
 
-get_customer_user(Customer, undefined) ->
+get_user_by_id(Customer, undefined) ->
     #customer{users = Users} = Customer,
     {ok, Plist} = prepare_users(Users),
     ?log_debug("User: ~p", [Plist]),
     {ok, Plist};
-get_customer_user(Customer, UserId) ->
-    case k_storage_customers:get_customer_user(Customer, UserId) of
+get_user_by_id(Customer, UserId) ->
+    case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, User} ->
             {ok, [Plist]} = prepare_users([User]),
             ?log_debug("User: ~p", [Plist]),

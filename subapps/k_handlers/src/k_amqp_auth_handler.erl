@@ -110,7 +110,7 @@ authenticate(CustomerId, UserId, Password, Interface) ->
             ?log_debug("Customer found: ~p", [Customer]),
             case check_state(customer, Customer#customer.state) of
                 allow ->
-                    case k_storage_customers:get_customer_user(Customer, UserId) of
+                    case k_storage_customers:get_user_by_id(Customer, UserId) of
                         {ok, User = #user{}} ->
                             ?log_debug("User found: ~p", [User]),
                             case check_password(Password, User#user.password) of

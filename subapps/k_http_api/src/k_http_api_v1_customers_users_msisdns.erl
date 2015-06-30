@@ -49,7 +49,7 @@ create(Params) ->
     Msisdn = ?gv(msisdn, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer} ->
-            case k_storage_customers:get_customer_user(Customer, UserId) of
+            case k_storage_customers:get_user_by_id(Customer, UserId) of
                 {error, no_entry} ->
                     {exception, 'svc0003'};
                 {ok, _User} ->
@@ -84,7 +84,7 @@ read(Params) ->
     UserId = ?gv(user_id, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer} ->
-            case k_storage_customers:get_customer_user(Customer, UserId) of
+            case k_storage_customers:get_user_by_id(Customer, UserId) of
                 {error, no_entry} ->
                     {exception, 'svc0003'};
                 {ok, _User} ->

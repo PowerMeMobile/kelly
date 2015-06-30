@@ -89,7 +89,7 @@ read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            get_customer_user(Customer, ?gv(user_id, Params));
+            get_user_by_id(Customer, ?gv(user_id, Params));
         {error, no_entry} ->
             ?log_warn("Customer not found: ~p", [CustomerUuid]),
             {exception, 'svc0003'}
@@ -140,7 +140,7 @@ prepare_users(Users) when is_list(Users) ->
 
 create_user(Customer, Params) ->
     UserId = ?gv(user_id, Params),
-    case k_storage_customers:get_customer_user(Customer, UserId) of
+    case k_storage_customers:get_user_id(Customer, UserId) of
         {ok, #user{}} ->
             ?log_error("User already exists: ~p", [UserId]),
             {exception, 'svc0004'};
@@ -179,7 +179,7 @@ create_user(Customer, Params) ->
 
 update_user(Customer, Params) ->
     UserId = ?gv(user_id, Params),
-    case k_storage_customers:get_customer_user(Customer, UserId) of
+    case k_storage_customers:get_user_id(Customer, UserId) of
         {ok, User} ->
             Password = resolve_pass(?gv(password, Params), User#user.password),
             Interfaces = ?gv(interfaces, Params, User#user.connection_types),
@@ -216,13 +216,13 @@ update_user(Customer, Params) ->
             {exception, 'svc0003'}
     end.
 
-get_customer_user(Customer, undefined) ->
+get_user_by_id(Customer, undefined) ->
     #customer{users = Users} = Customer,
     {ok, Plist} = prepare_users(Users),
     ?log_debug("User: ~p", [Plist]),
     {ok, Plist};
-get_customer_user(Customer, UserId) ->
-    case k_storage_customers:get_customer_user(Customer, UserId) of
+get_user_by_id(Customer, UserId) ->
+    case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, User} ->
             {ok, [Plist]} = prepare_users([User]),
             ?log_debug("User: ~p", [Plist]),

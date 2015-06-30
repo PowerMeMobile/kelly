@@ -8,14 +8,14 @@
     set_customer/2,
     del_customer/1,
 
-    get_customer_user/2,
-    set_customer_user/2,
-    del_customer_user/2,
+    get_user_by_id/2,
+    set_user/2,
+    del_user/2,
 
-    get_customer_originator/2,
-    set_customer_originator/2,
-    del_customer_originator_by_id/2,
-    del_customer_originator_by_msisdn/2,
+    get_originator/2,
+    set_originator/2,
+    del_originator_by_id/2,
+    del_originator_by_msisdn/2,
 
     change_credit/2
 ]).
@@ -137,12 +137,12 @@ del_customer(CustomerUuid) ->
             {error, Reason}
     end.
 
--spec get_customer_user(#customer{}, user_id()) -> {ok, #user{}} | {error, no_entry}.
-get_customer_user(#customer{users = Users}, UserId) ->
+-spec get_user_by_id(#customer{}, user_id()) -> {ok, #user{}} | {error, no_entry}.
+get_user_by_id(#customer{users = Users}, UserId) ->
     find(UserId, #user.id, Users).
 
--spec set_customer_user(#user{}, customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
-set_customer_user(User = #user{id = UserId}, CustomerUuid) ->
+-spec set_user(#user{}, customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
+set_user(User = #user{id = UserId}, CustomerUuid) ->
     case get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{users = Users}} ->
             NewUsers = lists:keydelete(UserId, #user.id, Users),
@@ -151,8 +151,8 @@ set_customer_user(User = #user{id = UserId}, CustomerUuid) ->
             {error, Reason}
     end.
 
--spec del_customer_user(customer_uuid(), user_id()) -> ok | {error, no_entry} | {error, term()}.
-del_customer_user(CustomerUuid, UserId) ->
+-spec del_user(customer_uuid(), user_id()) -> ok | {error, no_entry} | {error, term()}.
+del_user(CustomerUuid, UserId) ->
     case get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{users = Users}} ->
             NewUsers = lists:keydelete(UserId, #user.id, Users),
@@ -161,12 +161,12 @@ del_customer_user(CustomerUuid, UserId) ->
             {error, Reason}
     end.
 
--spec get_customer_originator(#customer{}, originator_id()) -> {ok, #originator{}} | {error, no_entry}.
-get_customer_originator(#customer{originators = Originators}, OriginatorId) ->
+-spec get_originator(#customer{}, originator_id()) -> {ok, #originator{}} | {error, no_entry}.
+get_originator(#customer{originators = Originators}, OriginatorId) ->
     find(OriginatorId, #originator.id, Originators).
 
--spec set_customer_originator(#originator{}, customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
-set_customer_originator(Originator = #originator{id = OriginatorId}, CustomerUuid) ->
+-spec set_originator(#originator{}, customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
+set_originator(Originator = #originator{id = OriginatorId}, CustomerUuid) ->
     case get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{originators = Originators}} ->
             NewOriginators = lists:keydelete(OriginatorId, #originator.id, Originators),
@@ -175,9 +175,9 @@ set_customer_originator(Originator = #originator{id = OriginatorId}, CustomerUui
             {error, Reason}
     end.
 
--spec del_customer_originator_by_id(customer_uuid(), originator_id()) ->
+-spec del_originator_by_id(customer_uuid(), originator_id()) ->
     ok | {error, no_entry} | {error, term()}.
-del_customer_originator_by_id(CustomerUuid, OriginatorId) ->
+del_originator_by_id(CustomerUuid, OriginatorId) ->
     case get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{originators = Originators}} ->
             NewOriginators = lists:keydelete(OriginatorId, #originator.id, Originators),
@@ -186,9 +186,9 @@ del_customer_originator_by_id(CustomerUuid, OriginatorId) ->
             {error, Reason}
     end.
 
--spec del_customer_originator_by_msisdn(customer_uuid(), addr()) ->
+-spec del_originator_by_msisdn(customer_uuid(), addr()) ->
     ok | {error, no_entry} | {error, term()}.
-del_customer_originator_by_msisdn(CustomerUuid, Msisdn) ->
+del_originator_by_msisdn(CustomerUuid, Msisdn) ->
     case get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{originators = Originators}} ->
             NewOriginators = lists:keydelete(Msisdn, #originator.address, Originators),
