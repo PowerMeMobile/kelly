@@ -97,8 +97,8 @@ get_customers() ->
     case mongodb_storage:find(static_storage, customers, {}) of
         {ok, List} ->
             {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
-        Error ->
-            Error
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 -spec get_customer_by_uuid(customer_uuid()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
@@ -106,17 +106,19 @@ get_customer_by_uuid(CustomerUuid) ->
     case mongodb_storage:find_one(static_storage, customers, {'_id', CustomerUuid}) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
-        Error ->
-            Error
+        {error, Reason} ->
+            {error, Reason}
     end.
 
--spec get_customer_by_id(customer_id()) -> {ok, #customer{}} | any().
+-spec get_customer_by_id(customer_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_id(CustomerId) ->
     case mongodb_storage:find_one(static_storage, customers, {'customer_id', CustomerId}) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
-        Error ->
-            Error
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
     end.
 
 -spec del_customer(customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
@@ -145,8 +147,8 @@ set_customer_user(User = #user{id = UserId}, CustomerUuid) ->
         {ok, Customer = #customer{users = Users}} ->
             NewUsers = lists:keydelete(UserId, #user.id, Users),
             set_customer(CustomerUuid, Customer#customer{users = [User | NewUsers]});
-        Error ->
-            Error
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 -spec del_customer_user(customer_uuid(), user_id()) -> ok | {error, no_entry} | {error, term()}.
@@ -155,8 +157,8 @@ del_customer_user(CustomerUuid, UserId) ->
         {ok, Customer = #customer{users = Users}} ->
             NewUsers = lists:keydelete(UserId, #user.id, Users),
             set_customer(CustomerUuid, Customer#customer{users = NewUsers});
-        Error ->
-            Error
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 -spec get_customer_originator(#customer{}, originator_id()) -> {ok, #originator{}} | {error, no_entry}.
@@ -169,7 +171,8 @@ set_customer_originator(Originator = #originator{id = OriginatorId}, CustomerUui
         {ok, Customer = #customer{originators = Originators}} ->
             NewOriginators = lists:keydelete(OriginatorId, #originator.id, Originators),
             set_customer(CustomerUuid, Customer#customer{originators = [Originator | NewOriginators]});
-        Error -> Error
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 -spec del_customer_originator_by_id(customer_uuid(), originator_id()) ->
@@ -179,8 +182,8 @@ del_customer_originator_by_id(CustomerUuid, OriginatorId) ->
         {ok, Customer = #customer{originators = Originators}} ->
             NewOriginators = lists:keydelete(OriginatorId, #originator.id, Originators),
             set_customer(CustomerUuid, Customer#customer{originators = NewOriginators});
-        Error ->
-            Error
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 -spec del_customer_originator_by_msisdn(customer_uuid(), addr()) ->
@@ -190,8 +193,8 @@ del_customer_originator_by_msisdn(CustomerUuid, Msisdn) ->
         {ok, Customer = #customer{originators = Originators}} ->
             NewOriginators = lists:keydelete(Msisdn, #originator.address, Originators),
             set_customer(CustomerUuid, Customer#customer{originators = NewOriginators});
-        Error ->
-            Error
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 -spec change_credit(customer_uuid(), float()) ->
@@ -214,8 +217,8 @@ change_credit(CustomerUuid, Amount) ->
                     %% It will clear the auth cache on every change.
                     {ok, bsondoc:at(credit, Value)}
             end;
-        {error, Error} ->
-            {error, Error}
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 %% ===================================================================
