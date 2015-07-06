@@ -47,7 +47,7 @@ create(Params) ->
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, #customer{}} ->
             case k_storage_msisdns:get_one(Msisdn) of
-                {error, not_found} ->
+                {error, no_entry} ->
                     {exception, 'svc0003'};
                 {ok, #msisdn_info{
                         msisdn = Msisdn,

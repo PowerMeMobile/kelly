@@ -42,11 +42,11 @@ start_link() ->
 set(Key, Value) ->
     gen_server:call(?MODULE, {set, Key, Value}).
 
--spec get(key()) -> {ok, value()} | {error, not_found}.
+-spec get(key()) -> {ok, value()} | {error, no_entry}.
 get(Key) ->
     case ets:lookup(?MODULE, Key) of
         [] ->
-            {error, not_found};
+            {error, no_entry};
         [{Key, Value}] ->
             {ok, Value}
     end.

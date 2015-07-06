@@ -54,7 +54,7 @@ create(Params) ->
                     {exception, 'svc0003'};
                 {ok, _User} ->
                     case k_storage_msisdns:get_one(Msisdn) of
-                        {error, not_found} ->
+                        {error, no_entry} ->
                             {exception, 'svc0003'};
                         {ok, #msisdn_info{
                                 msisdn = Msisdn,

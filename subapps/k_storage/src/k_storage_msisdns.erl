@@ -20,14 +20,14 @@
 %% API
 %% ===================================================================
 
--spec get_one(msisdn()) -> {ok, #msisdn_info{}} | {error, not_found}.
+-spec get_one(msisdn()) -> {ok, #msisdn_info{}} | {error, no_entry}.
 get_one(Msisdn) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
     },
     case mongodb_storage:find(static_storage, msisdns, Selector) of
         {ok, []} ->
-            {error, not_found};
+            {error, no_entry};
         {ok, [{_, Doc}]} ->
             {ok, doc_to_info(Doc)}
     end.

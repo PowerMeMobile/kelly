@@ -237,18 +237,6 @@ authenticate_by_email(Email, Interface) ->
             {error, Error}
     end.
 
--spec authenticate_by_msisdn(binary(), atom()) ->
-    {allow, #customer{}, #user{}} |
-    {error, term()} |
-    {deny, unknown_customer} |
-    {deny, unknown_user} |
-    {deny, wrong_password} |
-    {deny, wrong_interface} |
-    {deny, blocked_customer} |
-    {deny, blocked_user} |
-    {deny, deactivated_customer} |
-    {deny, deactivated_user} |
-    {deny, credit_limit_exceeded}.
 authenticate_by_msisdn(Msisdn, Interface) ->
     case k_storage_msisdns:get_one(Msisdn) of
         {ok, #msisdn_info{customer_uuid = CustomerUuid, user_id = UserId}} ->
@@ -359,7 +347,7 @@ get_networks_and_providers(Customer) ->
     case k_handlers_auth_cache:get(CustomerUuid) of
         {ok, {Ns, Ps}} ->
             {ok, Ns, Ps};
-        {error, not_found} ->
+        {error, no_entry} ->
             {ok, Ns, Ps} = build_networks_and_providers(Customer),
             k_handlers_auth_cache:set(CustomerUuid, {Ns, Ps}),
             {ok, Ns, Ps}

@@ -60,7 +60,7 @@ read(Params) ->
 create(Params) ->
     Msisdn = ?gv(msisdn, Params),
     case k_storage_msisdns:get_one(Msisdn) of
-        {error, not_found} ->
+        {error, no_entry} ->
             ok = k_storage_msisdns:create(Msisdn),
             {http_code, 201, <<"">>};
         {ok, _} ->
@@ -71,7 +71,7 @@ update(Params) ->
     Msisdn = ?gv(msisdn, Params),
     CustomerUuid = ?gv(customer_uuid, Params),
     case k_storage_msisdns:get_one(Msisdn) of
-        {error, not_found} ->
+        {error, no_entry} ->
             {exception, 'svc0003'};
         {ok, _} ->
             ok = k_storage_msisdns:assign_to_customer(Msisdn, CustomerUuid),
