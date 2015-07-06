@@ -204,5 +204,8 @@ cast({"override_originator", Value}) when Value =:= "empty";
 cast({"inbox", Value}) when Value =:= "true";
                             Value =:= "false" ->
     ok;
+cast({"sms_from_email", Value}) when Value =:= "true";
+                                     Value =:= "false" ->
+    ok;
 cast({_Name, _Value}) ->
     error.

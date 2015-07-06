@@ -264,9 +264,14 @@ authenticate_by_msisdn(Msisdn, Interface) ->
                                         allow ->
                                             case check_interface(Interface, User#user.connection_types) of
                                                 allow ->
-                                                    case check_credit_limit(Customer) of
+                                                    case check_feature(<<"sms_from_email">>, get_features(UserId, Customer)) of
                                                         allow ->
-                                                            {allow, Customer, User};
+                                                            case check_credit_limit(Customer) of
+                                                                allow ->
+                                                                    {allow, Customer, User};
+                                                                Deny ->
+                                                                    Deny
+                                                            end;
                                                         Deny ->
                                                             Deny
                                                     end;
@@ -317,6 +322,14 @@ check_interface(Interface, Interfaces) ->
         true ->
             allow;
         false ->
+            {deny, wrong_interface}
+    end.
+
+check_feature(Feature, Features) ->
+    case lists:keyfind(Feature, #feature.name, Features) of
+        #feature{value = <<"true">>} ->
+            allow;
+        _ ->
             {deny, wrong_interface}
     end.
 
