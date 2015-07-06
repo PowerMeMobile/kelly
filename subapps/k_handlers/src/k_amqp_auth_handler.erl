@@ -7,6 +7,7 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
+-include_lib("k_storage/include/msisdn.hrl").
 
 %% ===================================================================
 %% API
@@ -93,10 +94,10 @@ process(<<"AuthReqV2">>, ReqBin) ->
     case adto:decode(#auth_req_v2{}, ReqBin) of
         {ok, AuthReq} ->
             ?log_debug("Got auth request: ~p", [AuthReq]),
-            Email      = AuthReq#auth_req_v2.email,
-            Interface  = AuthReq#auth_req_v2.interface,
-            ReqId      = AuthReq#auth_req_v2.req_id,
-            case authenticate_by_email(Email, Interface) of
+            AuthData  = AuthReq#auth_req_v2.auth_data,
+            Interface = AuthReq#auth_req_v2.interface,
+            ReqId     = AuthReq#auth_req_v2.req_id,
+            case authenticate_by(AuthData, Interface) of
                 {allow, Customer = #customer{}, User = #user{}} ->
                     {ok, Networks, Providers} = get_networks_and_providers(Customer),
                     Features = get_features(User#user.id, Customer),
@@ -123,7 +124,7 @@ process(ContentType, ReqBin) ->
     ?log_error("Got unknown auth request: ~p ~p", [ContentType, ReqBin]),
     noreply.
 
--spec authenticate(customer_uuid(), user_id(), binary(), atom()) ->
+-spec authenticate_by(#auth_credentials{} | #auth_email{} | #auth_msisdn{}, atom()) ->
     {allow, #customer{}, #user{}} |
     {error, term()} |
     {deny, unknown_customer} |
@@ -135,6 +136,16 @@ process(ContentType, ReqBin) ->
     {deny, deactivated_customer} |
     {deny, deactivated_user} |
     {deny, credit_limit_exceeded}.
+authenticate_by(C = #auth_credentials{}, Interface) ->
+    CustomerId = C#auth_credentials.customer_id,
+    UserId     = C#auth_credentials.user_id,
+    Password   = C#auth_credentials.password,
+    authenticate(CustomerId, UserId, Password, Interface);
+authenticate_by(#auth_email{email = Email}, Interface) ->
+    authenticate_by_email(Email, Interface);
+authenticate_by(#auth_msisdn{msisdn = Msisdn}, Interface) ->
+    authenticate_by_msisdn(Msisdn, Interface).
+
 authenticate(CustomerId, UserId, Password, Interface) ->
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
@@ -183,18 +194,6 @@ authenticate(CustomerId, UserId, Password, Interface) ->
             {error, Error}
     end.
 
--spec authenticate_by_email(email(), atom()) ->
-    {allow, #customer{}, #user{}} |
-    {error, term()} |
-    {deny, unknown_customer} |
-    {deny, unknown_user} |
-    {deny, wrong_password} |
-    {deny, wrong_interface} |
-    {deny, blocked_customer} |
-    {deny, blocked_user} |
-    {deny, deactivated_customer} |
-    {deny, deactivated_user} |
-    {deny, credit_limit_exceeded}.
 authenticate_by_email(Email, Interface) ->
     case k_storage_customers:get_customer_by_email(Email) of
         {ok, Customer} ->
@@ -232,6 +231,67 @@ authenticate_by_email(Email, Interface) ->
             end;
         {error, no_entry} ->
             ?log_info("Customer by email: ~p not found", [Email]),
+            {deny, unknown_customer};
+        {error, Error} ->
+            ?log_error("Unexpected error: ~p.", [Error]),
+            {error, Error}
+    end.
+
+-spec authenticate_by_msisdn(binary(), atom()) ->
+    {allow, #customer{}, #user{}} |
+    {error, term()} |
+    {deny, unknown_customer} |
+    {deny, unknown_user} |
+    {deny, wrong_password} |
+    {deny, wrong_interface} |
+    {deny, blocked_customer} |
+    {deny, blocked_user} |
+    {deny, deactivated_customer} |
+    {deny, deactivated_user} |
+    {deny, credit_limit_exceeded}.
+authenticate_by_msisdn(Msisdn, Interface) ->
+    case k_storage_msisdns:get_one(Msisdn) of
+        {ok, #msisdn_info{customer_uuid = CustomerUuid, user_id = UserId}} ->
+            case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
+                {ok, Customer} ->
+                    ?log_debug("Customer found: ~p", [Customer]),
+                    case check_state(customer, Customer#customer.state) of
+                        allow ->
+                            case k_storage_customers:get_user_by_id(Customer, UserId) of
+                                {ok, User = #user{}} ->
+                                    ?log_debug("User found: ~p", [User]),
+                                    case check_state(user, User#user.state) of
+                                        allow ->
+                                            case check_interface(Interface, User#user.connection_types) of
+                                                allow ->
+                                                    case check_credit_limit(Customer) of
+                                                        allow ->
+                                                            {allow, Customer, User};
+                                                        Deny ->
+                                                            Deny
+                                                    end;
+                                                Deny ->
+                                                    Deny
+                                            end;
+                                        Deny ->
+                                            Deny
+                                    end;
+                                {error, no_entry} ->
+                                    ?log_debug("User by msisdn: ~p not found", [Msisdn]),
+                                    {deny, unknown_user};
+                                {error, Error} ->
+                                    ?log_error("Unexpected error: ~p", [Error]),
+                                    {error, Error}
+                            end;
+                        Deny ->
+                            Deny
+                    end;
+                {error, no_entry} ->
+                    ?log_info("Customer by uuid: ~p not found", [CustomerUuid]),
+                    {deny, unknown_customer}
+            end;
+        {error, no_entry} ->
+            ?log_info("Msisdn: ~p not found", [Msisdn]),
             {deny, unknown_customer};
         {error, Error} ->
             ?log_error("Unexpected error: ~p.", [Error]),
