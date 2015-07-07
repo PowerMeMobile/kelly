@@ -6,11 +6,13 @@
     get_customer_by_uuid/1,
     get_customer_by_id/1,
     get_customer_by_email/1,
+    get_customer_by_msisdn/1,
     set_customer/2,
     del_customer/1,
 
     get_user_by_id/2,
     get_user_by_email/2,
+    get_user_by_msisdn/2,
     set_user/2,
     del_user/2,
 
@@ -130,6 +132,15 @@ get_customer_by_email(Email) ->
             {error, Reason}
     end.
 
+-spec get_customer_by_msisdn(addr()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
+get_customer_by_msisdn(Msisdn) ->
+    case mongodb_storage:find_one(static_storage, customers, {'users.mobile_phone', Msisdn#addr.addr}) of
+        {ok, Doc} ->
+            {ok, doc_to_record(Doc)};
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
 -spec del_customer(customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
 del_customer(CustomerUuid) ->
     case get_customer_by_uuid(CustomerUuid) of
@@ -153,6 +164,10 @@ get_user_by_id(#customer{users = Users}, UserId) ->
 -spec get_user_by_email(#customer{}, email()) -> {ok, #user{}} | {error, no_entry}.
 get_user_by_email(#customer{users = Users}, Email) ->
     find(Email, #user.email, Users).
+
+-spec get_user_by_msisdn(#customer{}, addr()) -> {ok, #user{}} | {error, no_entry}.
+get_user_by_msisdn(#customer{users = Users}, Msisdn) ->
+    find(Msisdn#addr.addr, #user.mobile_phone, Users).
 
 -spec set_user(#user{}, customer_uuid()) -> ok | {error, no_entry} | {error, term()}.
 set_user(User = #user{id = UserId}, CustomerUuid) ->

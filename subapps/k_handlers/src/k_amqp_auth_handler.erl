@@ -7,7 +7,6 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
--include_lib("k_storage/include/msisdn.hrl").
 
 %% ===================================================================
 %% API
@@ -238,28 +237,22 @@ authenticate_by_email(Email, Interface) ->
     end.
 
 authenticate_by_msisdn(Msisdn, Interface) ->
-    case k_storage_msisdns:get_one(Msisdn) of
-        {ok, #msisdn_info{customer_uuid = CustomerUuid, user_id = UserId}} ->
-            case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
-                {ok, Customer} ->
-                    ?log_debug("Customer found: ~p", [Customer]),
-                    case check_state(customer, Customer#customer.state) of
-                        allow ->
-                            case k_storage_customers:get_user_by_id(Customer, UserId) of
-                                {ok, User = #user{}} ->
-                                    ?log_debug("User found: ~p", [User]),
-                                    case check_state(user, User#user.state) of
+    case k_storage_customers:get_customer_by_msisdn(Msisdn) of
+        {ok, Customer} ->
+            ?log_debug("Customer found: ~p", [Customer]),
+            case check_state(customer, Customer#customer.state) of
+                allow ->
+                    case k_storage_customers:get_user_by_msisdn(Customer, Msisdn) of
+                        {ok, User = #user{}} ->
+                            ?log_debug("User found: ~p", [User]),
+                            case check_state(user, User#user.state) of
+                                allow ->
+                                    case check_interface(Interface, User#user.connection_types) of
                                         allow ->
-                                            case check_interface(Interface, User#user.connection_types) of
-                                                allow ->
-                                                    case check_feature(<<"sms_from_email">>, get_features(UserId, Customer)) of
+                                            case check_feature(<<"sms_from_email">>, get_features(User#user.id, Customer)) of                                                 allow ->
+                                                    case check_credit_limit(Customer) of
                                                         allow ->
-                                                            case check_credit_limit(Customer) of
-                                                                allow ->
-                                                                    {allow, Customer, User};
-                                                                Deny ->
-                                                                    Deny
-                                                            end;
+                                                            {allow, Customer, User};
                                                         Deny ->
                                                             Deny
                                                     end;
@@ -269,26 +262,24 @@ authenticate_by_msisdn(Msisdn, Interface) ->
                                         Deny ->
                                             Deny
                                     end;
-                                {error, no_entry} ->
-                                    ?log_debug("User by msisdn: ~p not found", [Msisdn]),
-                                    {deny, unknown_user};
-                                {error, Error} ->
-                                    ?log_error("Unexpected error: ~p", [Error]),
-                                    {error, Error}
+                                Deny ->
+                                    Deny
                             end;
-                        Deny ->
-                            Deny
+                        {error, no_entry} ->
+                            ?log_debug("User by msisdn: ~p not found", [Msisdn]),
+                            {deny, unknown_user};
+                        {error, Error} ->
+                            ?log_error("Unexpected error: ~p", [Error]),
+                            {error, Error}
                     end;
-                {error, no_entry} ->
-                    ?log_info("Customer by uuid: ~p not found", [CustomerUuid]),
-                    {deny, unknown_customer}
+                Deny ->
+                    Deny
             end;
         {error, no_entry} ->
-            ?log_info("Msisdn: ~p not found", [Msisdn]),
-            {deny, unknown_customer};
+           ?log_info("Customer by msisdn: ~p not found", [Msisdn]),
+           {deny, unknown_customer};
         {error, Error} ->
-            ?log_error("Unexpected error: ~p.", [Error]),
-            {error, Error}
+          ?log_error("Unexpected error: ~p", [Error])
     end.
 
 check_password(PasswHash, PasswHash) ->
