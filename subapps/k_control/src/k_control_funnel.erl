@@ -37,7 +37,7 @@ connections() ->
             {error, Error}
     end.
 
--spec disconnect(customer_id(), user_id(), [bind_type()], connection_id()) ->
+-spec disconnect(customer_id(), user_id(), [bind_type()], [connection_id()]) ->
     ok | {error, term()}.
 disconnect(CustomerId, UserId, BindType, ConnectionId) ->
     {ok, CtrlQueue} = application:get_env(k_handlers, funnel_control_queue),
