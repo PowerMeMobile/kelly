@@ -477,10 +477,12 @@ build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Provide
         max_validity = MV,
         pay_type = PayType,
         credit = Credit,
-        credit_limit = CreditLimit
+        credit_limit = CreditLimit,
+        priority = Priority,
+        rps = RPS
     } = Customer,
 
-    CustomerDTO = #auth_customer_v1{
+    CustomerDTO = #auth_customer_v2{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         user_id = UserId,
@@ -495,7 +497,9 @@ build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Provide
         no_retry = NR,
         default_validity = MV,
         max_validity = MV,
-        features = [feature_to_v1(F) || F <- Features]
+        features = [feature_to_v1(F) || F <- Features],
+        priority = Priority,
+        rps = RPS
     },
 
     ResponseDTO = #auth_resp_v2{
