@@ -160,3 +160,11 @@ def test_should_exist_originator_succ(http):
     assert req.status_code == 200
     origs = req.json()
     assert origs == []
+
+def test_unassign_from_deleted_user_succ(http):
+    test_create_msisdn_succ(http)
+    test_read_msisdns_used_empty_succ(http)
+    test_assign_msisdn_to_user_succ(http)
+    test_read_msisdns_non_empty_succ(http)
+    http.delete(CUSTOMERS_USERS_URL+'/'+USER_ID)
+    test_read_msisdns_used_empty_succ(http)

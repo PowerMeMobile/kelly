@@ -139,3 +139,10 @@ def test_read_all_3_succ(http):
     assert req.status_code == 200
     resp_data = req.json()
     assert resp_data == []
+
+def test_unassign_from_deleted_customer_succ(http):
+    test_create_msisdn_succ(http)
+    test_update_msisdn_succ(http)
+    test_read_used_2_succ(http)
+    http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
+    test_read_used_succ(http)

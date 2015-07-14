@@ -144,6 +144,7 @@ update(Params) ->
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     ok = k_control_just:delete_customer(CustomerUuid),
+    ok = k_storage_msisdns:unassign_all_from_customer(CustomerUuid),
     ok = k_storage_customers:del_customer(CustomerUuid),
     {http_code, 204}.
 

@@ -108,6 +108,7 @@ update(Params) ->
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     UserId = ?gv(user_id, Params),
+    ok = k_storage_msisdns:unassign_all_from_user(CustomerUuid, UserId),
     case k_storage_customers:del_user(CustomerUuid, UserId) of
         {error, no_entry} ->
             ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),

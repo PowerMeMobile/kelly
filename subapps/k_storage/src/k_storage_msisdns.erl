@@ -9,7 +9,9 @@
     assign_to_customer/2,
     assign_to_user/3,
     unassign_from_customer/1,
+    unassign_all_from_customer/1,
     unassign_from_user/1,
+    unassign_all_from_user/2,
     get_assigned_to_customer/2,
     get_assigned_to_user/2
 ]).
@@ -112,10 +114,32 @@ unassign_from_customer(Msisdn) ->
     }},
     ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
 
+-spec unassign_all_from_customer(customer_uuid()) -> ok.
+unassign_all_from_customer(CustomerUuid) ->
+    Selector = {
+        'customer_uuid', CustomerUuid
+    },
+    Modifier = {'$set', {
+        'customer_uuid', undefined,
+        'user_id'      , undefined
+    }},
+    ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
+
 -spec unassign_from_user(msisdn()) -> ok.
 unassign_from_user(Msisdn) ->
     Selector = {
         'msisdn', k_storage_utils:addr_to_doc(Msisdn)
+    },
+    Modifier = {'$set', {
+        'user_id', undefined
+    }},
+    ok = mongodb_storage:update(static_storage, msisdns, Selector, Modifier).
+
+-spec unassign_all_from_user(customer_uuid(), user_id()) -> ok.
+unassign_all_from_user(CustomerUuid, UserId) ->
+    Selector = {
+        'customer_uuid', CustomerUuid,
+        'user_id', UserId
     },
     Modifier = {'$set', {
         'user_id', undefined
