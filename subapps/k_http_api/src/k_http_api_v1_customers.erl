@@ -30,7 +30,8 @@ init() ->
         #param{name = priority, mandatory = false, repeated = false, type = integer},
         #param{name = rps, mandatory = false, repeated = false, type = integer},
         #param{name = network_map_id, mandatory = false, repeated = false, type = uuid},
-        #param{name = default_provider_id, mandatory = false, repeated = false, type = uuid},
+        %% the type should be uuid, but it's not clear how to allow empty uuid
+        #param{name = default_provider_id, mandatory = false, repeated = false, type = binary},
         #param{name = receipts_allowed, mandatory = false, repeated = false, type = boolean},
         #param{name = no_retry, mandatory = false, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = false, repeated = false, type = binary},
@@ -53,7 +54,8 @@ init() ->
         #param{name = priority, mandatory = false, repeated = false, type = integer},
         #param{name = rps, mandatory = false, repeated = false, type = integer},
         #param{name = network_map_id, mandatory = true, repeated = false, type = uuid},
-        #param{name = default_provider_id, mandatory = true, repeated = false, type = uuid},
+        %% the type should be uuid, but it's not clear how to allow empty uuid
+        #param{name = default_provider_id, mandatory = true, repeated = false, type = binary},
         #param{name = receipts_allowed, mandatory = true, repeated = false, type = boolean},
         #param{name = no_retry, mandatory = true, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = true, repeated = false, type = binary},

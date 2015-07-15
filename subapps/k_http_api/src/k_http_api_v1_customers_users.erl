@@ -241,12 +241,13 @@ resolve_pass(NewPass, _Pass) ->
 
 interface(Type) ->
     case Type of
-        <<"mm">> -> mm;
-        <<"soap">> -> soap;
-        <<"oneapi">> -> oneapi;
         <<"transmitter">> -> transmitter;
-        <<"receiver">> -> receiver;
-        <<"transceiver">> -> transceiver
+        <<"receiver">>    -> receiver;
+        <<"transceiver">> -> transceiver;
+        <<"soap">>        -> soap;
+        <<"mm">>          -> mm;
+        <<"oneapi">>      -> oneapi;
+        <<"email">>       -> email
     end.
 
 user_state(State) ->

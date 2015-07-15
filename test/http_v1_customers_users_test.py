@@ -55,7 +55,7 @@ def http(request):
 def test_create_user_succ(http):
     req_data = {'user_id':USER_ID,
                 'password':'secret',
-                'interfaces':'transmitter;receiver',
+                'interfaces':'transmitter;receiver;transceiver;soap;mm;oneapi;email',
                 'mobile_phone':'375290000000',
                 'first_name':'fn',
                 'last_name':'ln',
@@ -69,7 +69,7 @@ def test_create_user_succ(http):
     assert req.status_code == 201
     resp_data = req.json()
     # add/remove some fields expected in response
-    req_data['interfaces'] = ['transmitter', 'receiver']
+    req_data['interfaces'] = ['transmitter', 'receiver', 'transceiver', 'soap', 'mm', 'oneapi', 'email']
     req_data['features'] = []
     del req_data['password']
     assert resp_data == req_data
