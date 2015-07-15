@@ -7,6 +7,8 @@ SCRIPT_NAME=$(basename ${BASH_SOURCE[0]})
 
 if [ $# -ne 1 ]; then
    echo "usage: $SCRIPT_NAME <config.count | config.remove | mailbox.count | mailbox.remove>"
+   echo "env: MONGO_HOST=${HOST}"
+   echo "     MONGO_PORT=${PORT}"
    exit 1
 fi
 
