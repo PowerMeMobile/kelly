@@ -37,7 +37,7 @@ unregister_subscription(SubId, CustomerUuid, UserId) ->
 register_incoming_item(Item = #k_mb_oneapi_receipt{}) ->
     case k_storage_mailbox:get_subscription_for_oneapi_receipt(Item) of
         undefined ->
-            ?log_debug("Suitable subscription NOT FOUND"
+            ?log_debug("Suitable subscription NOT FOUND. "
                 "Don't register OneAPI receipt", []),
             ok;
         {ok, #k_mb_oneapi_receipt_sub{}} ->
