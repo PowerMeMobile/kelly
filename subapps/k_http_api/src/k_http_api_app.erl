@@ -78,7 +78,8 @@ dispatch_rules() ->
 
 gen_http_api_handlers_dispatch_rules() ->
     gen_http_api:compile_routes([
-        %% deprecated since PowerAlley 1.5.0
+        %% deprecated since PowerAlley UI 1.5.0
+        %% !!! change monitor scripts before removing !!!
         k_http_api_handler_blacklist,
         k_http_api_handler_mt_msg_aggr_stats,
         k_http_api_handler_customers,
