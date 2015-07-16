@@ -253,8 +253,10 @@ prepare([Customer = #customer{} | Rest], Acc) ->
         }
     ),
 
-    ?log_debug("Customer: ~p", [Plist]),
-    prepare(Rest, [Plist | Acc]).
+    Plist2 = proplists:delete(interfaces, Plist),
+    Plist3 = proplists:delete(features, Plist2),
+    ?log_debug("Customer: ~p", [Plist3]),
+    prepare(Rest, [Plist3 | Acc]).
 
 customer_state(State) ->
     case State of

@@ -58,6 +58,8 @@
     no_retry            :: boolean(),
     default_validity    :: binary(),
     max_validity        :: integer(),
+    interfaces = []     :: [interface()],
+    features = []       :: [feature()],
     users = []          :: [user()],
     pay_type            :: pay_type(),
     credit              :: float(),

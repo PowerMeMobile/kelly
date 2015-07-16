@@ -52,8 +52,8 @@ set_customer(CustomerUuid, Customer) ->
         {
             'id'      , U#user.id,
             'password', U#user.password,
-            'connection_types',
-                [bsondoc:atom_to_binary(Type) || Type <- U#user.interfaces],
+            'interfaces',
+                [bsondoc:atom_to_binary(I) || I <- U#user.interfaces],
             'features'    , features_to_docs(U#user.features),
             'mobile_phone', U#user.mobile_phone,
             'first_name'  , U#user.first_name,
@@ -82,6 +82,9 @@ set_customer(CustomerUuid, Customer) ->
             'default_validity'   , Customer#customer.default_validity,
             'max_validity'       , Customer#customer.max_validity,
             'users'              , UsersDocList,
+            'interfaces',
+                [bsondoc:atom_to_binary(I) || I <- Customer#customer.interfaces],
+            'features'           , features_to_docs(Customer#customer.features),
             'pay_type'           , bsondoc:atom_to_binary(Customer#customer.pay_type),
             'credit'             , Customer#customer.credit,
             'credit_limit'       , Customer#customer.credit_limit,
@@ -276,7 +279,19 @@ doc_to_record(Doc) ->
             id = bsondoc:at(id, UserDoc),
             password = bsondoc:at(password, UserDoc),
             interfaces =
-                [bsondoc:binary_to_atom(Type) || Type <- bsondoc:at(connection_types, UserDoc)],
+                [bsondoc:binary_to_atom(I) ||
+                    I <- case bsondoc:at(interfaces, UserDoc) of
+                             undefined ->
+                                 case bsondoc:at(connection_types, UserDoc) of
+                                     undefined ->
+                                         [];
+                                     CtList ->
+                                         CtList
+                                 end;
+                             IfList ->
+                                 IfList
+                         end
+                ],
             features = docs_to_features(bsondoc:at(features, UserDoc)),
             mobile_phone = bsondoc:at(mobile_phone, UserDoc),
             first_name = bsondoc:at(first_name, UserDoc),
@@ -301,6 +316,9 @@ doc_to_record(Doc) ->
     NoRetry = bsondoc:at(no_retry, Doc),
     DefValidity = bsondoc:at(default_validity, Doc),
     MaxValidity = bsondoc:at(max_validity, Doc),
+    Interfaces =
+        [bsondoc:binary_to_atom(I) || I <- bsondoc:at(interfaces, Doc, [])],
+    Features = docs_to_features(bsondoc:at(features, Doc, [])),
     PayType = bsondoc:binary_to_atom(bsondoc:at(pay_type, Doc)),
     Credit = bsondoc:at(credit, Doc),
     CreditLimit = bsondoc:at(credit_limit, Doc),
@@ -321,6 +339,8 @@ doc_to_record(Doc) ->
         default_validity = DefValidity,
         max_validity = MaxValidity,
         users = Users,
+        interfaces = Interfaces,
+        features = Features,
         pay_type = PayType,
         credit = Credit,
         credit_limit = CreditLimit,

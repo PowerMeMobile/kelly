@@ -36,6 +36,10 @@ init() ->
         #param{name = no_retry, mandatory = false, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = false, repeated = false, type = binary},
         #param{name = max_validity, mandatory = false, repeated = false, type = integer},
+        #param{name = interfaces, mandatory = false, repeated = true, type =
+            {custom, fun interface/1}},
+        #param{name = features, mandatory = false, repeated = true, type =
+            {custom, fun feature/1}},
         #param{name = pay_type, mandatory = false, repeated = false, type =
             {custom, fun pay_type/1}},
         #param{name = credit, mandatory = false, repeated = false, type = float},
@@ -60,6 +64,10 @@ init() ->
         #param{name = no_retry, mandatory = true, repeated = false, type = boolean},
         #param{name = default_validity, mandatory = true, repeated = false, type = binary},
         #param{name = max_validity, mandatory = true, repeated = false, type = integer},
+        #param{name = interfaces, mandatory = true, repeated = true, type =
+            {custom, fun interface/1}},
+        #param{name = features, mandatory = true, repeated = true, type =
+            {custom, fun feature/1}},
         #param{name = pay_type, mandatory = true, repeated = false, type =
             {custom, fun pay_type/1}},
         #param{name = credit, mandatory = true, repeated = false, type = float},
@@ -153,6 +161,8 @@ update_customer(Customer, Params) ->
     NewNoRetry = ?gv(no_retry, Params, Customer#customer.no_retry),
     NewDefaultValidity = ?gv(default_validity, Params, Customer#customer.default_validity),
     NewMaxValidity = ?gv(max_validity, Params, Customer#customer.max_validity),
+    NewInterfaces = ?gv(interfaces, Params, Customer#customer.interfaces),
+    NewFeatures = ?gv(features, Params, Customer#customer.features),
     NewPayType = ?gv(pay_type, Params, Customer#customer.pay_type),
     NewCredit = ?gv(credit, Params, Customer#customer.credit),
     NewCreditLimit = ?gv(credit_limit, Params, Customer#customer.credit_limit),
@@ -172,6 +182,8 @@ update_customer(Customer, Params) ->
         default_validity = NewDefaultValidity,
         max_validity = NewMaxValidity,
         users = Customer#customer.users,
+        interfaces = NewInterfaces,
+        features = NewFeatures,
         pay_type = NewPayType,
         credit = NewCredit,
         credit_limit = NewCreditLimit,
@@ -203,6 +215,8 @@ create_customer(Params) ->
         default_validity = ?gv(default_validity, Params),
         max_validity = ?gv(max_validity, Params),
         users = [],
+        interfaces = ?gv(interfaces, Params),
+        features = ?gv(features, Params),
         pay_type = ?gv(pay_type, Params),
         credit = ?gv(credit, Params),
         credit_limit = ?gv(credit_limit, Params),
@@ -225,33 +239,59 @@ prepare([], Acc) ->
 prepare([Customer = #customer{} | Rest], Acc) ->
      #customer{
         originators = Originators,
-        users = Users
+        users = Users,
+        features = Features
     } = Customer,
 
     {ok, OriginatorPlists} =
         k_http_api_v1_customers_originators:prepare_originators(Originators),
     {ok, UserPlists} =
         k_http_api_v1_customers_users:prepare_users(Users),
+    {ok, FeaturesPlists} =
+        k_http_api_v1_customers_users_features:prepare_features(Features),
 
     %% preparation customer's record
     Fun = ?record_to_proplist(customer),
     Plist = Fun(
         Customer#customer{
             users = UserPlists,
-            originators = OriginatorPlists
+            originators = OriginatorPlists,
+            features = FeaturesPlists
         }
     ),
     prepare(Rest, [Plist | Acc]).
 
-customer_state(State) ->
-    case State of
-        <<"active">> -> active;
-        <<"blocked">> -> blocked;
-        <<"deactivated">> -> deactivated
+interface(<<"transmitter">>) -> transmitter;
+interface(<<"receiver">>)    -> receiver;
+interface(<<"transceiver">>) -> transceiver;
+interface(<<"soap">>)        -> soap;
+interface(<<"mm">>)          -> mm;
+interface(<<"oneapi">>)      -> oneapi;
+interface(<<"email">>)       -> email.
+
+features() -> [
+    {<<"override_originator">>, [<<"empty">>, <<"any">>, <<"false">>]},
+    {<<"inbox">>, [<<"true">>, <<"false">>]},
+    {<<"sms_from_email">>, [<<"true">>, <<"false">>]}
+].
+
+feature(Binary) ->
+    [Name, Value] = binary:split(Binary, <<",">>),
+    case proplists:get_value(Name, features()) of
+        undefined ->
+            error(unknown_feature_name);
+        Values ->
+            case lists:member(Value, Values) of
+                false ->
+                    error(unknown_feature_value);
+                true ->
+                    #feature{name = Name, value = Value}
+            end
     end.
 
-pay_type(Type) ->
-    case Type of
-        <<"prepaid">> -> prepaid;
-        <<"postpaid">> -> postpaid
-    end.
+customer_state(<<"active">>)      -> active;
+customer_state(<<"blocked">>)     -> blocked;
+customer_state(<<"deactivated">>) -> deactivated.
+
+pay_type(<<"prepaid">>)  -> prepaid;
+pay_type(<<"postpaid">>) -> postpaid.

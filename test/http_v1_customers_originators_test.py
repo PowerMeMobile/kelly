@@ -38,6 +38,8 @@ def http(request):
             'max_validity':259200,
             'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec73',
             'network_map_id':'befa8b7c-c4a3-11e3-b670-00269e42f7a5',
+            'interfaces':'',
+            'features':'',
             'pay_type':'postpaid',
             'credit':10000.0,
             'credit_limit':10000.0,
