@@ -246,7 +246,7 @@ prepare([Customer = #customer{} | Rest], Acc) ->
     {ok, OriginatorPlists} =
         k_http_api_v1_customers_originators:prepare_originators(Originators),
     {ok, UserPlists} =
-        k_http_api_v1_customers_users:prepare_users(Users),
+        k_http_api_v1_customers_users:prepare_users(Customer, Users),
     {ok, FeaturesPlists} =
         k_http_api_v1_customers_users_features:prepare_features(Features),
 

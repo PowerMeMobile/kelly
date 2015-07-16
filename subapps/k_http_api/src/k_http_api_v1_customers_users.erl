@@ -12,7 +12,7 @@
 
 %% export helpers
 -export([
-    prepare_users/1
+    prepare_users/2
 ]).
 
 -include_lib("alley_common/include/utils.hrl").
@@ -125,17 +125,20 @@ delete(Params) ->
 %% Internal & API
 %% ===================================================================
 
--spec prepare_users(#user{}) -> {ok, [{atom(), term()}]}.
-prepare_users(User = #user{features = Features}) ->
+-spec prepare_users(#customer{}, #user{}) -> {ok, [{atom(), term()}]}.
+prepare_users(Customer, User = #user{features = Features}) ->
     {ok, FeaturesPlists} =
         k_http_api_v1_customers_users_features:prepare_features(Features),
     UserFun = ?record_to_proplist(user),
     Plist = UserFun(User#user{features = FeaturesPlists}),
     Plist2 = [{user_id, ?gv(id, Plist)} | Plist],
-    Plist3 = proplists:delete(password, Plist2),
-    proplists:delete(id, Plist3);
-prepare_users(Users) when is_list(Users) ->
-    {ok, [prepare_users(User) || User <- Users]}.
+    Plist3 = [{customer_uuid, Customer#customer.customer_uuid} | Plist2],
+    Plist4 = [{customer_id, Customer#customer.customer_id} | Plist3],
+    Plist5 = [{customer_name, Customer#customer.name} | Plist4],
+    Plist6 = proplists:delete(password, Plist5),
+    proplists:delete(id, Plist6);
+prepare_users(Customer, Users) when is_list(Users) ->
+    {ok, [prepare_users(Customer, User) || User <- Users]}.
 
 %% ===================================================================
 %% Internal
@@ -177,7 +180,7 @@ create_user(Customer, Params) ->
                 state = State
             },
             ok = k_storage_customers:set_user(User, Customer#customer.customer_uuid),
-            {ok, [Plist]} = prepare_users([User]),
+            {ok, [Plist]} = prepare_users(Customer, [User]),
             ?log_debug("User: ~p", [Plist]),
             {http_code, 201, Plist}
     end.
@@ -214,7 +217,7 @@ update_user(Customer, Params) ->
                 state = State
             },
             ok = k_storage_customers:set_user(Updated, Customer#customer.customer_uuid),
-            {ok, [Plist]} = prepare_users([Updated]),
+            {ok, [Plist]} = prepare_users(Customer, [Updated]),
             ?log_debug("User: ~p", [Plist]),
             {ok, Plist};
         {error, no_entry} ->
@@ -225,13 +228,13 @@ update_user(Customer, Params) ->
 
 get_user_by_id(Customer, undefined) ->
     #customer{users = Users} = Customer,
-    {ok, Plist} = prepare_users(Users),
+    {ok, Plist} = prepare_users(Customer, Users),
     ?log_debug("User: ~p", [Plist]),
     {ok, Plist};
 get_user_by_id(Customer, UserId) ->
     case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, User} ->
-            {ok, [Plist]} = prepare_users([User]),
+            {ok, [Plist]} = prepare_users(Customer, [User]),
             ?log_debug("User: ~p", [Plist]),
             {ok, Plist};
         {error, no_entry} ->

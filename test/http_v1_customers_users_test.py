@@ -14,6 +14,9 @@ if KELLY_PORT == None or KELLY_PORT == '':
     KELLY_PORT = '8080'
 
 CUSTOMER_UUID = '2dca065f-c328-4a19-bc92-b222f48764e1'
+CUSTOMER_ID = '0'
+CUSTOMER_NAME = 'name'
+
 USER_ID = 'user'
 
 BAD_CUSTOMER_UUID = '00000000-0000-0000-0000-000000000000'
@@ -28,8 +31,8 @@ def http(request):
     http = requests
 
     data = {'customer_uuid':CUSTOMER_UUID,
-            'customer_id':'0',
-            'name':'name',
+            'customer_id':CUSTOMER_ID,
+            'name':CUSTOMER_NAME,
             'priority':1,
             'rps':1000,
             'receipts_allowed':True,
@@ -73,6 +76,9 @@ def test_create_user_succ(http):
     assert req.status_code == 201
     resp_data = req.json()
     # add/remove some fields expected in response
+    req_data['customer_uuid'] = CUSTOMER_UUID
+    req_data['customer_id'] = CUSTOMER_ID
+    req_data['customer_name'] = CUSTOMER_NAME
     req_data['interfaces'] = ['transmitter', 'receiver', 'transceiver', 'soap', 'mm', 'oneapi', 'email']
     req_data['features'] = [{'name': 'inbox', 'value': 'true'}]
     del req_data['password']
@@ -96,6 +102,9 @@ def test_update_user_succ(http):
     resp_data = req.json()
     # add/remove some fields expected in response
     req_data['user_id'] = USER_ID
+    req_data['customer_uuid'] = CUSTOMER_UUID
+    req_data['customer_id'] = CUSTOMER_ID
+    req_data['customer_name'] = CUSTOMER_NAME
     req_data['interfaces'] = ['transmitter']
     req_data['features'] = [{'name':'sms_from_email', 'value':'true'}, {'name':'inbox', 'value':'false'}]
     del req_data['password']
@@ -110,6 +119,9 @@ def test_read_user_succ(http):
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = {'user_id':USER_ID,
+                'customer_uuid':CUSTOMER_UUID,
+                'customer_id':CUSTOMER_ID,
+                'customer_name':CUSTOMER_NAME,
                 'interfaces':['transmitter'],
                 'mobile_phone':'375290000001',
                 'first_name':'fn1',
@@ -129,6 +141,9 @@ def test_delete_user_succ(http):
 
 def test_create_user_empty_interfaces_and_features_succ(http):
     req_data = {'user_id':USER_ID,
+                'customer_uuid':CUSTOMER_UUID,
+                'customer_id':CUSTOMER_ID,
+                'customer_name':CUSTOMER_NAME,
                 'password':'secret',
                 'interfaces':'',
                 'features':'',
