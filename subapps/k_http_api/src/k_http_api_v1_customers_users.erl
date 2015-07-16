@@ -34,7 +34,9 @@ init() ->
         #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = false, repeated = false, type = binary},
         #param{name = interfaces, mandatory = false, repeated = true, type =
-             {custom, fun interface/1}},
+            {custom, fun interface/1}},
+        #param{name = features, mandatory = false, repeated = true, type =
+            {custom, fun feature/1}},
         #param{name = mobile_phone, mandatory = false, repeated = false, type = binary},
         #param{name = first_name, mandatory = false, repeated = false, type = binary},
         #param{name = last_name, mandatory = false, repeated = false, type = binary},
@@ -56,6 +58,8 @@ init() ->
         #param{name = password, mandatory = true, repeated = false, type = binary},
         #param{name = interfaces, mandatory = true, repeated = true, type =
             {custom, fun interface/1}},
+        #param{name = features, mandatory = true, repeated = true, type =
+            {custom, fun feature/1}},
         #param{name = mobile_phone, mandatory = false, repeated = false, type = binary},
         #param{name = first_name, mandatory = false, repeated = false, type = binary},
         #param{name = last_name, mandatory = false, repeated = false, type = binary},
@@ -148,6 +152,7 @@ create_user(Customer, Params) ->
         {error, no_entry} ->
             Password = ?gv(password, Params),
             Interfaces = ?gv(interfaces, Params),
+            Features = ?gv(features, Params),
             MobilePhone = ?gv(mobile_phone, Params),
             FirstName = ?gv(first_name, Params),
             LastName = ?gv(last_name, Params),
@@ -162,6 +167,7 @@ create_user(Customer, Params) ->
                 password = ac_hexdump:binary_to_hexdump(
                                 crypto:hash(md5, Password), to_lower),
                 connection_types = Interfaces,
+                features = Features,
                 mobile_phone = MobilePhone,
                 first_name = FirstName,
                 last_name = LastName,
@@ -184,6 +190,7 @@ update_user(Customer, Params) ->
         {ok, User} ->
             Password = resolve_pass(?gv(password, Params), User#user.password),
             Interfaces = ?gv(interfaces, Params, User#user.connection_types),
+            Features = ?gv(features, Params, User#user.features),
             MobilePhone = ?gv(mobile_phone, Params, User#user.mobile_phone),
             FirstName = ?gv(first_name, Params, User#user.first_name),
             LastName = ?gv(last_name, Params, User#user.last_name),
@@ -197,6 +204,7 @@ update_user(Customer, Params) ->
                 id = UserId,
                 password = Password,
                 connection_types = Interfaces,
+                features = Features,
                 mobile_phone = MobilePhone,
                 first_name = FirstName,
                 last_name = LastName,
@@ -239,20 +247,34 @@ resolve_pass(undefined, Pass) ->
 resolve_pass(NewPass, _Pass) ->
     ac_hexdump:binary_to_hexdump(crypto:hash(md5, NewPass), to_lower).
 
-interface(Type) ->
-    case Type of
-        <<"transmitter">> -> transmitter;
-        <<"receiver">>    -> receiver;
-        <<"transceiver">> -> transceiver;
-        <<"soap">>        -> soap;
-        <<"mm">>          -> mm;
-        <<"oneapi">>      -> oneapi;
-        <<"email">>       -> email
+interface(<<"transmitter">>) -> transmitter;
+interface(<<"receiver">>)    -> receiver;
+interface(<<"transceiver">>) -> transceiver;
+interface(<<"soap">>)        -> soap;
+interface(<<"mm">>)          -> mm;
+interface(<<"oneapi">>)      -> oneapi;
+interface(<<"email">>)       -> email.
+
+features() -> [
+    {<<"override_originator">>, [<<"empty">>, <<"any">>, <<"false">>]},
+    {<<"inbox">>, [<<"true">>, <<"false">>]},
+    {<<"sms_from_email">>, [<<"true">>, <<"false">>]}
+].
+
+feature(Binary) ->
+    [Name, Value] = binary:split(Binary, <<",">>),
+    case proplists:get_value(Name, features()) of
+        undefined ->
+            error(unknown_feature_name);
+        Values ->
+            case lists:member(Value, Values) of
+                false ->
+                    error(unknown_feature_value);
+                true ->
+                    #feature{name = Name, value = Value}
+            end
     end.
 
-user_state(State) ->
-    case State of
-        <<"active">> -> active;
-        <<"blocked">> -> blocked;
-        <<"deactivated">> -> deactivated
-    end.
+user_state(<<"active">>)      -> active;
+user_state(<<"blocked">>)     -> blocked;
+user_state(<<"deactivated">>) -> deactivated.

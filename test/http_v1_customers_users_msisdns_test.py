@@ -59,6 +59,7 @@ def http(request):
     data3 = {'user_id':USER_ID,
              'password':'secret',
              'interfaces':'transmitter;receiver',
+             'features':'',
              'mobile_phone':'375290000000',
              'first_name':'fn',
              'last_name':'ln',

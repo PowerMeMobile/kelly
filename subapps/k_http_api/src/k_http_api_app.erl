@@ -118,7 +118,6 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_v1_customers_msisdns,
         k_http_api_v1_customers_originators,
         k_http_api_v1_customers_users,
-        k_http_api_v1_customers_users_features,
         k_http_api_v1_customers_users_msisdns,
         k_http_api_v1_customers,
 

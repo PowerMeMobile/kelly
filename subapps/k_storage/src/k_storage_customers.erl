@@ -50,7 +50,7 @@ set_customer(CustomerUuid, Customer) ->
 
     UsersDocList = [
         {
-            'id' , U#user.id,
+            'id'      , U#user.id,
             'password', U#user.password,
             'connection_types',
                 [bsondoc:atom_to_binary(Type) || Type <- U#user.connection_types],
@@ -69,7 +69,7 @@ set_customer(CustomerUuid, Customer) ->
     ],
 
     Modifier = {
-        '$set' , {
+        '$set', {
             'customer_id'        , Customer#customer.customer_id,
             'name'               , Customer#customer.name,
             'priority'           , Customer#customer.priority,
