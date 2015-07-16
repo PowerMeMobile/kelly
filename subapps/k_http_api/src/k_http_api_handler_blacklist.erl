@@ -26,9 +26,9 @@ init() ->
     Update = [
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = dst_addr, mandatory = false, repeated = false, type =
-            {custom, fun decode_addr/1}},
+            {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = src_addr, mandatory = false, repeated = false, type =
-            {custom, fun decode_addr/1}}
+            {custom, fun k_http_api_utils:decode_msisdn/1}}
     ],
     Delete = [
         #param{name = id, mandatory = true, repeated = false, type = binary}
@@ -36,9 +36,9 @@ init() ->
     Create = [
         #param{name = id, mandatory = false, repeated = false, type = binary},
         #param{name = dst_addr, mandatory = true, repeated = false, type =
-            {custom, fun decode_addr/1}},
+            {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = src_addr, mandatory = false, repeated = false, type =
-            {custom, fun decode_addr/1}}
+            {custom, fun k_http_api_utils:decode_msisdn/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -169,15 +169,3 @@ prepare([Entry = #blacklist_entry{} | Rest], Acc) ->
         }
     ),
     prepare(Rest, [Plist | Acc]).
-
-%% convert "addr,ton,npi" to #addr{addr, ton, npi}
-decode_addr(<<>>) ->
-    undefined;
-decode_addr(AddrBin) ->
-    AddrString = binary_to_list(AddrBin),
-    [Addr, Ton, Npi] = string:tokens(AddrString, ","),
-    #addr{
-        addr = list_to_binary(Addr),
-        ton = list_to_integer(Ton),
-        npi = list_to_integer(Npi)
-    }.

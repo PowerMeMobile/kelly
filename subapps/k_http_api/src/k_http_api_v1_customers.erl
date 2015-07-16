@@ -37,16 +37,16 @@ init() ->
         #param{name = default_validity, mandatory = false, repeated = false, type = binary},
         #param{name = max_validity, mandatory = false, repeated = false, type = integer},
         #param{name = interfaces, mandatory = false, repeated = true, type =
-            {custom, fun interface/1}},
+            {custom, fun k_http_api_utils:decode_interface/1}},
         #param{name = features, mandatory = false, repeated = true, type =
-            {custom, fun feature/1}},
+            {custom, fun k_http_api_utils:decode_feature/1}},
         #param{name = pay_type, mandatory = false, repeated = false, type =
-            {custom, fun pay_type/1}},
+            {custom, fun decode_pay_type/1}},
         #param{name = credit, mandatory = false, repeated = false, type = float},
         #param{name = credit_limit, mandatory = false, repeated = false, type = float},
         #param{name = language, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = false, repeated = false, type =
-            {custom, fun customer_state/1}}
+            {custom, fun decode_state/1}}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid}
@@ -65,16 +65,16 @@ init() ->
         #param{name = default_validity, mandatory = true, repeated = false, type = binary},
         #param{name = max_validity, mandatory = true, repeated = false, type = integer},
         #param{name = interfaces, mandatory = true, repeated = true, type =
-            {custom, fun interface/1}},
+            {custom, fun k_http_api_utils:decode_interface/1}},
         #param{name = features, mandatory = true, repeated = true, type =
-            {custom, fun feature/1}},
+            {custom, fun k_http_api_utils:decode_feature/1}},
         #param{name = pay_type, mandatory = true, repeated = false, type =
-            {custom, fun pay_type/1}},
+            {custom, fun decode_pay_type/1}},
         #param{name = credit, mandatory = true, repeated = false, type = float},
         #param{name = credit_limit, mandatory = true, repeated = false, type = float},
         #param{name = language, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = true, repeated = false, type =
-            {custom, fun customer_state/1}}
+            {custom, fun decode_state/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -114,7 +114,7 @@ read(Params) ->
 read_all() ->
     case k_storage_customers:get_customers() of
         {ok, Customers} ->
-            {ok, Plists} = prepare(Customers),
+            {ok, Plists} = prepare_customers(Customers),
             ?log_debug("Customers: ~p", [Plists]),
             {http_code, 200, Plists}
     end.
@@ -122,7 +122,7 @@ read_all() ->
 read_customer_uuid(CustomerUuid) ->
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            {ok, [Plist]} = prepare(Customer),
+            {ok, [Plist]} = prepare_customers(Customer),
             ?log_debug("Customer: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -193,7 +193,7 @@ update_customer(Customer, Params) ->
 
     ok = k_control_just:set_customer(CustomerUuid, NewRps, NewPriority),
     ok = k_storage_customers:set_customer(CustomerUuid, NewCustomer),
-    {ok, [Plist]} = prepare(NewCustomer),
+    {ok, [Plist]} = prepare_customers(NewCustomer),
     ?log_debug("Customer: ~p", [Plist]),
     {http_code, 200, Plist}.
 
@@ -225,18 +225,18 @@ create_customer(Params) ->
     },
     ok = k_control_just:set_customer(CustomerUuid, Rps, Priority),
     ok = k_storage_customers:set_customer(CustomerUuid, Customer),
-    {ok, [Plist]} = prepare(Customer),
+    {ok, [Plist]} = prepare_customers(Customer),
     ?log_debug("Customer: ~p", [Plist]),
     {http_code, 201, Plist}.
 
-prepare(ItemList) when is_list(ItemList) ->
-    prepare(ItemList, []);
-prepare(Item) ->
-    prepare([Item], []).
+prepare_customers(ItemList) when is_list(ItemList) ->
+    prepare_customers(ItemList, []);
+prepare_customers(Item) ->
+    prepare_customers([Item], []).
 
-prepare([], Acc) ->
+prepare_customers([], Acc) ->
     {ok, Acc};
-prepare([Customer = #customer{} | Rest], Acc) ->
+prepare_customers([Customer = #customer{} | Rest], Acc) ->
      #customer{
         originators = Originators,
         users = Users,
@@ -244,11 +244,11 @@ prepare([Customer = #customer{} | Rest], Acc) ->
     } = Customer,
 
     {ok, OriginatorPlists} =
-        k_http_api_v1_customers_originators:prepare_originators(Originators),
+        k_http_api_utils:prepare_originators(Originators),
     {ok, UserPlists} =
-        k_http_api_v1_customers_users:prepare_users(Customer, Users),
+        k_http_api_utils:prepare_users(Customer, Users),
     {ok, FeaturesPlists} =
-        k_http_api_v1_customers_users_features:prepare_features(Features),
+        k_http_api_utils:prepare_features(Features),
 
     %% preparation customer's record
     Fun = ?record_to_proplist(customer),
@@ -259,39 +259,17 @@ prepare([Customer = #customer{} | Rest], Acc) ->
             features = FeaturesPlists
         }
     ),
-    prepare(Rest, [Plist | Acc]).
+    prepare_customers(Rest, [Plist | Acc]).
 
-interface(<<"transmitter">>) -> transmitter;
-interface(<<"receiver">>)    -> receiver;
-interface(<<"transceiver">>) -> transceiver;
-interface(<<"soap">>)        -> soap;
-interface(<<"mm">>)          -> mm;
-interface(<<"oneapi">>)      -> oneapi;
-interface(<<"email">>)       -> email.
-
-features() -> [
-    {<<"override_originator">>, [<<"empty">>, <<"any">>, <<"false">>]},
-    {<<"inbox">>, [<<"true">>, <<"false">>]},
-    {<<"sms_from_email">>, [<<"true">>, <<"false">>]}
-].
-
-feature(Binary) ->
-    [Name, Value] = binary:split(Binary, <<",">>),
-    case proplists:get_value(Name, features()) of
-        undefined ->
-            error(unknown_feature_name);
-        Values ->
-            case lists:member(Value, Values) of
-                false ->
-                    error(unknown_feature_value);
-                true ->
-                    #feature{name = Name, value = Value}
-            end
+decode_state(State) ->
+    case bstr:lower(State) of
+        <<"active">>      -> active;
+        <<"blocked">>     -> blocked;
+        <<"deactivated">> -> deactivated
     end.
 
-customer_state(<<"active">>)      -> active;
-customer_state(<<"blocked">>)     -> blocked;
-customer_state(<<"deactivated">>) -> deactivated.
-
-pay_type(<<"prepaid">>)  -> prepaid;
-pay_type(<<"postpaid">>) -> postpaid.
+decode_pay_type(PayType) ->
+    case bstr:lower(PayType) of
+        <<"prepaid">>  -> prepaid;
+        <<"postpaid">> -> postpaid
+    end.

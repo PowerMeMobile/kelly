@@ -21,19 +21,24 @@
 
 init() ->
     Create = [
-        #param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_msisdn/1}}
+        #param{name = msisdn, mandatory = true, repeated = false, type =
+            {custom, fun k_http_api_utils:decode_msisdn/1}}
     ],
     Read = [
-        #param{name = msisdn, mandatory = false, repeated = false, type = {custom, fun decode_msisdn/1}},
+        #param{name = msisdn, mandatory = false, repeated = false, type =
+            {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
-        #param{name = state, mandatory = false, repeated = false, type = {custom, fun decode_state/1}}
+        #param{name = state, mandatory = false, repeated = false, type =
+            {custom, fun decode_state/1}}
     ],
     Update = [
-        #param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_msisdn/1}},
+        #param{name = msisdn, mandatory = true, repeated = false, type =
+            {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid}
     ],
     Delete = [
-        #param{name = msisdn, mandatory = true, repeated = false, type = {custom, fun decode_msisdn/1}}
+        #param{name = msisdn, mandatory = true, repeated = false, type =
+            {custom, fun k_http_api_utils:decode_msisdn/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -102,15 +107,6 @@ build_resp(Info, Dict) ->
      {customer_uuid, CustomerUuid},
      {customer_id, CustomerId},
      {customer_name, CustomerName}].
-
-decode_msisdn(AddrBin) ->
-    AddrString = binary_to_list(AddrBin),
-    [Addr, Ton, Npi] = string:tokens(AddrString, ","),
-    #addr{
-        addr = list_to_binary(Addr),
-        ton = list_to_integer(Ton),
-        npi = list_to_integer(Npi)
-    }.
 
 decode_state(State) ->
     case bstr:lower(State) of

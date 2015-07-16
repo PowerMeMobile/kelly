@@ -22,17 +22,18 @@
 init() ->
     Read = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
-        #param{name = state, mandatory = false, repeated = false, type = {custom, fun decode_state/1}}
+        #param{name = state, mandatory = false, repeated = false, type =
+            {custom, fun decode_state/1}}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = msisdn, mandatory = true, repeated = false, type =
-            {custom, fun decode_msisdn/1}}
+            {custom, fun k_http_api_utils:decode_msisdn/1}}
     ],
     Create = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = msisdn, mandatory = true, repeated = false, type =
-            {custom, fun decode_msisdn/1}}
+            {custom, fun k_http_api_utils:decode_msisdn/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -114,16 +115,6 @@ prepare_msisdns(Msisdn = #addr{}) ->
     proplists:delete(ref_num, AddrFun(Msisdn));
 prepare_msisdns(Msisdns) when is_list(Msisdns) ->
     {ok, [prepare_msisdns(M) || M <- Msisdns]}.
-
-%% convert "addr,ton,npi" to #addr{addr, ton, npi}
-decode_msisdn(AddrBin) ->
-    AddrString = binary_to_list(AddrBin),
-    [Addr, Ton, Npi] = string:tokens(AddrString, ","),
-    #addr{
-        addr = list_to_binary(Addr),
-        ton = list_to_integer(Ton),
-        npi = list_to_integer(Npi)
-    }.
 
 decode_state(State) ->
     case bstr:lower(State) of

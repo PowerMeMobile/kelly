@@ -33,7 +33,7 @@ init() ->
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = address, mandatory = false, repeated = false, type =
-            {custom, fun decode_addr/1}},
+            {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
         #param{name = state, mandatory = false, repeated = false, type =
@@ -47,7 +47,7 @@ init() ->
         #param{name = customer_uuid, mandatory = true, repeated = false, type = binary},
         #param{name = id, mandatory = false, repeated = false, type = binary},
         #param{name = address, mandatory = true, repeated = false, type =
-            {custom, fun decode_addr/1}},
+            {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
         #param{name = state, mandatory = true, repeated = false, type =
@@ -200,18 +200,8 @@ get_originator(Customer, Id) ->
             {http_code, 500}
     end.
 
-%% convert "addr,ton,npi" to #addr{addr, ton, npi}
-decode_addr(AddrBin) ->
-    AddrString = binary_to_list(AddrBin),
-    [Addr, Ton, Npi] = string:tokens(AddrString, ","),
-    #addr{
-        addr = list_to_binary(Addr),
-        ton = list_to_integer(Ton),
-        npi = list_to_integer(Npi)
-    }.
-
 originator_state(State) ->
-    case State of
+    case bstr:lower(State) of
         <<"pending">> -> pending;
         <<"approved">> -> approved;
         <<"rejected">> -> rejected

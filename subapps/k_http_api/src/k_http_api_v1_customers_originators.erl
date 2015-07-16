@@ -10,11 +10,6 @@
     delete/1
 ]).
 
-%% export helpers
--export([
-    prepare_originators/1
-]).
-
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
@@ -33,11 +28,11 @@ init() ->
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = msisdn, mandatory = false, repeated = false, type =
-            {custom, fun decode_msisdn/1}},
+            {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
         #param{name = state, mandatory = false, repeated = false, type =
-            {custom, fun originator_state/1}}
+            {custom, fun decode_state/1}}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
@@ -47,11 +42,11 @@ init() ->
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
         #param{name = id, mandatory = false, repeated = false, type = binary},
         #param{name = msisdn, mandatory = true, repeated = false, type =
-            {custom, fun decode_msisdn/1}},
+            {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
         #param{name = state, mandatory = true, repeated = false, type =
-            {custom, fun originator_state/1}}
+            {custom, fun decode_state/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -99,16 +94,6 @@ delete(Params) ->
             {http_code, 204}
     end.
 
--spec prepare_originators(#originator{}) -> {ok, [{atom(), term()}]}.
-prepare_originators(Orig = #originator{}) ->
-    AddrFun = ?record_to_proplist(addr),
-    OrigFun = ?record_to_proplist(originator),
-    AddrPlist = proplists:delete(ref_num, AddrFun(Orig#originator.address)),
-    OrigPlist = proplists:delete(address, OrigFun(Orig)),
-    [{msisdn, AddrPlist} | OrigPlist];
-prepare_originators(Originators) when is_list(Originators) ->
-    {ok, [prepare_originators(Originator) || Originator <- Originators]}.
-
 %% ===================================================================
 %% Internal
 %% ===================================================================
@@ -136,7 +121,7 @@ create_originator(Customer, Params) ->
                 state = State
             },
             ok = k_storage_customers:set_originator(Originator, Customer#customer.customer_uuid),
-            {ok, [Plist]} = prepare_originators([Originator]),
+            {ok, [Plist]} = k_http_api_utils:prepare_originators([Originator]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 201, Plist}
     end.
@@ -157,7 +142,7 @@ update_originator(Customer, Params) ->
                 state = State
             },
             ok = k_storage_customers:set_originator(Updated, Customer#customer.customer_uuid),
-            {ok, [Plist]} = prepare_originators([Updated]),
+            {ok, [Plist]} = k_http_api_utils:prepare_originators([Updated]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -166,31 +151,21 @@ update_originator(Customer, Params) ->
 
 get_originator(Customer, undefined) ->
     #customer{originators = Originators} = Customer,
-    {ok, Plist} = prepare_originators(Originators),
+    {ok, Plist} = k_http_api_utils:prepare_originators(Originators),
     ?log_debug("Originator: ~p", [Plist]),
     {http_code, 200, Plist};
 get_originator(Customer, Id) ->
     case k_storage_customers:get_originator(Customer, Id) of
         {ok, Originator} ->
-            {ok, [Plist]} = prepare_originators([Originator]),
+            {ok, [Plist]} = k_http_api_utils:prepare_originators([Originator]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
 
-%% convert "addr,ton,npi" to #addr{addr, ton, npi}
-decode_msisdn(AddrBin) ->
-    AddrString = binary_to_list(AddrBin),
-    [Addr, Ton, Npi] = string:tokens(AddrString, ","),
-    #addr{
-        addr = list_to_binary(Addr),
-        ton = list_to_integer(Ton),
-        npi = list_to_integer(Npi)
-    }.
-
-originator_state(State) ->
-    case State of
+decode_state(State) ->
+    case bstr:lower(State) of
         <<"pending">> -> pending;
         <<"approved">> -> approved;
         <<"rejected">> -> rejected

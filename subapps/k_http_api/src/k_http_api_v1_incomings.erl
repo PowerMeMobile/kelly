@@ -27,7 +27,8 @@ init() ->
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = user_id, mandatory = false, repeated = false, type = binary},
-        #param{name = state, mandatory = false, repeated = false, type = {custom, fun decode_state/1}},
+        #param{name = state, mandatory = false, repeated = false, type =
+            {custom, fun decode_state/1}},
         #param{name = skip, mandatory = true, repeated = false, type = integer},
         #param{name = limit, mandatory = true, repeated = false, type = integer}
     ],

@@ -10,11 +10,6 @@
     delete/1
 ]).
 
-%% export helpers
--export([
-    prepare_users/2
-]).
-
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
@@ -34,9 +29,9 @@ init() ->
         #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = false, repeated = false, type = binary},
         #param{name = interfaces, mandatory = false, repeated = true, type =
-            {custom, fun interface/1}},
+            {custom, fun k_http_api_utils:decode_interface/1}},
         #param{name = features, mandatory = false, repeated = true, type =
-            {custom, fun feature/1}},
+            {custom, fun k_http_api_utils:decode_feature/1}},
         #param{name = mobile_phone, mandatory = false, repeated = false, type = binary},
         #param{name = first_name, mandatory = false, repeated = false, type = binary},
         #param{name = last_name, mandatory = false, repeated = false, type = binary},
@@ -46,7 +41,7 @@ init() ->
         #param{name = country, mandatory = false, repeated = false, type = binary},
         #param{name = language, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = false, repeated = false, type =
-            {custom, fun user_state/1}}
+            {custom, fun decode_state/1}}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
@@ -57,9 +52,9 @@ init() ->
         #param{name = user_id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = true, repeated = false, type = binary},
         #param{name = interfaces, mandatory = true, repeated = true, type =
-            {custom, fun interface/1}},
+            {custom, fun k_http_api_utils:decode_interface/1}},
         #param{name = features, mandatory = true, repeated = true, type =
-            {custom, fun feature/1}},
+            {custom, fun k_http_api_utils:decode_feature/1}},
         #param{name = mobile_phone, mandatory = false, repeated = false, type = binary},
         #param{name = first_name, mandatory = false, repeated = false, type = binary},
         #param{name = last_name, mandatory = false, repeated = false, type = binary},
@@ -69,7 +64,7 @@ init() ->
         #param{name = country, mandatory = false, repeated = false, type = binary},
         #param{name = language, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = true, repeated = false, type =
-            {custom, fun user_state/1}}
+            {custom, fun decode_state/1}}
     ],
     {ok, #specs{
         create = Create,
@@ -122,25 +117,6 @@ delete(Params) ->
     end.
 
 %% ===================================================================
-%% Internal & API
-%% ===================================================================
-
--spec prepare_users(#customer{}, #user{}) -> {ok, [{atom(), term()}]}.
-prepare_users(Customer, User = #user{features = Features}) ->
-    {ok, FeaturesPlists} =
-        k_http_api_v1_customers_users_features:prepare_features(Features),
-    UserFun = ?record_to_proplist(user),
-    Plist = UserFun(User#user{features = FeaturesPlists}),
-    Plist2 = [{user_id, ?gv(id, Plist)} | Plist],
-    Plist3 = [{customer_uuid, Customer#customer.customer_uuid} | Plist2],
-    Plist4 = [{customer_id, Customer#customer.customer_id} | Plist3],
-    Plist5 = [{customer_name, Customer#customer.name} | Plist4],
-    Plist6 = proplists:delete(password, Plist5),
-    proplists:delete(id, Plist6);
-prepare_users(Customer, Users) when is_list(Users) ->
-    {ok, [prepare_users(Customer, User) || User <- Users]}.
-
-%% ===================================================================
 %% Internal
 %% ===================================================================
 
@@ -180,7 +156,7 @@ create_user(Customer, Params) ->
                 state = State
             },
             ok = k_storage_customers:set_user(User, Customer#customer.customer_uuid),
-            {ok, [Plist]} = prepare_users(Customer, [User]),
+            {ok, [Plist]} = k_http_api_utils:prepare_users(Customer, [User]),
             ?log_debug("User: ~p", [Plist]),
             {http_code, 201, Plist}
     end.
@@ -217,7 +193,7 @@ update_user(Customer, Params) ->
                 state = State
             },
             ok = k_storage_customers:set_user(Updated, Customer#customer.customer_uuid),
-            {ok, [Plist]} = prepare_users(Customer, [Updated]),
+            {ok, [Plist]} = k_http_api_utils:prepare_users(Customer, [Updated]),
             ?log_debug("User: ~p", [Plist]),
             {ok, Plist};
         {error, no_entry} ->
@@ -228,13 +204,13 @@ update_user(Customer, Params) ->
 
 get_user_by_id(Customer, undefined) ->
     #customer{users = Users} = Customer,
-    {ok, Plist} = prepare_users(Customer, Users),
+    {ok, Plist} = k_http_api_utils:prepare_users(Customer, Users),
     ?log_debug("User: ~p", [Plist]),
     {ok, Plist};
 get_user_by_id(Customer, UserId) ->
     case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, User} ->
-            {ok, [Plist]} = prepare_users(Customer, [User]),
+            {ok, [Plist]} = k_http_api_utils:prepare_users(Customer, [User]),
             ?log_debug("User: ~p", [Plist]),
             {ok, Plist};
         {error, no_entry} ->
@@ -248,34 +224,9 @@ resolve_pass(undefined, Pass) ->
 resolve_pass(NewPass, _Pass) ->
     ac_hexdump:binary_to_hexdump(crypto:hash(md5, NewPass), to_lower).
 
-interface(<<"transmitter">>) -> transmitter;
-interface(<<"receiver">>)    -> receiver;
-interface(<<"transceiver">>) -> transceiver;
-interface(<<"soap">>)        -> soap;
-interface(<<"mm">>)          -> mm;
-interface(<<"oneapi">>)      -> oneapi;
-interface(<<"email">>)       -> email.
-
-features() -> [
-    {<<"override_originator">>, [<<"empty">>, <<"any">>, <<"false">>]},
-    {<<"inbox">>, [<<"true">>, <<"false">>]},
-    {<<"sms_from_email">>, [<<"true">>, <<"false">>]}
-].
-
-feature(Binary) ->
-    [Name, Value] = binary:split(Binary, <<",">>),
-    case proplists:get_value(Name, features()) of
-        undefined ->
-            error(unknown_feature_name);
-        Values ->
-            case lists:member(Value, Values) of
-                false ->
-                    error(unknown_feature_value);
-                true ->
-                    #feature{name = Name, value = Value}
-            end
+decode_state(State) ->
+    case bstr:lower(State) of
+        <<"active">>      -> active;
+        <<"blocked">>     -> blocked;
+        <<"deactivated">> -> deactivated
     end.
-
-user_state(<<"active">>)      -> active;
-user_state(<<"blocked">>)     -> blocked;
-user_state(<<"deactivated">>) -> deactivated.
