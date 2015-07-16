@@ -131,11 +131,9 @@ prepare_users(User = #user{features = Features}) ->
         k_http_api_v1_customers_users_features:prepare_features(Features),
     UserFun = ?record_to_proplist(user),
     Plist = UserFun(User#user{features = FeaturesPlists}),
-    Plist2 = [{interfaces, ?gv(connection_types, Plist)} | Plist],
-    Plist3 = [{user_id, ?gv(id, Plist)} | Plist2],
-    Plist4 = proplists:delete(password, Plist3),
-    Plist5 = proplists:delete(connection_types, Plist4),
-    proplists:delete(id, Plist5);
+    Plist2 = [{user_id, ?gv(id, Plist)} | Plist],
+    Plist3 = proplists:delete(password, Plist2),
+    proplists:delete(id, Plist3);
 prepare_users(Users) when is_list(Users) ->
     {ok, [prepare_users(User) || User <- Users]}.
 
@@ -166,7 +164,7 @@ create_user(Customer, Params) ->
                 id = UserId,
                 password = ac_hexdump:binary_to_hexdump(
                                 crypto:hash(md5, Password), to_lower),
-                connection_types = Interfaces,
+                interfaces = Interfaces,
                 features = Features,
                 mobile_phone = MobilePhone,
                 first_name = FirstName,
@@ -189,7 +187,7 @@ update_user(Customer, Params) ->
     case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, User} ->
             Password = resolve_pass(?gv(password, Params), User#user.password),
-            Interfaces = ?gv(interfaces, Params, User#user.connection_types),
+            Interfaces = ?gv(interfaces, Params, User#user.interfaces),
             Features = ?gv(features, Params, User#user.features),
             MobilePhone = ?gv(mobile_phone, Params, User#user.mobile_phone),
             FirstName = ?gv(first_name, Params, User#user.first_name),
@@ -203,7 +201,7 @@ update_user(Customer, Params) ->
             Updated = #user{
                 id = UserId,
                 password = Password,
-                connection_types = Interfaces,
+                interfaces = Interfaces,
                 features = Features,
                 mobile_phone = MobilePhone,
                 first_name = FirstName,

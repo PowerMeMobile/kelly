@@ -141,7 +141,9 @@ prepare_users(User = #user{features = Features}) ->
     Plist = Fun(
         User#user{features = FeaturesPlists}
     ),
-    proplists:delete(password, Plist);
+    Plist2 = [{connection_types, ?gv(interfaces, Plist)} | Plist],
+    Plist3 = proplists:delete(password, Plist2),
+    proplists:delete(interfaces, Plist3);
 prepare_users(Users) when is_list(Users) ->
     {ok, [prepare_users(User) || User <- Users]}.
 
@@ -157,7 +159,7 @@ create_user(Customer, Params) ->
             {exception, 'svc0004'};
         {error, no_entry} ->
             Password = ?gv(password, Params),
-            ConnectionTypes = ?gv(connection_types, Params),
+            Interfaces = ?gv(connection_types, Params),
             MobilePhone = ?gv(mobile_phone, Params),
             FirstName = ?gv(first_name, Params),
             LastName = ?gv(last_name, Params),
@@ -171,7 +173,7 @@ create_user(Customer, Params) ->
                 id = UserId,
                 password = ac_hexdump:binary_to_hexdump(
                                 crypto:hash(md5, Password), to_lower),
-                connection_types = ConnectionTypes,
+                interfaces = Interfaces,
                 mobile_phone = MobilePhone,
                 first_name = FirstName,
                 last_name = LastName,
@@ -196,7 +198,7 @@ update_user(Customer, Params) ->
     case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, User} ->
             Password = resolve_pass(?gv(password, Params), User#user.password),
-            ConnectionTypes = ?gv(connection_types, Params, User#user.connection_types),
+            Interfaces = ?gv(connection_types, Params, User#user.interfaces),
             MobilePhone = ?gv(mobile_phone, Params, User#user.mobile_phone),
             FirstName = ?gv(first_name, Params, User#user.first_name),
             LastName = ?gv(last_name, Params, User#user.last_name),
@@ -209,7 +211,7 @@ update_user(Customer, Params) ->
             Updated = #user{
                 id = UserId,
                 password = Password,
-                connection_types = ConnectionTypes,
+                interfaces = Interfaces,
                 mobile_phone = MobilePhone,
                 first_name = FirstName,
                 last_name = LastName,

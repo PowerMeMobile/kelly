@@ -158,7 +158,7 @@ authenticate(CustomerId, UserId, Password, Interface) ->
                                 allow ->
                                     case check_state(user, User#user.state) of
                                         allow ->
-                                            case check_interface(Interface, User#user.connection_types) of
+                                            case check_interface(Interface, User#user.interfaces) of
                                                 allow ->
                                                     case check_credit_limit(Customer) of
                                                         allow ->
@@ -204,7 +204,7 @@ authenticate_by_email(Email, Interface) ->
                             ?log_debug("User found: ~p", [User]),
                             case check_state(user, User#user.state) of
                                 allow ->
-                                    case check_interface(Interface, User#user.connection_types) of
+                                    case check_interface(Interface, User#user.interfaces) of
                                         allow ->
                                             case check_credit_limit(Customer) of
                                                 allow ->
@@ -247,7 +247,7 @@ authenticate_by_msisdn(Msisdn, Interface) ->
                             ?log_debug("User found: ~p", [User]),
                             case check_state(user, User#user.state) of
                                 allow ->
-                                    case check_interface(Interface, User#user.connection_types) of
+                                    case check_interface(Interface, User#user.interfaces) of
                                         allow ->
                                             case check_feature(<<"sms_from_email">>, get_features(User#user.id, Customer)) of                                                 allow ->
                                                     case check_credit_limit(Customer) of

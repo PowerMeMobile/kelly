@@ -53,7 +53,7 @@ set_customer(CustomerUuid, Customer) ->
             'id'      , U#user.id,
             'password', U#user.password,
             'connection_types',
-                [bsondoc:atom_to_binary(Type) || Type <- U#user.connection_types],
+                [bsondoc:atom_to_binary(Type) || Type <- U#user.interfaces],
             'features'    , features_to_docs(U#user.features),
             'mobile_phone', U#user.mobile_phone,
             'first_name'  , U#user.first_name,
@@ -275,7 +275,7 @@ doc_to_record(Doc) ->
         #user{
             id = bsondoc:at(id, UserDoc),
             password = bsondoc:at(password, UserDoc),
-            connection_types =
+            interfaces =
                 [bsondoc:binary_to_atom(Type) || Type <- bsondoc:at(connection_types, UserDoc)],
             features = docs_to_features(bsondoc:at(features, UserDoc)),
             mobile_phone = bsondoc:at(mobile_phone, UserDoc),
