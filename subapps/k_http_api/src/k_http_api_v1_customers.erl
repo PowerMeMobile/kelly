@@ -161,13 +161,19 @@ update_customer(Customer, Params) ->
     NewNoRetry = ?gv(no_retry, Params, Customer#customer.no_retry),
     NewDefaultValidity = ?gv(default_validity, Params, Customer#customer.default_validity),
     NewMaxValidity = ?gv(max_validity, Params, Customer#customer.max_validity),
-    NewInterfaces = ?gv(interfaces, Params, Customer#customer.interfaces),
-    NewFeatures = ?gv(features, Params, Customer#customer.features),
     NewPayType = ?gv(pay_type, Params, Customer#customer.pay_type),
     NewCredit = ?gv(credit, Params, Customer#customer.credit),
     NewCreditLimit = ?gv(credit_limit, Params, Customer#customer.credit_limit),
     NewLanguage = ?gv(language, Params, Customer#customer.language),
     NewState = ?gv(state, Params, Customer#customer.state),
+
+    NewFeatures = ?gv(features, Params, Customer#customer.features),
+
+    PreInterfaces = Customer#customer.interfaces,
+    NewInterfaces = ?gv(interfaces, Params, PreInterfaces),
+    Users = Customer#customer.users,
+    Users2 = sync_interfaces(PreInterfaces, NewInterfaces, Users),
+
     NewCustomer = #customer{
         customer_uuid = CustomerUuid,
         customer_id = NewCustomerId,
@@ -181,7 +187,7 @@ update_customer(Customer, Params) ->
         no_retry = NewNoRetry,
         default_validity = NewDefaultValidity,
         max_validity = NewMaxValidity,
-        users = Customer#customer.users,
+        users = Users2,
         interfaces = NewInterfaces,
         features = NewFeatures,
         pay_type = NewPayType,
@@ -260,6 +266,12 @@ prepare_customers([Customer = #customer{} | Rest], Acc) ->
         }
     ),
     prepare_customers(Rest, [Plist | Acc]).
+
+sync_interfaces(_PreIfs, undefined, Users) ->
+    Users;
+sync_interfaces(PreIfs, NewIfs, Users) ->
+    RemovedIfs = PreIfs -- NewIfs,
+    [U#user{interfaces = U#user.interfaces -- RemovedIfs} || U <- Users].
 
 decode_state(State) ->
     case bstr:lower(State) of
