@@ -14,6 +14,9 @@ if KELLY_PORT == None or KELLY_PORT == '':
     KELLY_PORT = '8080'
 
 CUSTOMER_UUID = '2dca065f-c328-4a19-bc92-b222f48764e1'
+CUSTOMER_ID = '0'
+CUSTOMER_NAME = 'name'
+
 BAD_CUSTOMER_UUID = '00000000-0000-0000-0000-000000000000'
 
 ORIGINATOR_ID = 'd4000b38-f2d8-11e3-ba01-00269e42f7a5'
@@ -28,8 +31,8 @@ def http(request):
     http = requests
 
     data = {'customer_uuid':CUSTOMER_UUID,
-            'customer_id':'0',
-            'name':'name',
+            'customer_id':CUSTOMER_ID,
+            'name':CUSTOMER_NAME,
             'priority':1,
             'rps':1000,
             'receipts_allowed':True,
@@ -64,6 +67,9 @@ def test_create_originator_succ(http):
     assert req.status_code == 201
     resp_data = req.json()
     # add/remove some fields expected in response
+    req_data['customer_uuid'] = CUSTOMER_UUID
+    req_data['customer_id'] = CUSTOMER_ID
+    req_data['customer_name'] = CUSTOMER_NAME
     req_data['msisdn'] = {'addr':'375290000000', 'ton':1, 'npi':1}
     assert resp_data == req_data
 
@@ -77,6 +83,9 @@ def test_update_originator_succ(http):
     resp_data = req.json()
     # add/remove some fields expected in response
     req_data['id'] = ORIGINATOR_ID
+    req_data['customer_uuid'] = CUSTOMER_UUID
+    req_data['customer_id'] = CUSTOMER_ID
+    req_data['customer_name'] = CUSTOMER_NAME
     req_data['msisdn'] = {'addr':'Hello', 'ton':5, 'npi':0}
     assert resp_data == req_data
 
@@ -89,6 +98,9 @@ def test_read_originator_succ(http):
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = {'id':ORIGINATOR_ID,
+                'customer_uuid':CUSTOMER_UUID,
+                'customer_id':CUSTOMER_ID,
+                'customer_name':CUSTOMER_NAME,
                 'description':'descr2',
                 'state':'pending',
                 'is_default':False,

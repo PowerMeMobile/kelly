@@ -121,7 +121,7 @@ create_originator(Customer, Params) ->
                 state = State
             },
             ok = k_storage_customers:set_originator(Originator, Customer#customer.customer_uuid),
-            {ok, [Plist]} = k_http_api_utils:prepare_originators([Originator]),
+            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [Originator]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 201, Plist}
     end.
@@ -142,7 +142,7 @@ update_originator(Customer, Params) ->
                 state = State
             },
             ok = k_storage_customers:set_originator(Updated, Customer#customer.customer_uuid),
-            {ok, [Plist]} = k_http_api_utils:prepare_originators([Updated]),
+            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [Updated]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -151,13 +151,13 @@ update_originator(Customer, Params) ->
 
 get_originator(Customer, undefined) ->
     #customer{originators = Originators} = Customer,
-    {ok, Plist} = k_http_api_utils:prepare_originators(Originators),
+    {ok, Plist} = k_http_api_utils:prepare_originators(Customer, Originators),
     ?log_debug("Originator: ~p", [Plist]),
     {http_code, 200, Plist};
 get_originator(Customer, Id) ->
     case k_storage_customers:get_originator(Customer, Id) of
         {ok, Originator} ->
-            {ok, [Plist]} = k_http_api_utils:prepare_originators([Originator]),
+            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [Originator]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->

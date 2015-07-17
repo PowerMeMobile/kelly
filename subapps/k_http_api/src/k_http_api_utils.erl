@@ -6,7 +6,7 @@
     decode_feature/1,
 
     prepare_features/1,
-    prepare_originators/1,
+    prepare_originators/2,
     prepare_users/2
 ]).
 
@@ -75,15 +75,19 @@ prepare_features([Feature = #feature{} | Rest], Acc) ->
     Plist = Fun(Feature),
     prepare_features(Rest, [Plist | Acc]).
 
--spec prepare_originators(#originator{}) -> {ok, [{atom(), term()}]}.
-prepare_originators(Orig = #originator{}) ->
+-spec prepare_originators(#customer{}, #originator{}) -> {ok, [{atom(), term()}]}.
+prepare_originators(Customer, Orig = #originator{}) ->
     AddrFun = ?record_to_proplist(addr),
-    OrigFun = ?record_to_proplist(originator),
     AddrPlist = proplists:delete(ref_num, AddrFun(Orig#originator.address)),
-    OrigPlist = proplists:delete(address, OrigFun(Orig)),
-    [{msisdn, AddrPlist} | OrigPlist];
-prepare_originators(Originators) when is_list(Originators) ->
-    {ok, [prepare_originators(Originator) || Originator <- Originators]}.
+    OrigFun = ?record_to_proplist(originator),
+    Plist = OrigFun(Orig),
+    Plist2 = [{msisdn, AddrPlist} | Plist],
+    Plist3 = [{customer_uuid, Customer#customer.customer_uuid} | Plist2],
+    Plist4 = [{customer_id, Customer#customer.customer_id} | Plist3],
+    Plist5 = [{customer_name, Customer#customer.name} | Plist4],
+    proplists:delete(address, Plist5);
+prepare_originators(Customer, Originators) when is_list(Originators) ->
+    {ok, [prepare_originators(Customer, O) || O <- Originators]}.
 
 -spec prepare_users(#customer{}, #user{}) -> {ok, [{atom(), term()}]}.
 prepare_users(Customer, User = #user{features = Features}) ->
@@ -98,4 +102,4 @@ prepare_users(Customer, User = #user{features = Features}) ->
     Plist6 = proplists:delete(password, Plist5),
     proplists:delete(id, Plist6);
 prepare_users(Customer, Users) when is_list(Users) ->
-    {ok, [prepare_users(Customer, User) || User <- Users]}.
+    {ok, [prepare_users(Customer, U) || U <- Users]}.
