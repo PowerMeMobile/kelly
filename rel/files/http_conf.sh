@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o verbose
+
 check() {
     read status
     echo ${status}
@@ -26,10 +28,6 @@ check() {
 # Be aware:
 # Customer's `default_validity' in time format, described in SMPP specification v3.4
 ###
-
-# To test PUT requests:
-# curl --request PUT 'Url' --data 'Body'
-# httpc:request(put, {Url, [], "application/x-www-form-urlencoded", Body}, [], []).
 
 #
 # Gateways
