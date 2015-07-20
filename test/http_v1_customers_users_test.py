@@ -61,7 +61,7 @@ def http(request):
 def test_create_user_succ(http):
     req_data = {'user_id':USER_ID,
                 'password':'secret',
-                'interfaces':'transmitter;receiver;transceiver;soap;mm;oneapi;email',
+                'interfaces':'',
                 'features':'inbox,true',
                 'mobile_phone':'375290000000',
                 'first_name':'fn',
@@ -79,13 +79,13 @@ def test_create_user_succ(http):
     req_data['customer_uuid'] = CUSTOMER_UUID
     req_data['customer_id'] = CUSTOMER_ID
     req_data['customer_name'] = CUSTOMER_NAME
-    req_data['interfaces'] = ['transmitter', 'receiver', 'transceiver', 'soap', 'mm', 'oneapi', 'email']
+    req_data['interfaces'] = []
     req_data['features'] = [{'name': 'inbox', 'value': 'true'}]
     del req_data['password']
     assert resp_data == req_data
 
 def test_update_user_succ(http):
-    req_data = {'interfaces':'transmitter',
+    req_data = {'interfaces':'',
                 'features':'inbox,false;sms_from_email,true',
                 'password':'secret2',
                 'mobile_phone':'375290000001',
@@ -105,7 +105,7 @@ def test_update_user_succ(http):
     req_data['customer_uuid'] = CUSTOMER_UUID
     req_data['customer_id'] = CUSTOMER_ID
     req_data['customer_name'] = CUSTOMER_NAME
-    req_data['interfaces'] = ['transmitter']
+    req_data['interfaces'] = []
     req_data['features'] = [{'name':'sms_from_email', 'value':'true'}, {'name':'inbox', 'value':'false'}]
     del req_data['password']
     assert resp_data == req_data
@@ -122,7 +122,7 @@ def test_read_user_succ(http):
                 'customer_uuid':CUSTOMER_UUID,
                 'customer_id':CUSTOMER_ID,
                 'customer_name':CUSTOMER_NAME,
-                'interfaces':['transmitter'],
+                'interfaces':[],
                 'mobile_phone':'375290000001',
                 'first_name':'fn1',
                 'last_name':'ln1',
@@ -138,29 +138,3 @@ def test_read_user_succ(http):
 def test_delete_user_succ(http):
     req = http.delete(USERS_URL+'/'+USER_ID)
     assert req.status_code == 204
-
-def test_create_user_empty_interfaces_and_features_succ(http):
-    req_data = {'user_id':USER_ID,
-                'customer_uuid':CUSTOMER_UUID,
-                'customer_id':CUSTOMER_ID,
-                'customer_name':CUSTOMER_NAME,
-                'password':'secret',
-                'interfaces':'',
-                'features':'',
-                'mobile_phone':'375290000000',
-                'first_name':'fn',
-                'last_name':'ln',
-                'company':'com',
-                'occupation':'oc',
-                'email':'u@m.c',
-                'country':'cou',
-                'language':'en',
-                'state':'active'}
-    req = http.post(USERS_URL, data=req_data)
-    assert req.status_code == 201
-    resp_data = req.json()
-    # add/remove some fields expected in response
-    req_data['interfaces'] = []
-    req_data['features'] = []
-    del req_data['password']
-    assert resp_data == req_data

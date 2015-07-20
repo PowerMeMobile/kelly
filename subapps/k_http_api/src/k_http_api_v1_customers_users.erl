@@ -74,16 +74,6 @@ init() ->
         route = "/v1/customers/:customer_uuid/users/[:user_id]"
     }}.
 
-create(Params) ->
-    CustomerUuid = ?gv(customer_uuid, Params),
-    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
-        {ok, Customer = #customer{}} ->
-            create_user(Customer, Params);
-        {error, no_entry} ->
-            ?log_warn("Customer not found: ~p", [CustomerUuid]),
-            {exception, 'svc0003'}
-    end.
-
 read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
@@ -94,15 +84,29 @@ read(Params) ->
             {exception, 'svc0003'}
     end.
 
+create(Params) ->
+    Steps = [
+        fun get_customer/1,
+        fun check_user_doesnt_exist/1,
+        fun check_unique_email/1,
+        fun check_unique_phone/1,
+        fun check_interfaces/1,
+        fun check_features/1,
+        fun create_user/1
+    ],
+    handle(Steps, Params).
+
 update(Params) ->
-    CustomerUuid = ?gv(customer_uuid, Params),
-    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
-        {ok, Customer = #customer{}} ->
-            update_user(Customer, Params);
-        {error, no_entry} ->
-            ?log_warn("Customer not found: ~p", [CustomerUuid]),
-            {exception, 'svc0003'}
-    end.
+    Steps = [
+        fun get_customer/1,
+        fun check_user_exists/1,
+        fun check_unique_email/1,
+        fun check_unique_phone/1,
+        fun check_interfaces/1,
+        fun check_features/1,
+        fun update_user/1
+    ],
+    handle(Steps, Params).
 
 delete(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
@@ -120,87 +124,140 @@ delete(Params) ->
 %% Internal
 %% ===================================================================
 
-create_user(Customer, Params) ->
+handle([Step], Params) ->
+    Step(Params);
+handle([Step|Steps], Params) ->
+    case Step(Params) of
+        {ok, Params2} ->
+            handle(Steps, Params2);
+        Error ->
+            Error
+    end.
+
+get_customer(Params) ->
+    CustomerUuid = ?gv(customer_uuid, Params),
+    case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
+        {ok, Customer = #customer{}} ->
+            {ok, [{customer, Customer} | Params]};
+        {error, no_entry} ->
+            ?log_warn("Customer not found: ~p", [CustomerUuid]),
+            {exception, 'svc0003'}
+    end.
+
+check_user_doesnt_exist(Params) ->
+    Customer = ?gv(customer, Params),
     UserId = ?gv(user_id, Params),
     case k_storage_customers:get_user_by_id(Customer, UserId) of
         {ok, #user{}} ->
             ?log_error("User already exists: ~p", [UserId]),
             {exception, 'svc0004'};
         {error, no_entry} ->
-            Password = ?gv(password, Params),
-            Interfaces = ?gv(interfaces, Params),
-            Features = ?gv(features, Params),
-            MobilePhone = ?gv(mobile_phone, Params),
-            FirstName = ?gv(first_name, Params),
-            LastName = ?gv(last_name, Params),
-            Company = ?gv(company, Params),
-            Occupation = ?gv(occupation, Params),
-            Email = ?gv(email, Params),
-            Country = ?gv(country, Params),
-            Language = ?gv(language, Params),
-            State = ?gv(state, Params),
-            User = #user{
-                id = UserId,
-                password = ac_hexdump:binary_to_hexdump(
-                                crypto:hash(md5, Password), to_lower),
-                interfaces = Interfaces,
-                features = Features,
-                mobile_phone = MobilePhone,
-                first_name = FirstName,
-                last_name = LastName,
-                company = Company,
-                occupation = Occupation,
-                email = Email,
-                country = Country,
-                language = Language,
-                state = State
-            },
-            ok = k_storage_customers:set_user(User, Customer#customer.customer_uuid),
-            {ok, [Plist]} = k_http_api_utils:prepare_users(Customer, [User]),
-            ?log_debug("User: ~p", [Plist]),
-            {http_code, 201, Plist}
+            {ok, Params}
     end.
 
-update_user(Customer, Params) ->
+check_user_exists(Params) ->
+    Customer = ?gv(customer, Params),
     UserId = ?gv(user_id, Params),
     case k_storage_customers:get_user_by_id(Customer, UserId) of
-        {ok, User} ->
-            Password = resolve_pass(?gv(password, Params), User#user.password),
-            Interfaces = ?gv(interfaces, Params, User#user.interfaces),
-            Features = ?gv(features, Params, User#user.features),
-            MobilePhone = ?gv(mobile_phone, Params, User#user.mobile_phone),
-            FirstName = ?gv(first_name, Params, User#user.first_name),
-            LastName = ?gv(last_name, Params, User#user.last_name),
-            Company = ?gv(company, Params, User#user.company),
-            Occupation = ?gv(occupation, Params, User#user.occupation),
-            Email = ?gv(email, Params, User#user.email),
-            Country = ?gv(country, Params, User#user.country),
-            Language = ?gv(language, Params, User#user.language),
-            State = ?gv(state, Params, User#user.state),
-            Updated = #user{
-                id = UserId,
-                password = Password,
-                interfaces = Interfaces,
-                features = Features,
-                mobile_phone = MobilePhone,
-                first_name = FirstName,
-                last_name = LastName,
-                company = Company,
-                occupation = Occupation,
-                email = Email,
-                country = Country,
-                language = Language,
-                state = State
-            },
-            ok = k_storage_customers:set_user(Updated, Customer#customer.customer_uuid),
-            {ok, [Plist]} = k_http_api_utils:prepare_users(Customer, [Updated]),
-            ?log_debug("User: ~p", [Plist]),
-            {ok, Plist};
+        {ok, User = #user{}} ->
+            {ok, [{user, User} | Params]};
         {error, no_entry} ->
             CustomerUuid = ?gv(customer_uuid, Params),
             ?log_warn("User not found: (customer_uuid: ~p, user_id: ~p)", [CustomerUuid, UserId]),
             {exception, 'svc0003'}
     end.
+
+check_unique_email(Params) ->
+    {ok, Params}.
+
+check_unique_phone(Params) ->
+    {ok, Params}.
+
+check_interfaces(Params) ->
+    Customer = ?gv(customer, Params),
+    CustomerIfs = Customer#customer.interfaces,
+    Ifs = ?gv(interfaces, Params, []),
+    case Ifs -- CustomerIfs of
+        [] ->
+            {ok, Params};
+        Forbidden ->
+            {exception, 'svc0002', [<<"interfaces">>, Forbidden]}
+    end.
+
+check_features(Params) ->
+    {ok, Params}.
+
+create_user(Params) ->
+    UserId = ?gv(user_id, Params),
+    Interfaces = ?gv(interfaces, Params),
+    Features = ?gv(features, Params),
+    Password = ?gv(password, Params),
+    MobilePhone = ?gv(mobile_phone, Params),
+    FirstName = ?gv(first_name, Params),
+    LastName = ?gv(last_name, Params),
+    Company = ?gv(company, Params),
+    Occupation = ?gv(occupation, Params),
+    Email = ?gv(email, Params),
+    Country = ?gv(country, Params),
+    Language = ?gv(language, Params),
+    State = ?gv(state, Params),
+    User = #user{
+        id = UserId,
+        password = ac_hexdump:binary_to_hexdump(
+            crypto:hash(md5, Password), to_lower),
+        interfaces = Interfaces,
+        features = Features,
+        mobile_phone = MobilePhone,
+        first_name = FirstName,
+        last_name = LastName,
+        company = Company,
+        occupation = Occupation,
+        email = Email,
+        country = Country,
+        language = Language,
+        state = State
+    },
+    Customer = ?gv(customer, Params),
+    ok = k_storage_customers:set_user(User, Customer#customer.customer_uuid),
+    {ok, [Plist]} = k_http_api_utils:prepare_users(Customer, [User]),
+    ?log_debug("User: ~p", [Plist]),
+    {http_code, 201, Plist}.
+
+update_user(Params) ->
+    User = ?gv(user, Params),
+    UserId = User#user.id,
+    Password = resolve_pass(?gv(password, Params), User#user.password),
+    Interfaces = ?gv(interfaces, Params, User#user.interfaces),
+    Features = ?gv(features, Params, User#user.features),
+    MobilePhone = ?gv(mobile_phone, Params, User#user.mobile_phone),
+    FirstName = ?gv(first_name, Params, User#user.first_name),
+    LastName = ?gv(last_name, Params, User#user.last_name),
+    Company = ?gv(company, Params, User#user.company),
+    Occupation = ?gv(occupation, Params, User#user.occupation),
+    Email = ?gv(email, Params, User#user.email),
+    Country = ?gv(country, Params, User#user.country),
+    Language = ?gv(language, Params, User#user.language),
+    State = ?gv(state, Params, User#user.state),
+    Updated = #user{
+        id = UserId,
+        password = Password,
+        interfaces = Interfaces,
+        features = Features,
+        mobile_phone = MobilePhone,
+        first_name = FirstName,
+        last_name = LastName,
+        company = Company,
+        occupation = Occupation,
+        email = Email,
+        country = Country,
+        language = Language,
+        state = State
+    },
+    Customer = ?gv(customer, Params),
+    ok = k_storage_customers:set_user(Updated, Customer#customer.customer_uuid),
+    {ok, [Plist]} = k_http_api_utils:prepare_users(Customer, [Updated]),
+    ?log_debug("User: ~p", [Plist]),
+    {ok, Plist}.
 
 get_user_by_id(Customer, undefined) ->
     #customer{users = Users} = Customer,

@@ -15,6 +15,11 @@
 -include_lib("gen_http_api/include/crud_specs.hrl").
 -include_lib("k_storage/include/customer.hrl").
 
+%-define(TEST, 1).
+-ifdef(TEST).
+    -include_lib("eunit/include/eunit.hrl").
+-endif.
+
 %% ===================================================================
 %% Callback Functions
 %% ===================================================================
@@ -167,12 +172,15 @@ update_customer(Customer, Params) ->
     NewLanguage = ?gv(language, Params, Customer#customer.language),
     NewState = ?gv(state, Params, Customer#customer.state),
 
-    NewFeatures = ?gv(features, Params, Customer#customer.features),
+    Users = Customer#customer.users,
 
     PreInterfaces = Customer#customer.interfaces,
     NewInterfaces = ?gv(interfaces, Params, PreInterfaces),
-    Users = Customer#customer.users,
     Users2 = sync_interfaces(PreInterfaces, NewInterfaces, Users),
+
+    PreFeatures = Customer#customer.features,
+    NewFeatures = ?gv(features, Params, PreFeatures),
+    Users3 = sync_features(PreFeatures, NewFeatures, Users2),
 
     NewCustomer = #customer{
         customer_uuid = CustomerUuid,
@@ -187,7 +195,7 @@ update_customer(Customer, Params) ->
         no_retry = NewNoRetry,
         default_validity = NewDefaultValidity,
         max_validity = NewMaxValidity,
-        users = Users2,
+        users = Users3,
         interfaces = NewInterfaces,
         features = NewFeatures,
         pay_type = NewPayType,
@@ -267,11 +275,49 @@ prepare_customers([Customer = #customer{} | Rest], Acc) ->
     ),
     prepare_customers(Rest, [Plist | Acc]).
 
-sync_interfaces(_PreIfs, undefined, Users) ->
-    Users;
 sync_interfaces(PreIfs, NewIfs, Users) ->
-    RemovedIfs = PreIfs -- NewIfs,
-    [U#user{interfaces = U#user.interfaces -- RemovedIfs} || U <- Users].
+    DisIfs = get_disabled_interfaces(PreIfs, NewIfs),
+    Users2 = [U#user{
+                interfaces = U#user.interfaces -- DisIfs
+              } || U <- Users],
+    case lists:member(email, DisIfs) of
+        true ->
+            [U#user{
+                features = remove_features(
+                    U#user.features, [<<"sms_from_email">>])
+             } || U <- Users2];
+        false ->
+            Users2
+    end.
+
+sync_features(PreFs, NewFs, Users) ->
+    DisNames = get_disabled_feature_names(PreFs, NewFs),
+    [U#user{features = remove_features(U#user.features, DisNames)} ||
+     U <- Users].
+
+get_disabled_interfaces(PreIfs, NewIfs) ->
+    PreIfs -- NewIfs.
+
+get_disabled_feature_names(PreFs, NewFs) ->
+    Fs = lists:filter(
+        fun(Feature=#feature{name=Name}) ->
+            case lists:keyfind(Name, #feature.name, NewFs) of
+                Feature ->
+                    %% feature exists
+                    %% filter it out
+                    false;
+                _Otherwise ->
+                    %% feature was either removed or disabled
+                    %% leave it
+                    true
+            end
+        end,
+        PreFs
+    ),
+    [N || #feature{name = N} <- Fs].
+
+remove_features(Features, DisNames) ->
+    [F || F <- Features, not lists:member(F#feature.name, DisNames)].
 
 decode_state(State) ->
     case bstr:lower(State) of
@@ -285,3 +331,86 @@ decode_pay_type(PayType) ->
         <<"prepaid">>  -> prepaid;
         <<"postpaid">> -> postpaid
     end.
+
+%% ===================================================================
+%% Tests begin
+%% ===================================================================
+
+-ifdef(TEST).
+
+sync_interfaces_test() ->
+    PreIfs = [soap,mm,email],
+    NewIfs = [soap],
+    PreUsers = [
+        #user{interfaces = [soap,email]}
+    ],
+    NewUsers = [
+        #user{interfaces = [soap]}
+    ],
+    ?assertEqual(NewUsers, sync_interfaces(PreIfs, NewIfs, PreUsers)).
+
+disable_email_interface_removes_sms_from_email_feature_test() ->
+    PreIfs = [email],
+    NewIfs = [],
+    PreUsers = [
+        #user{
+            interfaces = [email],
+            features = [#feature{name = <<"sms_from_email">>, value = <<"true">>}]
+        }
+    ],
+    NewUsers = [
+        #user{interfaces = [], features = []}
+    ],
+    ?assertEqual(NewUsers, sync_interfaces(PreIfs, NewIfs, PreUsers)).
+
+get_disabled_feature_names_test() ->
+    PreFs = [
+        #feature{name = <<"f1">>, value = <<"true">>},
+        #feature{name = <<"f2">>, value = <<"true">>},
+        #feature{name = <<"f3">>, value = <<"true">>},
+        #feature{name = <<"f4">>, value = <<"false">>}
+    ],
+    NowFs = [
+        #feature{name = <<"f1">>, value = <<"false">>},
+        #feature{name = <<"f3">>, value = <<"true">>}
+    ],
+    DisabledFs = [
+        <<"f1">>,
+        <<"f2">>,
+        <<"f4">>
+    ],
+    ?assertEqual(DisabledFs, get_disabled_feature_names(PreFs, NowFs)).
+
+remove_features_test() ->
+    Fs = [
+        #feature{name = <<"f1">>, value = <<"true">>},
+        #feature{name = <<"f2">>, value = <<"true">>},
+        #feature{name = <<"f3">>, value = <<"true">>},
+        #feature{name = <<"f4">>, value = <<"false">>}
+    ],
+    DisNames = [
+        <<"f1">>,
+        <<"f2">>,
+        <<"f4">>
+    ],
+    LeftFs = [
+        #feature{name = <<"f3">>, value = <<"true">>}
+    ],
+    ?assertEqual(LeftFs, remove_features(Fs, DisNames)).
+
+sync_features_test() ->
+    PreFs = [#feature{name = <<"inbox">>, value = <<"true">>}],
+    NowFs = [],
+    PreUsers = [
+        #user{features = [#feature{name = <<"inbox">>, value = <<"true">>}]}
+    ],
+    NewUsers = [
+        #user{features = []}
+    ],
+    ?assertEqual(NewUsers, sync_features(PreFs, NowFs, PreUsers)).
+
+-endif.
+
+%% ===================================================================
+%% Tests end
+%% ===================================================================
