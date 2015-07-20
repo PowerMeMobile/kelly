@@ -40,7 +40,7 @@ def http(request):
             'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec73',
             'network_map_id':'befa8b7c-c4a3-11e3-b670-00269e42f7a5',
             'interfaces':'',
-            'features':'',
+            'features':'inbox,true',
             'pay_type':'postpaid',
             'credit':10000.0,
             'credit_limit':10000.0,
@@ -142,9 +142,27 @@ def test_read_all_3_succ(http):
     resp_data = req.json()
     assert resp_data == []
 
-def test_unassign_from_deleted_customer_succ(http):
+def test_disable_inbox_from_customer_should_unassign_msisdn_succ(http):
     test_create_msisdn_succ(http)
     test_update_msisdn_succ(http)
     test_read_used_2_succ(http)
+
+    req_data = {'features':'inbox,false'}
+    http.put(CUSTOMERS_URL+'/'+CUSTOMER_UUID, data=req_data)
+
+    try:
+        test_read_used_succ(http)
+    finally:
+        test_delete_msisdn_succ(http)
+
+def test_delete_customer_should_unassign_msidsn_succ(http):
+    test_create_msisdn_succ(http)
+    test_update_msisdn_succ(http)
+    test_read_used_2_succ(http)
+
     http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
-    test_read_used_succ(http)
+
+    try:
+        test_read_used_succ(http)
+    finally:
+        test_delete_msisdn_succ(http)

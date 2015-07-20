@@ -176,11 +176,29 @@ update_customer(Customer, Params) ->
 
     PreInterfaces = Customer#customer.interfaces,
     NewInterfaces = ?gv(interfaces, Params, PreInterfaces),
-    Users2 = sync_interfaces(PreInterfaces, NewInterfaces, Users),
+    {Users2, DisIfs} = sync_interfaces(PreInterfaces, NewInterfaces, Users),
 
     PreFeatures = Customer#customer.features,
     NewFeatures = ?gv(features, Params, PreFeatures),
-    Users3 = sync_features(PreFeatures, NewFeatures, Users2),
+    {Users3, DisFs} = sync_features(PreFeatures, NewFeatures, Users2),
+
+    Users4 =
+        case lists:member(email, DisIfs) of
+            true ->
+                [U#user{
+                   features = remove_features(
+                       U#user.features, [<<"sms_from_email">>])
+                 } || U <- Users3];
+            false ->
+                Users3
+        end,
+
+    case lists:member(<<"inbox">>, DisFs) of
+        true ->
+            ok = k_storage_msisdns:unassign_all_from_customer(CustomerUuid);
+        false ->
+            nop
+    end,
 
     NewCustomer = #customer{
         customer_uuid = CustomerUuid,
@@ -195,7 +213,7 @@ update_customer(Customer, Params) ->
         no_retry = NewNoRetry,
         default_validity = NewDefaultValidity,
         max_validity = NewMaxValidity,
-        users = Users3,
+        users = Users4,
         interfaces = NewInterfaces,
         features = NewFeatures,
         pay_type = NewPayType,
@@ -280,20 +298,13 @@ sync_interfaces(PreIfs, NewIfs, Users) ->
     Users2 = [U#user{
                 interfaces = U#user.interfaces -- DisIfs
               } || U <- Users],
-    case lists:member(email, DisIfs) of
-        true ->
-            [U#user{
-                features = remove_features(
-                    U#user.features, [<<"sms_from_email">>])
-             } || U <- Users2];
-        false ->
-            Users2
-    end.
+    {Users2, DisIfs}.
 
 sync_features(PreFs, NewFs, Users) ->
     DisNames = get_disabled_feature_names(PreFs, NewFs),
-    [U#user{features = remove_features(U#user.features, DisNames)} ||
-     U <- Users].
+    Users2 = [U#user{features = remove_features(U#user.features, DisNames)} ||
+     U <- Users],
+    {Users2, DisNames}.
 
 get_disabled_interfaces(PreIfs, NewIfs) ->
     PreIfs -- NewIfs.
@@ -347,21 +358,21 @@ sync_interfaces_test() ->
     NewUsers = [
         #user{interfaces = [soap]}
     ],
-    ?assertEqual(NewUsers, sync_interfaces(PreIfs, NewIfs, PreUsers)).
+    ?assertEqual({NewUsers, [mm,email]}, sync_interfaces(PreIfs, NewIfs, PreUsers)).
 
-disable_email_interface_removes_sms_from_email_feature_test() ->
-    PreIfs = [email],
-    NewIfs = [],
-    PreUsers = [
-        #user{
-            interfaces = [email],
-            features = [#feature{name = <<"sms_from_email">>, value = <<"true">>}]
-        }
-    ],
-    NewUsers = [
-        #user{interfaces = [], features = []}
-    ],
-    ?assertEqual(NewUsers, sync_interfaces(PreIfs, NewIfs, PreUsers)).
+%% disable_email_interface_removes_sms_from_email_feature_test() ->
+%%     PreIfs = [email],
+%%     NewIfs = [],
+%%     PreUsers = [
+%%         #user{
+%%             interfaces = [email],
+%%             features = [#feature{name = <<"sms_from_email">>, value = <<"true">>}]
+%%         }
+%%     ],
+%%     NewUsers = [
+%%         #user{interfaces = [], features = []}
+%%     ],
+%%     ?assertEqual(NewUsers, sync_interfaces(PreIfs, NewIfs, PreUsers)).
 
 get_disabled_feature_names_test() ->
     PreFs = [
@@ -407,7 +418,7 @@ sync_features_test() ->
     NewUsers = [
         #user{features = []}
     ],
-    ?assertEqual(NewUsers, sync_features(PreFs, NowFs, PreUsers)).
+    ?assertEqual({NewUsers, [<<"inbox">>]}, sync_features(PreFs, NowFs, PreUsers)).
 
 -endif.
 
