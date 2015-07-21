@@ -168,10 +168,53 @@ check_user_exists(Params) ->
     end.
 
 check_unique_email(Params) ->
-    {ok, Params}.
+    CustomerUuid = ?gv(customer_uuid, Params),
+    UserId = ?gv(user_id, Params),
+    case bstr:strip(?gv(email, Params, <<>>)) of
+        <<>> ->
+            {ok, Params};
+        Email ->
+            case k_storage_customers:get_customer_by_email(Email) of
+                %% email is NOT used
+                {error, no_entry} ->
+                    {ok, Params};
+                %% it's our customer and our user
+                {ok, Customer = #customer{customer_uuid = CustomerUuid}} ->
+                    case k_storage_customers:get_user_by_email(Customer, Email) of
+                        {ok, #user{id = UserId}} ->
+                            {ok, Params};
+                        {ok, _OtherUser} ->
+                            {exception, 'svc0002', [<<"email">>, Email]}
+                    end;
+                {ok, _OtherCustomer} ->
+                    {exception, 'svc0002', [<<"email">>, Email]}
+            end
+    end.
 
 check_unique_phone(Params) ->
-    {ok, Params}.
+    CustomerUuid = ?gv(customer_uuid, Params),
+    UserId = ?gv(user_id, Params),
+    case bstr:strip(?gv(mobile_phone, Params, <<>>)) of
+        <<>> ->
+            {ok, Params};
+        Phone ->
+            Msisdn = alley_services_utils:addr_to_dto(Phone),
+            case k_storage_customers:get_customer_by_msisdn(Msisdn) of
+                %% phone is NOT used
+                {error, no_entry} ->
+                    {ok, Params};
+                %% it's our customer and our user
+                {ok, Customer = #customer{customer_uuid = CustomerUuid}} ->
+                    case k_storage_customers:get_user_by_msisdn(Customer, Msisdn) of
+                        {ok, #user{id = UserId}} ->
+                            {ok, Params};
+                        {ok, _OtherUser} ->
+                            {exception, 'svc0002', [<<"mobile_phone">>, Phone]}
+                    end;
+                {ok, _OtherCustomer} ->
+                    {exception, 'svc0002', [<<"mobile_phone">>, Phone]}
+            end
+    end.
 
 check_interfaces(Params) ->
     Customer = ?gv(customer, Params),

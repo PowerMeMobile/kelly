@@ -18,6 +18,7 @@ CUSTOMER_ID = '0'
 CUSTOMER_NAME = 'name'
 
 USER_ID = 'user'
+USER_ID2 = 'user2'
 
 BAD_CUSTOMER_UUID = '00000000-0000-0000-0000-000000000000'
 BAD_USER_ID = 'bad_user'
@@ -53,6 +54,7 @@ def http(request):
     def fin():
         print ("finalizing...")
         http.delete(USERS_URL+'/'+USER_ID)
+        http.delete(USERS_URL+'/'+USER_ID2)
         http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
 
     request.addfinalizer(fin)
@@ -68,7 +70,7 @@ def test_create_user_succ(http):
                 'last_name':'ln',
                 'company':'com',
                 'occupation':'oc',
-                'email':'u@m.c',
+                'email':'user@mail.com',
                 'country':'cou',
                 'language':'en',
                 'state':'active'}
@@ -88,12 +90,12 @@ def test_update_user_succ(http):
     req_data = {'interfaces':'',
                 'features':'inbox,false;sms_from_email,true',
                 'password':'secret2',
-                'mobile_phone':'375290000001',
+                'mobile_phone':'375290000000',
                 'first_name':'fn1',
                 'last_name':'ln1',
                 'company':'com1',
                 'occupation':'oc1',
-                'email':'u@m.d',
+                'email':'user@mail.dom',
                 'country':'cou1',
                 'language':'fr',
                 'state':'blocked'}
@@ -123,12 +125,12 @@ def test_read_user_succ(http):
                 'customer_id':CUSTOMER_ID,
                 'customer_name':CUSTOMER_NAME,
                 'interfaces':[],
-                'mobile_phone':'375290000001',
+                'mobile_phone':'375290000000',
                 'first_name':'fn1',
                 'last_name':'ln1',
                 'company':'com1',
                 'occupation':'oc1',
-                'email':'u@m.d',
+                'email':'user@mail.dom',
                 'country':'cou1',
                 'language':'fr',
                 'state':'blocked',
@@ -138,3 +140,46 @@ def test_read_user_succ(http):
 def test_delete_user_succ(http):
     req = http.delete(USERS_URL+'/'+USER_ID)
     assert req.status_code == 204
+
+def test_create_second_users_w_same_email_fail(http):
+    test_create_user_succ(http)
+
+    req_data = {'user_id':USER_ID2,
+                'password':'secret',
+                'interfaces':'',
+                'features':'inbox,true',
+                'mobile_phone':'375290000001',
+                'first_name':'fn',
+                'last_name':'ln',
+                'company':'com',
+                'occupation':'oc',
+                'email':'user@mail.com',
+                'country':'cou',
+                'language':'en',
+                'state':'active'}
+
+    try:
+        req = http.post(USERS_URL, data=req_data)
+        assert req.status_code == 400
+    finally:
+        http.delete(USERS_URL+'/'+USER_ID)
+        http.delete(USERS_URL+'/'+USER_ID2)
+
+def test_create_second_users_w_same_phone_fail(http):
+    test_create_user_succ(http)
+
+    req_data = {'user_id':USER_ID2,
+                'password':'secret',
+                'interfaces':'',
+                'features':'inbox,true',
+                'mobile_phone':'375290000000',
+                'first_name':'fn',
+                'last_name':'ln',
+                'company':'com',
+                'occupation':'oc',
+                'email':'user2@mail.com',
+                'country':'cou',
+                'language':'en',
+                'state':'active'}
+    req = http.post(USERS_URL, data=req_data)
+    assert req.status_code == 400
