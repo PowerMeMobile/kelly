@@ -185,6 +185,7 @@ check_interfaces(Params) ->
     end.
 
 check_features(Params) ->
+    %% forbid sms_from_email w/o email interface
     {ok, Params}.
 
 create_user(Params) ->
@@ -227,8 +228,6 @@ update_user(Params) ->
     User = ?gv(user, Params),
     UserId = User#user.id,
     Password = resolve_pass(?gv(password, Params), User#user.password),
-    Interfaces = ?gv(interfaces, Params, User#user.interfaces),
-    Features = ?gv(features, Params, User#user.features),
     MobilePhone = ?gv(mobile_phone, Params, User#user.mobile_phone),
     FirstName = ?gv(first_name, Params, User#user.first_name),
     LastName = ?gv(last_name, Params, User#user.last_name),
@@ -238,11 +237,36 @@ update_user(Params) ->
     Country = ?gv(country, Params, User#user.country),
     Language = ?gv(language, Params, User#user.language),
     State = ?gv(state, Params, User#user.state),
+
+    PreIfs = User#user.interfaces,
+    NewIfs = ?gv(interfaces, Params, PreIfs),
+    DisIfs = k_http_api_utils:get_disabled_interfaces(PreIfs, NewIfs),
+
+    PreFs = User#user.features,
+    NewFs = ?gv(features, Params, PreFs),
+    DisFNs = k_http_api_utils:get_disabled_feature_names(PreFs, NewFs),
+
+    NewFs2 =
+        case lists:member(email, DisIfs) of
+            true ->
+                k_http_api_utils:remove_features(NewFs, [<<"sms_from_email">>]);
+            false ->
+                NewFs
+        end,
+
+    case lists:member(<<"inbox">>, DisFNs) of
+        true ->
+            CustomerUuid = ?gv(customer_uuid, Params),
+            ok = k_storage_msisdns:unassign_all_from_user(CustomerUuid, UserId);
+        false ->
+            nop
+    end,
+
     Updated = #user{
         id = UserId,
         password = Password,
-        interfaces = Interfaces,
-        features = Features,
+        interfaces = NewIfs,
+        features = NewFs2,
         mobile_phone = MobilePhone,
         first_name = FirstName,
         last_name = LastName,

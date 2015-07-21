@@ -7,11 +7,20 @@
 
     prepare_features/1,
     prepare_originators/2,
-    prepare_users/2
+    prepare_users/2,
+
+    get_disabled_interfaces/2,
+    get_disabled_feature_names/2,
+    remove_features/2
 ]).
 
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("k_storage/include/msisdn.hrl").
+
+%-define(TEST, 1).
+-ifdef(TEST).
+    -include_lib("eunit/include/eunit.hrl").
+-endif.
 
 %% ===================================================================
 %% API
@@ -103,3 +112,83 @@ prepare_users(Customer, User = #user{features = Features}) ->
     proplists:delete(id, Plist6);
 prepare_users(Customer, Users) when is_list(Users) ->
     {ok, [prepare_users(Customer, U) || U <- Users]}.
+
+-spec get_disabled_interfaces([interface()], [interface()]) -> [interface()].
+get_disabled_interfaces(PreIfs, NewIfs) ->
+    PreIfs -- NewIfs.
+
+-spec get_disabled_feature_names([#feature{}], [#feature{}]) -> [binary()].
+get_disabled_feature_names(PreFs, NewFs) ->
+    Fs = lists:filter(
+        fun(Feature=#feature{name=Name}) ->
+            case lists:keyfind(Name, #feature.name, NewFs) of
+                Feature ->
+                    %% feature exists
+                    %% filter it out
+                    false;
+                _Otherwise ->
+                    %% feature was either removed or disabled
+                    %% leave it
+                    true
+            end
+        end,
+        PreFs
+    ),
+    [N || #feature{name = N} <- Fs].
+
+-spec remove_features([#feature{}], [binary()]) -> [#feature{}].
+remove_features(Features, DisNames) ->
+    [F || F <- Features, not lists:member(F#feature.name, DisNames)].
+
+%% ===================================================================
+%% Tests begin
+%% ===================================================================
+
+-ifdef(TEST).
+
+get_disabled_interfaces_test() ->
+    PreIfs = [soap,mm,email],
+    NewIfs = [soap],
+    DisIfs = [mm,email],
+    ?assertEqual(DisIfs, get_disabled_interfaces(PreIfs, NewIfs)).
+
+get_disabled_feature_names_test() ->
+    PreFs = [
+        #feature{name = <<"f1">>, value = <<"true">>},
+        #feature{name = <<"f2">>, value = <<"true">>},
+        #feature{name = <<"f3">>, value = <<"true">>},
+        #feature{name = <<"f4">>, value = <<"false">>}
+    ],
+    NowFs = [
+        #feature{name = <<"f1">>, value = <<"false">>},
+        #feature{name = <<"f3">>, value = <<"true">>}
+    ],
+    DisFs = [
+        <<"f1">>,
+        <<"f2">>,
+        <<"f4">>
+    ],
+    ?assertEqual(DisFs, get_disabled_feature_names(PreFs, NowFs)).
+
+remove_features_test() ->
+    Fs = [
+        #feature{name = <<"f1">>, value = <<"true">>},
+        #feature{name = <<"f2">>, value = <<"true">>},
+        #feature{name = <<"f3">>, value = <<"true">>},
+        #feature{name = <<"f4">>, value = <<"false">>}
+    ],
+    DisNames = [
+        <<"f1">>,
+        <<"f2">>,
+        <<"f4">>
+    ],
+    LeftFs = [
+        #feature{name = <<"f3">>, value = <<"true">>}
+    ],
+    ?assertEqual(LeftFs, remove_features(Fs, DisNames)).
+
+-endif.
+
+%% ===================================================================
+%% Tests end
+%% ===================================================================

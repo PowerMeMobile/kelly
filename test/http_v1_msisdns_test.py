@@ -141,28 +141,3 @@ def test_read_all_3_succ(http):
     assert req.status_code == 200
     resp_data = req.json()
     assert resp_data == []
-
-def test_disable_inbox_from_customer_should_unassign_msisdn_succ(http):
-    test_create_msisdn_succ(http)
-    test_update_msisdn_succ(http)
-    test_read_used_2_succ(http)
-
-    req_data = {'features':'inbox,false'}
-    http.put(CUSTOMERS_URL+'/'+CUSTOMER_UUID, data=req_data)
-
-    try:
-        test_read_used_succ(http)
-    finally:
-        test_delete_msisdn_succ(http)
-
-def test_delete_customer_should_unassign_msidsn_succ(http):
-    test_create_msisdn_succ(http)
-    test_update_msisdn_succ(http)
-    test_read_used_2_succ(http)
-
-    http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
-
-    try:
-        test_read_used_succ(http)
-    finally:
-        test_delete_msisdn_succ(http)

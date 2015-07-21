@@ -38,7 +38,7 @@ def http(request):
             'max_validity':259200,
             'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec73',
             'network_map_id':'befa8b7c-c4a3-11e3-b670-00269e42f7a5',
-            'interfaces':'soap;mm;oneapi',
+            'interfaces':'soap;mm;email',
             'features':'',
             'pay_type':'postpaid',
             'credit':10000.0,
@@ -71,19 +71,19 @@ def http(request):
     return http
 
 def test_add_customer_s_interfaces_to_user_succ(http):
-    req_data = {'interfaces':'soap;mm;oneapi'}
+    req_data = {'interfaces':'soap;mm;email'}
     req = http.put(USERS_URL+'/'+USER_ID, data=req_data)
     assert req.status_code == 200
-    assert req.json()['interfaces'] == ['soap','mm','oneapi']
+    assert req.json()['interfaces'] == ['soap','mm','email']
 
 def test_remove_user_s_interface_succ(http):
-    req_data = {'interfaces':'soap;oneapi'}
+    req_data = {'interfaces':'soap;email'}
     req = http.put(USERS_URL+'/'+USER_ID, data=req_data)
     assert req.status_code == 200
-    assert req.json()['interfaces'] == ['soap','oneapi']
+    assert req.json()['interfaces'] == ['soap','email']
 
-def test_add_non_customer_s_email_interface_to_user_fail(http):
-    req_data = {'interfaces':'email'}
+def test_add_non_customer_s_oneapi_interface_to_user_fail(http):
+    req_data = {'interfaces':'oneapi'}
     req = http.put(USERS_URL+'/'+USER_ID, data=req_data)
     assert req.status_code == 400
 

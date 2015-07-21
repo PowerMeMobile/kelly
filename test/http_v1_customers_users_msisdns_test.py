@@ -121,3 +121,23 @@ def test_read_msisdns_2_empty_succ(http):
     assert req.status_code == 200
     resp_data = req.json()
     assert resp_data == []
+
+def test_disable_inbox_from_user_should_unassign_msisdn_succ(http):
+    test_create_msisdn_succ(http)
+    test_read_msisdns_non_empty_succ(http)
+
+    req_data = {'features':'inbox,false'}
+    http.put(CUSTOMERS_USERS_URL+'/'+USER_ID, data=req_data)
+
+    try:
+        req = http.get(CUSTOMERS_MSISDNS_URL+'/'+MSISDN+'?state=used')
+        assert req.json() == []
+    finally:
+        test_delete_msisdn_succ(http)
+
+def test_delete_user_should_unassign_msisdn_succ(http):
+    test_create_msisdn_succ(http)
+    test_read_msisdns_non_empty_succ(http)
+    http.delete(CUSTOMERS_USERS_URL+'/'+USER_ID)
+    req = http.get(CUSTOMERS_MSISDNS_URL+'/'+MSISDN+'?state=used')
+    assert req.json() == []

@@ -174,26 +174,26 @@ update_customer(Customer, Params) ->
 
     Users = Customer#customer.users,
 
-    PreInterfaces = Customer#customer.interfaces,
-    NewInterfaces = ?gv(interfaces, Params, PreInterfaces),
-    {Users2, DisIfs} = sync_interfaces(PreInterfaces, NewInterfaces, Users),
+    PreIfs = Customer#customer.interfaces,
+    NewIfs = ?gv(interfaces, Params, PreIfs),
+    {Users2, DisIfs} = sync_interfaces(PreIfs, NewIfs, Users),
 
-    PreFeatures = Customer#customer.features,
-    NewFeatures = ?gv(features, Params, PreFeatures),
-    {Users3, DisFs} = sync_features(PreFeatures, NewFeatures, Users2),
+    PreFs = Customer#customer.features,
+    NewFs = ?gv(features, Params, PreFs),
+    {Users3, DisFNs} = sync_features(PreFs, NewFs, Users2),
 
     Users4 =
         case lists:member(email, DisIfs) of
             true ->
                 [U#user{
-                   features = remove_features(
+                   features = k_http_api_utils:remove_features(
                        U#user.features, [<<"sms_from_email">>])
                  } || U <- Users3];
             false ->
                 Users3
         end,
 
-    case lists:member(<<"inbox">>, DisFs) of
+    case lists:member(<<"inbox">>, DisFNs) of
         true ->
             ok = k_storage_msisdns:unassign_all_from_customer(CustomerUuid);
         false ->
@@ -214,8 +214,8 @@ update_customer(Customer, Params) ->
         default_validity = NewDefaultValidity,
         max_validity = NewMaxValidity,
         users = Users4,
-        interfaces = NewInterfaces,
-        features = NewFeatures,
+        interfaces = NewIfs,
+        features = NewFs,
         pay_type = NewPayType,
         credit = NewCredit,
         credit_limit = NewCreditLimit,
@@ -294,41 +294,20 @@ prepare_customers([Customer = #customer{} | Rest], Acc) ->
     prepare_customers(Rest, [Plist | Acc]).
 
 sync_interfaces(PreIfs, NewIfs, Users) ->
-    DisIfs = get_disabled_interfaces(PreIfs, NewIfs),
+    DisIfs = k_http_api_utils:get_disabled_interfaces(PreIfs, NewIfs),
     Users2 = [U#user{
                 interfaces = U#user.interfaces -- DisIfs
               } || U <- Users],
     {Users2, DisIfs}.
 
 sync_features(PreFs, NewFs, Users) ->
-    DisNames = get_disabled_feature_names(PreFs, NewFs),
-    Users2 = [U#user{features = remove_features(U#user.features, DisNames)} ||
-     U <- Users],
+    DisNames = k_http_api_utils:get_disabled_feature_names(PreFs, NewFs),
+    Users2 = [U#user{
+                features = k_http_api_utils:remove_features(
+                    U#user.features, DisNames)
+              } || U <- Users],
     {Users2, DisNames}.
 
-get_disabled_interfaces(PreIfs, NewIfs) ->
-    PreIfs -- NewIfs.
-
-get_disabled_feature_names(PreFs, NewFs) ->
-    Fs = lists:filter(
-        fun(Feature=#feature{name=Name}) ->
-            case lists:keyfind(Name, #feature.name, NewFs) of
-                Feature ->
-                    %% feature exists
-                    %% filter it out
-                    false;
-                _Otherwise ->
-                    %% feature was either removed or disabled
-                    %% leave it
-                    true
-            end
-        end,
-        PreFs
-    ),
-    [N || #feature{name = N} <- Fs].
-
-remove_features(Features, DisNames) ->
-    [F || F <- Features, not lists:member(F#feature.name, DisNames)].
 
 decode_state(State) ->
     case bstr:lower(State) of
@@ -373,41 +352,6 @@ sync_interfaces_test() ->
 %%         #user{interfaces = [], features = []}
 %%     ],
 %%     ?assertEqual(NewUsers, sync_interfaces(PreIfs, NewIfs, PreUsers)).
-
-get_disabled_feature_names_test() ->
-    PreFs = [
-        #feature{name = <<"f1">>, value = <<"true">>},
-        #feature{name = <<"f2">>, value = <<"true">>},
-        #feature{name = <<"f3">>, value = <<"true">>},
-        #feature{name = <<"f4">>, value = <<"false">>}
-    ],
-    NowFs = [
-        #feature{name = <<"f1">>, value = <<"false">>},
-        #feature{name = <<"f3">>, value = <<"true">>}
-    ],
-    DisabledFs = [
-        <<"f1">>,
-        <<"f2">>,
-        <<"f4">>
-    ],
-    ?assertEqual(DisabledFs, get_disabled_feature_names(PreFs, NowFs)).
-
-remove_features_test() ->
-    Fs = [
-        #feature{name = <<"f1">>, value = <<"true">>},
-        #feature{name = <<"f2">>, value = <<"true">>},
-        #feature{name = <<"f3">>, value = <<"true">>},
-        #feature{name = <<"f4">>, value = <<"false">>}
-    ],
-    DisNames = [
-        <<"f1">>,
-        <<"f2">>,
-        <<"f4">>
-    ],
-    LeftFs = [
-        #feature{name = <<"f3">>, value = <<"true">>}
-    ],
-    ?assertEqual(LeftFs, remove_features(Fs, DisNames)).
 
 sync_features_test() ->
     PreFs = [#feature{name = <<"inbox">>, value = <<"true">>}],

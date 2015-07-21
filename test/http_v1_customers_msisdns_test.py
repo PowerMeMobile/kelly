@@ -164,10 +164,26 @@ def test_should_exist_originator_succ(http):
     origs = req.json()
     assert origs == []
 
-def test_unassign_from_deleted_user_succ(http):
+def test_disable_inbox_from_customer_should_unassign_msisdn_succ(http):
     test_create_msisdn_succ(http)
     test_read_msisdns_used_empty_succ(http)
-    test_assign_msisdn_to_user_succ(http)
-    test_read_msisdns_non_empty_succ(http)
-    http.delete(CUSTOMERS_USERS_URL+'/'+USER_ID)
-    test_read_msisdns_used_empty_succ(http)
+
+    req_data = {'features':'inbox,false'}
+    http.put(CUSTOMERS_URL+'/'+CUSTOMER_UUID, data=req_data)
+
+    try:
+        test_read_msisdns_used_empty_succ(http)
+    finally:
+        test_delete_msisdn_succ(http)
+
+def test_delete_customer_should_unassign_msisdn_succ(http):
+    test_create_msisdn_succ(http)
+
+    req = http.get(MSISDNS_URL+'/'+MSISDN)
+    assert req.json()[0]['customer_uuid'] == CUSTOMER_UUID
+
+    req = http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
+    assert req.status_code == 204
+
+    req = http.get(MSISDNS_URL+'/'+MSISDN)
+    assert req.json()[0]['customer_uuid'] == None
