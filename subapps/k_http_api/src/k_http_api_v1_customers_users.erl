@@ -185,8 +185,49 @@ check_interfaces(Params) ->
     end.
 
 check_features(Params) ->
-    %% forbid sms_from_email w/o email interface
-    {ok, Params}.
+    Customer = ?gv(customer, Params),
+    CustomerIfs = Customer#customer.interfaces,
+    CustomerFs = Customer#customer.features,
+    Fs = ?gv(features, Params, []),
+    Forbidden = [],
+    Forbidden2 =
+        %% forbid sms_from_email w/o customer's email interface
+        case lists:keyfind(<<"sms_from_email">>, #feature.name, Fs) of
+            false ->
+                Forbidden;
+            #feature{value = <<"false">>} ->
+                Forbidden;
+            #feature{value = <<"true">>} ->
+                case lists:member(email, CustomerIfs) of
+                    true ->
+                        Forbidden;
+                    false ->
+                        [<<"sms_from_email">> | Forbidden]
+                end
+        end,
+    Forbidden3 =
+        %% forbid inbox if w/o customer's inbox
+        case lists:keyfind(<<"inbox">>, #feature.name, Fs) of
+            false ->
+                Forbidden2;
+            #feature{value = <<"false">>} ->
+                Forbidden2;
+            #feature{value = <<"true">>} ->
+                case lists:keyfind(<<"inbox">>, #feature.name, CustomerFs) of
+                    false ->
+                        [<<"inbox">> | Forbidden2];
+                    #feature{value = <<"false">>} ->
+                        [<<"inbox">> | Forbidden2];
+                    #feature{value = <<"true">>} ->
+                        Forbidden2
+                end
+        end,
+    case Forbidden3 of
+        [] ->
+            {ok, Params};
+        _ ->
+            {exception, 'svc0002', [<<"features">>, Forbidden3]}
+    end.
 
 create_user(Params) ->
     UserId = ?gv(user_id, Params),

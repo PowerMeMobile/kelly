@@ -113,6 +113,10 @@ def test_disable_feature_from_customer_should_remove_from_user_succ(http):
     assert req2.json()['features'] == []
 
 def test_add_non_customer_s_sms_from_email_feature_to_user_succ(http):
+    req_data = {'interfaces':'email'}
+    req = http.put(CUSTOMERS_URL+'/'+CUSTOMER_UUID, data=req_data)
+    assert req.status_code == 200
+
     req_data = {'features':'sms_from_email,true'}
     req = http.put(USERS_URL+'/'+USER_ID, data=req_data)
     assert req.status_code == 200
