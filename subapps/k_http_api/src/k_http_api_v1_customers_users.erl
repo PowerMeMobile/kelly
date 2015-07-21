@@ -175,13 +175,13 @@ check_unique_email(Params) ->
             {ok, Params};
         Email ->
             case k_storage_customers:get_customer_by_email(Email) of
-                %% email is NOT used
                 {error, no_entry} ->
+                    %% email is NOT used
                     {ok, Params};
-                %% it's our customer and our user
                 {ok, Customer = #customer{customer_uuid = CustomerUuid}} ->
                     case k_storage_customers:get_user_by_email(Customer, Email) of
                         {ok, #user{id = UserId}} ->
+                            %% it's our customer and our user
                             {ok, Params};
                         {ok, _OtherUser} ->
                             {exception, 'svc0002', [<<"email">>, Email]}
@@ -200,13 +200,13 @@ check_unique_phone(Params) ->
         Phone ->
             Msisdn = alley_services_utils:addr_to_dto(Phone),
             case k_storage_customers:get_customer_by_msisdn(Msisdn) of
-                %% phone is NOT used
                 {error, no_entry} ->
+                    %% phone is NOT used
                     {ok, Params};
-                %% it's our customer and our user
                 {ok, Customer = #customer{customer_uuid = CustomerUuid}} ->
                     case k_storage_customers:get_user_by_msisdn(Customer, Msisdn) of
                         {ok, #user{id = UserId}} ->
+                            %% it's our customer and our user
                             {ok, Params};
                         {ok, _OtherUser} ->
                             {exception, 'svc0002', [<<"mobile_phone">>, Phone]}
