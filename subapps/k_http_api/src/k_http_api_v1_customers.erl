@@ -30,7 +30,6 @@ init() ->
     ],
     Update = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
-        #param{name = customer_id, mandatory = false, repeated = false, type = binary},
         #param{name = name, mandatory = false, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = integer},
         #param{name = rps, mandatory = false, repeated = false, type = integer},
@@ -47,7 +46,6 @@ init() ->
             {custom, fun k_http_api_utils:decode_feature/1}},
         #param{name = pay_type, mandatory = false, repeated = false, type =
             {custom, fun decode_pay_type/1}},
-        #param{name = credit, mandatory = false, repeated = false, type = float},
         #param{name = credit_limit, mandatory = false, repeated = false, type = float},
         #param{name = language, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = false, repeated = false, type =
@@ -92,19 +90,43 @@ init() ->
 create(Params) ->
     case ?gv(customer_uuid, Params) of
         undefined ->
-            CustomerUuid = uuid:unparse(uuid:generate_time()),
-            create_customer(lists:keyreplace(customer_uuid, 1, Params, {customer_uuid, CustomerUuid}));
+            case does_exist_by_id(Params) of
+                true ->
+                    {exception, 'svc0004'};
+                false ->
+                    CustomerUuid = uuid:unparse(uuid:generate_time()),
+                    create_customer(lists:keyreplace(customer_uuid, 1, Params, {customer_uuid, CustomerUuid}))
+            end;
         _ ->
-            is_exist(Params)
+            case does_exist_by_uuid(Params) of
+                true ->
+                    {exception, 'svc0004'};
+                false ->
+                    case does_exist_by_id(Params) of
+                        true ->
+                            {exception, 'svc0004'};
+                        false ->
+                            create_customer(Params)
+                    end
+            end
     end.
 
-is_exist(Params) ->
+does_exist_by_uuid(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, #customer{}} ->
-            {exception, 'svc0004'};
+            true;
         {error, no_entry} ->
-            create_customer(Params)
+            false
+    end.
+
+does_exist_by_id(Params) ->
+    CustomerId = ?gv(customer_id, Params),
+    case k_storage_customers:get_customer_by_id(CustomerId) of
+        {ok, #customer{}} ->
+            true;
+        {error, no_entry} ->
+            false
     end.
 
 read(Params) ->
@@ -156,7 +178,7 @@ delete(Params) ->
 
 update_customer(Customer, Params) ->
     CustomerUuid = Customer#customer.customer_uuid,
-    NewCustomerId = ?gv(customer_id, Params, Customer#customer.customer_id),
+    CustomerId = Customer#customer.customer_id,
     NewName = ?gv(name, Params, Customer#customer.name),
     NewPriority = ?gv(priority, Params, Customer#customer.priority),
     NewRps = ?gv(rps, Params, Customer#customer.rps),
@@ -167,7 +189,7 @@ update_customer(Customer, Params) ->
     NewDefaultValidity = ?gv(default_validity, Params, Customer#customer.default_validity),
     NewMaxValidity = ?gv(max_validity, Params, Customer#customer.max_validity),
     NewPayType = ?gv(pay_type, Params, Customer#customer.pay_type),
-    NewCredit = ?gv(credit, Params, Customer#customer.credit),
+    Credit = Customer#customer.credit,
     NewCreditLimit = ?gv(credit_limit, Params, Customer#customer.credit_limit),
     NewLanguage = ?gv(language, Params, Customer#customer.language),
     NewState = ?gv(state, Params, Customer#customer.state),
@@ -202,7 +224,7 @@ update_customer(Customer, Params) ->
 
     NewCustomer = #customer{
         customer_uuid = CustomerUuid,
-        customer_id = NewCustomerId,
+        customer_id = CustomerId,
         name = NewName,
         priority = NewPriority,
         rps = NewRps,
@@ -217,7 +239,7 @@ update_customer(Customer, Params) ->
         interfaces = NewIfs,
         features = NewFs,
         pay_type = NewPayType,
-        credit = NewCredit,
+        credit = Credit,
         credit_limit = NewCreditLimit,
         language = NewLanguage,
         state = NewState

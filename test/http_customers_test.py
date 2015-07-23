@@ -55,8 +55,7 @@ def test_create_customer_succ(http):
     assert resp_data == req_data
 
 def test_update_customer_succ(http):
-    req_data = {'customer_id':'1',
-                'name':'name2',
+    req_data = {'name':'name2',
                 'priority':2,
                 'rps':500,
                 'receipts_allowed':False,
@@ -66,7 +65,6 @@ def test_update_customer_succ(http):
                 'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec74',
                 'network_map_id':'cf1563b0-c4a3-11e3-8a61-00269e42f7a5',
                 'pay_type':'prepaid',
-                'credit':20000.0,
                 'credit_limit':0.0,
                 'language':'fr',
                 'state':'blocked'}
@@ -75,6 +73,8 @@ def test_update_customer_succ(http):
     resp_data = req.json()
     # add some fields expected in response
     req_data['customer_uuid'] = CUSTOMER_UUID
+    req_data['customer_id'] = '0'
+    req_data['credit'] = 10000.0
     req_data['users'] = []
     req_data['originators'] = []
     assert resp_data == req_data
@@ -88,7 +88,7 @@ def test_read_customer_succ(http):
     assert req.status_code == 200
     resp_data = req.json()
     exp_data = {'customer_uuid':CUSTOMER_UUID,
-                'customer_id':'1',
+                'customer_id':'0',
                 'name':'name2',
                 'priority':2,
                 'rps':500,
@@ -99,7 +99,7 @@ def test_read_customer_succ(http):
                 'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec74',
                 'network_map_id':'cf1563b0-c4a3-11e3-8a61-00269e42f7a5',
                 'pay_type':'prepaid',
-                'credit':20000.0,
+                'credit':10000.0,
                 'credit_limit':0.0,
                 'language':'fr',
                 'state':'blocked',

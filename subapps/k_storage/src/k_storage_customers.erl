@@ -69,8 +69,11 @@ set_customer(CustomerUuid, Customer) ->
     ],
 
     Modifier = {
-        '$set', {
+        '$setOnInsert', {
             'customer_id'        , Customer#customer.customer_id,
+            'credit'             , Customer#customer.credit
+        },
+        '$set', {
             'name'               , Customer#customer.name,
             'priority'           , Customer#customer.priority,
             'rps'                , Customer#customer.rps,
@@ -86,7 +89,6 @@ set_customer(CustomerUuid, Customer) ->
                 [bsondoc:atom_to_binary(I) || I <- Customer#customer.interfaces],
             'features'           , features_to_docs(Customer#customer.features),
             'pay_type'           , bsondoc:atom_to_binary(Customer#customer.pay_type),
-            'credit'             , Customer#customer.credit,
             'credit_limit'       , Customer#customer.credit_limit,
             'language'           , Customer#customer.language,
             'state'              , bsondoc:atom_to_binary(Customer#customer.state)
