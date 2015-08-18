@@ -46,6 +46,7 @@ decode_interface(Interface) ->
         <<"transceiver">> -> transceiver;
         <<"soap">>        -> soap;
         <<"mm">>          -> mm;
+        <<"webmm">>       -> webmm;
         <<"oneapi">>      -> oneapi;
         <<"email">>       -> email
     end.

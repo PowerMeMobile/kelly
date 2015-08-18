@@ -34,7 +34,7 @@ init() ->
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = false, repeated = false, type = binary},
         #param{name = connection_types, mandatory = false, repeated = true, type =
-             {custom, fun connection_type/1}},
+             {custom, fun k_http_api_utils:decode_interface/1}},
         #param{name = mobile_phone, mandatory = false, repeated = false, type = binary},
         #param{name = first_name, mandatory = false, repeated = false, type = binary},
         #param{name = last_name, mandatory = false, repeated = false, type = binary},
@@ -55,7 +55,7 @@ init() ->
         #param{name = id, mandatory = true, repeated = false, type = binary},
         #param{name = password, mandatory = true, repeated = false, type = binary},
         #param{name = connection_types, mandatory = true, repeated = true, type =
-            {custom, fun connection_type/1}},
+            {custom, fun k_http_api_utils:decode_interface/1}},
         #param{name = mobile_phone, mandatory = false, repeated = false, type = binary},
         #param{name = first_name, mandatory = false, repeated = false, type = binary},
         #param{name = last_name, mandatory = false, repeated = false, type = binary},
@@ -259,17 +259,6 @@ resolve_pass(undefined, Pass) ->
     Pass;
 resolve_pass(NewPass, _Pass) ->
     ac_hexdump:binary_to_hexdump(crypto:hash(md5, NewPass), to_lower).
-
-connection_type(Type) ->
-    case Type of
-        <<"transmitter">> -> transmitter;
-        <<"receiver">>    -> receiver;
-        <<"transceiver">> -> transceiver;
-        <<"soap">>        -> soap;
-        <<"mm">>          -> mm;
-        <<"oneapi">>      -> oneapi;
-        <<"email">>       -> email
-    end.
 
 user_state(State) ->
     case State of

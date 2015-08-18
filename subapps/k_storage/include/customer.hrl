@@ -9,7 +9,7 @@
 -type customer_uuid() :: uuid().
 -type customer_id() :: binary(). %% http customer_id | smpp system-type
 -type user_id() :: binary(). %% http user_id | smpp system-id
--type interface() :: transmitter | receiver | tranceiver | oneapi | soap | mm | email.
+-type interface() :: transmitter | receiver | tranceiver | oneapi | soap | mm | webmm | email.
 -type originator_state() :: pending | approved | rejected.
 -type user_state() :: active | blocked | deactivated.
 -type customer_state() :: active | blocked | deactivated.
