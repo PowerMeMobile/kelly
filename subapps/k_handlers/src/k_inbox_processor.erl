@@ -188,6 +188,36 @@ process(_CustomerUuid, _UserId, delete_id, MsgIds) ->
         Error ->
             Error
     end;
+process(_CustomerUuid, _UserId, mark_as_read_id, MsgIds) ->
+    Selector = {
+        '_id', {'$in', MsgIds}
+    },
+    Modifier = {
+        '$set', {
+            'state', bsondoc:atom_to_binary(read)
+        }
+    },
+    case mongodb_storage:update(mailbox_storage, incomings, Selector, Modifier) of
+        ok ->
+            {ok, {modified, length(MsgIds)}};
+        Error ->
+            Error
+    end;
+process(_CustomerUuid, _UserId, mark_as_unread_id, MsgIds) ->
+    Selector = {
+        '_id', {'$in', MsgIds}
+    },
+    Modifier = {
+        '$set', {
+            'state', bsondoc:atom_to_binary(new)
+        }
+    },
+    case mongodb_storage:update(mailbox_storage, incomings, Selector, Modifier) of
+        ok ->
+            {ok, {modified, length(MsgIds)}};
+        Error ->
+            Error
+    end;
 process(_CustomerUuid, _UserId, _, _) ->
     {ok, {error, not_implemented}}.
 
