@@ -195,6 +195,7 @@ curl -s -D - -X POST 127.0.0.1:8080/v1/customers/b5801eb1-d5ed-4a6e-80b4-a9bc35b
 # postpaid users
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/users -d "user_id=user&password=password&interfaces=email&features=inbox,true;sms_from_email,true&mobile_phone=375296660009&first_name=&last_name=&company=&occupation=&email=email-postpaid@mail.com&country=&language=en&state=active"
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/users -d "user_id=user_no_sms_from_email&password=password&interfaces=email&features=sms_from_email,false&mobile_phone=375296660019&first_name=&last_name=&company=&occupation=&email=user_no_sms_from_email-postpaid@mail.com&country=&language=en&state=active"
+curl -s -D - -X POST 127.0.0.1:8080/v1/customers/b5801eb1-d5ed-4a6e-80b4-a9bc35bdb3e9/users -d "user_id=user_no_email_if&password=password&interfaces=&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=email_no_email_if-postpaid@mail.com&country=&language=en&state=active"
 
 # prepaid customer
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers -d "customer_uuid=01a2d05d-fd2d-4532-847c-16681302101e&customer_id=10010&name=email-prepaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&interfaces=email&features=inbox,true&pay_type=prepaid&credit=10000.0&credit_limit=0.0&language=en&state=active"
