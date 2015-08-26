@@ -130,6 +130,7 @@ def test_should_exist_originator_succ(http):
     orig = req.json()[0]
     assert orig['msisdn'] == {'addr':ADDR, 'ton':int(TON), 'npi':int(NPI)}
     assert orig['state'] == 'approved'
+    assert orig['description'] == '2-Way Msisdn'
 
 def test_assign_msisdn_to_user_succ(http):
     req_data = {'msisdn':MSISDN}
@@ -158,7 +159,7 @@ def test_delete_msisdn_succ(http):
     req = http.delete(CUSTOMERS_MSISDNS_URL+'/'+MSISDN)
     assert req.status_code == 204
 
-def test_should_exist_originator_succ(http):
+def test_should_not_exist_originator_succ(http):
     req = http.get(CUSTOMERS_ORIGINATORS_URL)
     assert req.status_code == 200
     origs = req.json()

@@ -58,7 +58,7 @@ create(Params) ->
                     Originator = #originator{
                         id = uuid:unparse(uuid:generate_time()),
                         address = Msisdn,
-                        description = <<"">>,
+                        description = <<"2-Way Msisdn">>,
                         is_default = false,
                         state = approved
                     },
