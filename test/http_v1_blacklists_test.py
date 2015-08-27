@@ -77,16 +77,14 @@ def test_update_entry_1_succ(http):
     assert req.status_code == 201
 
     req = http.put(BLACKLISTS_URL+'/'+ENTRY_ID, data={'dst_addr':'375296000003,1,1',
-                                                'src_addr':''})
+                                                      'src_addr':''})
     assert req.status_code == 200
     json = req.json()
     assert json['id'] == ENTRY_ID
     assert json['dst_addr']['addr'] == '375296000003'
     assert json['dst_addr']['ton'] == 1
     assert json['dst_addr']['npi'] == 1
-    assert json['src_addr']['addr'] == 'Hola'
-    assert json['src_addr']['ton'] == 5
-    assert json['src_addr']['npi'] == 0
+    assert json['src_addr'] == None
 
 def test_update_entry_2_succ(http):
     req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
@@ -101,9 +99,39 @@ def test_update_entry_2_succ(http):
     assert json['dst_addr']['addr'] == '375296000004'
     assert json['dst_addr']['ton'] == 1
     assert json['dst_addr']['npi'] == 1
+    assert json['src_addr'] == None
+
+def test_update_entry_3_succ(http):
+    req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
+                                    'dst_addr':'375296000001,1,1',
+                                    'src_addr':'Hola,5,0'})
+    assert req.status_code == 201
+
+    req = http.put(BLACKLISTS_URL+'/'+ ENTRY_ID, data={'src_addr':'Hola,5,0'})
+    assert req.status_code == 200
+    json = req.json()
+    assert json['id'] == ENTRY_ID
+    assert json['dst_addr']['addr'] == '375296000001'
+    assert json['dst_addr']['ton'] == 1
+    assert json['dst_addr']['npi'] == 1
     assert json['src_addr']['addr'] == 'Hola'
     assert json['src_addr']['ton'] == 5
     assert json['src_addr']['npi'] == 0
+
+def test_update_entry_4_succ(http):
+    req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,
+                                    'dst_addr':'375296000001,1,1',
+                                    'src_addr':'Hola,5,0'})
+    assert req.status_code == 201
+
+    req = http.put(BLACKLISTS_URL+'/'+ ENTRY_ID, data={})
+    assert req.status_code == 200
+    json = req.json()
+    assert json['id'] == ENTRY_ID
+    assert json['dst_addr']['addr'] == '375296000001'
+    assert json['dst_addr']['ton'] == 1
+    assert json['dst_addr']['npi'] == 1
+    assert json['src_addr'] == None
 
 def test_delete_succ(http):
     req = http.post(BLACKLISTS_URL, data={'id':ENTRY_ID,

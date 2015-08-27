@@ -109,7 +109,7 @@ read_id(Uuid) ->
 update_blacklist_entry(Entry, Params) ->
     Id = ?gv(id, Params),
     DstAddr = ?gv(dst_addr, Params, Entry#blacklist_entry.dst_addr),
-    SrcAddr = ?gv(src_addr, Params, Entry#blacklist_entry.src_addr),
+    SrcAddr = ?gv(src_addr, Params),
     Updated = #blacklist_entry{
         id = Id,
         dst_addr = DstAddr,
@@ -121,7 +121,7 @@ update_blacklist_entry(Entry, Params) ->
     {http_code, 200, Plist}.
 
 create_blacklist_entry(Params) ->
-    Id= ?gv(id, Params),
+    Id = ?gv(id, Params),
     DstAddr = ?gv(dst_addr, Params),
     SrcAddr = ?gv(src_addr, Params),
     Entry = #blacklist_entry{
