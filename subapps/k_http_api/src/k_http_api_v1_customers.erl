@@ -198,14 +198,14 @@ update_customer(Customer, Params) ->
 
     PreIfs = Customer#customer.interfaces,
     NewIfs = ?gv(interfaces, Params, PreIfs),
-    {Users2, DisIfs} = sync_interfaces(PreIfs, NewIfs, Users),
+    {Users2, DisabledIfs} = sync_interfaces(PreIfs, NewIfs, Users),
 
     PreFs = Customer#customer.features,
     NewFs = ?gv(features, Params, PreFs),
-    {Users3, DisFNs} = sync_features(PreFs, NewFs, Users2),
+    {Users3, DisabledFNs} = sync_features(PreFs, NewFs, Users2),
 
     Users4 =
-        case lists:member(email, DisIfs) of
+        case lists:member(email, DisabledIfs) of
             true ->
                 [U#user{
                    features = k_http_api_utils:remove_features(
@@ -215,12 +215,19 @@ update_customer(Customer, Params) ->
                 Users3
         end,
 
-    case lists:member(<<"inbox">>, DisFNs) of
-        true ->
-            ok = k_storage_msisdns:unassign_all_from_customer(CustomerUuid);
-        false ->
-            nop
-    end,
+    NewOriginators =
+        case lists:member(<<"inbox">>, DisabledFNs) of
+            true ->
+                {ok, Msisdns} =
+                    k_storage_msisdns:get_assigned_to_customer(CustomerUuid, all),
+                ok = k_storage_msisdns:unassign_all_from_customer(CustomerUuid),
+                DelOrig = fun(Msisdn, Origs) ->
+                    lists:keydelete(Msisdn, #originator.address, Origs)
+                end,
+                lists:foldl(DelOrig, Customer#customer.originators, Msisdns);
+            false ->
+                Customer#customer.originators
+        end,
 
     NewCustomer = #customer{
         customer_uuid = CustomerUuid,
@@ -228,7 +235,7 @@ update_customer(Customer, Params) ->
         name = NewName,
         priority = NewPriority,
         rps = NewRps,
-        originators = Customer#customer.originators,
+        originators = NewOriginators,
         network_map_id = NewNetworkMapId,
         default_provider_id = NewDefaultProviderId,
         receipts_allowed = NewReceiptsAllowed,
@@ -316,19 +323,19 @@ prepare_customers([Customer = #customer{} | Rest], Acc) ->
     prepare_customers(Rest, [Plist | Acc]).
 
 sync_interfaces(PreIfs, NewIfs, Users) ->
-    DisIfs = k_http_api_utils:get_disabled_interfaces(PreIfs, NewIfs),
+    DisabledIfs = k_http_api_utils:get_disabled_interfaces(PreIfs, NewIfs),
     Users2 = [U#user{
-                interfaces = U#user.interfaces -- DisIfs
+                interfaces = U#user.interfaces -- DisabledIfs
               } || U <- Users],
-    {Users2, DisIfs}.
+    {Users2, DisabledIfs}.
 
 sync_features(PreFs, NewFs, Users) ->
-    DisNames = k_http_api_utils:get_disabled_feature_names(PreFs, NewFs),
+    DisabledNames = k_http_api_utils:get_disabled_feature_names(PreFs, NewFs),
     Users2 = [U#user{
                 features = k_http_api_utils:remove_features(
-                    U#user.features, DisNames)
+                    U#user.features, DisabledNames)
               } || U <- Users],
-    {Users2, DisNames}.
+    {Users2, DisabledNames}.
 
 
 decode_state(State) ->

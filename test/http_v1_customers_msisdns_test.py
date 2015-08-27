@@ -165,7 +165,7 @@ def test_should_not_exist_originator_succ(http):
     origs = req.json()
     assert origs == []
 
-def test_disable_inbox_from_customer_should_unassign_msisdn_succ(http):
+def test_disable_inbox_from_customer_should_unassign_msisdn_and_remove_originator_succ(http):
     test_create_msisdn_succ(http)
     test_read_msisdns_used_empty_succ(http)
 
@@ -174,6 +174,7 @@ def test_disable_inbox_from_customer_should_unassign_msisdn_succ(http):
 
     try:
         test_read_msisdns_used_empty_succ(http)
+        test_should_not_exist_originator_succ(http)
     finally:
         test_delete_msisdn_succ(http)
 
