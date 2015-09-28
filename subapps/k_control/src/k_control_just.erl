@@ -7,6 +7,10 @@
     block_request/1,
     unblock_request/1,
 
+    gateway_states_request/0,
+    start_gateway_request/1,
+    stop_gateway_request/1,
+
     set_customer/3,
     delete_customer/1,
 
@@ -86,6 +90,56 @@ unblock_request(ReqId) ->
         {ok, <<"UnblockRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#unblock_resp_v1{}, RespBin),
             #unblock_resp_v1{result = Result} = Resp,
+            Result;
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec gateway_states_request() -> {ok, [#gateway_state_v1{}]} | {error, term()}.
+gateway_states_request() ->
+    {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
+    Req = #gateway_states_req_v1{
+        req_id = uuid:unparse(uuid:generate())
+    },
+    {ok, ReqBin} = adto:encode(Req),
+    case k_control_rmq:rpc_call(CtrlQueue, <<"GatewayStatesReqV1">>, ReqBin) of
+        {ok, <<"GatewayStatesRespV1">>, RespBin} ->
+            {ok, Resp} = adto:decode(#gateway_states_resp_v1{}, RespBin),
+            #gateway_states_resp_v1{result = Result} = Resp,
+            Result;
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec start_gateway_request(gateway_id()) -> ok | {error, term()}.
+start_gateway_request(GatewayId) ->
+    {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
+    Req = #start_gateway_req_v1{
+        req_id = uuid:unparse(uuid:generate()),
+        gateway_id = GatewayId
+    },
+    {ok, ReqBin} = adto:encode(Req),
+    case k_control_rmq:rpc_call(CtrlQueue, <<"StartGatewayReqV1">>, ReqBin) of
+        {ok, <<"StartGatewayRespV1">>, RespBin} ->
+            {ok, Resp} = adto:decode(#start_gateway_resp_v1{}, RespBin),
+            #start_gateway_resp_v1{result = Result} = Resp,
+            Result;
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec stop_gateway_request(gateway_id()) -> ok | {error, term()}.
+stop_gateway_request(GatewayId) ->
+    {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
+    Req = #stop_gateway_req_v1{
+        req_id = uuid:unparse(uuid:generate()),
+        gateway_id = GatewayId
+    },
+    {ok, ReqBin} = adto:encode(Req),
+    case k_control_rmq:rpc_call(CtrlQueue, <<"StopGatewayReqV1">>, ReqBin) of
+        {ok, <<"StopGatewayRespV1">>, RespBin} ->
+            {ok, Resp} = adto:decode(#stop_gateway_resp_v1{}, RespBin),
+            #stop_gateway_resp_v1{result = Result} = Resp,
             Result;
         {error, Error} ->
             {error, Error}
