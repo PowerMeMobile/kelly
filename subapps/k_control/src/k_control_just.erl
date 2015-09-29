@@ -56,7 +56,7 @@ throughput() ->
             {ok, Resp = #'ThroughputResponse'{slices = Slices}} =
                 'JustAsn':decode('ThroughputResponse', RespBin),
             ?log_debug("Got just throughput response: ~p", [Resp]),
-            {ok, prepare_slices(Slices)};
+            {ok, slices_to_plist(Slices)};
         {error, Error} ->
             {error, Error}
     end.
@@ -212,19 +212,19 @@ set_gtw(Gtw) ->
     [ok = set_connection(GtwId, Conn) || Conn <- Gtw#gateway.connections],
     [ok = set_setting(GtwId, Setting) || Setting <- Gtw#gateway.settings].
 
-prepare_slices(Slices) ->
-    prepare_slices(Slices, []).
+slices_to_plist(Slices) ->
+    slices_to_plist(Slices, []).
 
-prepare_slices([], Acc) ->
+slices_to_plist([], Acc) ->
     lists:reverse(Acc);
-prepare_slices([Slice | Slices], Acc) ->
+slices_to_plist([Slice | Slices], Acc) ->
     PeriodStart = Slice#'Slice'.periodStart,
     Counters = Slice#'Slice'.counters,
     Plist = [
         {period_start, ac_datetime:utc_string_to_iso8601(PeriodStart)},
         {counters, [counter_to_plist(C) || C <- Counters]}
     ],
-    prepare_slices(Slices, [Plist | Acc]).
+    slices_to_plist(Slices, [Plist | Acc]).
 
 counter_to_plist(#'Counter'{
     gatewayId = GatewayId,
