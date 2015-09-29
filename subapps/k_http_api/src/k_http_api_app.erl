@@ -87,6 +87,8 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_handler_customers_originators,
         k_http_api_handler_customers_users,
         k_http_api_handler_customers_users_features,
+        %% deprecated since PowerAlley UI 1.6.0
+        k_http_api_v1_blacklists,
 
         %% Config API
         k_http_api_handler_gateways,
@@ -114,7 +116,7 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_v1_funnel_throughput,
 
         %% Config API
-        k_http_api_v1_blacklists,
+        k_http_api_v1_blacklist,
         k_http_api_v1_customers_credit,
         k_http_api_v1_customers_msisdns,
         k_http_api_v1_customers_originators,
