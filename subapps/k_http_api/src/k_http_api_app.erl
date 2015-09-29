@@ -107,6 +107,7 @@ gen_http_api_handlers_dispatch_rules() ->
         %%
 
         %% Control API
+        k_http_api_v1_just_gateways,
         k_http_api_v1_just_reconfigure,
         k_http_api_v1_just_throughput,
         k_http_api_v1_funnel_connections,

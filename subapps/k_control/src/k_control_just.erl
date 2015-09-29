@@ -7,9 +7,9 @@
     block_request/1,
     unblock_request/1,
 
-    gateway_states_request/0,
-    start_gateway_request/1,
-    stop_gateway_request/1,
+    gateway_states/0,
+    start_gateway/1,
+    stop_gateway/1,
 
     set_customer/3,
     delete_customer/1,
@@ -95,8 +95,8 @@ unblock_request(ReqId) ->
             {error, Error}
     end.
 
--spec gateway_states_request() -> {ok, [#gateway_state_v1{}]} | {error, term()}.
-gateway_states_request() ->
+-spec gateway_states() -> {ok, [#gateway_state_v1{}]} | {error, term()}.
+gateway_states() ->
     {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
     Req = #gateway_states_req_v1{
         req_id = uuid:unparse(uuid:generate())
@@ -106,13 +106,18 @@ gateway_states_request() ->
         {ok, <<"GatewayStatesRespV1">>, RespBin} ->
             {ok, Resp} = adto:decode(#gateway_states_resp_v1{}, RespBin),
             #gateway_states_resp_v1{result = Result} = Resp,
-            Result;
+            case Result of
+                {error, Error} ->
+                    {error, Error};
+                States ->
+                    {ok, gateway_states_v1_to_plist(States)}
+            end;
         {error, Error} ->
             {error, Error}
     end.
 
--spec start_gateway_request(gateway_id()) -> ok | {error, term()}.
-start_gateway_request(GatewayId) ->
+-spec start_gateway(gateway_id()) -> ok | {error, term()}.
+start_gateway(GatewayId) ->
     {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
     Req = #start_gateway_req_v1{
         req_id = uuid:unparse(uuid:generate()),
@@ -128,8 +133,8 @@ start_gateway_request(GatewayId) ->
             {error, Error}
     end.
 
--spec stop_gateway_request(gateway_id()) -> ok | {error, term()}.
-stop_gateway_request(GatewayId) ->
+-spec stop_gateway(gateway_id()) -> ok | {error, term()}.
+stop_gateway(GatewayId) ->
     {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
     Req = #stop_gateway_req_v1{
         req_id = uuid:unparse(uuid:generate()),
@@ -212,6 +217,8 @@ set_gtw(Gtw) ->
     [ok = set_connection(GtwId, Conn) || Conn <- Gtw#gateway.connections],
     [ok = set_setting(GtwId, Setting) || Setting <- Gtw#gateway.settings].
 
+%% TODO: it's presentation part
+%% better carry out to appropriate k_http_api handler
 slices_to_plist(Slices) ->
     slices_to_plist(Slices, []).
 
@@ -245,3 +252,46 @@ direction('smsIn')  -> in.
 bind_type_to_integer(transmitter) -> 1;
 bind_type_to_integer(receiver)    -> 2;
 bind_type_to_integer(transceiver) -> 3.
+
+%% TODO: it's presentation part
+%% better carry out to appropriate k_http_api handler
+gateway_states_v1_to_plist(Ss) ->
+    [gateway_state_v1_to_plist(S) || S <- Ss].
+
+gateway_state_v1_to_plist(S) ->
+    #gateway_state_v1{
+        id = Id,
+        name = Name,
+        host = Host,
+        state = State,
+        connections = Cs
+    } = S,
+    [
+        {id, Id},
+        {name, Name},
+        {host, Host},
+        {state, State},
+        {connections, [connection_state_v1_to_plist(C) || C <- Cs]}
+    ].
+
+connection_state_v1_to_plist(C) ->
+    #connection_state_v1{
+        id = Id,
+        host = Host,
+        port = Port,
+        bind_type = BindType,
+        system_id = SystemId,
+        password = Password,
+        system_type = SystemType,
+        state = State
+    } = C,
+    [
+        {id, Id},
+        {host, Host},
+        {port, Port},
+        {bind_type,  BindType},
+        {system_id, SystemId},
+        {password, Password},
+        {system_type, SystemType},
+        {state, State}
+    ].
