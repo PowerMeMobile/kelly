@@ -237,9 +237,7 @@ summary_project(hourly) ->
         'day', <<"$_id.day">>,
         'hour', <<"$_id.hour">>,
         'messages', <<"$messages">>,
-        'revenue', <<"$revenue">>,
-         %% TODO: deprecated, remove upon removing /report/mt_aggr
-        'number', <<"$messages">>
+        'revenue', <<"$revenue">>
     }};
 summary_project(daily) ->
     {'$project', {
@@ -248,9 +246,7 @@ summary_project(daily) ->
         'month', <<"$_id.month">>,
         'day', <<"$_id.day">>,
         'messages', <<"$messages">>,
-        'revenue', <<"$revenue">>,
-         %% TODO: deprecated, remove upon removing /report/mt_aggr
-        'number', <<"$messages">>
+        'revenue', <<"$revenue">>
     }};
 summary_project(monthly) ->
     {'$project', {
@@ -258,9 +254,7 @@ summary_project(monthly) ->
         'year', <<"$_id.year">>,
         'month', <<"$_id.month">>,
         'messages', <<"$messages">>,
-        'revenue', <<"$revenue">>,
-         %% TODO: deprecated, remove upon removing /report/mt_aggr
-        'number', <<"$messages">>
+        'revenue', <<"$revenue">>
     }}.
 
 by_period_group(hourly) ->
