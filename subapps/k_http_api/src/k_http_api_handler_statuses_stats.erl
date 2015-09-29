@@ -25,8 +25,6 @@ init() ->
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = to, mandatory = true, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
-        %% customer_id is deprecated, force clients to use customer_uuid
-        #param{name = customer_id, mandatory = false, repeated = false, type = uuid},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = status, mandatory = false, repeated = false, type = atom}
     ],
@@ -39,7 +37,7 @@ read(Params) ->
     ?log_debug("Params: ~p", [Params]),
     From = ?gv(from, Params),
     To = ?gv(to, Params),
-    CustomerUuid = get_customer_uuid(Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
     Status = ?gv(status, Params),
     case build_report(From, To, CustomerUuid, Status) of
         {ok, Report} ->
@@ -67,11 +65,3 @@ build_report(From, To, CustomerUuid, undefined) ->
 
 build_report(From, To, CustomerUuid, Status) ->
     k_statistic:get_msgs_by_status_report(From, To, CustomerUuid, Status).
-
-get_customer_uuid(Params) ->
-    case ?gv(customer_uuid, Params) of
-        undefined ->
-            ?gv(customer_id, Params);
-        CustomerUuid ->
-            CustomerUuid
-    end.

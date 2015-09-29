@@ -29,8 +29,6 @@ init() ->
         #param{name = limit, mandatory = true, repeated = false, type = integer},
         #param{name = order_by, mandatory = true, repeated = false, type = binary},
         #param{name = order_direction, mandatory = true, repeated = false, type = binary},
-        %% customer_id is deprecated, force clients to use customer_uuid
-        #param{name = customer_id, mandatory = false, repeated = false, type = uuid},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = recipient, mandatory = false, repeated = false, type = binary},
         #param{name = status, mandatory = false, repeated = false, type = binary}
@@ -41,9 +39,7 @@ init() ->
     }}.
 
 read(Params) ->
-    CustomerUuid = get_customer_uuid(Params),
-    Params2 = [{customer_uuid, CustomerUuid} | Params],
-    {ok, k_statistic_mt_messages:build_msgs_report(Params2)}.
+    {ok, k_statistic_mt_messages:build_msgs_report(Params)}.
 
 create(_Params) ->
     ok.
@@ -53,15 +49,3 @@ update(_Params) ->
 
 delete(_Params) ->
     ok.
-
-%% ===================================================================
-%% Internal
-%% ===================================================================
-
-get_customer_uuid(Params) ->
-    case ?gv(customer_uuid, Params) of
-        undefined ->
-            ?gv(customer_id, Params);
-        CustomerUuid ->
-            CustomerUuid
-    end.

@@ -25,8 +25,6 @@ init() ->
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = to, mandatory = true, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
-        %% customer_id is deprecated, force clients to use customer_uuid
-        #param{name = customer_id, mandatory = false, repeated = false, type = uuid},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = group_by , mandatory = true, repeated = false, type =
             {custom, fun convert_group_by/1}}
@@ -37,9 +35,7 @@ init() ->
     }}.
 
 read(Params) ->
-    CustomerUuid = get_customer_uuid(Params),
-    Params2 = [{customer_uuid, CustomerUuid} | Params],
-    {ok, k_statistic_mt_aggr_reports:summary(Params2)}.
+    {ok, k_statistic_mt_aggr_reports:summary(Params)}.
 
 create(_Params) ->
     ok.
@@ -60,11 +56,3 @@ convert_group_by(<<"d">>) ->
     daily;
 convert_group_by(<<"h">>) ->
     hourly.
-
-get_customer_uuid(Params) ->
-    case ?gv(customer_uuid, Params) of
-        undefined ->
-            ?gv(customer_id, Params);
-        CustomerUuid ->
-            CustomerUuid
-    end.
