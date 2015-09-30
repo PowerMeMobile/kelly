@@ -174,7 +174,7 @@ binary_to_encoding(Binary) ->
             binary_to_integer(Binary)
     end.
 
--spec get_uuid_to_customer_dict([uuid()]) -> [#customer{}].
+-spec get_uuid_to_customer_dict([uuid()]) -> dict().
 get_uuid_to_customer_dict(Uuids) ->
     get_uuid_to_customer_dict(Uuids, dict:new()).
 
@@ -190,7 +190,7 @@ get_uuid_to_customer_dict([Uuid | Uuids], Dict) ->
             get_uuid_to_customer_dict(Uuids, Dict2)
     end.
 
--spec get_id_to_network_dict([uuid()]) -> [#network{}].
+-spec get_id_to_network_dict([uuid()]) -> dict().
 get_id_to_network_dict(NetIds) ->
     get_id_to_network_dict(NetIds, dict:new()).
 
@@ -206,7 +206,7 @@ get_id_to_network_dict([NetId | NetIds], Dict) ->
             get_id_to_network_dict(NetIds, Dict2)
     end.
 
--spec get_id_to_gateway_dict([uuid()]) -> [#gateway{}].
+-spec get_id_to_gateway_dict([uuid()]) -> dict().
 get_id_to_gateway_dict(GtwIds) ->
     get_id_to_gateway_dict(GtwIds, dict:new()).
 
