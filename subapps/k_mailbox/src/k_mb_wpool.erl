@@ -231,7 +231,7 @@ build_dto(Item = #k_mb_incoming{}, Sub = #k_mb_oneapi_incoming_sub{}) ->
         notify_url = NotifyURL,
         callback_data = CallbackData
     } = Sub,
-    DTO = #k1api_sms_notification_request_dto{
+    DTO = #incoming_sms_notification_v1{
         callback_data = CallbackData,
         datetime = RcvTime,
         dest_addr = DstAddr,
@@ -253,7 +253,7 @@ build_dto(Item = #k_mb_oneapi_receipt{}, Sub = #k_mb_oneapi_receipt_sub{}) ->
         callback_data = CallbackData,
         notify_url = NotifyURL
     } = Sub,
-    DTO = #k1api_sms_delivery_receipt_notification_dto{
+    DTO = #sms_receipt_notification_v1{
         id = ItemID,
         dest_addr = DstAddr,
         %% it's binary here, see #k_mb_funnel_receipt{} case
