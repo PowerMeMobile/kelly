@@ -48,7 +48,10 @@ build_msgs_report(Params) ->
          '$orderby', {OrderBy, OrderDirection}
         },
     {ok, Docs} = shifted_storage:find(mt_messages, Selector, {}, Skip, Limit),
-    [k_statistic_utils:doc_to_mt_msg(Doc) || {_, Doc} <- Docs].
+    Msgs = [k_storage_utils:doc_to_mt_msg_info(Doc) || {_, Doc} <- Docs],
+    Uuids = [M#msg_info.customer_uuid || M <- Msgs],
+    Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
+    [k_statistic_utils:build_mt_msg_resp(M, Dict) || M <- Msgs].
 
 -spec build_msg_report(msg_id()) -> [[{atom(), term()}]].
 build_msg_report(MsgId) ->
@@ -56,7 +59,10 @@ build_msg_report(MsgId) ->
         '_id', k_storage_utils:binary_to_objectid(MsgId)
     },
     {ok, Doc} = shifted_storage:find_one(mt_messages, Selector),
-    [k_statistic_utils:doc_to_mt_msg(Doc)].
+    Msgs = [k_storage_utils:doc_to_mt_msg_info(D) || D <- [Doc]],
+    Uuids = [M#msg_info.customer_uuid || M <- Msgs],
+    Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
+    [k_statistic_utils:build_mt_msg_resp(M, Dict) || M <- Msgs].
 
 %% ===================================================================
 %% Internals
