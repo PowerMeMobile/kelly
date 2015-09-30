@@ -42,7 +42,7 @@ process(Req = #unsub_sms_receipts_req_v1{}) ->
         req_id = ReqId,
         customer_uuid = CustomerUuid,
         user_id = UserId,
-        subscription_id = SubId
+        sub_id = SubId
     } = Req,
     ok = k_mailbox:unregister_subscription(SubId, CustomerUuid, UserId),
     Resp = #unsub_sms_receipts_resp_v1{
@@ -77,7 +77,7 @@ process(Req = #sub_incoming_sms_req_v1{}) ->
     k_mailbox:register_subscription(Sub),
     Resp = #sub_incoming_sms_resp_v1{
         req_id = Id,
-        subscription_id = Id
+        sub_id = Id
     },
     {ok, Resp};
 process(Req = #unsub_incoming_sms_req_v1{}) ->
@@ -85,7 +85,7 @@ process(Req = #unsub_incoming_sms_req_v1{}) ->
         req_id = ReqId,
         customer_uuid = CustomerUuid,
         user_id = UserId,
-        subscription_id = SubId
+        sub_id = SubId
     } = Req,
     ok = k_mailbox:unregister_subscription(SubId, CustomerUuid, UserId),
     Resp = #unsub_incoming_sms_resp_v1{
