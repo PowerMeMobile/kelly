@@ -60,14 +60,20 @@ delete(_Params) ->
 %% ===================================================================
 
 build_report(From, To, customers, _Params) ->
-    k_statistic:get_msg_stats_report(customers, From, To);
+    From2 = ac_datetime:datetime_to_timestamp(From),
+    To2 = ac_datetime:datetime_to_timestamp(To),
+    k_statistic_msg_stats_report:get_report(customers, From2, To2);
 
 build_report(From, To, networks, _Params) ->
-    k_statistic:get_msg_stats_report(networks, From, To);
+    From2 = ac_datetime:datetime_to_timestamp(From),
+    To2 = ac_datetime:datetime_to_timestamp(To),
+    k_statistic_msg_stats_report:get_report(networks, From2, To2);
 
 build_report(From, To, details, Params) ->
+    From2 = ac_datetime:datetime_to_unixepoch(From),
+    To2 = ac_datetime:datetime_to_unixepoch(To),
     SliceLengthSecs = convert_slice_length(?gv(slice_length, Params)),
-    k_statistic:get_detailed_msg_stats_report(From, To, SliceLengthSecs).
+    k_statistic_detailed_msg_stats_report:get_report(From2, To2, SliceLengthSecs).
 
 convert_slice_length(undefined) ->
     60;

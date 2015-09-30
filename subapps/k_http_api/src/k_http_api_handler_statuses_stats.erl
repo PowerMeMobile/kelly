@@ -61,7 +61,11 @@ delete(_Params) ->
 %% ===================================================================
 
 build_report(From, To, CustomerUuid, undefined) ->
-    k_statistic:get_aggregated_statuses_report(From, To, CustomerUuid);
+    From2 = ac_datetime:datetime_to_timestamp(From),
+    To2 = ac_datetime:datetime_to_timestamp(To),
+    k_statistic_status_reports:get_aggregated_statuses_report(From2, To2, CustomerUuid);
 
 build_report(From, To, CustomerUuid, Status) ->
-    k_statistic:get_msgs_by_status_report(From, To, CustomerUuid, Status).
+    From2 = ac_datetime:datetime_to_timestamp(From),
+    To2 = ac_datetime:datetime_to_timestamp(To),
+    k_statistic_status_reports:get_msgs_by_status_report(From2, To2, CustomerUuid, Status).
