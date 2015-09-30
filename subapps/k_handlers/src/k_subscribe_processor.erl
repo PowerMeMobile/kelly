@@ -17,7 +17,7 @@ process(Req = #sub_sms_receipts_req_v1{}) ->
         customer_uuid = CustomerUuid,
         user_id = UserId,
         url = NotifyURL,
-        dest_addr = SrcAddr, %% TODO: HERE MUST BE source_addr
+        src_addr = SrcAddr,
         callback_data = CallbackData
     } = Req,
     %% TODO: Ensure correct SrcAddr for Customer:User
@@ -54,7 +54,7 @@ process(Req = #sub_incoming_sms_req_v1{}) ->
         req_id = Id,
         customer_uuid = CustomerUuid,
         user_id = UserId,
-        dest_addr = DstAddr,
+        dst_addr = DstAddr,
         notify_url = NotifyURL,
         criteria = Criteria,
         correlator = _Correlator,

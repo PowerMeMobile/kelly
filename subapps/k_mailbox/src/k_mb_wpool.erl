@@ -234,7 +234,7 @@ build_dto(Item = #k_mb_incoming{}, Sub = #k_mb_oneapi_incoming_sub{}) ->
     DTO = #incoming_sms_notification_v1{
         callback_data = CallbackData,
         datetime = RcvTime,
-        dest_addr = DstAddr,
+        dst_addr = DstAddr,
         message_id = ItemID,
         message = Body,
         sender_addr = SrcAddr,
@@ -255,7 +255,7 @@ build_dto(Item = #k_mb_oneapi_receipt{}, Sub = #k_mb_oneapi_receipt_sub{}) ->
     } = Sub,
     DTO = #sms_receipt_notification_v1{
         id = ItemID,
-        dest_addr = DstAddr,
+        dst_addr = DstAddr,
         %% it's binary here, see #k_mb_funnel_receipt{} case
         status = atom_to_binary(Status, utf8),
         callback_data = CallbackData,
