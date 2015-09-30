@@ -14,7 +14,7 @@
 process(Req = #sub_sms_receipts_req_v1{}) ->
     #sub_sms_receipts_req_v1{
         req_id = ReqId,
-        customer_id = CustomerUuid,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         url = NotifyURL,
         dest_addr = SrcAddr, %% TODO: HERE MUST BE source_addr
@@ -40,7 +40,7 @@ process(Req = #sub_sms_receipts_req_v1{}) ->
 process(Req = #unsub_sms_receipts_req_v1{}) ->
     #unsub_sms_receipts_req_v1{
         req_id = ReqId,
-        customer_id = CustomerUuid,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         subscription_id = SubId
     } = Req,
@@ -52,7 +52,7 @@ process(Req = #unsub_sms_receipts_req_v1{}) ->
 process(Req = #sub_incoming_sms_req_v1{}) ->
     #sub_incoming_sms_req_v1{
         req_id = Id,
-        customer_id = CustomerUuid,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         dest_addr = DstAddr,
         notify_url = NotifyURL,
@@ -83,7 +83,7 @@ process(Req = #sub_incoming_sms_req_v1{}) ->
 process(Req = #unsub_incoming_sms_req_v1{}) ->
     #unsub_incoming_sms_req_v1{
         req_id = ReqId,
-        customer_id = CustomerUuid,
+        customer_uuid = CustomerUuid,
         user_id = UserId,
         subscription_id = SubId
     } = Req,
