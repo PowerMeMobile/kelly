@@ -27,8 +27,7 @@ get_all(Params) ->
     case k_storage_mailbox:get_incomings(
             From, To, CustomerUuid, UserId, State, Skip, Limit) of
         {ok, Incomings} ->
-            Uuids = [I#k_mb_incoming.customer_uuid || I <- Incomings,
-                        I#k_mb_incoming.customer_uuid =/= undefined],
+            Uuids = [I#k_mb_incoming.customer_uuid || I <- Incomings],
             Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
             Resp = [build_resp(I, Dict) || I <- Incomings],
             {ok, Resp};
@@ -43,12 +42,11 @@ get_all(Params) ->
 build_resp(I, Dict) ->
     CustomerUuid = I#k_mb_incoming.customer_uuid,
     CustomerId =
-        case CustomerUuid of
-            undefined ->
-                undefined;
-            _ ->
-                Customer = dict:fetch(CustomerUuid, Dict),
-                Customer#customer.customer_id
+        case dict:find(CustomerUuid, Dict) of
+            {ok, C} ->
+                C#customer.customer_id;
+            error ->
+                undefined
         end,
     RcvTime = ac_datetime:timestamp_to_datetime(I#k_mb_incoming.rcv_time),
     [

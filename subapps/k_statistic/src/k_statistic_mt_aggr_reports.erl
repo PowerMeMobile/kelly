@@ -48,8 +48,14 @@ by_country(Params) ->
         fun(R, Dict) ->
             NetId = proplists:get_value(network_id, R),
             R2 = proplists:delete(network_id, R),
-            Net = dict:fetch(NetId, Dict),
-            [{country, Net#network.country} | R2]
+            Country =
+                case dict:find(NetId, Dict) of
+                    {ok, N} ->
+                        N#network.country;
+                    error ->
+                        undefined
+                end,
+            [{country, Country} | R2]
         end,
     group_by_date_and_country(modify(AddCountryAndRmNetId, ByNetResps, NetDict)).
 
@@ -85,9 +91,15 @@ by_country_and_network(Params) ->
     AddCountryAndName =
         fun(R, Dict) ->
             NetId = proplists:get_value(network_id, R),
-            Net = dict:fetch(NetId, Dict),
-            [{country, Net#network.country},
-             {network_name, Net#network.name} | R]
+            {Country, NetName} =
+                case dict:find(NetId, Dict) of
+                    {ok, N} ->
+                        {N#network.country, N#network.name};
+                    error ->
+                        {undefined, undefined}
+                end,
+            [{country, Country},
+             {network_name, NetName} | R]
         end,
     modify(AddCountryAndName, ByNetResps, NetDict).
 
@@ -123,8 +135,14 @@ by_gateway(Params) ->
     AddName =
         fun(R, Dict) ->
             Id = proplists:get_value(gateway_id, R),
-            Gtw = dict:fetch(Id, Dict),
-            [{gateway_name, Gtw#gateway.name} | R]
+            GtwName =
+                case dict:find(Id, Dict) of
+                    {ok, G} ->
+                        G#gateway.name;
+                    error ->
+                        undefined
+                end,
+            [{gateway_name, GtwName} | R]
         end,
     modify(AddName, Resps, GtwDict).
 

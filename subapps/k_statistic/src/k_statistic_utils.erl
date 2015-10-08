@@ -26,9 +26,13 @@ get_timestamp_ranges(From, To, Step) when From < To ->
 -spec build_mt_msg_resp(#msg_info{}, dict()) -> plist().
 build_mt_msg_resp(MsgInfo, Dict) ->
     CustomerUuid = MsgInfo#msg_info.customer_uuid,
-    Customer = dict:fetch(CustomerUuid, Dict),
-    _CustomerId = Customer#customer.customer_id,
-    CustomerName = Customer#customer.name,
+    {_CustomerId, CustomerName} =
+        case dict:find(CustomerUuid, Dict) of
+            {ok, C} ->
+                {C#customer.customer_id, C#customer.name};
+            error ->
+                {undefined, undefined}
+        end,
     Type = get_type(MsgInfo#msg_info.type),
     PartInfo = get_part_info(MsgInfo#msg_info.type),
     ReqTime  = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
@@ -70,14 +74,19 @@ build_mt_msg_resp(MsgInfo, Dict) ->
 build_mo_msg_resp(MsgInfo, Dict) ->
     MsgId = MsgInfo#msg_info.msg_id,
     CustomerUuid = MsgInfo#msg_info.customer_uuid,
-    Customer = dict:fetch(CustomerUuid, Dict),
-    _CustomerId = Customer#customer.customer_id,
-    CustomerName = Customer#customer.name,
+    {_CustomerId, CustomerName} =
+        case dict:find(CustomerUuid, Dict) of
+            {ok, C} ->
+                {C#customer.customer_id, C#customer.name};
+            error ->
+                {undefined, undefined}
+        end,
     Datetime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
     ISO8601 = ac_datetime:datetime_to_iso8601(Datetime),
     [
         {msg_id, MsgId},
         {customer_uuid, CustomerUuid},
+        {user_id, MsgInfo#msg_info.user_id},
         %% customer_id holding CustomerUuid is deprecated,
         %% force clients to use customer_uuid
         %% replace with CustomerId when done

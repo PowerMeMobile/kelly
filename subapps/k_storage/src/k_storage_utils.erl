@@ -185,9 +185,13 @@ get_uuid_to_customer_dict([Uuid | Uuids], Dict) ->
         true ->
             get_uuid_to_customer_dict(Uuids, Dict);
         false ->
-            {ok, C} = k_storage_customers:get_customer_by_uuid(Uuid),
-            Dict2 = dict:store(Uuid, C, Dict),
-            get_uuid_to_customer_dict(Uuids, Dict2)
+            case k_storage_customers:get_customer_by_uuid(Uuid) of
+                {ok, C} ->
+                    Dict2 = dict:store(Uuid, C, Dict),
+                    get_uuid_to_customer_dict(Uuids, Dict2);
+                {error, no_entry} ->
+                    get_uuid_to_customer_dict(Uuids, Dict)
+            end
     end.
 
 -spec get_id_to_network_dict([uuid()]) -> dict().
@@ -201,9 +205,13 @@ get_id_to_network_dict([NetId | NetIds], Dict) ->
         true ->
             get_id_to_network_dict(NetIds, Dict);
         false ->
-            {ok, Net} = k_storage_networks:get_network(NetId),
-            Dict2 = dict:store(NetId, Net, Dict),
-            get_id_to_network_dict(NetIds, Dict2)
+            case k_storage_networks:get_network(NetId) of
+                {ok, N} ->
+                    Dict2 = dict:store(NetId, N, Dict),
+                    get_id_to_network_dict(NetIds, Dict2);
+                {error, no_entry} ->
+                    get_id_to_network_dict(NetIds, Dict)
+            end
     end.
 
 -spec get_id_to_gateway_dict([uuid()]) -> dict().
@@ -217,9 +225,13 @@ get_id_to_gateway_dict([GtwId | GtwIds], Dict) ->
         true ->
             get_id_to_gateway_dict(GtwIds, Dict);
         false ->
-            {ok, Gtw} = k_storage_gateways:get_gateway(GtwId),
-            Dict2 = dict:store(GtwId, Gtw, Dict),
-            get_id_to_gateway_dict(GtwIds, Dict2)
+            case k_storage_gateways:get_gateway(GtwId) of
+                {ok, G} ->
+                    Dict2 = dict:store(GtwId, G, Dict),
+                    get_id_to_gateway_dict(GtwIds, Dict2);
+                {error, no_entry} ->
+                    get_id_to_gateway_dict(GtwIds, Dict)
+            end
     end.
 
 %% ===================================================================

@@ -183,9 +183,13 @@ merge([{Key, Value}|Pairs], Dict) ->
 
 build_mt_batch_resp(Batch, Dict) ->
     CustomerUuid = Batch#batch_info.customer_uuid,
-    Customer = dict:fetch(CustomerUuid, Dict),
-    CustomerId = Customer#customer.customer_id,
-    CustomerName = Customer#customer.name,
+    {CustomerId, CustomerName} =
+        case dict:find(CustomerUuid, Dict) of
+            {ok, C} ->
+                {C#customer.customer_id, C#customer.name};
+            error ->
+                {undefined, undefined}
+        end,
     ReqTime = ac_datetime:timestamp_to_datetime(Batch#batch_info.req_time),
     ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
     [
