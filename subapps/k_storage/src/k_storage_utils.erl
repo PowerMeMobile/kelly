@@ -83,8 +83,6 @@ doc_to_mt_msg_info(Doc) ->
             {n, <<"part">>, r, PartRef, s, PartSeq, t, PartsTotal} ->
                 {part, #part_info{ref = PartRef, seq = PartSeq, total = PartsTotal}}
         end,
-    SrcAddrDoc = bsondoc:at(sa, Doc),
-    DstAddrDoc = bsondoc:at(da, Doc),
     #msg_info{
         msg_id = objectid_to_binary(ObjId),
         client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
@@ -95,8 +93,8 @@ doc_to_mt_msg_info(Doc) ->
         gateway_id = bsondoc:at(gi, Doc),
         out_msg_id = bsondoc:at(omi, Doc),
         type = Type,
-        src_addr = doc_to_addr(SrcAddrDoc),
-        dst_addr = doc_to_addr(DstAddrDoc),
+        src_addr = doc_to_addr(bsondoc:at(sa, Doc)),
+        dst_addr = doc_to_addr(bsondoc:at(da, Doc)),
         encoding = binary_to_encoding(bsondoc:at(e, Doc)),
         body = bsondoc:at(b, Doc),
         reg_dlr = bsondoc:at(rd, Doc),
@@ -112,7 +110,6 @@ doc_to_mt_msg_info(Doc) ->
 
 -spec doc_to_mt_batch_info(bson:document()) -> #batch_info{}.
 doc_to_mt_batch_info(Doc) ->
-    SrcAddrDoc = bsondoc:at(sa, Doc),
     #batch_info{
         req_id = bsondoc:at('_id', Doc),
         customer_uuid = bsondoc:at(ci, Doc),
@@ -120,7 +117,7 @@ doc_to_mt_batch_info(Doc) ->
         client_type = bsondoc:binary_to_atom(bsondoc:at(ct, Doc)),
         def_time = bsondoc:at(dft, Doc),
         req_type = bsondoc:binary_to_atom(bsondoc:at(rt, Doc)),
-        src_addr = doc_to_addr(SrcAddrDoc),
+        src_addr = doc_to_addr(bsondoc:at(sa, Doc)),
         encoding = binary_to_encoding(bsondoc:at(e, Doc)),
         body = bsondoc:at(b, Doc),
         reg_dlr = bsondoc:at(rd, Doc),
@@ -135,20 +132,18 @@ doc_to_mt_batch_info(Doc) ->
 
 -spec doc_to_mo_msg_info(bson:document()) -> #msg_info{}.
 doc_to_mo_msg_info(Doc) ->
-    ObjId = bsondoc:at('_id', Doc),
-    SrcAddrDoc = bsondoc:at(sa, Doc),
-    DstAddrDoc = bsondoc:at(da, Doc),
     #msg_info{
-        msg_id = objectid_to_binary(ObjId),
+        msg_id = bsondoc:at('_id', Doc),
         customer_uuid = bsondoc:at(ci, Doc),
         in_msg_id = bsondoc:at(imi, Doc),
         gateway_id = bsondoc:at(gi, Doc),
         type = bsondoc:binary_to_atom(bsondoc:at(t, Doc)),
         encoding = binary_to_encoding(bsondoc:at(e, Doc)),
         body = bsondoc:at(b, Doc),
-        src_addr = doc_to_addr(SrcAddrDoc),
-        dst_addr = doc_to_addr(DstAddrDoc),
+        src_addr = doc_to_addr(bsondoc:at(sa, Doc)),
+        dst_addr = doc_to_addr(bsondoc:at(da, Doc)),
         reg_dlr = bsondoc:at(rd, Doc),
+        status = bsondoc:binary_to_atom(bsondoc:at(s, Doc)),
         req_time = bsondoc:at(rqt, Doc)
     }.
 
