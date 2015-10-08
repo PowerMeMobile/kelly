@@ -81,8 +81,9 @@ build_mo_msg_resp(MsgInfo, Dict) ->
             error ->
                 {undefined, undefined}
         end,
-    Datetime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
-    ISO8601 = ac_datetime:datetime_to_iso8601(Datetime),
+    ReqTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
+    ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
+    StatusISO = ReqISO,
     [
         {msg_id, MsgId},
         {customer_uuid, CustomerUuid},
@@ -92,16 +93,25 @@ build_mo_msg_resp(MsgInfo, Dict) ->
         %% replace with CustomerId when done
         {customer_id, CustomerUuid},
         {customer_name, CustomerName},
-        {in_msg_id, MsgInfo#msg_info.in_msg_id},
         {gateway_id, MsgInfo#msg_info.gateway_id},
-        {out_msg_id, MsgInfo#msg_info.out_msg_id},
         {type, MsgInfo#msg_info.type},
         {encoding, MsgInfo#msg_info.encoding},
         {body, MsgInfo#msg_info.body},
         {src_addr, k_storage_utils:addr_to_proplist(MsgInfo#msg_info.src_addr)},
         {dst_addr, k_storage_utils:addr_to_proplist(MsgInfo#msg_info.dst_addr)},
         {reg_dlr, MsgInfo#msg_info.reg_dlr},
-        {req_time, ISO8601}
+        {req_time, ReqISO},
+        {status, MsgInfo#msg_info.status},
+
+        {client_type, undefined},
+        {in_msg_id, undefined},
+        {out_msg_id, undefined},
+        {part_info, undefined},
+        {esm_class, 0},
+        {validity_period, undefined},
+        {status_update_time, StatusISO},
+        {network_id, undefined},
+        {revenue, 0.0}
     ].
 
 %% ===================================================================

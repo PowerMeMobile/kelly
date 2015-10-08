@@ -135,7 +135,7 @@ doc_to_mo_msg_info(Doc) ->
     #msg_info{
         msg_id = bsondoc:at('_id', Doc),
         customer_uuid = bsondoc:at(ci, Doc),
-        in_msg_id = bsondoc:at(imi, Doc),
+        user_id = bsondoc:at(ui, Doc),
         gateway_id = bsondoc:at(gi, Doc),
         type = bsondoc:binary_to_atom(bsondoc:at(t, Doc)),
         encoding = binary_to_encoding(bsondoc:at(e, Doc)),

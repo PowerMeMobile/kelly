@@ -39,7 +39,14 @@ init() ->
     }}.
 
 read(Params) ->
-    {ok, k_statistic_mt_messages:build_msgs_report(Params)}.
+    Report =
+        case ?gv(status, Params) of
+            <<"received">> ->
+                k_statistic_mo_messages:build_msgs_report(Params);
+            _ ->
+                k_statistic_mt_messages:build_msgs_report(Params)
+        end,
+    {ok, Report}.
 
 create(_Params) ->
     ok.

@@ -30,7 +30,15 @@ init() ->
 
 read(Params) ->
     MsgId = ?gv(msg_id, Params),
-    {ok, k_statistic_mt_messages:build_msg_report(MsgId)}.
+    Report =
+        try k_storage_utils:binary_to_objectid(MsgId) of
+            _ ->
+                k_statistic_mt_messages:build_msg_report(MsgId)
+        catch
+            _:_ ->
+                k_statistic_mo_messages:build_msg_report(MsgId)
+        end,
+    {ok, Report}.
 
 create(_Params) ->
     ok.
