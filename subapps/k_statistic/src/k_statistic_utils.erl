@@ -54,8 +54,8 @@ build_mt_msg_resp(MsgInfo, Dict) ->
         {part_info, PartInfo},
         {encoding, MsgInfo#msg_info.encoding},
         {body, MsgInfo#msg_info.body},
-        {src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
-        {dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
+        {src_addr, k_storage_utils:addr_to_proplist(MsgInfo#msg_info.src_addr)},
+        {dst_addr, k_storage_utils:addr_to_proplist(MsgInfo#msg_info.dst_addr)},
         {reg_dlr, MsgInfo#msg_info.reg_dlr},
         {esm_class, MsgInfo#msg_info.esm_class},
         {validity_period, MsgInfo#msg_info.val_period},
@@ -89,8 +89,8 @@ build_mo_msg_resp(MsgInfo, Dict) ->
         {type, MsgInfo#msg_info.type},
         {encoding, MsgInfo#msg_info.encoding},
         {body, MsgInfo#msg_info.body},
-        {src_addr, addr_to_proplist(MsgInfo#msg_info.src_addr)},
-        {dst_addr, addr_to_proplist(MsgInfo#msg_info.dst_addr)},
+        {src_addr, k_storage_utils:addr_to_proplist(MsgInfo#msg_info.src_addr)},
+        {dst_addr, k_storage_utils:addr_to_proplist(MsgInfo#msg_info.dst_addr)},
         {reg_dlr, MsgInfo#msg_info.reg_dlr},
         {req_time, ISO8601}
     ].
@@ -132,20 +132,6 @@ align_time_range(From, To, Step) ->
                     Rem -> To - Rem + Step
                 end,
     {FromFloor, ToCeiling}.
-
-addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = undefined}) ->
-    [
-        {addr, Addr},
-        {ton, Ton},
-        {npi, Npi}
-    ];
-addr_to_proplist(#addr{addr = Addr, ton = Ton, npi = Npi, ref_num = RefNum}) ->
-    [
-        {addr, Addr},
-        {ton, Ton},
-        {npi, Npi},
-        {ref_num, RefNum}
-    ].
 
 get_type(regular) ->
     regular;
