@@ -93,6 +93,40 @@ process(<<"AuthReqV2">>, ReqBin) ->
             ?log_error("Auth request decode error: ~p", [Error]),
             noreply
     end;
+process(<<"AuthReqV3">>, ReqBin) ->
+    RespCT = <<"AuthRespV3">>,
+    case adto:decode(#auth_req_v3{}, ReqBin) of
+        {ok, AuthReq} ->
+            ?log_debug("Got auth request: ~p", [AuthReq]),
+            AuthData  = AuthReq#auth_req_v3.auth_data,
+            Interface = AuthReq#auth_req_v3.interface,
+            ReqId     = AuthReq#auth_req_v3.req_id,
+            case authenticate_by(AuthData, Interface) of
+                {allow, Customer = #customer{}, User = #user{}} ->
+                    NetMapId = Customer#customer.network_map_id,
+                    DefProvId = Customer#customer.default_provider_id,
+                    {ok, Networks, Providers} =
+                        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
+                    Features = get_features(User#user.id, Customer),
+                    {ok, Response} = build_auth_response(RespCT,
+                        ReqId, Customer, User#user.id, Networks, Providers, Features),
+                    ?log_debug("Auth allowed", []),
+                    encode_response(RespCT, Response);
+                {deny, Reason} ->
+                    {ok, Response} = build_error_response(RespCT,
+                        ReqId, {deny, Reason}),
+                    ?log_notice("Auth denied: ~p", [Reason]),
+                    encode_response(RespCT, Response);
+                {error, Reason} ->
+                    {ok, Response} = build_error_response(RespCT,
+                        ReqId, {error, Reason}),
+                    ?log_error("Auth error: ~p", [Reason]),
+                    encode_response(RespCT, Response)
+            end;
+        {error, Error} ->
+            ?log_error("Auth request decode error: ~p", [Error]),
+            noreply
+    end;
 process(ContentType, ReqBin) ->
     ?log_error("Got unknown auth request: ~p ~p", [ContentType, ReqBin]),
     noreply.
@@ -376,6 +410,47 @@ build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Provide
         result = CustomerDTO
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
+    {ok, ResponseDTO};
+build_auth_response(<<"AuthRespV3">>, ReqId, Customer, UserId, Networks, Providers, Features) ->
+    #customer{
+        customer_uuid = CustomerUuid,
+        customer_id = CustomerId,
+        originators = Originators,
+        receipts_allowed = RA,
+        no_retry = NR,
+        default_validity = _DV,
+        max_validity = MV,
+        pay_type = PayType,
+        credit = Credit,
+        credit_limit = CreditLimit,
+        priority = Priority,
+        rps = RPS
+    } = Customer,
+
+    CustomerDTO = #auth_customer_v3{
+        customer_uuid = CustomerUuid,
+        customer_id = CustomerId,
+        user_id = UserId,
+        pay_type = PayType,
+        credits = Credit + CreditLimit,
+        allowed_sources = allowed_sources(Originators),
+        default_source = default_source(Originators),
+        networks = [k_handlers_utils:network_to_v1(N) || N <- Networks],
+        providers = [k_handlers_utils:provider_to_v1(P) || P <- Providers],
+        receipts_allowed = RA,
+        no_retry = NR,
+        default_validity = MV,
+        max_validity = MV,
+        features = [feature_to_v1(F) || F <- Features],
+        priority = Priority,
+        rps = RPS
+    },
+
+    ResponseDTO = #auth_resp_v3{
+        req_id = ReqId,
+        result = CustomerDTO
+    },
+    ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO}.
 
 % deprecated since funnel 2.11.0
@@ -390,6 +465,14 @@ build_error_response(<<"AuthRespV2">>, ReqId, {_, Reason}) ->
     Response = #auth_resp_v2{
         req_id = ReqId,
         result = #auth_error_v2{code = Reason}
+    },
+
+    ?log_debug("Built auth response: ~p", [Response]),
+    {ok, Response};
+build_error_response(<<"AuthRespV3">>, ReqId, {_, Reason}) ->
+    Response = #auth_resp_v3{
+        req_id = ReqId,
+        result = #auth_error_v3{code = Reason}
     },
 
     ?log_debug("Built auth response: ~p", [Response]),
