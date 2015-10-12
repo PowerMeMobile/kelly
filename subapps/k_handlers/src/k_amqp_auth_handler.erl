@@ -22,6 +22,7 @@ start_link() ->
 %% ===================================================================
 
 -spec process(binary(), binary()) -> {binary(), binary()} | {ok, []}.
+%% deprecated since funnel 2.11.0
 process(<<"BindRequest">>, ReqBin) ->
     RespCT = <<"BindResponse">>,
     case adto:decode(#funnel_auth_request_dto{}, ReqBin) of
@@ -33,41 +34,6 @@ process(<<"BindRequest">>, ReqBin) ->
             ConnType   = AuthReq#funnel_auth_request_dto.type,
             ReqId      = AuthReq#funnel_auth_request_dto.connection_id,
             case authenticate(CustomerId, UserId, Password, ConnType) of
-                {allow, Customer = #customer{}, #user{}} ->
-                    NetMapId = Customer#customer.network_map_id,
-                    DefProvId = Customer#customer.default_provider_id,
-                    {ok, Networks, Providers} = get_networks_and_providers(NetMapId, DefProvId),
-                    Features = get_features(UserId, Customer),
-                    {ok, Response} = build_auth_response(RespCT,
-                        ReqId, Customer, UserId, Networks, Providers, Features),
-                    ?log_debug("Auth allowed", []),
-                    encode_response(RespCT, Response);
-                {deny, Reason} ->
-                    {ok, Response} = build_error_response(RespCT,
-                        ReqId, {deny, Reason}),
-                    ?log_notice("Auth denied: ~p", [Reason]),
-                    encode_response(RespCT, Response);
-                {error, Reason} ->
-                    {ok, Response} = build_error_response(RespCT,
-                        ReqId, {error, Reason}),
-                    ?log_error("Auth error: ~p", [Reason]),
-                    encode_response(RespCT, Response)
-            end;
-        {error, Error} ->
-            ?log_error("Auth request decode error: ~p", [Error]),
-            noreply
-    end;
-process(<<"AuthReqV1">>, ReqBin) ->
-    RespCT = <<"AuthRespV1">>,
-    case adto:decode(#auth_req_v1{}, ReqBin) of
-        {ok, AuthReq} ->
-            ?log_debug("Got auth request: ~p", [AuthReq]),
-            CustomerId = AuthReq#auth_req_v1.customer_id,
-            UserId     = AuthReq#auth_req_v1.user_id,
-            Password   = AuthReq#auth_req_v1.password,
-            Interface  = AuthReq#auth_req_v1.interface,
-            ReqId      = AuthReq#auth_req_v1.req_id,
-            case authenticate(CustomerId, UserId, Password, Interface) of
                 {allow, Customer = #customer{}, #user{}} ->
                     NetMapId = Customer#customer.network_map_id,
                     DefProvId = Customer#customer.default_provider_id,
@@ -391,6 +357,7 @@ build_networks_and_providers(NetMapId, DefProvId) ->
             error(storage_error)
     end.
 
+% deprecated since funnel 2.11.0
 build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Providers, Features) ->
     #customer{
         customer_uuid = CustomerUuid,
@@ -426,45 +393,6 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Prov
     ResponseDTO = #funnel_auth_response_dto{
         connection_id = ReqId,
         result = {customer, CustomerDTO}
-    },
-    ?log_debug("Built auth response: ~p", [ResponseDTO]),
-    {ok, ResponseDTO};
-build_auth_response(<<"AuthRespV1">>, ReqId, Customer, UserId, Networks, Providers, Features) ->
-    #customer{
-        customer_uuid = CustomerUuid,
-        customer_id = CustomerId,
-        originators = Originators,
-        default_provider_id = DP,
-        receipts_allowed = RA,
-        no_retry = NR,
-        default_validity = _DV,
-        max_validity = MV,
-        pay_type = PayType,
-        credit = Credit,
-        credit_limit = CreditLimit
-    } = Customer,
-
-    CustomerDTO = #auth_customer_v1{
-        customer_uuid = CustomerUuid,
-        customer_id = CustomerId,
-        user_id = UserId,
-        pay_type = PayType,
-        credit = Credit + CreditLimit,
-        allowed_sources = allowed_sources(Originators),
-        default_source = default_source(Originators),
-        networks = [network_to_v1(N) || N <- Networks],
-        providers = [provider_to_v1(P) || P <- Providers],
-        default_provider_id = DP,
-        receipts_allowed = RA,
-        no_retry = NR,
-        default_validity = MV,
-        max_validity = MV,
-        features = [feature_to_v1(F) || F <- Features]
-    },
-
-    ResponseDTO = #auth_resp_v1{
-        req_id = ReqId,
-        result = CustomerDTO
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO};
@@ -512,6 +440,7 @@ build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Provide
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO}.
 
+% deprecated since funnel 2.11.0
 build_error_response(<<"BindResponse">>, ReqId, {_, Reason}) ->
     ResponseDTO = #funnel_auth_response_dto{
         connection_id = ReqId,
@@ -519,28 +448,6 @@ build_error_response(<<"BindResponse">>, ReqId, {_, Reason}) ->
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO};
-build_error_response(<<"AuthRespV1">>, ReqId, {deny, Reason}) ->
-    Response = #auth_resp_v1{
-        req_id = ReqId,
-        result = #auth_error_v1{
-            code = Reason,
-            message = "Request denied: " ++ atom_to_list(Reason)
-        }
-    },
-
-    ?log_debug("Built auth response: ~p", [Response]),
-    {ok, Response};
-build_error_response(<<"AuthRespV1">>, ReqId, {error, Reason}) ->
-    Response = #auth_resp_v1{
-        req_id = ReqId,
-        result = #auth_error_v1{
-            code = Reason,
-            message = "Request error: " ++ atom_to_list(Reason)
-        }
-    },
-
-    ?log_debug("Built auth response: ~p", [Response]),
-    {ok, Response};
 build_error_response(<<"AuthRespV2">>, ReqId, {_, Reason}) ->
     Response = #auth_resp_v2{
         req_id = ReqId,
