@@ -34,7 +34,9 @@ process(<<"BindRequest">>, ReqBin) ->
             ReqId      = AuthReq#funnel_auth_request_dto.connection_id,
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}, #user{}} ->
-                    {ok, Networks, Providers} = get_networks_and_providers(Customer),
+                    NetMapId = Customer#customer.network_map_id,
+                    DefProvId = Customer#customer.default_provider_id,
+                    {ok, Networks, Providers} = get_networks_and_providers(NetMapId, DefProvId),
                     Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
@@ -67,7 +69,9 @@ process(<<"AuthReqV1">>, ReqBin) ->
             ReqId      = AuthReq#auth_req_v1.req_id,
             case authenticate(CustomerId, UserId, Password, Interface) of
                 {allow, Customer = #customer{}, #user{}} ->
-                    {ok, Networks, Providers} = get_networks_and_providers(Customer),
+                    NetMapId = Customer#customer.network_map_id,
+                    DefProvId = Customer#customer.default_provider_id,
+                    {ok, Networks, Providers} = get_networks_and_providers(NetMapId, DefProvId),
                     Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
@@ -98,7 +102,9 @@ process(<<"AuthReqV2">>, ReqBin) ->
             ReqId     = AuthReq#auth_req_v2.req_id,
             case authenticate_by(AuthData, Interface) of
                 {allow, Customer = #customer{}, User = #user{}} ->
-                    {ok, Networks, Providers} = get_networks_and_providers(Customer),
+                    NetMapId = Customer#customer.network_map_id,
+                    DefProvId = Customer#customer.default_provider_id,
+                    {ok, Networks, Providers} = get_networks_and_providers(NetMapId, DefProvId),
                     Features = get_features(User#user.id, Customer),
                     {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, User#user.id, Networks, Providers, Features),
@@ -321,21 +327,18 @@ check_credit_limit(Customer) ->
             allow
     end.
 
-get_networks_and_providers(Customer) ->
-    CustomerUuid = Customer#customer.customer_uuid,
-    case k_handlers_auth_cache:get(CustomerUuid) of
+get_networks_and_providers(NetMapId, DefProvId) ->
+    Key = {NetMapId, DefProvId},
+    case k_handlers_auth_cache:get(Key) of
         {ok, {Ns, Ps}} ->
             {ok, Ns, Ps};
         {error, no_entry} ->
-            {ok, Ns, Ps} = build_networks_and_providers(Customer),
-            k_handlers_auth_cache:set(CustomerUuid, {Ns, Ps}),
+            {Ns, Ps} = build_networks_and_providers(NetMapId, DefProvId),
+            k_handlers_auth_cache:set(Key, {Ns, Ps}),
             {ok, Ns, Ps}
     end.
 
-build_networks_and_providers(Customer) ->
-    NetMapId = Customer#customer.network_map_id,
-    DefProvId = Customer#customer.default_provider_id,
-
+build_networks_and_providers(NetMapId, undefined) ->
     case k_storage_network_maps:get_network_map(NetMapId) of
         {ok, #network_map{network_ids = NetIds}} ->
             {Networks, Providers} = lists:foldl(fun(NetId, {Ns, Ps})->
@@ -348,32 +351,44 @@ build_networks_and_providers(Customer) ->
                             {error, Error} ->
                                 ?log_error("Get provider id: ~p from network id: ~p from map id: ~p failed with: ~p",
                                     [ProvId, NetId, NetMapId, Error]),
-                                {Ns, Ps}
+                                error(storage_error)
                         end;
                     {error, Error} ->
                         ?log_error("Get network id: ~p from map id: ~p failed with: ~p",
                             [NetId, NetMapId, Error]),
-                        {Ns, Ps}
+                        error(storage_error)
                 end
             end, {[], []}, NetIds),
-            %% add default provider to providers list.
-            case DefProvId of
-                undefined ->
-                    {ok, Networks, Providers};
-                _ ->
-                    case k_storage_providers:get_provider(DefProvId) of
-                        {ok, DefProv} ->
-                            {ok, Networks, insert_if_not_member(DefProv, Providers)};
-                        {error, Error} ->
-                            ?log_error("Get default provider id: ~p from customer id: ~p failed with: ~p",
-                                [DefProvId, Customer#customer.customer_uuid, Error]),
-                            %% TODO: this will fail on client on price calculation.
-                            {ok, Networks, Providers}
-                    end
+            {Networks, Providers};
+        {error, Error} ->
+            ?log_error("Get map id: ~p failed with: ~p", [NetMapId, Error]),
+            error(storage_error)
+    end;
+build_networks_and_providers(NetMapId, DefProvId) ->
+    case k_storage_network_maps:get_network_map(NetMapId) of
+        {ok, #network_map{network_ids = NetIds}} ->
+            Networks = lists:foldl(fun(NetId, Ns)->
+                case k_storage_networks:get_network(NetId) of
+                    {ok, N} ->
+                        N2 = N#network{provider_id = DefProvId},
+                        [N2 | Ns];
+                    {error, Error} ->
+                        ?log_error("Get network id: ~p from map id: ~p failed with: ~p",
+                            [NetId, NetMapId, Error]),
+                        error(storage_error)
+                end
+            end, [], NetIds),
+            case k_storage_providers:get_provider(DefProvId) of
+                {ok, DefProv} ->
+                    {Networks, [DefProv]};
+                {error, Error} ->
+                    ?log_error("Get default provider id: ~p failed with: ~p",
+                        [DefProvId, Error]),
+                    error(storage_error)
             end;
         {error, Error} ->
             ?log_error("Get map id: ~p failed with: ~p", [NetMapId, Error]),
-            {ok, [], []}
+            error(storage_error)
     end.
 
 build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Providers, Features) ->
