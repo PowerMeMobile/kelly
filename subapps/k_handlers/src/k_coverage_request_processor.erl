@@ -5,8 +5,6 @@
 -include_lib("alley_dto/include/adto.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("k_storage/include/customer.hrl").
--include_lib("k_storage/include/network.hrl").
--include_lib("k_storage/include/network_map.hrl").
 
 %% ===================================================================
 %% API
@@ -19,126 +17,19 @@ process(Req = #coverage_req_v1{}) ->
 
     case k_storage_customers:get_customer_by_id(CustomerId) of
         {ok, Customer} ->
-            NetworkMapId = Customer#customer.network_map_id,
-            case k_storage_network_maps:get_network_map(NetworkMapId) of
-                {ok, NetworkMap} ->
-                    NetworkIds = NetworkMap#network_map.network_ids,
-                    Networks = get_networks(NetworkIds),
-                    Providers = get_providers(Networks),
-                    DefProvId = Customer#customer.default_provider_id,
-                    Providers2 =
-                        case DefProvId of
-                            undefined ->
-                                Providers;
-                            _ ->
-                                case k_storage_providers:get_provider(DefProvId) of
-                                    {ok, DefaultProvider} ->
-                                        insert_if_not_member(DefaultProvider, Providers);
-                                    {error, Error} ->
-                                        ?log_error("Get default provider id: ~p from customer id: ~p failed with: ~p",
-                                            [DefProvId, Customer#customer.customer_uuid, Error]),
-                                        %% TODO: this will fail on client on price calculation.
-                                        Providers
-                                end
-                        end,
-                    NetworksV1 = [network_to_v1(N) || N <- Networks],
-                    ProvidersV1 = [provider_to_v1(P) || P <- Providers2],
-                    {ok, #coverage_resp_v1{
-                        req_id = ReqId,
-                        networks = NetworksV1,
-                        providers = ProvidersV1,
-                        default_provider_id = DefProvId
-                    }};
-                {error, Error} ->
-                    ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
-                    {error, Error}
-            end;
+            NetMapId = Customer#customer.network_map_id,
+            DefProvId = Customer#customer.default_provider_id,
+            {ok, Networks, Providers} =
+                k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
+             NetworksV1 = [k_handlers_utils:network_to_v1(N) || N <- Networks],
+             ProvidersV1 = [k_handlers_utils:provider_to_v1(P) || P <- Providers],
+             {ok, #coverage_resp_v1{
+                req_id = ReqId,
+                networks = NetworksV1,
+                providers = ProvidersV1,
+                default_provider_id = DefProvId
+              }};
         {error, no_entry} ->
             ?log_error("Customer id: ~p not found", [CustomerId]),
             {error, unknown_customer}
     end.
-
-%% ===================================================================
-%% Internal
-%% ===================================================================
-
-get_networks(NetworkIds) ->
-    get_networks(NetworkIds, []).
-
-get_networks([], Acc) ->
-    Acc;
-get_networks([NetworkId | NetworkIds], Acc) ->
-    case k_storage_networks:get_network(NetworkId) of
-        {ok, Network} ->
-            get_networks(NetworkIds, [Network | Acc]);
-        {error, Error} ->
-            ?log_error("Get network id: ~p failed with: ~p", [NetworkId, Error]),
-            get_networks(NetworkIds, Acc)
-    end.
-
-get_providers(Networks) ->
-    ProvIds = lists:usort([N#network.provider_id || N <- Networks]),
-    get_providers(ProvIds, []).
-
-get_providers([], Acc) ->
-    Acc;
-get_providers([ProvId | ProvIds], Acc) ->
-    case k_storage_providers:get_provider(ProvId) of
-        {ok, Provider} ->
-            get_providers(ProvIds, [Provider | Acc]);
-        {error, Error} ->
-            ?log_error("Get provider id: ~p failed with: ~p", [ProvId, Error]),
-            get_providers(ProvIds, Acc)
-    end.
-
-insert_if_not_member(P, Ps) ->
-    case lists:member(P, Ps) of
-        true -> Ps;
-        false -> [P | Ps]
-    end.
-
-network_to_v1(Network) ->
-    #network{
-        id = Id,
-        name = Name,
-        country_code = CountryCode,
-        number_len = NumberLen,
-        prefixes = Prefixes,
-        provider_id = ProviderId,
-        is_home = IsHome,
-        country = Country,
-        gmt_diff = GMTDiff,
-        dst = DST,
-        sms_points = SmsPoints,
-        sms_mult_points = SmsMultPoints
-    } = Network,
-    #network_v1{
-        id = Id,
-        name = Name,
-        country_code = CountryCode,
-        number_len = NumberLen,
-        prefixes = Prefixes,
-        provider_id = ProviderId,
-        is_home = IsHome,
-        country = Country,
-        gmt_diff = GMTDiff,
-        dst = DST,
-        sms_points = SmsPoints,
-        sms_mult_points = SmsMultPoints
-    }.
-
-provider_to_v1(Provider) ->
-    #provider{
-        id = Id,
-        gateway_id = GatewayId,
-        bulk_gateway_id = BulkGatewayId,
-        receipts_supported = ReceiptsSupported,
-        sms_add_points = SmsAddPoints
-    } = Provider,
-    #provider_v1{
-        id = Id,
-        gateway_id = GatewayId,
-        bulk_gateway_id = BulkGatewayId,
-        receipts_supported = ReceiptsSupported,
-        sms_add_points = SmsAddPoints
-    }.

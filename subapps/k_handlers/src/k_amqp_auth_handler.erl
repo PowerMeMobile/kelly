@@ -37,7 +37,8 @@ process(<<"BindRequest">>, ReqBin) ->
                 {allow, Customer = #customer{}, #user{}} ->
                     NetMapId = Customer#customer.network_map_id,
                     DefProvId = Customer#customer.default_provider_id,
-                    {ok, Networks, Providers} = get_networks_and_providers(NetMapId, DefProvId),
+                    {ok, Networks, Providers} =
+                        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
                     Features = get_features(UserId, Customer),
                     {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, UserId, Networks, Providers, Features),
@@ -70,7 +71,8 @@ process(<<"AuthReqV2">>, ReqBin) ->
                 {allow, Customer = #customer{}, User = #user{}} ->
                     NetMapId = Customer#customer.network_map_id,
                     DefProvId = Customer#customer.default_provider_id,
-                    {ok, Networks, Providers} = get_networks_and_providers(NetMapId, DefProvId),
+                    {ok, Networks, Providers} =
+                        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
                     Features = get_features(User#user.id, Customer),
                     {ok, Response} = build_auth_response(RespCT,
                         ReqId, Customer, User#user.id, Networks, Providers, Features),
@@ -293,70 +295,6 @@ check_credit_limit(Customer) ->
             allow
     end.
 
-get_networks_and_providers(NetMapId, DefProvId) ->
-    Key = {NetMapId, DefProvId},
-    case k_handlers_auth_cache:get(Key) of
-        {ok, {Ns, Ps}} ->
-            {ok, Ns, Ps};
-        {error, no_entry} ->
-            {Ns, Ps} = build_networks_and_providers(NetMapId, DefProvId),
-            k_handlers_auth_cache:set(Key, {Ns, Ps}),
-            {ok, Ns, Ps}
-    end.
-
-build_networks_and_providers(NetMapId, undefined) ->
-    case k_storage_network_maps:get_network_map(NetMapId) of
-        {ok, #network_map{network_ids = NetIds}} ->
-            {Networks, Providers} = lists:foldl(fun(NetId, {Ns, Ps})->
-                case k_storage_networks:get_network(NetId) of
-                    {ok, N} ->
-                        ProvId = N#network.provider_id,
-                        case k_storage_providers:get_provider(ProvId) of
-                            {ok, P} ->
-                                {[N | Ns], insert_if_not_member(P, Ps)};
-                            {error, Error} ->
-                                ?log_error("Get provider id: ~p from network id: ~p from map id: ~p failed with: ~p",
-                                    [ProvId, NetId, NetMapId, Error]),
-                                error(storage_error)
-                        end;
-                    {error, Error} ->
-                        ?log_error("Get network id: ~p from map id: ~p failed with: ~p",
-                            [NetId, NetMapId, Error]),
-                        error(storage_error)
-                end
-            end, {[], []}, NetIds),
-            {Networks, Providers};
-        {error, Error} ->
-            ?log_error("Get map id: ~p failed with: ~p", [NetMapId, Error]),
-            error(storage_error)
-    end;
-build_networks_and_providers(NetMapId, DefProvId) ->
-    case k_storage_network_maps:get_network_map(NetMapId) of
-        {ok, #network_map{network_ids = NetIds}} ->
-            Networks = lists:foldl(fun(NetId, Ns)->
-                case k_storage_networks:get_network(NetId) of
-                    {ok, N} ->
-                        N2 = N#network{provider_id = DefProvId},
-                        [N2 | Ns];
-                    {error, Error} ->
-                        ?log_error("Get network id: ~p from map id: ~p failed with: ~p",
-                            [NetId, NetMapId, Error]),
-                        error(storage_error)
-                end
-            end, [], NetIds),
-            case k_storage_providers:get_provider(DefProvId) of
-                {ok, DefProv} ->
-                    {Networks, [DefProv]};
-                {error, Error} ->
-                    ?log_error("Get default provider id: ~p failed with: ~p",
-                        [DefProvId, Error]),
-                    error(storage_error)
-            end;
-        {error, Error} ->
-            ?log_error("Get map id: ~p failed with: ~p", [NetMapId, Error]),
-            error(storage_error)
-    end.
-
 % deprecated since funnel 2.11.0
 build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Providers, Features) ->
     #customer{
@@ -421,8 +359,8 @@ build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Provide
         credit = Credit + CreditLimit,
         allowed_sources = allowed_sources(Originators),
         default_source = default_source(Originators),
-        networks = [network_to_v1(N) || N <- Networks],
-        providers = [provider_to_v1(P) || P <- Providers],
+        networks = [k_handlers_utils:network_to_v1(N) || N <- Networks],
+        providers = [k_handlers_utils:provider_to_v1(P) || P <- Providers],
         default_provider_id = DP,
         receipts_allowed = RA,
         no_retry = NR,
@@ -501,29 +439,6 @@ network_to_dto(Network) ->
         sms_mult_points = SmsMultPoints
     }.
 
-network_to_v1(Network) ->
-    #network{
-        id = Id,
-        country_code = CC,
-        number_len = NL,
-        prefixes = Pref,
-        provider_id = ProviderId,
-        is_home = IsHome,
-        sms_points = SmsPoints,
-        sms_mult_points = SmsMultPoints
-    } = Network,
-    #network_v1{
-        id = Id,
-        country_code = CC,
-        %% now number_len in db without CC length or zero
-        number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
-        prefixes = Pref,
-        provider_id = ProviderId,
-        is_home = IsHome,
-        sms_points = SmsPoints,
-        sms_mult_points = SmsMultPoints
-    }.
-
 provider_to_dto(Provider) ->
     #provider{
         id = Id,
@@ -539,28 +454,6 @@ provider_to_dto(Provider) ->
         receipts_supported = RS,
         sms_add_points = SmsAddPoints
     }.
-
-provider_to_v1(Provider) ->
-    #provider{
-        id = Id,
-        gateway_id = GatewayId,
-        bulk_gateway_id = BulkGatewayId,
-        receipts_supported = RS,
-        sms_add_points = SmsAddPoints
-    } = Provider,
-    #provider_v1{
-        id = Id,
-        gateway_id = GatewayId,
-        bulk_gateway_id = BulkGatewayId,
-        receipts_supported = RS,
-        sms_add_points = SmsAddPoints
-    }.
-
-insert_if_not_member(P, Ps) ->
-    case lists:member(P, Ps) of
-        true -> Ps;
-        false -> [P | Ps]
-    end.
 
 get_features(UserId, #customer{users = Users}) ->
     User = lists:keyfind(UserId, #user.id, Users),
