@@ -281,19 +281,7 @@ doc_to_record(Doc) ->
             id = bsondoc:at(id, UserDoc),
             password = bsondoc:at(password, UserDoc),
             interfaces =
-                [bsondoc:binary_to_atom(I) ||
-                    I <- case bsondoc:at(interfaces, UserDoc) of
-                             undefined ->
-                                 case bsondoc:at(connection_types, UserDoc) of
-                                     undefined ->
-                                         [];
-                                     CtList ->
-                                         CtList
-                                 end;
-                             IfList ->
-                                 IfList
-                         end
-                ],
+                [bsondoc:binary_to_atom(I) || I <- bsondoc:at(interfaces, UserDoc, [])],
             features = docs_to_features(bsondoc:at(features, UserDoc)),
             mobile_phone = bsondoc:at(mobile_phone, UserDoc),
             first_name = bsondoc:at(first_name, UserDoc),
