@@ -25,6 +25,8 @@
     address              :: addr(),
     description = <<"">> :: binary(),
     is_default = false   :: boolean(),
+    network_map_id       :: network_map_id(),
+    default_provider_id  :: provider_id() | undefined,
     state                :: originator_state()
 }).
 

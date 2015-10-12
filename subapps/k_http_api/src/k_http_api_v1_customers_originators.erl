@@ -31,6 +31,10 @@ init() ->
             {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
+        %% the type should be uuid, but it's not clear how to allow empty uuid
+        #param{name = network_map_id, mandatory = false, repeated = false, type = binary},
+        %% the type should be uuid, but it's not clear how to allow empty uuid
+        #param{name = default_provider_id, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = false, repeated = false, type =
             {custom, fun decode_state/1}}
     ],
@@ -45,6 +49,10 @@ init() ->
             {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
+        %% the type should be uuid, but it's not clear how to allow empty uuid
+        #param{name = network_map_id, mandatory = true, repeated = false, type = binary},
+        %% the type should be uuid, but it's not clear how to allow empty uuid
+        #param{name = default_provider_id, mandatory = true, repeated = false, type = binary},
         #param{name = state, mandatory = true, repeated = false, type =
             {custom, fun decode_state/1}}
     ],
@@ -112,16 +120,20 @@ create_originator(Customer, Params) ->
             Msisdn = ?gv(msisdn, Params),
             Description = ?gv(description, Params),
             IsDefault = ?gv(is_default, Params),
+            NetMapId = ?gv(network_map_id, Params),
+            DefProvId = ?gv(default_provider_id, Params),
             State = ?gv(state, Params),
-            Originator = #originator{
+            O = #originator{
                 id = Id,
                 address = Msisdn,
                 description = Description,
                 is_default = IsDefault,
+                network_map_id = NetMapId,
+                default_provider_id = DefProvId,
                 state = State
             },
-            ok = k_storage_customers:set_originator(Originator, Customer#customer.customer_uuid),
-            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [Originator]),
+            ok = k_storage_customers:set_originator(O, Customer#customer.customer_uuid),
+            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [O]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 201, Plist}
     end.
@@ -129,20 +141,24 @@ create_originator(Customer, Params) ->
 update_originator(Customer, Params) ->
     Id = ?gv(id, Params),
     case k_storage_customers:get_originator(Customer, Id) of
-        {ok, Originator} ->
-            Msisdn = ?gv(msisdn, Params, Originator#originator.address),
-            Description = ?gv(description, Params, Originator#originator.description),
-            IsDefault = ?gv(is_default, Params, Originator#originator.is_default),
-            State = ?gv(state, Params, Originator#originator.state),
-            Updated = #originator{
+        {ok, O} ->
+            Msisdn = ?gv(msisdn, Params, O#originator.address),
+            Description = ?gv(description, Params, O#originator.description),
+            IsDefault = ?gv(is_default, Params, O#originator.is_default),
+            NetMapId = ?gv(network_map_id, Params, O#originator.network_map_id),
+            DefProvId = ?gv(default_provider_id, Params, O#originator.default_provider_id),
+            State = ?gv(state, Params, O#originator.state),
+            O2 = #originator{
                 id = Id,
                 address = Msisdn,
                 description = Description,
                 is_default = IsDefault,
+                network_map_id = NetMapId,
+                default_provider_id = DefProvId,
                 state = State
             },
-            ok = k_storage_customers:set_originator(Updated, Customer#customer.customer_uuid),
-            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [Updated]),
+            ok = k_storage_customers:set_originator(O2, Customer#customer.customer_uuid),
+            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [O2]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -150,14 +166,14 @@ update_originator(Customer, Params) ->
     end.
 
 get_originator(Customer, undefined) ->
-    #customer{originators = Originators} = Customer,
-    {ok, Plist} = k_http_api_utils:prepare_originators(Customer, Originators),
+    #customer{originators = Os} = Customer,
+    {ok, Plist} = k_http_api_utils:prepare_originators(Customer, Os),
     ?log_debug("Originator: ~p", [Plist]),
     {http_code, 200, Plist};
 get_originator(Customer, Id) ->
     case k_storage_customers:get_originator(Customer, Id) of
-        {ok, Originator} ->
-            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [Originator]),
+        {ok, O} ->
+            {ok, [Plist]} = k_http_api_utils:prepare_originators(Customer, [O]),
             ?log_debug("Originator: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->

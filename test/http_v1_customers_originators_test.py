@@ -26,6 +26,9 @@ BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1'
 CUSTOMERS_URL = BASE_URL+'/customers'
 ORIGINATORS_URL = CUSTOMERS_URL+'/'+CUSTOMER_UUID+'/originators'
 
+NETWORK_MAP_ID = 'c32d6325-6823-49dc-9b39-0a9451028c65'
+DEFAULT_PROVIDER_ID = 'd5be9611-d36a-4821-a1b3-0a9d4db8ea90'
+
 @pytest.fixture(scope="module")
 def http(request):
     http = requests
@@ -62,6 +65,8 @@ def test_create_originator_succ(http):
                 'msisdn':'375290000000,1,1',
                 'description':'descr',
                 'state':'approved',
+                'network_map_id':'',
+                'default_provider_id':'',
                 'is_default':True}
     req = http.post(ORIGINATORS_URL, data=req_data)
     assert req.status_code == 201
@@ -77,6 +82,8 @@ def test_update_originator_succ(http):
     req_data = {'msisdn':'Hello,5,0',
                 'description':'descr2',
                 'state':'pending',
+                'network_map_id':NETWORK_MAP_ID,
+                'default_provider_id':DEFAULT_PROVIDER_ID,
                 'is_default':False}
     req = http.put(ORIGINATORS_URL+'/'+ORIGINATOR_ID, data=req_data)
     assert req.status_code == 200
@@ -104,6 +111,8 @@ def test_read_originator_succ(http):
                 'description':'descr2',
                 'state':'pending',
                 'is_default':False,
+                'network_map_id':NETWORK_MAP_ID,
+                'default_provider_id':DEFAULT_PROVIDER_ID,
                 'msisdn':{'addr':'Hello', 'ton':5, 'npi':0}}
     assert resp_data == exp_data
 

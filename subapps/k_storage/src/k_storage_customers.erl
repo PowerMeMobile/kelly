@@ -35,24 +35,26 @@
 set_customer(CustomerUuid, Customer) ->
     OriginatorsDocList = [
         {
-            'id'     , O#originator.id,
-            'address', {
+            'id'                 , O#originator.id,
+            'address' , {
                 'addr', (O#originator.address)#addr.addr,
                 'ton' , (O#originator.address)#addr.ton,
                 'npi' , (O#originator.address)#addr.npi
             },
-            'description', O#originator.description,
-            'is_default' , O#originator.is_default,
-            'state'      , bsondoc:atom_to_binary(O#originator.state)
+            'description'        , O#originator.description,
+            'is_default'         , O#originator.is_default,
+            'network_map_id'     , O#originator.network_map_id,
+            'default_provider_id', O#originator.default_provider_id,
+            'state'              , bsondoc:atom_to_binary(O#originator.state)
         }
         || O <- Customer#customer.originators
     ],
 
     UsersDocList = [
         {
-            'id'      , U#user.id,
-            'password', U#user.password,
-            'interfaces',
+            'id'          , U#user.id,
+            'password'    , U#user.password,
+            'interfaces'  ,
                 [bsondoc:atom_to_binary(I) || I <- U#user.interfaces],
             'features'    , features_to_docs(U#user.features),
             'mobile_phone', U#user.mobile_phone,
@@ -270,6 +272,8 @@ doc_to_record(Doc) ->
             },
             description = bsondoc:at(description, OrigDoc),
             is_default = bsondoc:at(is_default, OrigDoc),
+            network_map_id = bsondoc:at(network_map_id, OrigDoc),
+            default_provider_id = bsondoc:at(default_provider_id, OrigDoc),
             state = bsondoc:binary_to_atom(bsondoc:at(state, OrigDoc))
         }
         || OrigDoc <- OriginatorsDocs
