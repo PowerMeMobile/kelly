@@ -333,37 +333,37 @@ get_networks_and_providers(Customer) ->
     end.
 
 build_networks_and_providers(Customer) ->
-    NetworkMapId = Customer#customer.network_map_id,
+    NetMapId = Customer#customer.network_map_id,
     DefProvId = Customer#customer.default_provider_id,
 
-    case k_storage_network_maps:get_network_map(NetworkMapId) of
-        {ok, #network_map{network_ids = NetworkIds}} ->
-            {Networks, Providers} = lists:foldl(fun(NetworkId, {Ns, Ps})->
-                case k_storage_networks:get_network(NetworkId) of
-                    {ok, Network} ->
-                        ProviderId = Network#network.provider_id,
-                        case k_storage_providers:get_provider(ProviderId) of
-                            {ok, Provider} ->
-                                {[Network | Ns], insert_if_not_member(Provider, Ps)};
+    case k_storage_network_maps:get_network_map(NetMapId) of
+        {ok, #network_map{network_ids = NetIds}} ->
+            {Networks, Providers} = lists:foldl(fun(NetId, {Ns, Ps})->
+                case k_storage_networks:get_network(NetId) of
+                    {ok, N} ->
+                        ProvId = N#network.provider_id,
+                        case k_storage_providers:get_provider(ProvId) of
+                            {ok, P} ->
+                                {[N | Ns], insert_if_not_member(P, Ps)};
                             {error, Error} ->
                                 ?log_error("Get provider id: ~p from network id: ~p from map id: ~p failed with: ~p",
-                                    [ProviderId, NetworkId, NetworkMapId, Error]),
+                                    [ProvId, NetId, NetMapId, Error]),
                                 {Ns, Ps}
                         end;
                     {error, Error} ->
                         ?log_error("Get network id: ~p from map id: ~p failed with: ~p",
-                            [NetworkId, NetworkMapId, Error]),
+                            [NetId, NetMapId, Error]),
                         {Ns, Ps}
                 end
-            end, {[], []}, NetworkIds),
+            end, {[], []}, NetIds),
             %% add default provider to providers list.
             case DefProvId of
                 undefined ->
                     {ok, Networks, Providers};
                 _ ->
                     case k_storage_providers:get_provider(DefProvId) of
-                        {ok, DefaultProvider} ->
-                            {ok, Networks, insert_if_not_member(DefaultProvider, Providers)};
+                        {ok, DefProv} ->
+                            {ok, Networks, insert_if_not_member(DefProv, Providers)};
                         {error, Error} ->
                             ?log_error("Get default provider id: ~p from customer id: ~p failed with: ~p",
                                 [DefProvId, Customer#customer.customer_uuid, Error]),
@@ -372,7 +372,7 @@ build_networks_and_providers(Customer) ->
                     end
             end;
         {error, Error} ->
-            ?log_error("Get map id: ~p failed with: ~p", [NetworkMapId, Error]),
+            ?log_error("Get map id: ~p failed with: ~p", [NetMapId, Error]),
             {ok, [], []}
     end.
 
