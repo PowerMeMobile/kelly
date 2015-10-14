@@ -35,13 +35,8 @@ process(<<"BindRequest">>, ReqBin) ->
             ReqId      = AuthReq#funnel_auth_request_dto.connection_id,
             case authenticate(CustomerId, UserId, Password, ConnType) of
                 {allow, Customer = #customer{}, #user{}} ->
-                    NetMapId = Customer#customer.network_map_id,
-                    DefProvId = Customer#customer.default_provider_id,
-                    {ok, Networks, Providers} =
-                        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
-                    Features = get_features(UserId, Customer),
-                    {ok, Response} = build_auth_response(RespCT,
-                        ReqId, Customer, UserId, Networks, Providers, Features),
+                    {ok, Response} =
+                        build_auth_response(RespCT, ReqId, Customer, UserId),
                     ?log_debug("Auth allowed", []),
                     encode_response(RespCT, Response);
                 {deny, Reason} ->
@@ -69,13 +64,8 @@ process(<<"AuthReqV2">>, ReqBin) ->
             ReqId     = AuthReq#auth_req_v2.req_id,
             case authenticate_by(AuthData, Interface) of
                 {allow, Customer = #customer{}, User = #user{}} ->
-                    NetMapId = Customer#customer.network_map_id,
-                    DefProvId = Customer#customer.default_provider_id,
-                    {ok, Networks, Providers} =
-                        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
-                    Features = get_features(User#user.id, Customer),
-                    {ok, Response} = build_auth_response(RespCT,
-                        ReqId, Customer, User#user.id, Networks, Providers, Features),
+                    {ok, Response} =
+                        build_auth_response(RespCT, ReqId, Customer, User#user.id),
                     ?log_debug("Auth allowed", []),
                     encode_response(RespCT, Response);
                 {deny, Reason} ->
@@ -103,13 +93,8 @@ process(<<"AuthReqV3">>, ReqBin) ->
             ReqId     = AuthReq#auth_req_v3.req_id,
             case authenticate_by(AuthData, Interface) of
                 {allow, Customer = #customer{}, User = #user{}} ->
-                    NetMapId = Customer#customer.network_map_id,
-                    DefProvId = Customer#customer.default_provider_id,
-                    {ok, Networks, Providers} =
-                        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
-                    Features = get_features(User#user.id, Customer),
-                    {ok, Response} = build_auth_response(RespCT,
-                        ReqId, Customer, User#user.id, Networks, Providers, Features),
+                    {ok, Response} =
+                        build_auth_response(RespCT, ReqId, Customer, User#user.id),
                     ?log_debug("Auth allowed", []),
                     encode_response(RespCT, Response);
                 {deny, Reason} ->
@@ -330,14 +315,15 @@ check_credit_limit(Customer) ->
     end.
 
 % deprecated since funnel 2.11.0
-build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Providers, Features) ->
+build_auth_response(<<"BindResponse">>, ReqId, Customer, UserId) ->
     #customer{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         priority = Prio,
         rps = RPS,
         originators = Originators,
-        default_provider_id = DP,
+        network_map_id = NetMapId,
+        default_provider_id = DefProvId,
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = DV,
@@ -345,16 +331,21 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Prov
         pay_type = PayType
     } = Customer,
 
+    {ok, Networks, Providers} =
+        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
+
+    Features = get_features(UserId, Customer),
+
     CustomerDTO = #funnel_auth_response_customer_dto{
         uuid = CustomerUuid,
         id = CustomerId,
         priority = Prio,
         rps = RPS,
-        allowed_sources = allowed_sources(Originators),
-        default_source = default_source(Originators),
+        allowed_sources = allowed_originators(Originators),
+        default_source = default_originator(Originators),
         networks = [network_to_dto(N) || N <- Networks],
         providers = [provider_to_dto(P) || P <- Providers],
-        default_provider_id = DP,
+        default_provider_id = DefProvId,
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = DV,
@@ -368,12 +359,13 @@ build_auth_response(<<"BindResponse">>, ReqId, Customer, _UserId, Networks, Prov
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO};
-build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Providers, Features) ->
+build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId) ->
     #customer{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         originators = Originators,
-        default_provider_id = DP,
+        network_map_id = NetMapId,
+        default_provider_id = DefProvId,
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = _DV,
@@ -385,17 +377,22 @@ build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Provide
         rps = RPS
     } = Customer,
 
+    {ok, Networks, Providers} =
+        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
+
+    Features = get_features(UserId, Customer),
+
     CustomerDTO = #auth_customer_v2{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         user_id = UserId,
         pay_type = PayType,
         credit = Credit + CreditLimit,
-        allowed_sources = allowed_sources(Originators),
-        default_source = default_source(Originators),
+        allowed_sources = allowed_originators(Originators),
+        default_source = default_originator(Originators),
         networks = [k_handlers_utils:network_to_v1(N) || N <- Networks],
         providers = [k_handlers_utils:provider_to_v1(P) || P <- Providers],
-        default_provider_id = DP,
+        default_provider_id = DefProvId,
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = MV,
@@ -411,11 +408,13 @@ build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId, Networks, Provide
     },
     ?log_debug("Built auth response: ~p", [ResponseDTO]),
     {ok, ResponseDTO};
-build_auth_response(<<"AuthRespV3">>, ReqId, Customer, UserId, Networks, Providers, Features) ->
+build_auth_response(<<"AuthRespV3">>, ReqId, Customer, UserId) ->
     #customer{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         originators = Originators,
+        network_map_id = NetMapId,
+        default_provider_id = DefProvId,
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = _DV,
@@ -427,16 +426,26 @@ build_auth_response(<<"AuthRespV3">>, ReqId, Customer, UserId, Networks, Provide
         rps = RPS
     } = Customer,
 
+    CustomerCoverage = build_auth_coverage_v1(customer, NetMapId, DefProvId),
+
+    AllowedOriginators =
+        [O || O <- Originators, O#originator.state =:= approved],
+    OriginatorCoverages =
+        build_originator_coverages_v1(NetMapId, DefProvId, AllowedOriginators),
+
+    Coverages = [CustomerCoverage | OriginatorCoverages],
+
+    Features = get_features(UserId, Customer),
+
     CustomerDTO = #auth_customer_v3{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
         user_id = UserId,
         pay_type = PayType,
         credits = Credit + CreditLimit,
-        allowed_sources = allowed_sources(Originators),
-        default_source = default_source(Originators),
-        networks = [k_handlers_utils:network_to_v1(N) || N <- Networks],
-        providers = [k_handlers_utils:provider_to_v1(P) || P <- Providers],
+        originators = allowed_originators(Originators),
+        default_originator = default_originator(Originators),
+        coverages = Coverages,
         receipts_allowed = RA,
         no_retry = NR,
         default_validity = MV,
@@ -487,10 +496,10 @@ encode_response(ContentType, Response) ->
             noreply
     end.
 
-allowed_sources(Originators) ->
+allowed_originators(Originators) ->
     [O#originator.address || O <- Originators, O#originator.state =:= approved].
 
-default_source(Originators) ->
+default_originator(Originators) ->
     case [O#originator.address || O <- Originators,
             O#originator.state =:= approved, O#originator.is_default] of
         [] ->
@@ -498,6 +507,46 @@ default_source(Originators) ->
         [Address | _] ->
             Address
     end.
+
+build_originator_coverages_v1(CustNetMapId, CustDefProvId, Originators) ->
+    build_originator_coverages_v1(CustNetMapId, CustDefProvId, Originators, []).
+
+build_originator_coverages_v1(_CustNetMapId, _CustDefProvId, [], Acc) ->
+    lists:reverse(Acc);
+build_originator_coverages_v1(CustNetMapId, CustDefProvId, [O | Os], Acc) ->
+    OrigAddr      = O#originator.address,
+    OrigNetMapId  = O#originator.network_map_id,
+    OrigDefProvId = O#originator.default_provider_id,
+    case {OrigNetMapId, OrigDefProvId} of
+        {undefined, undefined} ->
+            %% both originator's network map and default provider are undefined.
+            %% skip the originator.
+            build_originator_coverages_v1(CustNetMapId, CustDefProvId, Os, Acc);
+        {undefined, OrigDefProvId} ->
+            %% originator's network map is undefined, but default provider id is set.
+            %% use customer's network map and override default provider id.
+            Coverage = build_auth_coverage_v1(
+                OrigAddr, CustNetMapId, OrigDefProvId),
+            build_originator_coverages_v1(
+                CustNetMapId, CustDefProvId, Os, [Coverage | Acc]);
+        {OrigNetMapId, OrigDefProvId} ->
+            %% originator's network map is set and default provider id is whatever given.
+            %% use whatever is set in the originator.
+            Coverage = build_auth_coverage_v1(
+                OrigAddr, OrigNetMapId, OrigDefProvId),
+            build_originator_coverages_v1(
+                CustNetMapId, CustDefProvId, Os, [Coverage | Acc])
+    end.
+
+build_auth_coverage_v1(Id, NetMapId, DefProvId) ->
+    {ok, Networks, Providers} =
+        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
+    #auth_coverage_v1{
+        id = Id,
+        networks = [k_handlers_utils:network_to_v1(N) || N <- Networks],
+        providers = [k_handlers_utils:provider_to_v1(P) || P <- Providers]
+
+    }.
 
 network_to_dto(Network) ->
     #network{

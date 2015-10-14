@@ -48,7 +48,7 @@ network_to_v1(N) ->
         id = Id,
         name = Name,
         country_code = CC,
-        %% now number_len in db without CC length or zeroa
+        %% now number_len in db without CC length or zero
         number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
         prefixes = Prefixes,
         provider_id = ProviderId,
