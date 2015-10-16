@@ -77,12 +77,14 @@ curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=0456837f-e874-4b05-8e89-95ae
 
 curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=793e7b47-b248-4c86-a26f-eadfc44f84e2&name=Life&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=251;252;253;254;255;256;257;258;259&gmt_diff=%2B3&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=false&sms_points=3.0&sms_mult_points=1.0" | check || exit 1
 
-curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=3ef3529f-7d37-4285-9259-8d78101c8f14&name=Sink&country=Sink&hex_code=&country_code=999&number_len=9&prefixes=296&gmt_diff=&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=false&sms_points=1.0&sms_mult_points=1.0" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=3ef3529f-7d37-4285-9259-8d78101c8f14&name=Sink&country=Sink&hex_code=&country_code=999&number_len=0&prefixes=0,1,2,3,4,5,6,7,8,9&gmt_diff=&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=false&sms_points=1.0&sms_mult_points=1.0" | check || exit 1
 
 #
 # Network maps
 #
-curl -s -D - -X POST 127.0.0.1:8080/network_maps -d "id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=0456837f-e874-4b05-8e89-95ae20b897d2;6dd0af45-7cdf-41aa-954b-cc368fe1968e;793e7b47-b248-4c86-a26f-eadfc44f84e2;3ef3529f-7d37-4285-9259-8d78101c8f14" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/network_maps -d "id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=0456837f-e874-4b05-8e89-95ae20b897d2;6dd0af45-7cdf-41aa-954b-cc368fe1968e;793e7b47-b248-4c86-a26f-eadfc44f84e2" | check || exit 1
+
+curl -s -D - -X POST 127.0.0.1:8080/network_maps -d "id=05df4e08-473c-11e5-a63a-28d2445f2979&name=Sink&network_ids=3ef3529f-7d37-4285-9259-8d78101c8f14" | check || exit 1
 
 
 #
@@ -97,6 +99,9 @@ curl -s -D - -X POST 127.0.0.1:8080/v1/customers -d "customer_uuid=493b3678-9dc8
 
 # postpaid originators
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/originators -d "id=c71175cc-f091-11e3-8ee4-00269e42f7a5&msisdn=375296660001,1,1&description=&is_default=true&network_map_id=&default_provider_id=&state=approved" | check || exit 1
+curl -s -D - -XPOST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/originators -d "id=7583e5d1-7011-458a-873e-ae7643f71d42&msisdn=sink_default,5,0&description=&is_default=false&network_map_id=05df4e08-473c-11e5-a63a-28d2445f2979&default_provider_id=&state=approved"
+curl -s -D - -XPOST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/originators -d "id=ad77c6fa-01ef-41e5-a887-b517d633b92e&msisdn=sink_sim,5,0&description=&is_default=false&network_map_id=05df4e08-473c-11e5-a63a-28d2445f2979&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&state=approved"
+
 
 # postpaid users
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d "user_id=user&password=password&interfaces=transmitter;receiver;transceiver&features=inbox,true&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
@@ -126,6 +131,9 @@ curl -s -D - -X POST 127.0.0.1:8080/v1/customers -d "customer_uuid=c173786e-63ce
 
 # postpaid originators
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/originators -d "id=8cb7aa6e-f2d4-11e3-9a73-00269e42f7a5&msisdn=375296660003,1,1&description=&is_default=true&network_map_id=&default_provider_id=&state=approved" | check || exit 1
+curl -s -D - -XPOST 127.0.0.1:8080/v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/originators -d "id=bef2806a-095b-4325-91a2-b54044ad6977&msisdn=sink_default,5,0&description=&is_default=false&network_map_id=05df4e08-473c-11e5-a63a-28d2445f2979&default_provider_id=&state=approved"
+curl -s -D - -XPOST 127.0.0.1:8080/v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/originators -d "id=ac405199-1e6c-4ce1-91b3-4035eba051c8&msisdn=sink_sim,5,0&description=&is_default=false&network_map_id=05df4e08-473c-11e5-a63a-28d2445f2979&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&state=approved"
+
 
 # postpaid users
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/c173786e-63ce-11e2-8740-001d0947ec73/users -d "user_id=user&password=password&interfaces=soap&features=inbox,true&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
@@ -149,6 +157,9 @@ curl -s -D - -X POST 127.0.0.1:8080/v1/customers -d "customer_uuid=8032706a-b4ec
 
 # postpaid originators
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators -d "id=d8372096-f2d4-11e3-950a-00269e42f7a5&msisdn=375296660005,1,1&description=&is_default=true&network_map_id=&default_provider_id=&state=approved" | check || exit 1
+curl -s -D - -XPOST 127.0.0.1:8080/v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators -d "id=86dcd25e-33ba-4268-9483-45059715bc21&msisdn=sink_default,5,0&description=&is_default=false&network_map_id=05df4e08-473c-11e5-a63a-28d2445f2979&default_provider_id=&state=approved"
+curl -s -D - -XPOST 127.0.0.1:8080/v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators -d "id=f85beabb-9b6c-4076-a0dd-d08c6e89338d&msisdn=sink_sim,5,0&description=&is_default=false&network_map_id=05df4e08-473c-11e5-a63a-28d2445f2979&default_provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&state=approved"
+
 
 # postpaid users
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/users -d "user_id=user&password=password&interfaces=mm&features=inbox,true&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
