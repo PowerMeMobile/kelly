@@ -272,8 +272,8 @@ doc_to_record(Doc) ->
             },
             description = bsondoc:at(description, OrigDoc),
             is_default = bsondoc:at(is_default, OrigDoc),
-            network_map_id = bsondoc:at(network_map_id, OrigDoc),
-            default_provider_id = bsondoc:at(default_provider_id, OrigDoc),
+            network_map_id = check_undefined(bsondoc:at(network_map_id, OrigDoc)),
+            default_provider_id = check_undefined(bsondoc:at(default_provider_id, OrigDoc)),
             state = bsondoc:binary_to_atom(bsondoc:at(state, OrigDoc))
         }
         || OrigDoc <- OriginatorsDocs
@@ -304,8 +304,8 @@ doc_to_record(Doc) ->
     Name = bsondoc:at(name, Doc),
     Priority = bsondoc:at(priority, Doc),
     RPS = bsondoc:at(rps, Doc),
-    NetworkMapId = bsondoc:at(network_map_id, Doc),
-    DefaultProviderId = bsondoc:at(default_provider_id, Doc),
+    NetMapId = bsondoc:at(network_map_id, Doc),
+    DefProvId = bsondoc:at(default_provider_id, Doc),
     ReceiptsAllowed = bsondoc:at(receipts_allowed, Doc),
     NoRetry = bsondoc:at(no_retry, Doc),
     DefValidity = bsondoc:at(default_validity, Doc),
@@ -326,8 +326,8 @@ doc_to_record(Doc) ->
         priority = Priority,
         rps = RPS,
         originators = Originators,
-        network_map_id = NetworkMapId,
-        default_provider_id = check_undefined(DefaultProviderId),
+        network_map_id = NetMapId,
+        default_provider_id = check_undefined(DefProvId),
         receipts_allowed = ReceiptsAllowed,
         no_retry = NoRetry,
         default_validity = DefValidity,
