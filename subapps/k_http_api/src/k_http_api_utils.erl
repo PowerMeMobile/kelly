@@ -4,6 +4,7 @@
     decode_msisdn/1,
     decode_interface/1,
     decode_feature/1,
+    decode_routing/1,
 
     prepare_features/1,
     prepare_originators/2,
@@ -75,22 +76,42 @@ decode_feature(Binary) ->
 -spec prepare_features(#feature{}) -> {ok, [{atom(), term()}]}.
 prepare_features(FeaturesList) when is_list(FeaturesList) ->
     prepare_features(FeaturesList, []);
-prepare_features(Feature = #feature{}) ->
-    prepare_features([Feature], []).
+prepare_features(F = #feature{}) ->
+    prepare_features([F], []).
 
 prepare_features([], Acc) ->
     {ok, Acc};
-prepare_features([Feature = #feature{} | Rest], Acc) ->
+prepare_features([F = #feature{} | Fs], Acc) ->
     Fun = ?record_to_proplist(feature),
-    Plist = Fun(Feature),
-    prepare_features(Rest, [Plist | Acc]).
+    prepare_features(Fs, [Fun(F) | Acc]).
+
+-spec decode_routing(binary()) -> #routing{}.
+decode_routing(Binary) ->
+    [NetMapId, DefProvId] = binary:split(Binary, <<",">>),
+    #routing{
+        network_map_id = NetMapId,
+        default_provider_id = check_undefined(DefProvId)
+    }.
+
+-spec prepare_routings(#routing{}) -> {ok, [{atom(), term()}]}.
+prepare_routings(RoutingsList) when is_list(RoutingsList) ->
+    prepare_routings(RoutingsList, []);
+prepare_routings(F = #routing{}) ->
+    prepare_routings([F], []).
+
+prepare_routings([], Acc) ->
+    {ok, Acc};
+prepare_routings([R = #routing{} | Rs], Acc) ->
+    Fun = ?record_to_proplist(routing),
+    prepare_routings(Rs, [Fun(R) | Acc]).
 
 -spec prepare_originators(#customer{}, #originator{}) -> {ok, [{atom(), term()}]}.
-prepare_originators(Customer, Orig = #originator{}) ->
+prepare_originators(Customer, Orig = #originator{routings = Routings}) ->
     AddrFun = ?record_to_proplist(addr),
     AddrPlist = proplists:delete(ref_num, AddrFun(Orig#originator.address)),
+    {ok, RoutingsPlists} = prepare_routings(Routings),
     OrigFun = ?record_to_proplist(originator),
-    Plist = OrigFun(Orig),
+    Plist = OrigFun(Orig#originator{routings = RoutingsPlists}),
     Plist2 = [{msisdn, AddrPlist} | Plist],
     Plist3 = [{customer_uuid, Customer#customer.customer_uuid} | Plist2],
     Plist4 = [{customer_id, Customer#customer.customer_id} | Plist3],
@@ -101,8 +122,7 @@ prepare_originators(Customer, Originators) when is_list(Originators) ->
 
 -spec prepare_users(#customer{}, #user{}) -> {ok, [{atom(), term()}]}.
 prepare_users(Customer, User = #user{features = Features}) ->
-    {ok, FeaturesPlists} =
-        k_http_api_utils:prepare_features(Features),
+    {ok, FeaturesPlists} = prepare_features(Features),
     UserFun = ?record_to_proplist(user),
     Plist = UserFun(User#user{features = FeaturesPlists}),
     Plist2 = [{user_id, ?gv(id, Plist)} | Plist],
@@ -140,6 +160,11 @@ get_disabled_feature_names(PreFs, NewFs) ->
 -spec remove_features([#feature{}], [binary()]) -> [#feature{}].
 remove_features(Features, DisNames) ->
     [F || F <- Features, not lists:member(F#feature.name, DisNames)].
+
+check_undefined(<<>>) ->
+    undefined;
+check_undefined(Value) ->
+    Value.
 
 %% ===================================================================
 %% Tests begin

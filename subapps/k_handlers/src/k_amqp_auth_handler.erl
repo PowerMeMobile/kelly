@@ -426,14 +426,18 @@ build_auth_response(<<"AuthRespV3">>, ReqId, Customer, UserId) ->
         rps = RPS
     } = Customer,
 
-    CustomerCoverage = build_auth_coverage_v1(customer, NetMapId, DefProvId),
+    {ok, CustNs, CustPs} =
+        k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
 
-    AllowedOriginators =
-        [O || O <- Originators, O#originator.state =:= approved],
-    OriginatorCoverages =
-        build_originator_coverages_v1(NetMapId, DefProvId, AllowedOriginators),
+    CustCoverage = build_auth_coverage_v1(customer, CustNs, CustPs),
 
-    Coverages = [CustomerCoverage | OriginatorCoverages],
+    Origs = [O || O <- Originators, O#originator.state =:= approved,
+                                    O#originator.routings =/= []],
+
+    OrigCoverages =
+        [build_originator_auth_coverage_v1(CustNs, CustPs, O) || O <- Origs],
+
+    Coverages = [CustCoverage | OrigCoverages],
 
     Features = get_features(UserId, Customer),
 
@@ -508,44 +512,38 @@ default_originator(Originators) ->
             Address
     end.
 
-build_originator_coverages_v1(CustNetMapId, CustDefProvId, Originators) ->
-    build_originator_coverages_v1(CustNetMapId, CustDefProvId, Originators, []).
+build_originator_auth_coverage_v1(CustNs, CustPs, Orig) ->
+    Addr = Orig#originator.address,
+    Routings = Orig#originator.routings,
+    {OrigNs, OrigPs} = lists:foldl(
+        fun(R, {Ns, Ps}) -> merge_routing(Ns, Ps, R) end,
+        {CustNs, CustPs},
+        Routings
+    ),
+    build_auth_coverage_v1(Addr, OrigNs, OrigPs).
 
-build_originator_coverages_v1(_CustNetMapId, _CustDefProvId, [], Acc) ->
-    lists:reverse(Acc);
-build_originator_coverages_v1(CustNetMapId, CustDefProvId, [O | Os], Acc) ->
-    OrigAddr      = O#originator.address,
-    OrigNetMapId  = O#originator.network_map_id,
-    OrigDefProvId = O#originator.default_provider_id,
-    case {OrigNetMapId, OrigDefProvId} of
-        {undefined, undefined} ->
-            %% both originator's network map and default provider are undefined.
-            %% skip the originator.
-            build_originator_coverages_v1(CustNetMapId, CustDefProvId, Os, Acc);
-        {undefined, OrigDefProvId} ->
-            %% originator's network map is undefined, but default provider id is set.
-            %% use customer's network map and override default provider id.
-            Coverage = build_auth_coverage_v1(
-                OrigAddr, CustNetMapId, OrigDefProvId),
-            build_originator_coverages_v1(
-                CustNetMapId, CustDefProvId, Os, [Coverage | Acc]);
-        {OrigNetMapId, OrigDefProvId} ->
-            %% originator's network map is set and default provider id is whatever given.
-            %% use whatever is set in the originator.
-            Coverage = build_auth_coverage_v1(
-                OrigAddr, OrigNetMapId, OrigDefProvId),
-            build_originator_coverages_v1(
-                CustNetMapId, CustDefProvId, Os, [Coverage | Acc])
-    end.
-
-build_auth_coverage_v1(Id, NetMapId, DefProvId) ->
-    {ok, Networks, Providers} =
+merge_routing(Ns, Ps, R) ->
+    NetMapId  = R#routing.network_map_id,
+    DefProvId = R#routing.default_provider_id,
+    {ok, OrigNs, OrigPs} =
         k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
+    merge_networks_providers(Ns, Ps, OrigNs, OrigPs).
+
+merge_networks_providers(Ns, Ps, OrigNs, OrigPs) ->
+    OrigNs2 = lists:foldl(
+        fun(OrigNet, Acc) ->
+            lists:keyreplace(OrigNet#network.id, #network.id, Acc, OrigNet)
+        end,
+        Ns,
+        OrigNs
+    ),
+    {OrigNs2, OrigPs ++ Ps}.
+
+build_auth_coverage_v1(Id, Networks, Providers) ->
     #auth_coverage_v1{
         id = Id,
         networks = [k_handlers_utils:network_to_v1(N) || N <- Networks],
         providers = [k_handlers_utils:provider_to_v1(P) || P <- Providers]
-
     }.
 
 network_to_dto(Network) ->

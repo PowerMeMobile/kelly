@@ -31,10 +31,8 @@ init() ->
             {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
-        %% the type should be uuid, but it's not clear how to allow empty uuid
-        #param{name = network_map_id, mandatory = false, repeated = false, type = binary},
-        %% the type should be uuid, but it's not clear how to allow empty uuid
-        #param{name = default_provider_id, mandatory = false, repeated = false, type = binary},
+        #param{name = routings, mandatory = false, repeated = true, type =
+            {custom, fun k_http_api_utils:decode_routing/1}},
         #param{name = state, mandatory = false, repeated = false, type =
             {custom, fun decode_state/1}}
     ],
@@ -49,10 +47,8 @@ init() ->
             {custom, fun k_http_api_utils:decode_msisdn/1}},
         #param{name = description, mandatory = false, repeated = false, type = binary},
         #param{name = is_default, mandatory = false, repeated = false, type = boolean},
-        %% the type should be uuid, but it's not clear how to allow empty uuid
-        #param{name = network_map_id, mandatory = true, repeated = false, type = binary},
-        %% the type should be uuid, but it's not clear how to allow empty uuid
-        #param{name = default_provider_id, mandatory = true, repeated = false, type = binary},
+        #param{name = routings, mandatory = false, repeated = true, type =
+            {custom, fun k_http_api_utils:decode_routing/1}},
         #param{name = state, mandatory = true, repeated = false, type =
             {custom, fun decode_state/1}}
     ],
@@ -120,16 +116,14 @@ create_originator(Customer, Params) ->
             Msisdn = ?gv(msisdn, Params),
             Description = ?gv(description, Params),
             IsDefault = ?gv(is_default, Params),
-            NetMapId = ?gv(network_map_id, Params),
-            DefProvId = ?gv(default_provider_id, Params),
+            Routings = ?gv(routings, Params),
             State = ?gv(state, Params),
             O = #originator{
                 id = Id,
                 address = Msisdn,
                 description = Description,
                 is_default = IsDefault,
-                network_map_id = NetMapId,
-                default_provider_id = DefProvId,
+                routings = Routings,
                 state = State
             },
             ok = k_storage_customers:set_originator(O, Customer#customer.customer_uuid),
@@ -145,16 +139,14 @@ update_originator(Customer, Params) ->
             Msisdn = ?gv(msisdn, Params, O#originator.address),
             Description = ?gv(description, Params, O#originator.description),
             IsDefault = ?gv(is_default, Params, O#originator.is_default),
-            NetMapId = ?gv(network_map_id, Params, O#originator.network_map_id),
-            DefProvId = ?gv(default_provider_id, Params, O#originator.default_provider_id),
+            Routings = ?gv(routings, Params, O#originator.routings),
             State = ?gv(state, Params, O#originator.state),
             O2 = #originator{
                 id = Id,
                 address = Msisdn,
                 description = Description,
                 is_default = IsDefault,
-                network_map_id = NetMapId,
-                default_provider_id = DefProvId,
+                routings = Routings,
                 state = State
             },
             ok = k_storage_customers:set_originator(O2, Customer#customer.customer_uuid),

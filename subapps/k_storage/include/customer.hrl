@@ -20,13 +20,18 @@
 }).
 -type feature() :: #feature{}.
 
+-record(routing, {
+    network_map_id  :: network_map_id(),
+    default_provider_id :: provider_id() | undefined
+}).
+-type routing() :: #routing{}.
+
 -record(originator, {
     id                   :: originator_id(),
     address              :: addr(),
     description = <<"">> :: binary(),
     is_default = false   :: boolean(),
-    network_map_id       :: network_map_id(),
-    default_provider_id  :: provider_id() | undefined,
+    routings = []        :: [routing()],
     state                :: originator_state()
 }).
 

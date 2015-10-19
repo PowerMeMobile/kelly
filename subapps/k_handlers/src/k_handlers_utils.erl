@@ -88,13 +88,19 @@ build_networks_and_providers(NetMapId, undefined) ->
                 case k_storage_networks:get_network(NetId) of
                     {ok, N} ->
                         ProvId = N#network.provider_id,
-                        case k_storage_providers:get_provider(ProvId) of
-                            {ok, P} ->
-                                {[N | Ns], insert_if_not_member(P, Ps)};
-                            {error, Error} ->
-                                ?log_error("Get provider id: ~p from network id: ~p from map id: ~p failed with: ~p",
-                                    [ProvId, NetId, NetMapId, Error]),
-                                error(storage_error)
+                        case lists:keyfind(ProvId, #provider.id, Ps) of
+                            false ->
+                                case k_storage_providers:get_provider(ProvId) of
+                                    {ok, P} ->
+                                        {[N | Ns], [P | Ps]};
+                                    {error, Error} ->
+                                        ?log_error(
+                                            "Get provider id: ~p from network id: ~p from map id: ~p failed with: ~p",
+                                            [ProvId, NetId, NetMapId, Error]),
+                                        error(storage_error)
+                                end;
+                            _Found ->
+                                {[N | Ns], Ps}
                         end;
                     {error, Error} ->
                         ?log_error("Get network id: ~p from map id: ~p failed with: ~p",
@@ -132,10 +138,4 @@ build_networks_and_providers(NetMapId, DefProvId) ->
         {error, Error} ->
             ?log_error("Get map id: ~p failed with: ~p", [NetMapId, Error]),
             error(storage_error)
-    end.
-
-insert_if_not_member(P, Ps) ->
-    case lists:member(P, Ps) of
-        true -> Ps;
-        false -> [P | Ps]
     end.

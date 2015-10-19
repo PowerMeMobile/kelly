@@ -42,8 +42,8 @@ def http(request):
             'no_retry':False,
             'default_validity':'000003000000000R',
             'max_validity':259200,
-            'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec73',
             'network_map_id':'befa8b7c-c4a3-11e3-b670-00269e42f7a5',
+            'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec73',
             'interfaces':'',
             'features':'',
             'pay_type':'postpaid',
@@ -65,8 +65,7 @@ def test_create_originator_succ(http):
                 'msisdn':'375290000000,1,1',
                 'description':'descr',
                 'state':'approved',
-                'network_map_id':'',
-                'default_provider_id':'',
+                'routings':'',
                 'is_default':True}
     req = http.post(ORIGINATORS_URL, data=req_data)
     assert req.status_code == 201
@@ -76,14 +75,14 @@ def test_create_originator_succ(http):
     req_data['customer_id'] = CUSTOMER_ID
     req_data['customer_name'] = CUSTOMER_NAME
     req_data['msisdn'] = {'addr':'375290000000', 'ton':1, 'npi':1}
+    req_data['routings'] = []
     assert resp_data == req_data
 
 def test_update_originator_succ(http):
     req_data = {'msisdn':'Hello,5,0',
                 'description':'descr2',
                 'state':'pending',
-                'network_map_id':NETWORK_MAP_ID,
-                'default_provider_id':DEFAULT_PROVIDER_ID,
+                'routings':NETWORK_MAP_ID + ',' + DEFAULT_PROVIDER_ID,
                 'is_default':False}
     req = http.put(ORIGINATORS_URL+'/'+ORIGINATOR_ID, data=req_data)
     assert req.status_code == 200
@@ -94,6 +93,7 @@ def test_update_originator_succ(http):
     req_data['customer_id'] = CUSTOMER_ID
     req_data['customer_name'] = CUSTOMER_NAME
     req_data['msisdn'] = {'addr':'Hello', 'ton':5, 'npi':0}
+    req_data['routings'] = [{'network_map_id':NETWORK_MAP_ID,'default_provider_id':DEFAULT_PROVIDER_ID}]
     assert resp_data == req_data
 
 def test_read_bad_originator_succ(http):
@@ -111,8 +111,7 @@ def test_read_originator_succ(http):
                 'description':'descr2',
                 'state':'pending',
                 'is_default':False,
-                'network_map_id':NETWORK_MAP_ID,
-                'default_provider_id':DEFAULT_PROVIDER_ID,
+                'routings':[{'network_map_id':NETWORK_MAP_ID,'default_provider_id':DEFAULT_PROVIDER_ID}],
                 'msisdn':{'addr':'Hello', 'ton':5, 'npi':0}}
     assert resp_data == exp_data
 

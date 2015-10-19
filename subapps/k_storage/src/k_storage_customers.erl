@@ -35,17 +35,16 @@
 set_customer(CustomerUuid, Customer) ->
     OriginatorsDocList = [
         {
-            'id'                 , O#originator.id,
+            'id'         , O#originator.id,
             'address' , {
                 'addr', (O#originator.address)#addr.addr,
                 'ton' , (O#originator.address)#addr.ton,
                 'npi' , (O#originator.address)#addr.npi
             },
-            'description'        , O#originator.description,
-            'is_default'         , O#originator.is_default,
-            'network_map_id'     , O#originator.network_map_id,
-            'default_provider_id', O#originator.default_provider_id,
-            'state'              , bsondoc:atom_to_binary(O#originator.state)
+            'description', O#originator.description,
+            'is_default' , O#originator.is_default,
+            'routings'   , routings_to_docs(O#originator.routings),
+            'state'      , bsondoc:atom_to_binary(O#originator.state)
         }
         || O <- Customer#customer.originators
     ],
@@ -257,7 +256,7 @@ change_credit(CustomerUuid, Amount) ->
     end.
 
 %% ===================================================================
-%% Internals
+%% Internal
 %% ===================================================================
 
 doc_to_record(Doc) ->
@@ -272,8 +271,7 @@ doc_to_record(Doc) ->
             },
             description = bsondoc:at(description, OrigDoc),
             is_default = bsondoc:at(is_default, OrigDoc),
-            network_map_id = check_undefined(bsondoc:at(network_map_id, OrigDoc)),
-            default_provider_id = check_undefined(bsondoc:at(default_provider_id, OrigDoc)),
+            routings = docs_to_routings(bsondoc:at(routings, OrigDoc)),
             state = bsondoc:binary_to_atom(bsondoc:at(state, OrigDoc))
         }
         || OrigDoc <- OriginatorsDocs
@@ -342,10 +340,6 @@ doc_to_record(Doc) ->
         state = State
     }.
 
-%% ===================================================================
-%% Internal
-%% ===================================================================
-
 -spec find(binary(), integer(), list()) -> {ok, term()} | {error, no_entry}.
 find(Key, Pos, List) ->
     case lists:keyfind(Key, Pos, List) of
@@ -369,3 +363,20 @@ docs_to_features(undefined) ->
     [];
 docs_to_features(Docs) ->
     [#feature{name = bsondoc:at(name, D), value = bsondoc:at(value, D)} || D <- Docs].
+
+routings_to_docs(undefined) ->
+    [];
+routings_to_docs(Routings) ->
+    [{'network_map_id', NMI, 'default_provider_id', DPI} ||
+     #routing{network_map_id = NMI, default_provider_id = DPI} <- Routings].
+
+docs_to_routings(undefined) ->
+    [];
+docs_to_routings(Docs) ->
+    [#routing{network_map_id = NMI2, default_provider_id = DPI2} ||
+     {'network_map_id', NMI, 'default_provider_id', DPI} <- Docs,
+     begin
+        NMI2 = check_undefined(NMI),
+        DPI2 = check_undefined(DPI),
+        NMI2 =/= undefined
+     end].
