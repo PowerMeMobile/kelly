@@ -19,7 +19,8 @@
 
     get_uuid_to_customer_dict/1,
     get_id_to_gateway_dict/1,
-    get_id_to_network_dict/1
+    get_id_to_network_dict/1,
+    get_id_to_provider_dict/1
 ]).
 
 %-define(TEST, 1).
@@ -171,61 +172,40 @@ binary_to_encoding(Binary) ->
 
 -spec get_uuid_to_customer_dict([uuid()]) -> dict().
 get_uuid_to_customer_dict(Uuids) ->
-    get_uuid_to_customer_dict(Uuids, dict:new()).
-
-get_uuid_to_customer_dict([], Dict) ->
-    Dict;
-get_uuid_to_customer_dict([Uuid | Uuids], Dict) ->
-    case dict:is_key(Uuid, Dict) of
-        true ->
-            get_uuid_to_customer_dict(Uuids, Dict);
-        false ->
-            case k_storage_customers:get_customer_by_uuid(Uuid) of
-                {ok, C} ->
-                    Dict2 = dict:store(Uuid, C, Dict),
-                    get_uuid_to_customer_dict(Uuids, Dict2);
-                {error, no_entry} ->
-                    get_uuid_to_customer_dict(Uuids, Dict)
-            end
-    end.
+    get_id_to_term_dict(Uuids, fun k_storage_customers:get_customer_by_uuid/1).
 
 -spec get_id_to_network_dict([uuid()]) -> dict().
-get_id_to_network_dict(NetIds) ->
-    get_id_to_network_dict(NetIds, dict:new()).
-
-get_id_to_network_dict([], Dict) ->
-    Dict;
-get_id_to_network_dict([NetId | NetIds], Dict) ->
-    case dict:is_key(NetId, Dict) of
-        true ->
-            get_id_to_network_dict(NetIds, Dict);
-        false ->
-            case k_storage_networks:get_network(NetId) of
-                {ok, N} ->
-                    Dict2 = dict:store(NetId, N, Dict),
-                    get_id_to_network_dict(NetIds, Dict2);
-                {error, no_entry} ->
-                    get_id_to_network_dict(NetIds, Dict)
-            end
-    end.
+get_id_to_network_dict(Ids) ->
+    get_id_to_term_dict(Ids, fun k_storage_networks:get_network/1).
 
 -spec get_id_to_gateway_dict([uuid()]) -> dict().
-get_id_to_gateway_dict(GtwIds) ->
-    get_id_to_gateway_dict(GtwIds, dict:new()).
+get_id_to_gateway_dict(Ids) ->
+    get_id_to_term_dict(Ids, fun k_storage_gateways:get_gateway/1).
 
-get_id_to_gateway_dict([], Dict) ->
+-spec get_id_to_provider_dict([uuid()]) -> dict().
+get_id_to_provider_dict(Ids) ->
+    get_id_to_term_dict(Ids, fun k_storage_providers:get_provider/1).
+
+%% ===================================================================
+%% Internal
+%% ===================================================================
+
+get_id_to_term_dict(Ids, Fun1) when is_function(Fun1, 1) ->
+    get_id_to_term_dict(Ids, Fun1, dict:new()).
+
+get_id_to_term_dict([], _Fun1, Dict) ->
     Dict;
-get_id_to_gateway_dict([GtwId | GtwIds], Dict) ->
-    case dict:is_key(GtwId, Dict) of
+get_id_to_term_dict([Id | Ids], Fun1, Dict) ->
+    case dict:is_key(Id, Dict) of
         true ->
-            get_id_to_gateway_dict(GtwIds, Dict);
+            get_id_to_term_dict(Ids, Dict);
         false ->
-            case k_storage_gateways:get_gateway(GtwId) of
-                {ok, G} ->
-                    Dict2 = dict:store(GtwId, G, Dict),
-                    get_id_to_gateway_dict(GtwIds, Dict2);
+            case Fun1(Id) of
+                {ok, Term} ->
+                    Dict2 = dict:store(Id, Term, Dict),
+                    get_id_to_term_dict(Ids, Fun1, Dict2);
                 {error, no_entry} ->
-                    get_id_to_gateway_dict(GtwIds, Dict)
+                    get_id_to_term_dict(Ids, Fun1, Dict)
             end
     end.
 
