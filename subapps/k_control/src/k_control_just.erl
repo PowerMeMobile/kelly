@@ -8,6 +8,7 @@
     unblock_request/1,
 
     gateway_states/0,
+    gateway_state/1,
     start_gateway/1,
     stop_gateway/1,
 
@@ -111,6 +112,28 @@ gateway_states() ->
                     {error, Error};
                 States ->
                     {ok, gateway_states_v1_to_plist(States)}
+            end;
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec gateway_state(gateway_id()) -> {ok, #gateway_state_v1{}} | {error, term()}.
+gateway_state(GatewayId) ->
+    {ok, CtrlQueue} = application:get_env(k_handlers, just_control_queue),
+    Req = #gateway_state_req_v1{
+        req_id = uuid:unparse(uuid:generate()),
+        gateway_id = GatewayId
+    },
+    {ok, ReqBin} = adto:encode(Req),
+    case k_control_rmq:rpc_call(CtrlQueue, <<"GatewayStateReqV1">>, ReqBin) of
+        {ok, <<"GatewayStateRespV1">>, RespBin} ->
+            {ok, Resp} = adto:decode(#gateway_state_resp_v1{}, RespBin),
+            #gateway_state_resp_v1{result = Result} = Resp,
+            case Result of
+                {error, Error} ->
+                    {error, Error};
+                State ->
+                    {ok, gateway_state_v1_to_plist(State)}
             end;
         {error, Error} ->
             {error, Error}

@@ -21,7 +21,9 @@
 
 init() ->
     {ok, #specs{
-        read = [],
+        read = [
+            #param{name = gateway_id, mandatory = false, repeated = false, type = uuid}
+        ],
         create = [
             #param{name = gateway_id, mandatory = true, repeated = false, type = uuid}
         ],
@@ -31,13 +33,26 @@ init() ->
         route = "/v1/just/gateways/[:gateway_id]"
     }}.
 
-read(_Params) ->
-    case k_control_just:gateway_states() of
-        {ok, Report} ->
-            {ok, Report};
-        {error, Error} ->
-            ?log_debug("Get funnel connections failed with: ~p", [Error]),
-            {exception, 'svc0003'}
+read(Params) ->
+    case ?gv(gateway_id, Params) of
+        undefined ->
+            case k_control_just:gateway_states() of
+                {ok, Report} ->
+                    {ok, Report};
+                {error, Error} ->
+                    ?log_debug("Get gateway states failed with: ~p", [Error]),
+                    {exception, 'svc0003'}
+            end;
+        GatewayId ->
+            case k_control_just:gateway_state(GatewayId) of
+                {ok, Report} ->
+                    {ok, Report};
+                {error, Error} ->
+                    ?log_debug(
+                        "Get gateway state (gateway_id: ~p) failed with: ~p",
+                        [GatewayId, Error]),
+                    {exception, 'svc0003'}
+            end
     end.
 
 create(Params) ->
