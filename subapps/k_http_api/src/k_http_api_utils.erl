@@ -80,7 +80,7 @@ prepare_features(F = #feature{}) ->
     prepare_features([F], []).
 
 prepare_features([], Acc) ->
-    {ok, Acc};
+    {ok, lists:reverse(Acc)};
 prepare_features([F = #feature{} | Fs], Acc) ->
     Fun = ?record_to_proplist(feature),
     prepare_features(Fs, [Fun(F) | Acc]).
@@ -100,7 +100,7 @@ prepare_routings(F = #routing{}) ->
     prepare_routings([F], []).
 
 prepare_routings([], Acc) ->
-    {ok, Acc};
+    {ok, lists:reverse(Acc)};
 prepare_routings([R = #routing{} | Rs], Acc) ->
     Fun = ?record_to_proplist(routing),
     prepare_routings(Rs, [Fun(R) | Acc]).
