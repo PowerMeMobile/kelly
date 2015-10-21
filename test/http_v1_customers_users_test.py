@@ -108,7 +108,7 @@ def test_update_user_succ(http):
     req_data['customer_id'] = CUSTOMER_ID
     req_data['customer_name'] = CUSTOMER_NAME
     req_data['interfaces'] = []
-    req_data['features'] = [{'name':'sms_from_email', 'value':'true'}, {'name':'inbox', 'value':'false'}]
+    req_data['features'] = [{'name':'inbox', 'value':'false'}, {'name':'sms_from_email', 'value':'true'}]
     del req_data['password']
     assert resp_data == req_data
 
@@ -134,7 +134,7 @@ def test_read_user_succ(http):
                 'country':'cou1',
                 'language':'fr',
                 'state':'blocked',
-                'features':[{'name':'sms_from_email', 'value':'true'}, {'name':'inbox', 'value':'false'}]}
+                'features':[{'name':'inbox', 'value':'false'},{'name':'sms_from_email', 'value':'true'}]}
     assert resp_data == exp_data
 
 def test_delete_user_succ(http):

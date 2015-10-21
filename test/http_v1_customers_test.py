@@ -106,7 +106,7 @@ def test_update_customer_succ(http):
     req_data['users'] = []
     req_data['originators'] = []
     req_data['interfaces'] = ['transmitter']
-    req_data['features'] = [{'name':'sms_from_email', 'value':'true'}, {'name':'inbox', 'value':'false'}]
+    req_data['features'] = [{'name':'inbox', 'value':'false'}, {'name':'sms_from_email', 'value':'true'}]
     assert resp_data == req_data
 
 def test_read_bad_customer_fail(http):
@@ -131,7 +131,7 @@ def test_read_customer_succ(http):
                 'network_map_id':'cf1563b0-c4a3-11e3-8a61-00269e42f7a5',
                 'users':[],
                 'interfaces':['transmitter'],
-                'features':[{'name':'sms_from_email', 'value':'true'}, {'name':'inbox', 'value':'false'}],
+                'features':[{'name':'inbox', 'value':'false'}, {'name':'sms_from_email', 'value':'true'}],
                 'pay_type':'prepaid',
                 'credit':10000.0,
                 'credit_limit':0.0,
