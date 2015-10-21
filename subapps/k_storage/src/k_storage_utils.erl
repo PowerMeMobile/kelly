@@ -198,7 +198,7 @@ get_id_to_term_dict([], _Fun1, Dict) ->
 get_id_to_term_dict([Id | Ids], Fun1, Dict) ->
     case dict:is_key(Id, Dict) of
         true ->
-            get_id_to_term_dict(Ids, Dict);
+            get_id_to_term_dict(Ids, Fun1, Dict);
         false ->
             case Fun1(Id) of
                 {ok, Term} ->
