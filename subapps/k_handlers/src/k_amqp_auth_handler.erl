@@ -390,7 +390,7 @@ build_auth_response(<<"AuthRespV2">>, ReqId, Customer, UserId) ->
         credit = Credit + CreditLimit,
         allowed_sources = allowed_originators(Originators),
         default_source = default_originator(Originators),
-        networks = [k_handlers_utils:network_to_v1(N) || N <- Networks],
+        networks = [network_to_v1(N) || N <- Networks],
         providers = [k_handlers_utils:provider_to_v1(P) || P <- Providers],
         default_provider_id = DefProvId,
         receipts_allowed = RA,
@@ -583,6 +583,39 @@ provider_to_dto(Provider) ->
         bulk_gateway_id = BulkGatewayId,
         receipts_supported = RS,
         sms_add_points = SmsAddPoints
+    }.
+
+%% Note it's different from k_handlers_utils:network_to_v1/1
+%% this one possibly adds CC length.
+network_to_v1(N) ->
+    #network{
+        id = Id,
+        name = Name,
+        country_code = CC,
+        number_len = NL,
+        prefixes = Prefixes,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        country = Country,
+        gmt_diff = GMTDiff,
+        dst = DST,
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
+    } = N,
+    #network_v1{
+        id = Id,
+        name = Name,
+        country_code = CC,
+        %% now number_len in db without CC length or zero
+        number_len = if NL =:= 0 -> 0; true -> NL + erlang:size(CC) end,
+        prefixes = Prefixes,
+        provider_id = ProviderId,
+        is_home = IsHome,
+        country = Country,
+        gmt_diff = GMTDiff,
+        dst = DST,
+        sms_points = SmsPoints,
+        sms_mult_points = SmsMultPoints
     }.
 
 get_features(UserId, #customer{users = Users}) ->
