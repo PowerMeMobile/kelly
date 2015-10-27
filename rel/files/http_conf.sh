@@ -75,15 +75,15 @@ curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=0456837f-e874-4b05-8e89-95ae
 
 curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=793e7b47-b248-4c86-a26f-eadfc44f84e2&name=Life&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=251;252;253;254;255;256;257;258;259&gmt_diff=%2B3&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=false&sms_points=3.0&sms_mult_points=1.0" | check || exit 1
 
-curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=3ef3529f-7d37-4285-9259-8d78101c8f14&name=Sink&country=Sink&hex_code=&country_code=999&number_len=0&prefixes=0,1,2,3,4,5,6,7,8,9&gmt_diff=&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=false&sms_points=1.0&sms_mult_points=1.0" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=3ef3529f-7d37-4285-9259-8d78101c8f14&name=Sink&country=Sink&hex_code=&country_code=999&number_len=0&prefixes=0;1;2;3;4;5;6;7;8;9&gmt_diff=&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=false&sms_points=1.0&sms_mult_points=1.0" | check || exit 1
 
 # smppsim
-curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=d809b406-734a-11e5-80da-28d2445f2979&name=Sim&country=Sim&hex_code=&country_code=888&number_len=0&prefixes=0,1,2,3,4,5,6,7,8,9&gmt_diff=&dst=&provider_id=d809b406-734a-11e5-80da-28d2445f2979&is_home=false&sms_points=1.0&sms_mult_points=1.0" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=d809b406-734a-11e5-80da-28d2445f2979&name=Sim&country=Sim&hex_code=&country_code=888&number_len=0&prefixes=0;1;2;3;4;5;6;7;8;9&gmt_diff=&dst=&provider_id=0a89542c-5270-11e1-bf27-001d0947ec73&is_home=false&sms_points=1.0&sms_mult_points=1.0" | check || exit 1
 
 #
 # Network maps
 #
-curl -s -D - -X POST 127.0.0.1:8080/network_maps -d "id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=0456837f-e874-4b05-8e89-95ae20b897d2;6dd0af45-7cdf-41aa-954b-cc368fe1968e;793e7b47-b248-4c86-a26f-eadfc44f84e2" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/network_maps -d "id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&name=Belarus&network_ids=0456837f-e874-4b05-8e89-95ae20b897d2;6dd0af45-7cdf-41aa-954b-cc368fe1968e;793e7b47-b248-4c86-a26f-eadfc44f84e2;3ef3529f-7d37-4285-9259-8d78101c8f14" | check || exit 1
 
 curl -s -D - -X POST 127.0.0.1:8080/network_maps -d "id=df6b84c4-734d-11e5-80da-28d2445f2979&name=Sims&network_ids=d809b406-734a-11e5-80da-28d2445f2979;3ef3529f-7d37-4285-9259-8d78101c8f14" | check || exit 1
 
@@ -105,8 +105,8 @@ curl -s -D - -XPOST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42
 
 # postpaid users
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d "user_id=user&password=password&interfaces=transmitter;receiver;transceiver&features=inbox,true&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
-curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d "user_id=user2&password=password&interfaces=transmitter;receiver;transceiver&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
-curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d "user_id=user3&password=password&interfaces=transmitter;receiver;transceiver&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d "user_id=user2&password=password&interfaces=transmitter;receiver;transceiver&features=override_originator,any&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d "user_id=user3&password=password&interfaces=transmitter;receiver;transceiver&features=override_originator,false&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d "user_id=user4&password=password&interfaces=transmitter;receiver;transceiver&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/493b3678-9dc8-11e2-8cce-00269e42f7a5/users -d "user_id=user5&password=password&interfaces=transmitter;receiver;transceiver&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
 
@@ -118,8 +118,8 @@ curl -s -D - -X POST 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e4
 
 # prepaid users
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d "user_id=user&password=password&interfaces=transmitter;receiver;transceiver&features=inbox,true&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
-curl -s -D - -X POST 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d "user_id=user2&password=password&interfaces=transmitter;receiver;transceiver&features=override_originator,any&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
-curl -s -D - -X POST 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d "user_id=user3&password=password&interfaces=transmitter;receiver;transceiver&features=override_originator,false&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d "user_id=user2&password=password&interfaces=transmitter;receiver;transceiver&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d "user_id=user3&password=password&interfaces=transmitter;receiver;transceiver&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d "user_id=user4&password=password&interfaces=transmitter;receiver;transceiver&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/50cec0fa-ea33-11e2-8cb1-00269e42f7a5/users -d "user_id=user5&password=password&interfaces=transmitter;receiver;transceiver&features=&mobile_phone=&first_name=&last_name=&company=&occupation=&email=&country=&language=en&state=active" | check || exit 1
 
