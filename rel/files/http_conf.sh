@@ -151,7 +151,7 @@ curl -s -D - -X POST 127.0.0.1:8080/v1/customers/f9251298-381e-49c4-a60d-ff51e66
 # MM
 
 # postpaid customer
-curl -s -D - -X POST 127.0.0.1:8080/v1/customers -d "customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=10005&name=mm-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&interfaces=mm,webmm&features=inbox,true&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/v1/customers -d "customer_uuid=8032706a-b4ec-11e3-b3d7-00269e42f7a5&customer_id=10005&name=mm-postpaid&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&interfaces=mm;webmm&features=inbox,true&pay_type=postpaid&credit=10000.0&credit_limit=10000.0&language=en&state=active" | check || exit 1
 
 # postpaid originators
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/8032706a-b4ec-11e3-b3d7-00269e42f7a5/originators -d "id=d8372096-f2d4-11e3-950a-00269e42f7a5&msisdn=375296660005,1,1&description=&is_default=true&routings=&state=approved" | check || exit 1
