@@ -69,7 +69,7 @@ curl -s -D - -X POST 127.0.0.1:8080/providers -d "id=25081bd8-15c7-4956-ad96-d52
 #
 
 # smppsink
-curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=6dd0af45-7cdf-41aa-954b-cc368fe1968e&name=Velcom%20Mobile%20Digital%20Comm.&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=291;293;296;299;44&gmt_diff=%2B3&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=true&sms_points=1.0&sms_mult_points=1.0" | check || exit 1
+curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=6dd0af45-7cdf-41aa-954b-cc368fe1968e&name=Velcom&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=291;293;296;299;44&gmt_diff=%2B3&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=true&sms_points=1.0&sms_mult_points=1.0" | check || exit 1
 
 curl -s -D - -X POST 127.0.0.1:8080/networks -d "id=0456837f-e874-4b05-8e89-95ae20b897d2&name=Mobile%20Telesystems&country=Belarus&hex_code=&country_code=375&number_len=9&prefixes=292;295;297;298;33&gmt_diff=%2B3&dst=&provider_id=25081bd8-15c7-4956-ad96-d52334ea028a&is_home=false&sms_points=2.0&sms_mult_points=1.0" | check || exit 1
 
