@@ -346,6 +346,8 @@ set_mt_req_info_modifier(#req_info{
             'ni' , NetId,
             'p'  , Price
         };
+        %% deprecated case
+        %% this MUST NOT happen already
         true ->
         {
             'ci' , CustomerUuid,
