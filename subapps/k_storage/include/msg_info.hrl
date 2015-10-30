@@ -107,7 +107,6 @@
     req_id :: req_id(),
     customer_uuid :: customer_uuid(),
     in_msg_id :: in_msg_id(),
-    client_type :: interface(),
     gateway_id :: gateway_id(),
     out_msg_id :: out_msg_id(),
     resp_time :: timestamp(),

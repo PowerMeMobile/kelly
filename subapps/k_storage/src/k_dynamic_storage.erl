@@ -59,7 +59,6 @@ set_mt_resp_info(#resp_info{
     req_id = ReqId,
     customer_uuid = CustomerUuid,
     in_msg_id = InMsgId,
-    client_type = ClientType,
     gateway_id = GatewayId,
     out_msg_id = OutMsgId,
     resp_time = RespTime,
@@ -74,7 +73,7 @@ set_mt_resp_info(#resp_info{
         '$setOnInsert', {
             'ci' , CustomerUuid,
             'ui' , ?UNKNOWN_ID,
-            'ct' , bsondoc:atom_to_binary(ClientType),
+            'ct' , ?UNKNOWN_TYPE,
             'gi' , GatewayId,
             't'  , ?UNKNOWN_TYPE,
             'e'  , ?UNKNOWN_ENCODING,

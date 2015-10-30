@@ -99,7 +99,6 @@ convert(SmsResponse, SmsStatus) ->
     #just_sms_response_dto{
         id = RequestId,
         customer_id = CustomerUuid,
-        client_type = ClientType,
         gateway_id = GatewayId,
         timestamp = UTCString
     } = SmsResponse,
@@ -118,7 +117,6 @@ convert(SmsResponse, SmsStatus) ->
     #resp_info{
         req_id = RequestId,
         customer_uuid = CustomerUuid,
-        client_type = ClientType,
         in_msg_id = OriginalId,
         gateway_id = GatewayId,
         out_msg_id = MessageId,
