@@ -2,8 +2,8 @@
 
 -export([
     get_timestamp_ranges/3,
-    build_mt_msg_resp/2,
-    build_mo_msg_resp/2
+    build_mt_msg_resp/3,
+    build_mo_msg_resp/3
 ]).
 
 -include("application.hrl").
@@ -23,15 +23,23 @@ get_timestamp_ranges(From, To, Step) when From < To ->
     Timestamps = get_timestamp_list(From, To, Step),
     ac_lists:make_ranges(Timestamps).
 
--spec build_mt_msg_resp(#msg_info{}, dict()) -> plist().
-build_mt_msg_resp(MsgInfo, Dict) ->
+-spec build_mt_msg_resp(#msg_info{}, dict(), dict()) -> plist().
+build_mt_msg_resp(MsgInfo, CustDict, GtwDict) ->
     CustomerUuid = MsgInfo#msg_info.customer_uuid,
-    {_CustomerId, CustomerName} =
-        case dict:find(CustomerUuid, Dict) of
+    {CustomerId, CustomerName} =
+        case dict:find(CustomerUuid, CustDict) of
             {ok, C} ->
                 {C#customer.customer_id, C#customer.name};
             error ->
                 {undefined, undefined}
+        end,
+    GatewayId = MsgInfo#msg_info.gateway_id,
+    GatewayName =
+        case dict:find(GatewayId, GtwDict) of
+            {ok, G} ->
+                G#gateway.name;
+            error ->
+                undefined
         end,
     Type = get_type(MsgInfo#msg_info.type),
     PartInfo = get_part_info(MsgInfo#msg_info.type),
@@ -45,14 +53,12 @@ build_mt_msg_resp(MsgInfo, Dict) ->
         {msg_id, MsgInfo#msg_info.msg_id},
         {client_type, MsgInfo#msg_info.client_type},
         {customer_uuid, CustomerUuid},
-        %% customer_id holding CustomerUuid is deprecated,
-        %% force clients to use customer_uuid
-        %% replace with CustomerId when done
-        {customer_id, CustomerUuid},
+        {customer_id, CustomerId},
         {customer_name, CustomerName},
         {user_id, MsgInfo#msg_info.user_id},
         {in_msg_id, MsgInfo#msg_info.in_msg_id},
-        {gateway_id, MsgInfo#msg_info.gateway_id},
+        {gateway_id, GatewayId},
+        {gateway_name, GatewayName},
         {out_msg_id, MsgInfo#msg_info.out_msg_id},
         {type, Type},
         {part_info, PartInfo},
@@ -70,16 +76,24 @@ build_mt_msg_resp(MsgInfo, Dict) ->
         {revenue, MsgInfo#msg_info.price}
     ].
 
--spec build_mo_msg_resp(#msg_info{}, dict()) -> plist().
-build_mo_msg_resp(MsgInfo, Dict) ->
+-spec build_mo_msg_resp(#msg_info{}, dict(), dict()) -> plist().
+build_mo_msg_resp(MsgInfo, CustDict, GtwDict) ->
     MsgId = MsgInfo#msg_info.msg_id,
     CustomerUuid = MsgInfo#msg_info.customer_uuid,
-    {_CustomerId, CustomerName} =
-        case dict:find(CustomerUuid, Dict) of
+    {CustomerId, CustomerName} =
+        case dict:find(CustomerUuid, CustDict) of
             {ok, C} ->
                 {C#customer.customer_id, C#customer.name};
             error ->
                 {undefined, undefined}
+        end,
+    GatewayId = MsgInfo#msg_info.gateway_id,
+    GatewayName =
+        case dict:find(GatewayId, GtwDict) of
+            {ok, G} ->
+                G#gateway.name;
+            error ->
+                undefined
         end,
     ReqTime = ac_datetime:timestamp_to_datetime(MsgInfo#msg_info.req_time),
     ReqISO = ac_datetime:datetime_to_iso8601(ReqTime),
@@ -88,12 +102,10 @@ build_mo_msg_resp(MsgInfo, Dict) ->
         {msg_id, MsgId},
         {customer_uuid, CustomerUuid},
         {user_id, MsgInfo#msg_info.user_id},
-        %% customer_id holding CustomerUuid is deprecated,
-        %% force clients to use customer_uuid
-        %% replace with CustomerId when done
-        {customer_id, CustomerUuid},
+        {customer_id, CustomerId},
         {customer_name, CustomerName},
-        {gateway_id, MsgInfo#msg_info.gateway_id},
+        {gateway_id, GatewayId},
+        {gateway_name, GatewayName},
         {type, MsgInfo#msg_info.type},
         {encoding, MsgInfo#msg_info.encoding},
         {body, MsgInfo#msg_info.body},

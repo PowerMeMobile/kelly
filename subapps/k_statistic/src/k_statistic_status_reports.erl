@@ -109,9 +109,11 @@ get_raw_report(mt_messages, Selector) ->
     case shifted_storage:find(mt_messages, Selector) of
         {ok, Docs} ->
             Msgs = [k_storage_utils:doc_to_mt_msg_info(Doc) || {_Id, Doc} <- Docs],
-            Uuids = [M#msg_info.customer_uuid || M <- Msgs],
-            Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
-            MtMsgs = [k_statistic_utils:build_mt_msg_resp(M, Dict) || M <- Msgs],
+            CustUuids = [M#msg_info.customer_uuid || M <- Msgs],
+            CustDict = k_storage_utils:get_uuid_to_customer_dict(CustUuids),
+            GtwIds = [M#msg_info.gateway_id || M <- Msgs],
+            GtwDict = k_storage_utils:get_id_to_gateway_dict(GtwIds),
+            MtMsgs = [k_statistic_utils:build_mt_msg_resp(M, CustDict, GtwDict) || M <- Msgs],
             {ok, MtMsgs};
         Error ->
             Error
@@ -120,9 +122,11 @@ get_raw_report(mo_messages, Selector) ->
     case shifted_storage:find(mo_messages, Selector) of
         {ok, Docs} ->
             Msgs = [k_storage_utils:doc_to_mo_msg_info(Doc) || {_Id, Doc} <- Docs],
-            Uuids = [M#msg_info.customer_uuid || M <- Msgs],
-            Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
-            MoMsgs = [k_statistic_utils:build_mo_msg_resp(M, Dict) || M <- Msgs],
+            CustUuids = [M#msg_info.customer_uuid || M <- Msgs],
+            CustDict = k_storage_utils:get_uuid_to_customer_dict(CustUuids),
+            GtwIds = [M#msg_info.gateway_id || M <- Msgs],
+            GtwDict = k_storage_utils:get_id_to_gateway_dict(GtwIds),
+            MoMsgs = [k_statistic_utils:build_mo_msg_resp(M, CustDict, GtwDict) || M <- Msgs],
             {ok, MoMsgs};
         Error ->
             Error

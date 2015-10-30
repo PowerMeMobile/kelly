@@ -43,9 +43,11 @@ build_msgs_report(Params) ->
         },
     {ok, Docs} = shifted_storage:find(mo_messages, Selector, {}, Skip, Limit),
     Msgs = [k_storage_utils:doc_to_mo_msg_info(Doc) || {_, Doc} <- Docs],
-    Uuids = [M#msg_info.customer_uuid || M <- Msgs],
-    Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
-    [k_statistic_utils:build_mo_msg_resp(M, Dict) || M <- Msgs].
+    CustUuids = [M#msg_info.customer_uuid || M <- Msgs],
+    CustDict = k_storage_utils:get_uuid_to_customer_dict(CustUuids),
+    GtwIds = [M#msg_info.gateway_id || M <- Msgs],
+    GtwDict = k_storage_utils:get_id_to_gateway_dict(GtwIds),
+    [k_statistic_utils:build_mo_msg_resp(M, CustDict, GtwDict) || M <- Msgs].
 
 -spec build_msg_report(msg_id()) -> [[{atom(), term()}]].
 build_msg_report(MsgId) ->
@@ -54,9 +56,11 @@ build_msg_report(MsgId) ->
     },
     {ok, Doc} = shifted_storage:find_one(mo_messages, Selector),
     Msgs = [k_storage_utils:doc_to_mo_msg_info(D) || D <- [Doc]],
-    Uuids = [M#msg_info.customer_uuid || M <- Msgs],
-    Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),
-    [k_statistic_utils:build_mo_msg_resp(M, Dict) || M <- Msgs].
+    CustUuids = [M#msg_info.customer_uuid || M <- Msgs],
+    CustDict = k_storage_utils:get_uuid_to_customer_dict(CustUuids),
+    GtwIds = [M#msg_info.gateway_id || M <- Msgs],
+    GtwDict = k_storage_utils:get_id_to_gateway_dict(GtwIds),
+    [k_statistic_utils:build_mo_msg_resp(M, CustDict, GtwDict) || M <- Msgs].
 
 %% ===================================================================
 %% Internals
