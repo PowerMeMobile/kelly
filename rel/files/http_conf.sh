@@ -260,3 +260,9 @@ curl -s -D - -X POST 127.0.0.1:8080/v1/customers/b5801eb1-d5ed-4a6e-80b4-a9bc35b
 # email prepaid
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/01a2d05d-fd2d-4532-847c-16681302101e/msisdns -d "msisdn=0101,6,0" | check || exit 1
 curl -s -D - -X POST 127.0.0.1:8080/v1/customers/01a2d05d-fd2d-4532-847c-16681302101e/users/user/msisdns -d "msisdn=0101,6,0" | check || exit 1
+
+#
+# Blacklist
+#
+
+curl -s -D - -X POST 127.0.0.1:8080/v1/blacklist -d "dst_addr=375296666666,1,1" | check || exit 1
