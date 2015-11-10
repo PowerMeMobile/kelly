@@ -5,7 +5,8 @@
     set_provider/2,
     get_provider/1,
     get_providers/0,
-    del_provider/1
+    del_provider/1,
+    can_del_provider/1
 ]).
 
 -include("storages.hrl").
@@ -39,8 +40,8 @@ get_provider(ProviderId) ->
     case mongodb_storage:find_one(static_storage, providers, {'_id', ProviderId}) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
-        Error ->
-            Error
+        {error, Error} ->
+            {error, Error}
     end.
 
 -spec get_providers() -> {ok, [#provider{}]} | {error, term()}.
@@ -48,8 +49,8 @@ get_providers() ->
     case mongodb_storage:find(static_storage, providers, {}) of
         {ok, List} ->
             {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
-        Error ->
-            Error
+        {error, Error} ->
+            {error, Error}
     end.
 
 -spec del_provider(provider_id()) -> ok | {error, no_entry} | {error, term()}.
@@ -57,6 +58,33 @@ del_provider(ProviderId) ->
     case mongodb_storage:delete(static_storage, providers, {'_id', ProviderId}) of
         ok ->
             ok = k_event_manager:notify_provider_changed(ProviderId);
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec can_del_provider(provider_id()) -> true | false | {error, term()}.
+can_del_provider(ProviderId) ->
+    Selector = {
+        provider_id, ProviderId
+    },
+    case mongodb_storage:find_one(static_storage, networks, Selector) of
+        {ok, _} ->
+            false;
+        {error, no_entry} ->
+            Selector2 = {
+                '$or', [
+                    {default_provider_id, ProviderId},
+                    {'originators.routings.default_provider_id', ProviderId}
+                ]
+            },
+            case mongodb_storage:find_one(static_storage, customers, Selector2) of
+                {ok, _} ->
+                    false;
+                {error, no_entry} ->
+                    true;
+                {error, Error} ->
+                    {error, Error}
+            end;
         {error, Error} ->
             {error, Error}
     end.

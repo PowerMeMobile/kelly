@@ -80,8 +80,15 @@ update(Params) ->
     end.
 
 delete(Params) ->
-    ok = k_storage_providers:del_provider(?gv(id, Params)),
-    {http_code, 204}.
+    Id = ?gv(id, Params),
+    case k_storage_providers:can_del_provider(Id) of
+        true ->
+            ok = k_storage_providers:del_provider(Id),
+            {http_code, 204};
+        false ->
+            {http_code, 403}
+    end.
+
 
 %% ===================================================================
 %% Internal

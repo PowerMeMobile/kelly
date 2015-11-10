@@ -5,7 +5,8 @@
     set_network/2,
     get_network/1,
     get_networks/0,
-    del_network/1
+    del_network/1,
+    can_del_network/1
 ]).
 
 -include("storages.hrl").
@@ -45,8 +46,8 @@ get_network(NetworkId) ->
     case mongodb_storage:find_one(static_storage, networks, {'_id', NetworkId}) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
-        Error ->
-            Error
+        {error, Error} ->
+            {error, Error}
     end.
 
 -spec get_networks() -> {ok, [#network{}]} | {error, term()}.
@@ -54,8 +55,8 @@ get_networks() ->
     case mongodb_storage:find(static_storage, networks, {}) of
         {ok, List} ->
             {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
-        Error ->
-            Error
+        {error, Error} ->
+            {error, Error}
     end.
 
 -spec del_network(network_id()) -> ok | {error, no_entry} | {error, term()}.
@@ -63,6 +64,20 @@ del_network(NetworkId) ->
     case mongodb_storage:delete(static_storage, networks, {'_id', NetworkId}) of
         ok ->
             ok = k_event_manager:notify_network_changed(NetworkId);
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec can_del_network(network_id()) -> true | false | {error, term()}.
+can_del_network(NetworkId) ->
+    Selector = {
+        network_ids, NetworkId
+    },
+    case mongodb_storage:find_one(static_storage, network_maps, Selector) of
+        {ok, _} ->
+            false;
+        {error, no_entry} ->
+            true;
         {error, Error} ->
             {error, Error}
     end.

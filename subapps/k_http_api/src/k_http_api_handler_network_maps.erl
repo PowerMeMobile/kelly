@@ -73,8 +73,13 @@ update(Params) ->
 
 delete(Params) ->
     Id = ?gv(id, Params),
-    ok = k_storage_network_maps:del_network_map(Id),
-    {http_code, 204}.
+    case k_storage_network_maps:can_del_network_map(Id) of
+        true ->
+            ok = k_storage_network_maps:del_network_map(Id),
+            {http_code, 204};
+        false ->
+            {http_code, 403}
+    end.
 
 %% ===================================================================
 %% Internal

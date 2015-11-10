@@ -6,6 +6,7 @@
     get_gateway/1,
     get_gateways/0,
     del_gateway/1,
+    can_del_gateway/1,
     set_gateway_connection/2,
     del_gateway_connection/2
 ]).
@@ -70,6 +71,23 @@ get_gateways() ->
 -spec del_gateway(gateway_id()) -> ok | {error, no_entry} | {error, term()}.
 del_gateway(GatewayId) ->
     mongodb_storage:delete(static_storage, gateways, {'_id', GatewayId}).
+
+-spec can_del_gateway(gateway_id()) -> true | false | {error, term()}.
+can_del_gateway(GatewayId) ->
+    Selector = {
+        '$or', [
+            {gateway_id, GatewayId},
+            {bulk_gateway_id, GatewayId}
+        ]
+    },
+    case mongodb_storage:find_one(static_storage, providers, Selector) of
+        {ok, _} ->
+            false;
+        {error, no_entry} ->
+            true;
+        {error, Error} ->
+            {error, Error}
+    end.
 
 -spec set_gateway_connection(gateway_id(), #connection{}) -> ok | {error, no_entry} | {error, term()}.
 set_gateway_connection(GatewayId, Connection = #connection{id = ConnId}) ->

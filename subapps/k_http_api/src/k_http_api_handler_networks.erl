@@ -92,9 +92,14 @@ update(Params) ->
     end.
 
 delete(Params) ->
-    Uuid = ?gv(id, Params),
-    ok = k_storage_networks:del_network(Uuid),
-    {http_code, 204}.
+    Id = ?gv(id, Params),
+    case k_storage_networks:can_del_network(Id) of
+        true ->
+            ok = k_storage_networks:del_network(Id),
+            {http_code, 204};
+        false ->
+            {http_code, 403}
+    end.
 
 %% ===================================================================
 %% Internal

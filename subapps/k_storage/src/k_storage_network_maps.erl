@@ -5,7 +5,8 @@
     set_network_map/2,
     get_network_map/1,
     get_network_maps/0,
-    del_network_map/1
+    del_network_map/1,
+    can_del_network_map/1
 ]).
 
 -include("storages.hrl").
@@ -37,8 +38,8 @@ get_network_map(NetworkMapId) ->
     case mongodb_storage:find_one(static_storage, network_maps, {'_id', NetworkMapId}) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
-        Error ->
-            Error
+        {error, Error} ->
+            {error, Error}
     end.
 
 -spec get_network_maps() ->
@@ -47,8 +48,8 @@ get_network_maps() ->
     case mongodb_storage:find(static_storage, network_maps, {}) of
         {ok, List} ->
             {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
-        Error ->
-            Error
+        {error, Error} ->
+            {error, Error}
     end.
 
 -spec del_network_map(network_map_id()) ->
@@ -57,6 +58,23 @@ del_network_map(NetworkMapId) ->
     case mongodb_storage:delete(static_storage, network_maps, {'_id', NetworkMapId}) of
         ok ->
             ok = k_event_manager:notify_network_map_changed(NetworkMapId);
+        {error, Error} ->
+            {error, Error}
+    end.
+
+-spec can_del_network_map(network_map_id()) -> true | false | {error, term()}.
+can_del_network_map(NetworkMapId) ->
+    Selector = {
+        '$or', [
+            {network_map_id, NetworkMapId},
+            {'originators.routings.network_map_id', NetworkMapId}
+        ]
+    },
+    case mongodb_storage:find_one(static_storage, customers, Selector) of
+        {ok, _} ->
+            false;
+        {error, no_entry} ->
+            true;
         {error, Error} ->
             {error, Error}
     end.
