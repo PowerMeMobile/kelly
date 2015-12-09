@@ -40,7 +40,7 @@ fi
 echo Start tests
 ./rebar eunit skip_deps=true
 EUNIT_RES=$?
-py.test -v test/*.py
+py.test -vv test/*.py
 PYTEST_RES=$?
 
 echo Stop node

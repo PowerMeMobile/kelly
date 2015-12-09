@@ -7,6 +7,7 @@
 
 -type originator_id() :: uuid().
 -type customer_uuid() :: uuid().
+-type dealer_id() :: uuid().
 -type customer_id() :: binary(). %% http customer_id | smpp system-type
 -type user_id() :: binary(). %% http user_id | smpp system-id
 -type originator_state() :: pending | approved | rejected.
@@ -54,6 +55,7 @@
 -record(customer, {
     customer_uuid       :: customer_uuid(),
     customer_id         :: customer_id(),
+    dealer_id           :: dealer_id(),
     name                :: binary(),
     priority            :: integer(),
     rps                 :: integer() | undefined,

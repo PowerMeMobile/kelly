@@ -72,6 +72,7 @@ set_customer(CustomerUuid, Customer) ->
     Modifier = {
         '$setOnInsert', {
             'customer_id'        , Customer#customer.customer_id,
+            'dealer_id'          , Customer#customer.dealer_id,
             'credit'             , Customer#customer.credit
         },
         '$set', {
@@ -299,6 +300,7 @@ doc_to_record(Doc) ->
 
     CustomerUuid = bsondoc:at('_id', Doc),
     CustomerId = bsondoc:at(customer_id, Doc),
+    DealerId = bsondoc:at(dealer_id, Doc),
     Name = bsondoc:at(name, Doc),
     Priority = bsondoc:at(priority, Doc),
     RPS = bsondoc:at(rps, Doc),
@@ -320,6 +322,7 @@ doc_to_record(Doc) ->
     #customer{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
+        dealer_id = DealerId,
         name = Name,
         priority = Priority,
         rps = RPS,

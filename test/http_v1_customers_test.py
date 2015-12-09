@@ -19,6 +19,9 @@ BAD_CUSTOMER_UUID = '00000000-0000-0000-0000-000000000000'
 BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1'
 CUSTOMERS_URL = BASE_URL+'/customers'
 
+DEALER_CUSTOMER_UUID = '8acef583-5700-4366-a56d-41ad6d37228b'
+DEALER_UUID = '6b3208c2-6cdd-4fd4-8e4b-8b1aeb957d6d'
+
 @pytest.fixture(scope="module")
 def http(request):
     http = requests
@@ -33,6 +36,37 @@ def http(request):
 def test_create_customer_succ(http):
     req_data = {'customer_uuid':CUSTOMER_UUID,
                 'customer_id':'0',
+                'name':'name',
+                'priority':1,
+                'rps':1000,
+                'receipts_allowed':True,
+                'no_retry':False,
+                'default_validity':'000003000000000R',
+                'max_validity':259200,
+                'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec73',
+                'network_map_id':'befa8b7c-c4a3-11e3-b670-00269e42f7a5',
+                'interfaces':'transmitter;receiver;transceiver;soap;mm;oneapi;email',
+                'features':'inbox,true',
+                'pay_type':'postpaid',
+                'credit':10000.0,
+                'credit_limit':10000.0,
+                'language':'en',
+                'state':'active'}
+    req = http.post(CUSTOMERS_URL, data=req_data)
+    assert req.status_code == 201
+    resp_data = req.json()
+    # add some fields expected in response
+    req_data['users'] = []
+    req_data['originators'] = []
+    req_data['interfaces'] = ['transmitter', 'receiver', 'transceiver', 'soap', 'mm', 'oneapi', 'email']
+    req_data['features'] = [{'name': 'inbox', 'value': 'true'}]
+    req_data['dealer_id'] = None
+    assert resp_data == req_data
+
+def test_create_dealer_customer_succ(http):
+    req_data = {'customer_uuid':DEALER_CUSTOMER_UUID,
+                'customer_id':'1',
+                'dealer_id':DEALER_UUID,
                 'name':'name',
                 'priority':1,
                 'rps':1000,
@@ -84,6 +118,7 @@ def test_update_customer_succ(http):
     req_data = {'name':'name2',
                 'priority':2,
                 'rps':500,
+                'dealer_id': DEALER_UUID,
                 'receipts_allowed':False,
                 'no_retry':True,
                 'default_validity':'000004000000000R',
@@ -107,6 +142,7 @@ def test_update_customer_succ(http):
     req_data['originators'] = []
     req_data['interfaces'] = ['transmitter']
     req_data['features'] = [{'name':'inbox', 'value':'false'}, {'name':'sms_from_email', 'value':'true'}]
+    req_data['dealer_id'] = None
     assert resp_data == req_data
 
 def test_read_bad_customer_fail(http):
@@ -119,6 +155,7 @@ def test_read_customer_succ(http):
     resp_data = req.json()
     exp_data = {'customer_uuid':CUSTOMER_UUID,
                 'customer_id':'0',
+                'dealer_id': None,
                 'name':'name2',
                 'priority':2,
                 'rps':500,
