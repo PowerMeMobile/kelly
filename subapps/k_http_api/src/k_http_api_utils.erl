@@ -55,7 +55,8 @@ decode_interface(Interface) ->
 features() -> [
     {<<"override_originator">>, [<<"empty">>, <<"any">>, <<"false">>]},
     {<<"inbox">>, [<<"true">>, <<"false">>]},
-    {<<"sms_from_email">>, [<<"true">>, <<"false">>]}
+    {<<"sms_from_email">>, [<<"true">>, <<"false">>]},
+    {<<"bypass_blacklist">>, [<<"true">>, <<"false">>]}
 ].
 
 -spec decode_feature(binary()) -> #feature{}.
