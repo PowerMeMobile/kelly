@@ -10,6 +10,10 @@
     delete/1
 ]).
 
+%% export to enable hot code update
+-export([decode_pay_type/1]).
+-export([decode_state/1]).
+
 -include_lib("alley_common/include/utils.hrl").
 -include_lib("alley_common/include/logging.hrl").
 -include_lib("gen_http_api/include/crud_specs.hrl").
@@ -45,11 +49,11 @@ init() ->
         #param{name = features, mandatory = false, repeated = true, type =
             {custom, fun k_http_api_utils:decode_feature/1}},
         #param{name = pay_type, mandatory = false, repeated = false, type =
-            {custom, fun decode_pay_type/1}},
+            {custom, fun ?MODULE:decode_pay_type/1}},
         #param{name = credit_limit, mandatory = false, repeated = false, type = float},
         #param{name = language, mandatory = false, repeated = false, type = binary},
         #param{name = state, mandatory = false, repeated = false, type =
-            {custom, fun decode_state/1}}
+            {custom, fun ?MODULE:decode_state/1}}
     ],
     Delete = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid}
@@ -338,6 +342,7 @@ sync_features(PreFs, NewFs, Users) ->
     {Users2, DisabledNames}.
 
 
+-spec decode_state(binary()) -> active | blocked | deactivated.
 decode_state(State) ->
     case bstr:lower(State) of
         <<"active">>      -> active;
@@ -345,6 +350,7 @@ decode_state(State) ->
         <<"deactivated">> -> deactivated
     end.
 
+-spec decode_pay_type(binary()) -> prepaid | postpaid.
 decode_pay_type(PayType) ->
     case bstr:lower(PayType) of
         <<"prepaid">>  -> prepaid;
