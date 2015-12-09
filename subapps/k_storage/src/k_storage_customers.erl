@@ -3,6 +3,7 @@
 %% API
 -export([
     get_customers/0,
+    get_customers_by_dealer_uuid/1,
     get_customer_by_uuid/1,
     get_customer_by_id/1,
     get_customer_by_email/1,
@@ -21,11 +22,19 @@
     del_originator_by_id/2,
     del_originator_by_msisdn/2,
 
-    change_credit/2
+    delete_dealer_customers/1,
+    deactivate_dealer_customers/1,
+    block_dealer_customers/1,
+    unblock_dealer_customers/1,
+
+    change_credit/2,
+    transfer_credit/4
 ]).
 
 -include("storages.hrl").
 -include("customer.hrl").
+-include("dealer.hrl").
+
 
 %% ===================================================================
 %% API
@@ -72,6 +81,7 @@ set_customer(CustomerUuid, Customer) ->
     Modifier = {
         '$setOnInsert', {
             'customer_id'        , Customer#customer.customer_id,
+            'dealer_id'          , Customer#customer.dealer_id,
             'credit'             , Customer#customer.credit
         },
         '$set', {
@@ -104,7 +114,22 @@ set_customer(CustomerUuid, Customer) ->
 
 -spec get_customers() -> {ok, [#customer{}]} | {error, term()}.
 get_customers() ->
-    case mongodb_storage:find(static_storage, customers, {}) of
+    Selector = {'state', {'$ne', ?DELETED_ST}},
+    case mongodb_storage:find(static_storage, customers, Selector) of
+        {ok, List} ->
+            {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+-spec get_customers_by_dealer_uuid(dealer_uuid()) ->
+    {ok, [#customer{}]} | {error, term()}.
+get_customers_by_dealer_uuid(DealerUUID) when is_binary(DealerUUID) ->
+    Selector = {
+        'dealer_id', DealerUUID,
+        'state', {'$ne', ?DELETED_ST}
+    },
+    case mongodb_storage:find(static_storage, customers, Selector) of
         {ok, List} ->
             {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
         {error, Reason} ->
@@ -113,7 +138,11 @@ get_customers() ->
 
 -spec get_customer_by_uuid(customer_uuid()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_uuid(CustomerUuid) ->
-    case mongodb_storage:find_one(static_storage, customers, {'_id', CustomerUuid}) of
+    Selector = {
+        '_id', CustomerUuid,
+        'state', {'$ne', ?DELETED_ST}
+    },
+    case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
         {error, Reason} ->
@@ -122,7 +151,11 @@ get_customer_by_uuid(CustomerUuid) ->
 
 -spec get_customer_by_id(customer_id()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_id(CustomerId) ->
-    case mongodb_storage:find_one(static_storage, customers, {'customer_id', CustomerId}) of
+    Selector = {
+        'customer_id', CustomerId,
+        'state', {'$ne', ?DELETED_ST}
+    },
+    case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
         {error, Reason} ->
@@ -131,7 +164,11 @@ get_customer_by_id(CustomerId) ->
 
 -spec get_customer_by_email(email()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_email(Email) ->
-    case mongodb_storage:find_one(static_storage, customers, {'users.email', Email}) of
+    Selector = {
+        'users.email', Email,
+        'state', {'$ne', ?DELETED_ST}
+    },
+    case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
         {error, Reason} ->
@@ -140,7 +177,11 @@ get_customer_by_email(Email) ->
 
 -spec get_customer_by_msisdn(addr()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_msisdn(Msisdn) ->
-    case mongodb_storage:find_one(static_storage, customers, {'users.mobile_phone', Msisdn#addr.addr}) of
+    Selector = {
+        'users.mobile_phone', Msisdn#addr.addr,
+        'state', {'$ne', ?DELETED_ST}
+    },
+    case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
         {error, Reason} ->
@@ -234,10 +275,21 @@ del_originator_by_msisdn(CustomerUuid, Msisdn) ->
 -spec change_credit(customer_uuid(), float()) ->
     {ok, float()} | {error, term()}.
 change_credit(CustomerUuid, Amount) ->
+    change_credit(CustomerUuid, Amount, undefined).
+
+change_credit(CustomerUuid, Amount, TransactionUuid) ->
+    Update =
+    case TransactionUuid of
+        undefined ->
+            {'$inc', {'credit', Amount}};
+        _ ->
+            {'$inc', {'credit', Amount}, '$push', {'transactions', TransactionUuid}}
+    end,
+
     Command = {
         'findandmodify', <<"customers">>,
         'query' , {'_id', CustomerUuid},
-        'update', {'$inc', {'credit', Amount}},
+        'update', Update,
         'fields', {'credit', 1},
         'new'   , true
     },
@@ -251,6 +303,146 @@ change_credit(CustomerUuid, Amount) ->
                     %% It will clear the auth cache on every change.
                     {ok, bsondoc:at(credit, Value)}
             end;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+
+-spec transfer_credit(dealer_uuid(), customer_uuid(), customer_uuid(), float()) -> ok.
+transfer_credit(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount) ->
+    {ok, #customer{dealer_id = DealerUuid}} = get_customer_by_uuid(FromCustomerUuid),
+    {ok, #customer{dealer_id = DealerUuid}} = get_customer_by_uuid(ToCustomerUuid),
+    {ok, TransactionUuid} = create_transaction(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount),
+    {ok, _} = change_credit(FromCustomerUuid, (Amount * -1), TransactionUuid),
+    {ok, _} = change_credit(ToCustomerUuid, Amount, TransactionUuid),
+    ok = complete_transaction(TransactionUuid),
+    {ok, TransactionUuid}.
+
+create_transaction(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount) ->
+    TransactionUuid = uuid:unparse(uuid:generate_time()),
+    Modifier = {
+        '_id', TransactionUuid,
+        'dealer_uuid', DealerUuid,
+        'from', FromCustomerUuid,
+        'to', ToCustomerUuid,
+        'amount', Amount,
+        'state', 'in_progress',
+        'time', now()
+    },
+    {ok, TransactionUuid} =
+        mongodb_storage:insert(static_storage, credit_transactions, Modifier).
+
+complete_transaction(TransactionUuid) ->
+    Selector = {
+        '_id', TransactionUuid
+    },
+    Modifier = {
+        '$set', {'state', 'completed'}
+    },
+    case mongodb_storage:update(static_storage, credit_transactions, Selector, Modifier) of
+        ok -> ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+
+-spec delete_dealer_customers(dealer_uuid()) -> ok | {error, term()}.
+delete_dealer_customers(DealerUUID) when is_binary(DealerUUID) ->
+    {ok, Customers} = get_customers_by_dealer_uuid(DealerUUID),
+    delete_dealer_customers(DealerUUID, Customers).
+delete_dealer_customers(_, []) -> ok;
+delete_dealer_customers(DealerUUID, [Customer | OtherCustomers]) ->
+    CustomerUUID = Customer#customer.customer_uuid,
+    Selector = {'_id', CustomerUUID},
+    PrevState = bsondoc:atom_to_binary(Customer#customer.state),
+    NewState = bsondoc:atom_to_binary(?DELETED_ST),
+    Modifier = {'$set', {
+        'state', NewState,
+        'prev_state', PrevState
+    }},
+    case mongodb_storage:update(static_storage, customers, Selector, Modifier) of
+        ok ->
+            ok = k_event_manager:notify_customer_changed(CustomerUUID),
+            delete_dealer_customers(DealerUUID, OtherCustomers);
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+
+-spec deactivate_dealer_customers(dealer_uuid()) -> ok | {error, term()}.
+deactivate_dealer_customers(DealerUUID) when is_binary(DealerUUID) ->
+    {ok, Customers} = get_customers_by_dealer_uuid(DealerUUID),
+    deactivate_dealer_customers(DealerUUID, Customers).
+deactivate_dealer_customers(_, []) -> ok;
+deactivate_dealer_customers(DealerUUID, [Customer | OtherCustomers]) ->
+    CustomerUUID = Customer#customer.customer_uuid,
+    Selector = {'_id', CustomerUUID},
+    PrevState = bsondoc:atom_to_binary(Customer#customer.state),
+    NewState = bsondoc:atom_to_binary(?DEACTIVATED_ST),
+    Modifier = {'$set', {
+        'state', NewState,
+        'prev_state', PrevState
+    }},
+    case mongodb_storage:update(static_storage, customers, Selector, Modifier) of
+        ok ->
+            ok = k_event_manager:notify_customer_changed(CustomerUUID),
+            deactivate_dealer_customers(DealerUUID, OtherCustomers);
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+
+-spec block_dealer_customers(dealer_uuid()) -> ok | {error, term()}.
+block_dealer_customers(DealerUUID) when is_binary(DealerUUID) ->
+    {ok, Customers} = get_customers_by_dealer_uuid(DealerUUID),
+    block_dealer_customers(DealerUUID, Customers).
+block_dealer_customers(_, []) -> ok;
+block_dealer_customers(DealerUUID, [Customer | OtherCustomers]) ->
+    CustomerUUID = Customer#customer.customer_uuid,
+    Selector = {'_id', CustomerUUID},
+    PrevState = bsondoc:atom_to_binary(Customer#customer.state),
+    NewState = bsondoc:atom_to_binary(?BLOCKED_ST),
+    Modifier = {'$set', {
+        'state', NewState,
+        'prev_state', PrevState
+    }},
+    case mongodb_storage:update(static_storage, customers, Selector, Modifier) of
+        ok ->
+            ok = k_event_manager:notify_customer_changed(CustomerUUID),
+            block_dealer_customers(DealerUUID, OtherCustomers);
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+
+-spec unblock_dealer_customers(dealer_uuid()) -> ok | {error, term()}.
+unblock_dealer_customers(DealerUUID) when is_binary(DealerUUID) ->
+    {ok, Customers} = get_customers_by_dealer_uuid(DealerUUID),
+    unblock_dealer_customers(DealerUUID, Customers).
+unblock_dealer_customers(_, []) -> ok;
+unblock_dealer_customers(DealerUUID, [Customer | OtherCustomers]) ->
+    CustomerUUID = Customer#customer.customer_uuid,
+    {ok, PrevState} = get_customer_previous_state(CustomerUUID),
+    Selector = {'_id', CustomerUUID},
+    Modifier = {'$set', {
+        'state', PrevState
+    }, '$unset', {'prev_state', <<>>}},
+    case mongodb_storage:update(static_storage, customers, Selector, Modifier) of
+        ok ->
+            ok = k_event_manager:notify_customer_changed(CustomerUUID),
+            unblock_dealer_customers(DealerUUID, OtherCustomers);
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+get_customer_previous_state(CustomerUUID) ->
+    Selector = {
+        '_id', CustomerUUID
+    },
+    case mongodb_storage:find_one(static_storage, customers, Selector) of
+        {ok, Doc} ->
+            PrevState = bsondoc:at(prev_state, Doc),
+            {ok, PrevState};
         {error, Reason} ->
             {error, Reason}
     end.
@@ -299,6 +491,7 @@ doc_to_record(Doc) ->
 
     CustomerUuid = bsondoc:at('_id', Doc),
     CustomerId = bsondoc:at(customer_id, Doc),
+    DealerId = bsondoc:at(dealer_id, Doc),
     Name = bsondoc:at(name, Doc),
     Priority = bsondoc:at(priority, Doc),
     RPS = bsondoc:at(rps, Doc),
@@ -320,6 +513,7 @@ doc_to_record(Doc) ->
     #customer{
         customer_uuid = CustomerUuid,
         customer_id = CustomerId,
+        dealer_id = DealerId,
         name = Name,
         priority = Priority,
         rps = RPS,

@@ -4,21 +4,17 @@
 -include("storages.hrl").
 -include("network_map.hrl").
 -include("provider.hrl").
+-include("feature.hrl").
 
 -type originator_id() :: uuid().
 -type customer_uuid() :: uuid().
+-type dealer_id() :: uuid().
 -type customer_id() :: binary(). %% http customer_id | smpp system-type
 -type user_id() :: binary(). %% http user_id | smpp system-id
 -type originator_state() :: pending | approved | rejected.
 -type user_state() :: active | blocked | deactivated.
 -type customer_state() :: active | blocked | deactivated.
 -type email() :: binary().
-
--record(feature, {
-    name :: binary(),
-    value :: binary()
-}).
--type feature() :: #feature{}.
 
 -record(routing, {
     network_map_id  :: network_map_id(),
@@ -54,6 +50,7 @@
 -record(customer, {
     customer_uuid       :: customer_uuid(),
     customer_id         :: customer_id(),
+    dealer_id           :: dealer_id(),
     name                :: binary(),
     priority            :: integer(),
     rps                 :: integer() | undefined,

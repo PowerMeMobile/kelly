@@ -114,6 +114,9 @@ gen_http_api_handlers_dispatch_rules() ->
         k_http_api_v1_customers_users,
         k_http_api_v1_customers_users_msisdns,
         k_http_api_v1_customers,
+        k_http_api_v1_dealers,
+        k_http_api_v1_dealers_credit_transfer,
+        k_http_api_v1_dealers_customers,
 
         %% Inbox API
         k_http_api_v1_incomings,
