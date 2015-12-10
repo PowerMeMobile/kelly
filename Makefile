@@ -55,3 +55,9 @@ test: generate
 
 tags:
 	@find . -name "*.[e,h]rl" -print | etags -
+
+cleandb:
+	mongo --quiet kelly --eval 'db.dropDatabase()'
+	mongo --quiet defers --eval 'db.dropDatabase()'
+	mongo --quiet mailbox --eval 'db.dropDatabase()'
+	mongo --quiet cleandb.js
