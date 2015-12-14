@@ -422,9 +422,13 @@ build_auth_response(<<"AuthRespV3">>, ReqId, Customer, UserId) ->
         pay_type = PayType,
         credit = Credit,
         credit_limit = CreditLimit,
+        features = CustomerFeatures,
         priority = Priority,
         rps = RPS
     } = Customer,
+
+    BlacklistBypassFeature =
+        [F || F <- CustomerFeatures, F#feature.name =:= <<"bypass_blacklist">>],
 
     {ok, CustNs, CustPs} =
         k_handlers_utils:get_networks_and_providers(NetMapId, DefProvId),
@@ -439,7 +443,7 @@ build_auth_response(<<"AuthRespV3">>, ReqId, Customer, UserId) ->
 
     Coverages = [CustCoverage | OrigCoverages],
 
-    Features = get_features(UserId, Customer),
+    Features = get_features(UserId, Customer) ++ BlacklistBypassFeature,
 
     CustomerDTO = #auth_customer_v3{
         customer_uuid = CustomerUuid,

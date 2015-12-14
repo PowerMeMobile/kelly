@@ -1,6 +1,8 @@
-{"2.13.1",
+{"2.13.3",
     [{"2.12.6", [
+        {load_module, k_amqp_auth_handler}
     ]}],
     [{"2.12.6", [
+        {load_module, k_amqp_auth_handler}
     ]}]
 }.
