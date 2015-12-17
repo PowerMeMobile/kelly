@@ -2,18 +2,19 @@
 
 set -e
 
-echo Cleanup
-rm -rf rel/kelly* rel/*.tar.gz
-
 SUS_ARCH_USER=${1}
 SUS_ARCH_PASS=${2}
 FROM_VSN=${3}
 TO_VSN=${4}
 
-TAR_TMP_BASE=/tmp/
+REL_TAR_TMP=_tmp
+TMP=/tmp/
 TAR_URL_BASE=http://sus.dev1team.net/sus/poweralley/
 PRJ_NAME=kelly
 TAR_NAME_BASE=centos6.x86_64.tar.gz
+
+echo Cleanup
+rm -rf rel/${PRJ_NAME}* rel/*.tar.gz rel/${REL_TAR_TMP}
 
 echo Generate upgrade from ${FROM_VSN} to ${TO_VSN}
 
@@ -21,7 +22,7 @@ function download {
     PRJ_NAME_W_VER=${PRJ_NAME}-${1}
     TAR_NAME=${PRJ_NAME_W_VER}-${TAR_NAME_BASE}
     TAR_URL=${TAR_URL_BASE}${TAR_NAME}
-    TAR_TMP=${TAR_TMP_BASE}${TAR_NAME}
+    TAR_TMP=${TMP}${TAR_NAME}
     wget --http-user=${SUS_ARCH_USER} --http-password=${SUS_ARCH_PASS} -O ${TAR_TMP} ${TAR_URL}
 
     tar xzf ${TAR_TMP} -C rel/
@@ -29,11 +30,10 @@ function download {
     patch rel/${PRJ_NAME_W_VER}/lib/entop-0.0.1/ebin/entop.app entop.patch
     patch rel/${PRJ_NAME_W_VER}/lib/cecho-0.0.3/ebin/cecho.app cecho.patch
 
-
     ln -s ${PRJ_NAME}.rel rel/${PRJ_NAME_W_VER}/releases/${1}/${PRJ_NAME}-${1}.rel
     ln -s ${PRJ_NAME}.boot rel/${PRJ_NAME_W_VER}/releases/${1}/${PRJ_NAME}-${1}.boot
     if [ ! -f rel/${PRJ_NAME_W_VER}/releases/${1}/start.boot ]; then
-	ln -s ${PRJ_NAME}.boot rel/${PRJ_NAME_W_VER}/releases/${1}/start.boot
+	    ln -s ${PRJ_NAME}.boot rel/${PRJ_NAME_W_VER}/releases/${1}/start.boot
     fi
 }
 
@@ -47,7 +47,30 @@ UPGRADE_FROM=rel/${PRJ_NAME}-${FROM_VSN}/releases/${FROM_VSN}/${PRJ_NAME}-${FROM
 DOWNGRADE_TO=${UPGRADE_FROM}
 UPGRADE_FROM_EBIN_PATH=rel/${PRJ_NAME}-${FROM_VSN}/lib/*/ebin
 
+echo Generate relup
 erl -eval "systools:make_relup(\"${UPGRADE_TO}\", [\"${UPGRADE_FROM}\"], [\"${DOWNGRADE_TO}\"], [{path, [\"${UPGRADE_TO_EBIN_PATH}\", \"${UPGRADE_FROM_EBIN_PATH}\"]}, {outdir, \"${UPGRADE_TO_RELEASE_PATH}\"}])." -s init stop -noshell
 
+echo Generate upgrade tar
 erl -eval "systools:make_tar(\"${UPGRADE_TO}\", [{path, [\"${UPGRADE_TO_EBIN_PATH}\"]}, {outdir, \"rel/\"},{dirs,[include]}])." -s init stop -noshell
 
+echo Add ${PRJ_NAME}.boot, start_clean.boot and vm.args to upgrade tar
+
+mkdir -p rel/${REL_TAR_TMP}/releases/${TO_VSN}
+ln -s start.boot rel/${REL_TAR_TMP}/releases/${TO_VSN}/${PRJ_NAME}.boot
+cp rel/${PRJ_NAME}-${TO_VSN}/releases/${TO_VSN}/start_clean.boot rel/${REL_TAR_TMP}/releases/${TO_VSN}/start_clean.boot
+cp rel/${PRJ_NAME}-${TO_VSN}/releases/${TO_VSN}/vm.args rel/${REL_TAR_TMP}/releases/${TO_VSN}/vm.args
+
+CUR_DIR=$(pwd)
+REL_TAR_ABS=$(pwd)/rel/${PRJ_NAME}-${TO_VSN}.tar.gz
+
+cd rel/${REL_TAR_TMP}
+
+tar xzf ${REL_TAR_ABS} -C .
+
+rm ${REL_TAR_ABS}
+
+tar czf ${REL_TAR_ABS} lib releases
+
+cd ${CUR_DIR}
+
+echo All done
