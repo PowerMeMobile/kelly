@@ -56,7 +56,7 @@ init() ->
     ],
     Create = [
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
-        #param{name = dealer_id, mandatory = false, repeated = false, type = uuid},
+        #param{name = dealer_id, mandatory = false, repeated = false, type = binary},
         #param{name = customer_id, mandatory = true, repeated = false, type = binary},
         #param{name = name, mandatory = true, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = integer},

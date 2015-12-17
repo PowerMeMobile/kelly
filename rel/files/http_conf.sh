@@ -92,6 +92,14 @@ curl -s -D - -X POST 127.0.0.1:8080/network_maps -d "id=df6b84c4-734d-11e5-80da-
 # Customers
 #
 
+# With dealer_id=<UUID>
+
+curl -s -D - -X POST 127.0.0.1:8080/v1/customers -d "customer_uuid=d1c990b5-beef-425f-bc69-139cd7d73fa7&customer_id=10012&dealer_id=b24fce75-0776-4e19-b37a-406f81f9f9aa&name=with-dealer-id&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&interfaces=transmitter;receiver;transceiver&features=inbox,true&pay_type=postpaid&credit=1000000000.0&credit_limit=10000.0&language=en&state=active" | check || exit 1
+
+# With dealer_id=""
+
+curl -s -D - -X POST 127.0.0.1:8080/v1/customers -d "customer_uuid=7214ccb6-e36d-4f34-82d5-ed48547da926&customer_id=10013&dealer_id=&name=with-dealer-id&priority=1&rps=1000&network_map_id=c51a94bf-618a-48a4-90bf-7508e3d93b5d&receipts_allowed=true&no_retry=false&default_validity=000003000000000R&max_validity=259200&default_provider_id=&interfaces=transmitter;receiver;transceiver&features=inbox,true&pay_type=postpaid&credit=1000000000.0&credit_limit=10000.0&language=en&state=active" | check || exit 1
+
 #
 # Funnel
 
