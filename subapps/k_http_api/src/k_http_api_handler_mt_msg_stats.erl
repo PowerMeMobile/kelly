@@ -30,6 +30,7 @@ init() ->
         #param{name = order_by, mandatory = true, repeated = false, type = binary},
         #param{name = order_direction, mandatory = true, repeated = false, type = binary},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
+        #param{name = dealer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = recipient, mandatory = false, repeated = false, type = binary},
         #param{name = status, mandatory = false, repeated = false, type = binary}
     ],

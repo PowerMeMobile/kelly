@@ -22,11 +22,22 @@ build_msgs_report(Params) ->
     Limit = ?gv(limit, Params),
     OrderBy = decode_order_by(?gv(order_by, Params)),
     OrderDirection = decode_order_direction(?gv(order_direction, Params)),
-    CustomerSel =
-        case ?gv(customer_uuid, Params) of
-            undefined -> [];
-            CustomerUuid -> [{'ci', CustomerUuid}]
-        end,
+    DealerUuid = ?gv(dealer_uuid, Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
+
+    CustomerDealerSelector =
+    if
+        CustomerUuid =/= undefined ->
+            [{'ci', CustomerUuid}];
+
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            [{'ci', {'$in', DealerCustomersUuidList}}];
+
+        true -> []
+    end,
+
     RecipientSel =
         case ?gv(recipient, Params) of
             undefined -> [];
@@ -41,7 +52,7 @@ build_msgs_report(Params) ->
         {'$query',
             bson:document(
                 [{'rqt', {'$gte', From, '$lt', To}}] ++
-                CustomerSel ++
+                CustomerDealerSelector ++
                 RecipientSel ++
                 StatusSel
             ),

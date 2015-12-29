@@ -21,26 +21,33 @@
 get_all(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
+    DealerUuid = ?gv(dealer_uuid, Params),
     CustomerUuid = ?gv(customer_uuid, Params),
     UserId = ?gv(user_id, Params),
     Skip = ?gv(skip, Params),
     Limit = ?gv(limit, Params),
-    CustomerUuidSel =
-        case CustomerUuid of
-            undefined -> [];
-            CustomerUuid -> [{'ci', CustomerUuid}]
-        end,
-    UserIdSel =
-        case {CustomerUuid, UserId} of
-            {undefined, _} -> [];
-            {_, undefined} -> [];
-            {_, UserId} -> [{'ui', UserId}]
-        end,
+
+    CustomerUserDealerSelector =
+    if
+        CustomerUuid =/= undefined andalso
+        UserId =/= undefined ->
+            [{'ci', CustomerUuid}, {'ui', UserId}];
+
+        CustomerUuid =/= undefined ->
+            [{'ci', CustomerUuid}];
+
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            [{'ci', {'$in', DealerCustomersUuidList}}];
+
+        true -> []
+    end,
     Selector =
         {'$query',
             bson:document(
                 [{'rqt', {'$gte', From, '$lt', To}}] ++
-                CustomerUuidSel ++ UserIdSel
+                CustomerUserDealerSelector
             )
         },
     case shifted_storage:find(mt_batches, Selector, {}, Skip, Limit) of

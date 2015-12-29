@@ -26,6 +26,7 @@ init() ->
         #param{name = to, mandatory = true, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
+        #param{name = dealer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = status, mandatory = false, repeated = false, type = atom}
     ],
     {ok, #specs{
@@ -35,11 +36,12 @@ init() ->
 
 read(Params) ->
     ?log_debug("Params: ~p", [Params]),
-    From = ?gv(from, Params),
-    To = ?gv(to, Params),
-    CustomerUuid = ?gv(customer_uuid, Params),
-    Status = ?gv(status, Params),
-    case build_report(From, To, CustomerUuid, Status) of
+    %% From = ?gv(from, Params),
+    %% To = ?gv(to, Params),
+    %% CustomerUuid = ?gv(customer_uuid, Params),
+    %% DealerUuid = ?gv(dealer_uuid, Params),
+    %% Status = ?gv(status, Params),
+    case k_statistic_status_reports:build_report(Params) of
         {ok, Report} ->
             {ok, Report};
         {error, Error} ->
@@ -60,12 +62,12 @@ delete(_Params) ->
 %% Internal
 %% ===================================================================
 
-build_report(From, To, CustomerUuid, undefined) ->
-    From2 = ac_datetime:datetime_to_timestamp(From),
-    To2 = ac_datetime:datetime_to_timestamp(To),
-    k_statistic_status_reports:get_aggregated_statuses_report(From2, To2, CustomerUuid);
+%% build_report(From, To, CustomerUuid, undefined) ->
+%%     From2 = ac_datetime:datetime_to_timestamp(From),
+%%     To2 = ac_datetime:datetime_to_timestamp(To),
+%%     k_statistic_status_reports:get_aggregated_statuses_report(From2, To2, CustomerUuid);
 
-build_report(From, To, CustomerUuid, Status) ->
-    From2 = ac_datetime:datetime_to_timestamp(From),
-    To2 = ac_datetime:datetime_to_timestamp(To),
-    k_statistic_status_reports:get_msgs_by_status_report(From2, To2, CustomerUuid, Status).
+%% build_report(From, To, CustomerUuid, Status) ->
+%%     From2 = ac_datetime:datetime_to_timestamp(From),
+%%     To2 = ac_datetime:datetime_to_timestamp(To),
+%%     k_statistic_status_reports:get_msgs_by_status_report(From2, To2, CustomerUuid, Status).

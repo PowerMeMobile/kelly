@@ -1,11 +1,11 @@
 -module(k_statistic_status_reports).
 
 -export([
-    get_aggregated_statuses_report/3,
-    get_msgs_by_status_report/4
+    build_report/1
 ]).
 
 -include_lib("k_storage/include/msg_info.hrl").
+-include_lib("alley_common/include/utils.hrl").
 
 -type report() :: term().
 -type reason() :: term().
@@ -14,16 +14,37 @@
 %% API
 %% ===================================================================
 
--spec get_aggregated_statuses_report(timestamp(), timestamp(), undefined | customer_id()) ->
+-spec build_report(proplists:proplist()) -> {ok, report()} | {error, reason()}.
+build_report(Params) ->
+    From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
+    To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
+    CustomerUuid = ?gv(customer_uuid, Params),
+    DealerUuid = ?gv(dealer_uuid, Params),
+    Status = ?gv(status, Params),
+    if
+        Status =:= undefined ->
+            get_aggregated_statuses_report(From, To, CustomerUuid, DealerUuid);
+        true ->
+            get_msgs_by_status_report(From, To, CustomerUuid, DealerUuid, Status)
+    end.
+
+
+-spec get_aggregated_statuses_report(timestamp(), timestamp(), undefined | customer_id(), dealer_id()) ->
     {ok, report()} | {error, reason()}.
-get_aggregated_statuses_report(From, To, CustomerUuid) ->
+get_aggregated_statuses_report(From, To, CustomerUuid, DealerUuid) ->
     Query =
-        case CustomerUuid of
-            undefined ->
-                {'rqt', {'$gte', From, '$lt', To}};
-            CustomerUuid ->
-                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid}
-        end,
+    if
+        CustomerUuid =/= undefined ->
+            {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid};
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            CustomerUuidSelector = {'$in', DealerCustomersUuidList},
+            {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuidSelector};
+        true ->
+            {'rqt', {'$gte', From, '$lt', To}}
+    end,
+
     MtCommand = {
         'aggregate', <<"mt_messages">>,
         'pipeline' , [
@@ -47,19 +68,25 @@ get_aggregated_statuses_report(From, To, CustomerUuid) ->
      ]),
     {ok, Results}.
 
--spec get_msgs_by_status_report(timestamp(), timestamp(), undefined | customer_id(), status()) ->
+-spec get_msgs_by_status_report(timestamp(), timestamp(), undefined | customer_id(), dealer_id(), status()) ->
     {ok, report()} | {error, reason()}.
-get_msgs_by_status_report(From, To, CustomerUuid, received) ->
+get_msgs_by_status_report(From, To, CustomerUuid, DealerUuid, received) ->
     Selector =
-        case CustomerUuid of
-            undefined ->
-                {'rqt', {'$gte', From, '$lt', To}};
-            CustomerUuid ->
-                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid}
-        end,
+    if
+        CustomerUuid =/= undefined ->
+            {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid};
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            CustomerUuidSelector = {'$in', DealerCustomersUuidList},
+            {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuidSelector};
+        true ->
+            {'rqt', {'$gte', From, '$lt', To}}
+    end,
+
     get_raw_report(mo_messages, Selector);
 
-get_msgs_by_status_report(From, To, CustomerUuid, Status) when
+get_msgs_by_status_report(From, To, CustomerUuid, DealerUuid, Status) when
     Status == pending;
     Status == submitted; Status == failed; Status == blocked;
     Status == enroute; Status == delivered; Status == expired;
@@ -67,13 +94,19 @@ get_msgs_by_status_report(From, To, CustomerUuid, Status) when
     Status == unknown; Status == rejected; Status == unrecognized
 ->
     StatusBin = bsondoc:atom_to_binary(Status),
+
     Selector =
-        case CustomerUuid of
-            undefined ->
-                {'rqt', {'$gte', From, '$lt', To}, 's', StatusBin};
-            CustomerUuid ->
-                {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid, 's', StatusBin}
-        end,
+    if
+        CustomerUuid =/= undefined ->
+            {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuid, 's', StatusBin};
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            CustomerUuidSelector = {'$in', DealerCustomersUuidList},
+            {'rqt', {'$gte', From, '$lt', To}, 'ci', CustomerUuidSelector, 's', StatusBin};
+        true ->
+            {'rqt', {'$gte', From, '$lt', To}, 's', StatusBin}
+    end,
     get_raw_report(mt_messages, Selector).
 
 %% ===================================================================

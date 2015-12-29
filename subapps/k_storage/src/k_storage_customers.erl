@@ -4,6 +4,7 @@
 -export([
     get_customers/0,
     get_customers_by_dealer_uuid/1,
+    get_customers_uuid_by_dealer_uuid/1,
     get_customer_by_uuid/1,
     get_customer_by_id/1,
     get_customer_by_email/1,
@@ -135,6 +136,13 @@ get_customers_by_dealer_uuid(DealerUUID) when is_binary(DealerUUID) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+
+-spec get_customers_uuid_by_dealer_uuid(dealer_uuid()) -> {ok, [customer_uuid()]}.
+get_customers_uuid_by_dealer_uuid(DealerUuid) when is_binary(DealerUuid) ->
+    {ok, DealerCustomers} = get_customers_by_dealer_uuid(DealerUuid),
+    DealerCustomersUuidList = [C#customer.customer_uuid || C <- DealerCustomers],
+    {ok, DealerCustomersUuidList}.
 
 -spec get_customer_by_uuid(customer_uuid()) -> {ok, #customer{}} | {error, no_entry} | {error, term()}.
 get_customer_by_uuid(CustomerUuid) ->

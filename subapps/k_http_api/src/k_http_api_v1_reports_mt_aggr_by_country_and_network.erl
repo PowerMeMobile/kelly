@@ -26,6 +26,7 @@ init() ->
         #param{name = to, mandatory = true, repeated = false, type =
             {custom, fun ac_datetime:iso8601_to_datetime/1}},
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
+        #param{name = dealer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = group_by , mandatory = true, repeated = false, type =
             {custom, fun convert_group_by/1}}
     ],

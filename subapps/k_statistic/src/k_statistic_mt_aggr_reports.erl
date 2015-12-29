@@ -21,11 +21,21 @@
 by_country(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
-    CustomerSel =
-        case ?gv(customer_uuid, Params) of
-            undefined -> [];
-            CustomerUuid -> [{'ci', CustomerUuid}]
-        end,
+    DealerUuid = ?gv(dealer_uuid, Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
+
+    CustomerDealerSelector =
+    if
+        CustomerUuid =/= undefined ->
+            [{'ci', CustomerUuid}];
+
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            [{'ci', {'$in', DealerCustomersUuidList}}];
+
+        true -> []
+    end,
     GroupBy = ?gv(group_by, Params),
     Command = {
         'aggregate', <<"mt_messages">>,
@@ -33,7 +43,7 @@ by_country(Params) ->
             {'$match',
                 bson:document(
                     [{'rqt', {'$gte', From, '$lt', To}}] ++
-                    CustomerSel
+                    CustomerDealerSelector
                 )
             },
             by_network_group(GroupBy),
@@ -63,11 +73,21 @@ by_country(Params) ->
 by_country_and_network(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
-    CustomerSel =
-        case ?gv(customer_uuid, Params) of
-            undefined -> [];
-            CustomerUuid -> [{'ci', CustomerUuid}]
-        end,
+    DealerUuid = ?gv(dealer_uuid, Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
+
+    CustomerDealerSelector =
+    if
+        CustomerUuid =/= undefined ->
+            [{'ci', CustomerUuid}];
+
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            [{'ci', {'$in', DealerCustomersUuidList}}];
+
+        true -> []
+    end,
     GroupBy = ?gv(group_by, Params),
     Command = {
         'aggregate', <<"mt_messages">>,
@@ -75,7 +95,7 @@ by_country_and_network(Params) ->
             {'$match',
                 bson:document(
                     [{'rqt', {'$gte', From, '$lt', To}}] ++
-                    CustomerSel
+                    CustomerDealerSelector
                 )
             },
             by_network_group(GroupBy),
@@ -107,11 +127,21 @@ by_country_and_network(Params) ->
 by_gateway(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
-    CustomerSel =
-        case ?gv(customer_uuid, Params) of
-            undefined -> [];
-            CustomerUuid -> [{'ci', CustomerUuid}]
-        end,
+    DealerUuid = ?gv(dealer_uuid, Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
+
+    CustomerDealerSelector =
+    if
+        CustomerUuid =/= undefined ->
+            [{'ci', CustomerUuid}];
+
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            [{'ci', {'$in', DealerCustomersUuidList}}];
+
+        true -> []
+    end,
     GroupBy = ?gv(group_by, Params),
     Command = {
         'aggregate', <<"mt_messages">>,
@@ -119,7 +149,7 @@ by_gateway(Params) ->
             {'$match',
                 bson:document(
                     [{'rqt', {'$gte', From, '$lt', To}}] ++
-                    CustomerSel
+                    CustomerDealerSelector
                 )
             },
             by_gateway_group(GroupBy),
@@ -178,11 +208,22 @@ by_period(Params) ->
 summary(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
-    CustomerSel =
-        case ?gv(customer_uuid, Params) of
-            undefined -> [];
-            CustomerUuid -> [{'ci', CustomerUuid}]
-        end,
+    DealerUuid = ?gv(dealer_uuid, Params),
+    CustomerUuid = ?gv(customer_uuid, Params),
+
+    CustomerDealerSelector =
+    if
+        CustomerUuid =/= undefined ->
+            [{'ci', CustomerUuid}];
+
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            [{'ci', {'$in', DealerCustomersUuidList}}];
+
+        true -> []
+    end,
+
     GroupBy = ?gv(group_by, Params),
     Command = {
         'aggregate', <<"mt_messages">>,
@@ -190,7 +231,7 @@ summary(Params) ->
             {'$match',
                 bson:document(
                     [{'rqt', {'$gte', From, '$lt', To}}] ++
-                    CustomerSel
+                    CustomerDealerSelector
                 )
             },
             summary_group(GroupBy),
