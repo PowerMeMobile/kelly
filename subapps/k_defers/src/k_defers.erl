@@ -21,10 +21,11 @@
 -spec get_all(plist()) -> {ok, plist()} | {error, reason()}.
 get_all(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
+    DealerUuid = ?gv(dealer_uuid, Params),
     UserId = ?gv(user_id, Params),
     Skip = ?gv(skip, Params),
     Limit = ?gv(limit, Params),
-    case k_storage_defers:get_all(CustomerUuid, UserId, Skip, Limit) of
+    case k_storage_defers:get_all(CustomerUuid, UserId, DealerUuid, Skip, Limit) of
         {ok, Batches} ->
             Uuids = [B#batch_info.customer_uuid || B <- Batches],
             Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),

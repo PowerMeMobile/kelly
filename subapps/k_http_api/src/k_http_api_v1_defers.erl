@@ -22,6 +22,7 @@
 init() ->
     Read = [
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
+        #param{name = dealer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = user_id, mandatory = false, repeated = false, type = binary},
         #param{name = skip, mandatory = true, repeated = false, type = integer},
         #param{name = limit, mandatory = true, repeated = false, type = integer}

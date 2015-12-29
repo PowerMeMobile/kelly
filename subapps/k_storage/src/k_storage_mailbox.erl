@@ -26,7 +26,7 @@
     delete_item/1,
 
     get_incoming/4,
-    get_incomings/7
+    get_incomings/8
 ]).
 
 -type state() :: all | new | read.
@@ -418,12 +418,27 @@ get_incoming(CustomerUuid, UserId, DstAddr, Limit) ->
     Pending = length(AllDocs) - length(Docs),
     {ok, Items, Pending}.
 
--spec get_incomings(timestamp(), timestamp(), customer_uuid(), user_id(), state(), skip(), limit()) ->
+-spec get_incomings(timestamp(), timestamp(), customer_uuid(), user_id(), dealer_id(), state(), skip(), limit()) ->
     {ok, [#k_mb_incoming{}]} | {error, reason()}.
-get_incomings(From, To, CustomerUuid, UserId, State, Skip, Limit) ->
+get_incomings(From, To, CustomerUuid, UserId, DealerUuid, State, Skip, Limit) ->
+    CustomerUserDealerSelector =
+    if
+        CustomerUuid =/= undefined andalso
+        UserId =/= undefined ->
+            [{'customer_uuid', CustomerUuid}, {'user_id', UserId}];
+
+        CustomerUuid =/= undefined ->
+            [{'customer_uuid', CustomerUuid}];
+
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            [{'customer_uuid', {'$in', DealerCustomersUuidList}}];
+
+        true -> []
+    end,
     Selector = bson:document(lists:flatten([
-        [{'customer_uuid', CustomerUuid} || CustomerUuid =/= undefined],
-        [{'user_id', UserId} || CustomerUuid =/= undefined andalso UserId =/= undefined],
+        CustomerUserDealerSelector,
         [{'rcv_time', {'$gte', From, '$lt', To}}],
         [{'state', State} || State =/= all]
     ])),

@@ -19,13 +19,14 @@
 get_all(Params) ->
     From = ac_datetime:datetime_to_timestamp(?gv(from, Params)),
     To = ac_datetime:datetime_to_timestamp(?gv(to, Params)),
+    DealerUuid = ?gv(dealer_uuid, Params),
     CustomerUuid = ?gv(customer_uuid, Params),
     UserId = ?gv(user_id, Params),
     State = ?gv(state, Params, all),
     Skip = ?gv(skip, Params),
     Limit = ?gv(limit, Params),
     case k_storage_mailbox:get_incomings(
-            From, To, CustomerUuid, UserId, State, Skip, Limit) of
+            From, To, CustomerUuid, UserId, DealerUuid, State, Skip, Limit) of
         {ok, Incomings} ->
             Uuids = [I#k_mb_incoming.customer_uuid || I <- Incomings],
             Dict = k_storage_utils:get_uuid_to_customer_dict(Uuids),

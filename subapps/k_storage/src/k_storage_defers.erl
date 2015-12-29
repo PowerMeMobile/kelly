@@ -7,7 +7,7 @@
 
 %% API
 -export([
-    get_all/4,
+    get_all/5,
     get_details/1,
     get_recipients/1,
     get_expired_up_to/1,
@@ -24,24 +24,30 @@
 %% API
 %% ===================================================================
 
--spec get_all(customer_id(), user_id(), pos_integer(), pos_integer()) ->
+-spec get_all(customer_id(), user_id(), dealer_id(), pos_integer(), pos_integer()) ->
     {ok, #batch_info{}} | {error, reason()}.
-get_all(CustomerUuid, UserId, Skip, Limit) ->
-    CustomerUuidSel =
-        case CustomerUuid of
-            undefined -> [];
-            CustomerUuid -> [{'ci', CustomerUuid}]
-        end,
-    UserIdSel =
-        case {CustomerUuid, UserId} of
-            {undefined, _} -> [];
-            {_, undefined} -> [];
-            {_, UserId} -> [{'ui', UserId}]
-        end,
+get_all(CustomerUuid, UserId, DealerUuid, Skip, Limit) ->
+    CustomerUserDealerSelector =
+    if
+        CustomerUuid =/= undefined andalso
+        UserId =/= undefined ->
+            [{'ci', CustomerUuid}, {'ui', UserId}];
+
+        CustomerUuid =/= undefined ->
+            [{'ci', CustomerUuid}];
+
+        DealerUuid =/= undefined ->
+            {ok, DealerCustomersUuidList} =
+                k_storage_customers:get_customers_uuid_by_dealer_uuid(DealerUuid),
+            [{'ci', {'$in', DealerCustomersUuidList}}];
+
+        true -> []
+    end,
+
     Selector =
         {'$query',
             bson:document(
-                CustomerUuidSel ++ UserIdSel
+                CustomerUserDealerSelector
             )
         },
     Projector = {'rqs', 0},
