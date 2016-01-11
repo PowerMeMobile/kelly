@@ -99,31 +99,22 @@ init() ->
     }}.
 
 create(Params) ->
-    case ?gv(customer_uuid, Params) of
-        undefined ->
+    CustomerUuid = ?gv(customer_uuid, Params),
+    case does_exist_by_uuid(CustomerUuid) of
+        true ->
+            {exception, 'svc0004'};
+        false ->
             case does_exist_by_id(Params) of
                 true ->
                     {exception, 'svc0004'};
                 false ->
-                    CustomerUuid = uuid:unparse(uuid:generate_time()),
-                    create_customer(lists:keyreplace(customer_uuid, 1, Params, {customer_uuid, CustomerUuid}))
-            end;
-        _ ->
-            case does_exist_by_uuid(Params) of
-                true ->
-                    {exception, 'svc0004'};
-                false ->
-                    case does_exist_by_id(Params) of
-                        true ->
-                            {exception, 'svc0004'};
-                        false ->
-                            create_customer(Params)
-                    end
+                    create_customer(Params)
             end
     end.
 
-does_exist_by_uuid(Params) ->
-    CustomerUuid = ?gv(customer_uuid, Params),
+
+does_exist_by_uuid(undefined) -> false;
+does_exist_by_uuid(CustomerUuid) ->
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, #customer{}} ->
             true;
@@ -270,7 +261,13 @@ update_customer(Customer, Params) ->
     {http_code, 200, Plist}.
 
 create_customer(Params) ->
-    CustomerUuid = ?gv(customer_uuid, Params),
+    CustomerUuid =
+    case ?gv(customer_uuid, Params) of
+        undefined ->
+            uuid:unparse(uuid:generate_time());
+        CUuid -> CUuid
+    end,
+
     Priority = ?gv(priority, Params),
     Rps = ?gv(rps, Params),
     Customer = #customer{
