@@ -33,10 +33,7 @@ set_dealer(DealerUUID, Dealer = #dealer_v1{}) ->
     },
     Query = {
         '_id', DealerUUID,
-        '$and', [
-            {'state', {'$ne', ?DEACTIVATED_ST}},
-            {'state', {'$ne', ?DELETED_ST}}
-        ]
+        'state', {'$ne', ?DELETED_ST}
     },
     FindAndModify = {
         'findandmodify', atom_to_binary(?DEALERS_COLLECTION, utf8),
