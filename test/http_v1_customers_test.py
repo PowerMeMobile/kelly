@@ -16,6 +16,7 @@ if KELLY_PORT == None or KELLY_PORT == '':
 
 CUSTOMER_UUID = '2dca065f-c328-4a19-bc92-b222f48764e1'
 BAD_CUSTOMER_UUID = '00000000-0000-0000-0000-000000000000'
+CUSTOMER_UUID_2 = uuid.uuid4().__str__()
 
 BASE_URL = 'http://'+KELLY_HOST+':'+KELLY_PORT+'/v1'
 CUSTOMERS_URL = BASE_URL+'/customers'
@@ -264,3 +265,33 @@ def test_read_customer_succ(http):
 def test_delete_customer_succ(http):
     req = http.delete(CUSTOMERS_URL+'/'+CUSTOMER_UUID)
     assert req.status_code == 204
+
+def test_create_customer_wo_customer_id_succ(http):
+    req_data = {'customer_uuid':CUSTOMER_UUID_2,
+                'name':'name',
+                'priority':1,
+                'rps':1000,
+                'receipts_allowed':True,
+                'no_retry':False,
+                'default_validity':'000003000000000R',
+                'max_validity':259200,
+                'default_provider_id':'0a89542c-5270-11e1-bf27-001d0947ec73',
+                'network_map_id':'befa8b7c-c4a3-11e3-b670-00269e42f7a5',
+                'interfaces':'transmitter;receiver;transceiver;soap;mm;oneapi;email',
+                'features':'inbox,true',
+                'pay_type':'postpaid',
+                'credit':10000.0,
+                'credit_limit':10000.0,
+                'language':'en',
+                'state':'active'}
+    req = http.post(CUSTOMERS_URL, data=req_data)
+    assert req.status_code == 201
+    resp_data = req.json()
+    # add some fields expected in response
+    req_data['customer_id'] = '3'
+    req_data['users'] = []
+    req_data['originators'] = []
+    req_data['interfaces'] = ['transmitter', 'receiver', 'transceiver', 'soap', 'mm', 'oneapi', 'email']
+    req_data['features'] = [{'name': 'inbox', 'value': 'true'}]
+    req_data['dealer_id'] = None
+    assert resp_data == req_data

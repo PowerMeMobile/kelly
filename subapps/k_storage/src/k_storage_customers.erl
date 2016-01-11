@@ -28,6 +28,8 @@
     block_dealer_customers/1,
     unblock_dealer_customers/1,
 
+    get_next_vacant_customer_id/0,
+
     change_credit/2,
     transfer_credit/4
 ]).
@@ -279,6 +281,37 @@ del_originator_by_msisdn(CustomerUuid, Msisdn) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+
+-spec get_next_vacant_customer_id() -> {ok, customer_id()} | {error, term()}.
+get_next_vacant_customer_id() ->
+    Selector = {'state', {'$ne', ?DELETED_ST}},
+    Projector = {'customer_id', 1},
+    case mongodb_storage:find(static_storage, customers, Selector, Projector) of
+        {ok, CustomerIdDocList} ->
+            get_next_vacant_customer_id(CustomerIdDocList);
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+get_next_vacant_customer_id(CustomerIdDocList) ->
+    CustomerIdList = format_customer_id_list(CustomerIdDocList),
+    get_next_vacant_customer_id(CustomerIdList, 1).
+
+get_next_vacant_customer_id(CustomerIdList, VacantCustomerIdInt) ->
+    VacantCustomerId = list_to_binary(integer_to_list(VacantCustomerIdInt)),
+    case lists:member(VacantCustomerId, CustomerIdList) of
+        true ->
+            get_next_vacant_customer_id(CustomerIdList, VacantCustomerIdInt + 1);
+        false ->
+            {ok, VacantCustomerId}
+    end.
+
+format_customer_id_list(CustomerIdDocList) ->
+    [begin
+        bsondoc:at('customer_id', Doc)
+    end || {_Id, Doc} <- CustomerIdDocList].
+
 
 -spec change_credit(customer_uuid(), float()) ->
     {ok, float()} | {error, term()}.

@@ -67,7 +67,7 @@ init() ->
     Create = [
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = dealer_id, mandatory = false, repeated = false, type = binary},
-        #param{name = customer_id, mandatory = true, repeated = false, type = binary},
+        #param{name = customer_id, mandatory = false, repeated = false, type = binary},
         #param{name = name, mandatory = true, repeated = false, type = binary},
         #param{name = priority, mandatory = false, repeated = false, type = integer},
         #param{name = rps, mandatory = false, repeated = false, type = integer},
@@ -98,17 +98,29 @@ init() ->
         route = "/v1/customers/[:customer_uuid]"
     }}.
 
-create(Params) ->
-    CustomerUuid = ?gv(customer_uuid, Params),
+create(Params0) ->
+    CustomerId = ?gv(customer_id, Params0),
+    CustomerIdDefined = CustomerId =/= undefined andalso CustomerId =/= <<>>,
+
+    Params1 =
+    if
+        not CustomerIdDefined ->
+            {ok, VacantCustomerId} = k_storage_customers:get_next_vacant_customer_id(),
+            lists:keyreplace(customer_id, 1, Params0, {customer_id, VacantCustomerId});
+        true ->
+            Params0
+    end,
+
+    CustomerUuid = ?gv(customer_uuid, Params1),
     case does_exist_by_uuid(CustomerUuid) of
         true ->
             {exception, 'svc0004'};
         false ->
-            case does_exist_by_id(Params) of
+            case does_exist_by_id(Params1) of
                 true ->
                     {exception, 'svc0004'};
                 false ->
-                    create_customer(Params)
+                    create_customer(Params1)
             end
     end.
 
