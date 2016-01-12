@@ -47,6 +47,9 @@ create(Params) ->
             Resp = [{transaction_id, TransactionUUID}],
             {http_code, 200, Resp};
 
+        {error, not_enough_credit_amount} ->
+            {http_code, 400, <<"from_customer_uuid does not have enough credit amount">>};
+
         {error, from_customer_not_belong_to_dealer} ->
             {http_code, 400, <<"from_customer_uuid does not belong to specified dealer">>};
 
@@ -73,6 +76,11 @@ create(Params) ->
             ?log_error("Create credit transfer transaction DB error (~s;~s;~s;~p): ~p",
                 [DealerUUID, FromCustomerUUID, ToCustomerUUID, Amount, Error]),
             {http_code, 500, <<"Create credit transfer transaction DB error">>};
+
+        {error, TransactionUUID, not_enough_credits_or_customer_not_exist} ->
+            ?log_error("Not enough credits or from customer not exist (~s;~s;~s;~p;~s)",
+                [DealerUUID, FromCustomerUUID, ToCustomerUUID, Amount, TransactionUUID]),
+            {http_code, 400, <<"Not enough credits or from customer not exist">>};
 
         {error, TransactionUUID, cant_change_credit_for_from_customer, Error} ->
             ?log_error("Change credit from DB error (~s;~s;~s;~p;~s): ~p",

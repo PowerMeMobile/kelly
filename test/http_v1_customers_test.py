@@ -154,6 +154,26 @@ def test_credit_transfer_succ(http):
     dc2_resp_data = dc2_req.json()
     assert dc2_resp_data['credit'] == 11000.0
 
+
+def test_credit_transfer_not_enough_credit_available_fail(http):
+    url = BASE_URL+'/dealers/'+DEALER_UUID_1+'/credit_transfer'
+    req_data = {'from_customer_uuid':DEALER_CUSTOMER_UUID_1,
+                'to_customer_uuid':DEALER_CUSTOMER_UUID_2,
+                'amount':9001.0}
+    credit_transfer_req = http.post(url, data=req_data)
+    assert credit_transfer_req.status_code == 400
+    # check customer credits
+    # from customer (the same as in previous test - because transaction failed)
+    dc1_req = http.get(CUSTOMERS_URL+'/'+DEALER_CUSTOMER_UUID_1)
+    assert dc1_req.status_code == 200
+    dc1_resp_data = dc1_req.json()
+    assert dc1_resp_data['credit'] == 9000.0
+    # to customer (the same as in previous test - because transaction failed)
+    dc2_req = http.get(CUSTOMERS_URL+'/'+DEALER_CUSTOMER_UUID_2)
+    assert dc2_req.status_code == 200
+    dc2_resp_data = dc2_req.json()
+    assert dc2_resp_data['credit'] == 11000.0
+
 def test_credit_transfer_non_existing_customer_fail(http):
     bad_customer_id = uuid.uuid4().__str__()
     url = BASE_URL+'/dealers/'+DEALER_UUID_1+'/credit_transfer'

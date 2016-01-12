@@ -317,9 +317,9 @@ format_customer_id_list(CustomerIdDocList) ->
 -spec change_credit(customer_uuid(), float()) ->
     {ok, float()} | {error, term()}.
 change_credit(CustomerUuid, Amount) ->
-    change_credit(CustomerUuid, Amount, undefined).
+    change_credit(CustomerUuid, Amount, undefined, false).
 
-change_credit(CustomerUuid, Amount, TransactionUuid) ->
+change_credit(CustomerUuid, Amount, TransactionUuid, CheckCreditAvailable) ->
     Update =
     case TransactionUuid of
         undefined ->
@@ -328,9 +328,17 @@ change_credit(CustomerUuid, Amount, TransactionUuid) ->
             {'$inc', {'credit', Amount}, '$push', {'transactions', TransactionUuid}}
     end,
 
+    Query =
+    if
+        CheckCreditAvailable ->
+            {'_id', CustomerUuid ,'credit', {'$gte', (-1 * Amount)}};
+        true ->
+            {'_id', CustomerUuid}
+    end,
+
     Command = {
         'findandmodify', <<"customers">>,
-        'query' , {'_id', CustomerUuid},
+        'query' , Query,
         'update', Update,
         'fields', {'credit', 1},
         'new'   , true
@@ -363,9 +371,13 @@ transfer_credit(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount) ->
 transfer_credit(check_from_customer, Props0) ->
     FromCustomerUuid = proplists:get_value(from_customer_uuid, Props0),
     DealerUuid = proplists:get_value(dealer_uuid, Props0),
+    Amount = proplists:get_value(amount, Props0),
     case get_customer_by_uuid(FromCustomerUuid) of
-        {ok, #customer{dealer_id = DealerUuid}} ->
+        {ok, #customer{dealer_id = DealerUuid, credit = Credit}} when
+                Credit >= Amount ->
             transfer_credit(check_to_customer, Props0);
+        {ok, #customer{dealer_id = DealerUuid}} ->
+            {error, not_enough_credit_amount};
         {ok, #customer{}} ->
             {error, from_customer_not_belong_to_dealer};
         {error, no_entry} ->
@@ -405,9 +417,11 @@ transfer_credit(change_credit_from, Props0) ->
     TransactionUuid = proplists:get_value(transaction_uuid, Props0),
     FromCustomerUuid = proplists:get_value(from_customer_uuid, Props0),
     Amount = proplists:get_value(amount, Props0),
-    case change_credit(FromCustomerUuid, (Amount * -1), TransactionUuid) of
+    case change_credit(FromCustomerUuid, (Amount * -1), TransactionUuid, _CheckCreditAvailable = true) of
         {ok, _} ->
             transfer_credit(change_credit_to, Props0);
+        {error, no_entry} ->
+            {error, TransactionUuid, not_enough_credits_or_customer_not_exist};
         {error, Error} ->
             {error, TransactionUuid, cant_change_credit_for_from_customer, Error}
     end;
@@ -416,7 +430,7 @@ transfer_credit(change_credit_to, Props0) ->
     TransactionUuid = proplists:get_value(transaction_uuid, Props0),
     ToCustomerUuid = proplists:get_value(to_customer_uuid, Props0),
     Amount = proplists:get_value(amount, Props0),
-    case change_credit(ToCustomerUuid, Amount, TransactionUuid) of
+    case change_credit(ToCustomerUuid, Amount, TransactionUuid, _CheckCreditAvailable = false) of
         {ok, _} ->
             transfer_credit(complete_transaction, Props0);
         {error, Error} ->
