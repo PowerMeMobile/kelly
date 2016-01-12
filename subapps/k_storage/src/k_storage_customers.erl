@@ -554,7 +554,13 @@ unblock_dealer_customers(DealerUUID) when is_binary(DealerUUID) ->
 unblock_dealer_customers(_, []) -> ok;
 unblock_dealer_customers(DealerUUID, [Customer | OtherCustomers]) ->
     CustomerUUID = Customer#customer.customer_uuid,
-    {ok, PrevState} = get_customer_previous_state(CustomerUUID),
+
+    PrevState =
+    case get_customer_previous_state(CustomerUUID) of
+        {ok, undefined} -> ?ACTIVE_ST;
+        {ok, PS} -> PS
+    end,
+
     Selector = {'_id', CustomerUUID},
     Modifier = {'$set', {
         'state', PrevState
@@ -566,6 +572,7 @@ unblock_dealer_customers(DealerUUID, [Customer | OtherCustomers]) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
 
 get_customer_previous_state(CustomerUUID) ->
     Selector = {

@@ -69,7 +69,7 @@ update_customers_state(DealerUUID, _OldState, ?DEACTIVATED_ST) ->
     ok = k_storage_customers:deactivate_dealer_customers(DealerUUID);
 update_customers_state(DealerUUID, ?ACTIVE_ST, ?BLOCKED_ST) ->
     ok = k_storage_customers:block_dealer_customers(DealerUUID);
-update_customers_state(DealerUUID, ?BLOCKED_ST, ?ACTIVE_ST) ->
+update_customers_state(DealerUUID, _OldState, ?ACTIVE_ST) ->
     ok = k_storage_customers:unblock_dealer_customers(DealerUUID).
 
 
