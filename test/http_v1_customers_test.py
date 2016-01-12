@@ -161,7 +161,7 @@ def test_credit_transfer_non_existing_customer_fail(http):
                 'to_customer_uuid':bad_customer_id,
                 'amount':1000.0}
     credit_transfer_req = http.post(url, data=req_data)
-    assert credit_transfer_req.status_code == 500
+    assert credit_transfer_req.status_code == 400
 
 def test_credit_transfer_non_dealer_customer_fail(http):
     url = BASE_URL+'/dealers/'+DEALER_UUID_1+'/credit_transfer'
@@ -169,7 +169,7 @@ def test_credit_transfer_non_dealer_customer_fail(http):
                 'to_customer_uuid':CUSTOMER_UUID,
                 'amount':1000.0}
     credit_transfer_req = http.post(url, data=req_data)
-    assert credit_transfer_req.status_code == 500
+    assert credit_transfer_req.status_code == 400
 
 def test_get_dealer_customers_2_succ(http):
     url = BASE_URL+'/dealers/'+DEALER_UUID_1+'/customers'

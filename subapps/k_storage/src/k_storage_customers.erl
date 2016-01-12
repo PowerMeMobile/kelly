@@ -37,6 +37,7 @@
 -include("storages.hrl").
 -include("customer.hrl").
 -include("dealer.hrl").
+-include_lib("alley_common/include/logging.hrl").
 
 
 %% ===================================================================
@@ -351,13 +352,86 @@ change_credit(CustomerUuid, Amount, TransactionUuid) ->
 
 -spec transfer_credit(dealer_uuid(), customer_uuid(), customer_uuid(), float()) -> ok.
 transfer_credit(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount) ->
-    {ok, #customer{dealer_id = DealerUuid}} = get_customer_by_uuid(FromCustomerUuid),
-    {ok, #customer{dealer_id = DealerUuid}} = get_customer_by_uuid(ToCustomerUuid),
-    {ok, TransactionUuid} = create_transaction(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount),
-    {ok, _} = change_credit(FromCustomerUuid, (Amount * -1), TransactionUuid),
-    {ok, _} = change_credit(ToCustomerUuid, Amount, TransactionUuid),
-    ok = complete_transaction(TransactionUuid),
-    {ok, TransactionUuid}.
+    Props = [
+        {dealer_uuid, DealerUuid},
+        {from_customer_uuid, FromCustomerUuid},
+        {to_customer_uuid, ToCustomerUuid},
+        {amount, Amount}
+    ],
+    transfer_credit(check_from_customer, Props).
+
+transfer_credit(check_from_customer, Props0) ->
+    FromCustomerUuid = proplists:get_value(from_customer_uuid, Props0),
+    DealerUuid = proplists:get_value(dealer_uuid, Props0),
+    case get_customer_by_uuid(FromCustomerUuid) of
+        {ok, #customer{dealer_id = DealerUuid}} ->
+            transfer_credit(check_to_customer, Props0);
+        {ok, #customer{}} ->
+            {error, from_customer_not_belong_to_dealer};
+        {error, no_entry} ->
+            {error, from_customer_doesnot_exist};
+        {error, Error} ->
+            {error, cant_fetch_from_customer, Error}
+    end;
+
+transfer_credit(check_to_customer, Props0) ->
+    ToCustomerUuid = proplists:get_value(to_customer_uuid, Props0),
+    DealerUuid = proplists:get_value(dealer_uuid, Props0),
+    case get_customer_by_uuid(ToCustomerUuid) of
+        {ok, #customer{dealer_id = DealerUuid}} ->
+            transfer_credit(change_credit_from, Props0);
+        {ok, #customer{}} ->
+            {error, to_customer_not_belong_to_dealer};
+        {error, no_entry} ->
+            {error, to_customer_doesnot_exist};
+        {error, Error} ->
+            {error, cant_fetch_to_customer, Error}
+    end;
+
+transfer_credit(create_transaction, Props0) ->
+    ToCustomerUuid = proplists:get_value(to_customer_uuid, Props0),
+    FromCustomerUuid = proplists:get_value(from_customer_uuid, Props0),
+    Amount = proplists:get_value(amount, Props0),
+    DealerUuid = proplists:get_value(dealer_uuid, Props0),
+    case create_transaction(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount) of
+        {ok, TransactionUuid} ->
+            Props1 = [{transaction_uuid, TransactionUuid} | Props0],
+            transfer_credit(change_credit_from, Props1);
+        {error, Error} ->
+            {error, cant_create_transaction, Error}
+    end;
+
+transfer_credit(change_credit_from, Props0) ->
+    TransactionUuid = proplists:get_value(transaction_uuid, Props0),
+    FromCustomerUuid = proplists:get_value(from_customer_uuid, Props0),
+    Amount = proplists:get_value(amount, Props0),
+    case change_credit(FromCustomerUuid, (Amount * -1), TransactionUuid) of
+        {ok, _} ->
+            transfer_credit(change_credit_to, Props0);
+        {error, Error} ->
+            {error, TransactionUuid, cant_change_credit_for_from_customer, Error}
+    end;
+
+transfer_credit(change_credit_to, Props0) ->
+    TransactionUuid = proplists:get_value(transaction_uuid, Props0),
+    ToCustomerUuid = proplists:get_value(to_customer_uuid, Props0),
+    Amount = proplists:get_value(amount, Props0),
+    case change_credit(ToCustomerUuid, Amount, TransactionUuid) of
+        {ok, _} ->
+            transfer_credit(complete_transaction, Props0);
+        {error, Error} ->
+            {error, TransactionUuid, cant_change_credit_for_to_customer, Error}
+    end;
+
+transfer_credit(complete_transaction, Props) ->
+    TransactionUuid = proplists:get_value(transaction_uuid, Props),
+    case complete_transaction(TransactionUuid) of
+        ok ->
+            {ok, TransactionUuid};
+        {error, Error} ->
+            {error, TransactionUuid, cant_complete_transaction, Error}
+    end.
+
 
 create_transaction(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount) ->
     TransactionUuid = uuid:unparse(uuid:generate_time()),
@@ -370,8 +444,11 @@ create_transaction(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount) ->
         'state', 'in_progress',
         'time', now()
     },
-    {ok, TransactionUuid} =
-        mongodb_storage:insert(static_storage, credit_transactions, Modifier).
+    case mongodb_storage:insert(static_storage, credit_transactions, Modifier) of
+        {ok, TransactionUuid} -> {ok, TransactionUuid};
+        {error, Reason} -> {error, Reason}
+    end.
+
 
 complete_transaction(TransactionUuid) ->
     Selector = {

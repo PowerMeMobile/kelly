@@ -61,7 +61,7 @@ def test_create_dealer_w_same_dealer_id_fail(http):
     req = http.post(DEALERS_URL, data=req_data)
     assert req.status_code == 400
 
-def test_update_daeler_succ(http):
+def test_update_dealer_succ(http):
     req_data = {'id':DEALER_UUID,
                 'name':'newname',
                 'default_provider_id':DEFAULT_PROVIDER_ID,
