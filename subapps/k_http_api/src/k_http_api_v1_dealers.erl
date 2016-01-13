@@ -201,8 +201,8 @@ prepare_dealers([Dealer = #dealer_v1{} | Rest], Acc) ->
     ),
 
     NetworkMapName =
-    case k_storage_networks:get_network(NetworkMapId) of
-        {ok, #network{name = NM}} -> NM;
+    case k_storage_network_maps:get_network_map(NetworkMapId) of
+        {ok, #network_map{name = NM}} -> NM;
         _ -> <<>>
     end,
 

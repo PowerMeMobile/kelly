@@ -286,7 +286,7 @@ del_originator_by_msisdn(CustomerUuid, Msisdn) ->
 
 -spec get_next_vacant_customer_id() -> {ok, customer_id()} | {error, term()}.
 get_next_vacant_customer_id() ->
-    Selector = {'state', {'$ne', ?DELETED_ST}},
+    Selector = {},
     Projector = {'customer_id', 1},
     case mongodb_storage:find(static_storage, customers, Selector, Projector) of
         {ok, CustomerIdDocList} ->
