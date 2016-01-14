@@ -38,6 +38,7 @@ init() ->
     Read = [
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = dealer_id, mandatory = false, repeated = false, type = binary},
+        #param{name = compact, mandatory = false, repeated = false, type = boolean},
         #param{name = state, mandatory = false, repeated = false, type =
             {custom, fun ?MODULE:decode_state/1}},
         #param{name = customer_id, mandatory = false, repeated = false, type = binary}
@@ -151,6 +152,11 @@ read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     CustomerId = ?gv(customer_id, Params),
     State = ?gv(state, Params),
+    Compact =
+    case ?gv(compact, Params) of
+        undefined -> false;
+        C -> C
+    end,
 
     DealerId =
     case ?gv(dealer_id, Params) of
@@ -160,33 +166,33 @@ read(Params) ->
 
     if
         CustomerUuid =/= undefined ->
-            read_customer_uuid(CustomerUuid);
+            read_customer_uuid(CustomerUuid, Compact);
         CustomerId =/= undefined andalso CustomerId =/= <<>> ->
-            read_customer_id_preffix(DealerId, CustomerId, State);
+            read_customer_id_preffix(DealerId, CustomerId, State, Compact);
         true ->
-            read_all(DealerId, State)
+            read_all(DealerId, State, Compact)
     end.
 
 
-read_all(undefined = _DealerUuid, State) ->
+read_all(undefined = _DealerUuid, State, Compact) ->
     case k_storage_customers:get_customers(State) of
         {ok, Customers} ->
-            {ok, Plists} = prepare_customers(Customers),
+            {ok, Plists} = prepare_customers(Customers, Compact),
             ?log_debug("Customers: ~p", [Plists]),
             {http_code, 200, Plists}
     end;
 
-read_all(DealerUuid, State) ->
+read_all(DealerUuid, State, Compact) ->
     {ok, Customers} = k_storage_customers:get_customers_by_dealer_uuid(DealerUuid, State),
-    {ok, Plists} = prepare_customers(Customers),
+    {ok, Plists} = prepare_customers(Customers, Compact),
     ?log_debug("Customers: ~p", [Plists]),
     {http_code, 200, Plists}.
 
 
-read_customer_uuid(CustomerUuid) ->
+read_customer_uuid(CustomerUuid, Compact) ->
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
         {ok, Customer = #customer{}} ->
-            {ok, [Plist]} = prepare_customers(Customer),
+            {ok, [Plist]} = prepare_customers(Customer, Compact),
             ?log_debug("Customer: ~p", [Plist]),
             {http_code, 200, Plist};
         {error, no_entry} ->
@@ -194,9 +200,9 @@ read_customer_uuid(CustomerUuid) ->
     end.
 
 
-read_customer_id_preffix(DealerId, CustomerId, State) ->
+read_customer_id_preffix(DealerId, CustomerId, State, Compact) ->
     {ok, Customers} = k_storage_customers:get_customers_by_id_preffix(DealerId, CustomerId, State),
-    {ok, Plists} = prepare_customers(Customers),
+    {ok, Plists} = prepare_customers(Customers, Compact),
     ?log_debug("Customers: ~p", [Plists]),
     {http_code, 200, Plists}.
 
@@ -342,15 +348,20 @@ create_customer(Params) ->
     ?log_debug("Customer: ~p", [Plist]),
     {http_code, 201, Plist}.
 
--spec prepare_customers([customer()] | customer()) -> proplists:proplist().
-prepare_customers(ItemList) when is_list(ItemList) ->
-    prepare_customers(ItemList, []);
-prepare_customers(Item) ->
-    prepare_customers([Item], []).
 
-prepare_customers([], Acc) ->
+-spec prepare_customers([customer()] | customer()) -> proplists:proplist().
+prepare_customers(Customer) ->
+    prepare_customers(Customer, false).
+
+
+prepare_customers(ItemList, Compact) when is_list(ItemList) ->
+    prepare_customers(ItemList, [], Compact);
+prepare_customers(Item, Compact) ->
+    prepare_customers([Item], [], Compact).
+
+prepare_customers([], Acc, _Compact) ->
     {ok, Acc};
-prepare_customers([Customer = #customer{} | Rest], Acc) ->
+prepare_customers([Customer = #customer{} | Rest], Acc, false = Compact) ->
      #customer{
         originators = Originators,
         users = Users,
@@ -373,7 +384,17 @@ prepare_customers([Customer = #customer{} | Rest], Acc) ->
             features = FeaturesPlists
         }
     ),
-    prepare_customers(Rest, [Plist | Acc]).
+    prepare_customers(Rest, [Plist | Acc], Compact);
+
+prepare_customers([Customer = #customer{} | Rest], Acc, true = Compact) ->
+    Plist = [
+        {customer_uuid, Customer#customer.customer_uuid},
+        {customer_id, Customer#customer.customer_id},
+        {name, Customer#customer.name},
+        {credit, Customer#customer.credit}
+    ],
+    prepare_customers(Rest, [Plist | Acc], Compact).
+
 
 sync_interfaces(PreIfs, NewIfs, Users) ->
     DisabledIfs = k_http_api_utils:get_disabled_interfaces(PreIfs, NewIfs),
