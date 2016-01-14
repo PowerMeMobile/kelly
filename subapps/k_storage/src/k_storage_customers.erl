@@ -3,11 +3,13 @@
 %% API
 -export([
     get_customers/0,
+    get_customers/1,
     get_customers_by_dealer_uuid/1,
+    get_customers_by_dealer_uuid/2,
     get_customers_uuid_by_dealer_uuid/1,
     get_customer_by_uuid/1,
     get_customer_by_id/1,
-    get_customers_by_id_preffix/2,
+    get_customers_by_id_preffix/3,
     get_customer_by_email/1,
     get_customer_by_msisdn/1,
     set_customer/2,
@@ -117,9 +119,26 @@ set_customer(CustomerUuid, Customer) ->
             {error, Reason}
     end.
 
+
 -spec get_customers() -> {ok, [#customer{}]} | {error, term()}.
 get_customers() ->
-    Selector = {'state', {'$ne', ?DELETED_ST}},
+    get_customers(undefined).
+
+
+-spec get_customers(customer_state() | undefined) -> {ok, [#customer{}]} | {error, term()}.
+get_customers(State) when
+        (State =:= active orelse
+        State =:= blocked orelse
+        State =:= deactivated orelse
+        State =:= undefined) ->
+    StateNotEqualDeletedSelector = {'state', {'$ne', ?DELETED_ST}},
+    Selector =
+    case State of
+        undefined ->
+            StateNotEqualDeletedSelector;
+        _ ->
+            {'$and', [StateNotEqualDeletedSelector, {'state', atom_to_binary(State, latin1)}]}
+    end,
     case mongodb_storage:find(static_storage, customers, Selector) of
         {ok, List} ->
             {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
@@ -127,13 +146,34 @@ get_customers() ->
             {error, Reason}
     end.
 
--spec get_customers_by_dealer_uuid(dealer_uuid()) ->
+
+get_customers_by_dealer_uuid(DealerUUID) ->
+    get_customers_by_dealer_uuid(DealerUUID, undefined).
+
+-spec get_customers_by_dealer_uuid(dealer_uuid(), customer_state() | undefined) ->
     {ok, [#customer{}]} | {error, term()}.
-get_customers_by_dealer_uuid(DealerUUID) when is_binary(DealerUUID) ->
-    Selector = {
-        'dealer_id', DealerUUID,
-        'state', {'$ne', ?DELETED_ST}
-    },
+get_customers_by_dealer_uuid(DealerUUID, State) when
+        is_binary(DealerUUID) andalso
+            (State =:= active orelse
+            State =:= blocked orelse
+            State =:= deactivated orelse
+            State =:= undefined) ->
+
+    BaseSelectorList = [
+        'dealer_id', DealerUUID
+    ],
+
+    StateSelectorList =
+    case State of
+        undefined ->
+            ['state', {'$ne', ?DELETED_ST}];
+        _ ->
+            ['$and', [{'state', atom_to_binary(State, latin1)}, {'state', {'$ne', ?DELETED_ST}}]]
+    end,
+
+    SelectorList = StateSelectorList ++ BaseSelectorList,
+
+    Selector = list_to_tuple(SelectorList),
     case mongodb_storage:find(static_storage, customers, Selector) of
         {ok, List} ->
             {ok, [doc_to_record(Doc) || {_Id, Doc} <- List]};
@@ -174,20 +214,40 @@ get_customer_by_id(CustomerId) ->
             {error, Reason}
     end.
 
--spec get_customers_by_id_preffix(dealer_id() | undefined, binary()) -> {ok, [customer()]} | {error, term()}.
-get_customers_by_id_preffix(DealerId, CustomerIdPreffix) when is_binary(CustomerIdPreffix) ->
+-spec get_customers_by_id_preffix(dealer_id() | undefined, binary(), customer_state() | undefined) ->
+    {ok, [customer()]} | {error, term()}.
+get_customers_by_id_preffix(DealerId, CustomerIdPreffix, State) when
+        is_binary(CustomerIdPreffix) andalso
+            (State =:= active orelse
+            State =:= blocked orelse
+            State =:= deactivated orelse
+            State =:= undefined) ->
+
     Regex = <<"^", CustomerIdPreffix/binary>>,
-    SelectorListBase = [
-        'customer_id', {'$regex', Regex, '$options', <<"i">>},
-        'state', {'$ne', ?DELETED_ST}
+
+    SelectorList0 = [
+        'customer_id', {'$regex', Regex, '$options', <<"i">>}
     ],
+
+    StateNotEqualDeletedSelectorList = ['state', {'$ne', ?DELETED_ST}],
+
+    SelectorList1 =
+    case State of
+        undefined ->
+            StateNotEqualDeletedSelectorList ++ SelectorList0;
+        _ ->
+            ['$and', [
+                list_to_tuple(StateNotEqualDeletedSelectorList),
+                {'state', atom_to_binary(State, latin1)}
+            ]] ++ SelectorList0
+    end,
 
     SelectorList =
     if
         DealerId =/= undefined ->
-            ['dealer_id', DealerId | SelectorListBase];
+            ['dealer_id', DealerId | SelectorList1];
         true ->
-            SelectorListBase
+            SelectorList1
     end,
 
     Selector = list_to_tuple(SelectorList),

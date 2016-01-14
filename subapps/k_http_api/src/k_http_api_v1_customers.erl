@@ -38,6 +38,8 @@ init() ->
     Read = [
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
         #param{name = dealer_id, mandatory = false, repeated = false, type = binary},
+        #param{name = state, mandatory = false, repeated = false, type =
+            {custom, fun ?MODULE:decode_state/1}},
         #param{name = customer_id, mandatory = false, repeated = false, type = binary}
     ],
     Update = [
@@ -148,6 +150,7 @@ does_exist_by_id(Params) ->
 read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     CustomerId = ?gv(customer_id, Params),
+    State = ?gv(state, Params),
 
     DealerId =
     case ?gv(dealer_id, Params) of
@@ -159,22 +162,22 @@ read(Params) ->
         CustomerUuid =/= undefined ->
             read_customer_uuid(CustomerUuid);
         CustomerId =/= undefined andalso CustomerId =/= <<>> ->
-            read_customer_id_preffix(DealerId, CustomerId);
+            read_customer_id_preffix(DealerId, CustomerId, State);
         true ->
-            read_all(DealerId)
+            read_all(DealerId, State)
     end.
 
 
-read_all(undefined) ->
-    case k_storage_customers:get_customers() of
+read_all(undefined = _DealerUuid, State) ->
+    case k_storage_customers:get_customers(State) of
         {ok, Customers} ->
             {ok, Plists} = prepare_customers(Customers),
             ?log_debug("Customers: ~p", [Plists]),
             {http_code, 200, Plists}
     end;
 
-read_all(DealerUuid) ->
-    {ok, Customers} = k_storage_customers:get_customers_by_dealer_uuid(DealerUuid),
+read_all(DealerUuid, State) ->
+    {ok, Customers} = k_storage_customers:get_customers_by_dealer_uuid(DealerUuid, State),
     {ok, Plists} = prepare_customers(Customers),
     ?log_debug("Customers: ~p", [Plists]),
     {http_code, 200, Plists}.
@@ -190,8 +193,9 @@ read_customer_uuid(CustomerUuid) ->
             {exception, 'svc0003'}
     end.
 
-read_customer_id_preffix(DealerId, CustomerId) ->
-    {ok, Customers} = k_storage_customers:get_customers_by_id_preffix(DealerId, CustomerId),
+
+read_customer_id_preffix(DealerId, CustomerId, State) ->
+    {ok, Customers} = k_storage_customers:get_customers_by_id_preffix(DealerId, CustomerId, State),
     {ok, Plists} = prepare_customers(Customers),
     ?log_debug("Customers: ~p", [Plists]),
     {http_code, 200, Plists}.
