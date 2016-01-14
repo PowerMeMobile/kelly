@@ -3,7 +3,7 @@
 -export([
     get_all/1,
     get_details/1,
-    get_recipients/1
+    get_recipients/2
 ]).
 
 -include_lib("alley_dto/include/adto.hrl").
@@ -96,13 +96,21 @@ get_details(ReqId) ->
             {error, Error}
     end.
 
--spec get_recipients(uuid()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
-get_recipients(ReqId) ->
+-spec get_recipients(uuid(), boolean()) -> {ok, [[{atom(), term()}]]} | {error, reason()}.
+get_recipients(ReqId, ShowStatuses) ->
     Selector = {ri, ReqId},
-    Projector = {
-        '_id', 0,
-        da   , 1
-    },
+
+    Projector =
+    if
+        ShowStatuses ->
+            {'_id', 0,
+            's'   , 1,
+            'da'  , 1};
+        true ->
+            {'_id', 0,
+            'da'  , 1}
+    end,
+
     case shifted_storage:find(mt_messages, Selector, Projector) of
         {ok, Docs} ->
             {ok, build_addrs([D || {_, D} <- Docs])};
@@ -248,5 +256,14 @@ build_addrs([D | Ds], Acc) ->
         AddrDoc ->
             Addr = k_storage_utils:doc_to_addr(AddrDoc),
             Addr2 = k_storage_utils:addr_to_proplist(Addr),
-            build_addrs(Ds, [Addr2 | Acc])
+            AddrWithStatus = add_status_if_defined(D, Addr2),
+            build_addrs(Ds, [AddrWithStatus | Acc])
+    end.
+
+add_status_if_defined(Doc, Proplist) ->
+    case bson:at(s, Doc) of
+        null ->
+            Proplist;
+        Status ->
+            [{status, Status} | Proplist]
     end.

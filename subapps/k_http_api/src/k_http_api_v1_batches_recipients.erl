@@ -22,7 +22,8 @@
 
 init() ->
     Read = [
-        #param{name = req_id, mandatory = true, repeated = false, type = uuid}
+        #param{name = req_id, mandatory = true, repeated = false, type = uuid},
+        #param{name = show_statuses, mandatory = false, repeated = false, type = boolean}
     ],
     {ok, #specs{
         read = Read,
@@ -31,7 +32,8 @@ init() ->
 
 read(Params) ->
     ReqId = ?gv(req_id, Params),
-    case k_statistic_mt_batches:get_recipients(ReqId) of
+    ShowStatuses = ?gv(show_statuses, Params),
+    case k_statistic_mt_batches:get_recipients(ReqId, ShowStatuses) of
         {ok, Resp} ->
             {ok, Resp};
         {error, no_entry} ->
