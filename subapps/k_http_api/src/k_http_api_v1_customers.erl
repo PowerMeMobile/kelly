@@ -36,7 +36,8 @@
 
 init() ->
     Read = [
-        #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid}
+        #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
+        #param{name = customer_id, mandatory = false, repeated = false, type = binary}
     ],
     Update = [
         #param{name = customer_uuid, mandatory = true, repeated = false, type = uuid},
@@ -145,12 +146,16 @@ does_exist_by_id(Params) ->
 
 read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
-    case CustomerUuid of
-        undefined ->
-            read_all();
-        _ ->
-            read_customer_uuid(CustomerUuid)
+    CustomerId = ?gv(customer_id, Params),
+    if
+        CustomerUuid =/= undefined ->
+            read_customer_uuid(CustomerUuid);
+        CustomerId =/= undefined andalso CustomerId =/= <<>> ->
+            read_customer_id(CustomerId);
+        true ->
+            read_all()
     end.
+
 
 read_all() ->
     case k_storage_customers:get_customers() of
@@ -169,6 +174,13 @@ read_customer_uuid(CustomerUuid) ->
         {error, no_entry} ->
             {exception, 'svc0003'}
     end.
+
+read_customer_id(CustomerId) ->
+    {ok, Customers} = k_storage_customers:get_customers_by_id_preffix(CustomerId),
+    {ok, Plists} = prepare_customers(Customers),
+    ?log_debug("Customers: ~p", [Plists]),
+    {http_code, 200, Plists}.
+
 
 update(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),

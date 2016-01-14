@@ -7,6 +7,7 @@
     get_customers_uuid_by_dealer_uuid/1,
     get_customer_by_uuid/1,
     get_customer_by_id/1,
+    get_customers_by_id_preffix/1,
     get_customer_by_email/1,
     get_customer_by_msisdn/1,
     set_customer/2,
@@ -169,6 +170,20 @@ get_customer_by_id(CustomerId) ->
     case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
             {ok, doc_to_record(Doc)};
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+-spec get_customers_by_id_preffix(binary()) -> {ok, [customer()]} | {error, term()}.
+get_customers_by_id_preffix(CustomerIdPreffix) when is_binary(CustomerIdPreffix) ->
+    Regex = <<"^", CustomerIdPreffix/binary>>,
+    Selector = {
+        'customer_id', {'$regex', Regex, '$options', <<"i">>},
+        'state', {'$ne', ?DELETED_ST}
+    },
+    case mongodb_storage:find(static_storage, customers, Selector) of
+        {ok, DocList} ->
+            {ok, [doc_to_record(Doc) || {_, Doc} <- DocList]};
         {error, Reason} ->
             {error, Reason}
     end.
