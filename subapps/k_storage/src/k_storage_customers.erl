@@ -7,7 +7,7 @@
     get_customers_uuid_by_dealer_uuid/1,
     get_customer_by_uuid/1,
     get_customer_by_id/1,
-    get_customers_by_id_preffix/1,
+    get_customers_by_id_preffix/2,
     get_customer_by_email/1,
     get_customer_by_msisdn/1,
     set_customer/2,
@@ -174,13 +174,23 @@ get_customer_by_id(CustomerId) ->
             {error, Reason}
     end.
 
--spec get_customers_by_id_preffix(binary()) -> {ok, [customer()]} | {error, term()}.
-get_customers_by_id_preffix(CustomerIdPreffix) when is_binary(CustomerIdPreffix) ->
+-spec get_customers_by_id_preffix(dealer_id() | undefined, binary()) -> {ok, [customer()]} | {error, term()}.
+get_customers_by_id_preffix(DealerId, CustomerIdPreffix) when is_binary(CustomerIdPreffix) ->
     Regex = <<"^", CustomerIdPreffix/binary>>,
-    Selector = {
+    SelectorListBase = [
         'customer_id', {'$regex', Regex, '$options', <<"i">>},
         'state', {'$ne', ?DELETED_ST}
-    },
+    ],
+
+    SelectorList =
+    if
+        DealerId =/= undefined ->
+            ['dealer_id', DealerId | SelectorListBase];
+        true ->
+            SelectorListBase
+    end,
+
+    Selector = list_to_tuple(SelectorList),
     case mongodb_storage:find(static_storage, customers, Selector) of
         {ok, DocList} ->
             {ok, [doc_to_record(Doc) || {_, Doc} <- DocList]};

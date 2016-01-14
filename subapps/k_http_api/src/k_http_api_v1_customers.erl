@@ -37,6 +37,7 @@
 init() ->
     Read = [
         #param{name = customer_uuid, mandatory = false, repeated = false, type = uuid},
+        #param{name = dealer_id, mandatory = false, repeated = false, type = binary},
         #param{name = customer_id, mandatory = false, repeated = false, type = binary}
     ],
     Update = [
@@ -147,23 +148,37 @@ does_exist_by_id(Params) ->
 read(Params) ->
     CustomerUuid = ?gv(customer_uuid, Params),
     CustomerId = ?gv(customer_id, Params),
+
+    DealerId =
+    case ?gv(dealer_id, Params) of
+        <<>> -> undefined;
+        DI -> DI
+    end,
+
     if
         CustomerUuid =/= undefined ->
             read_customer_uuid(CustomerUuid);
         CustomerId =/= undefined andalso CustomerId =/= <<>> ->
-            read_customer_id(CustomerId);
+            read_customer_id_preffix(DealerId, CustomerId);
         true ->
-            read_all()
+            read_all(DealerId)
     end.
 
 
-read_all() ->
+read_all(undefined) ->
     case k_storage_customers:get_customers() of
         {ok, Customers} ->
             {ok, Plists} = prepare_customers(Customers),
             ?log_debug("Customers: ~p", [Plists]),
             {http_code, 200, Plists}
-    end.
+    end;
+
+read_all(DealerUuid) ->
+    {ok, Customers} = k_storage_customers:get_customers_by_dealer_uuid(DealerUuid),
+    {ok, Plists} = prepare_customers(Customers),
+    ?log_debug("Customers: ~p", [Plists]),
+    {http_code, 200, Plists}.
+
 
 read_customer_uuid(CustomerUuid) ->
     case k_storage_customers:get_customer_by_uuid(CustomerUuid) of
@@ -175,8 +190,8 @@ read_customer_uuid(CustomerUuid) ->
             {exception, 'svc0003'}
     end.
 
-read_customer_id(CustomerId) ->
-    {ok, Customers} = k_storage_customers:get_customers_by_id_preffix(CustomerId),
+read_customer_id_preffix(DealerId, CustomerId) ->
+    {ok, Customers} = k_storage_customers:get_customers_by_id_preffix(DealerId, CustomerId),
     {ok, Plists} = prepare_customers(Customers),
     ?log_debug("Customers: ~p", [Plists]),
     {http_code, 200, Plists}.
