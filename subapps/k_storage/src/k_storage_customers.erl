@@ -131,7 +131,7 @@ get_customers(State) when
         State =:= blocked orelse
         State =:= deactivated orelse
         State =:= undefined) ->
-    StateNotEqualDeletedSelector = {'state', {'$ne', ?DELETED_ST}},
+    StateNotEqualDeletedSelector = {'state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}},
     Selector =
     case State of
         undefined ->
@@ -147,6 +147,8 @@ get_customers(State) when
     end.
 
 
+-spec get_customers_by_dealer_uuid(dealer_uuid()) ->
+    {ok, [#customer{}]} | {error, term()}.
 get_customers_by_dealer_uuid(DealerUUID) ->
     get_customers_by_dealer_uuid(DealerUUID, undefined).
 
@@ -166,9 +168,12 @@ get_customers_by_dealer_uuid(DealerUUID, State) when
     StateSelectorList =
     case State of
         undefined ->
-            ['state', {'$ne', ?DELETED_ST}];
+            ['state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}];
         _ ->
-            ['$and', [{'state', atom_to_binary(State, latin1)}, {'state', {'$ne', ?DELETED_ST}}]]
+            ['$and', [
+                {'state', atom_to_binary(State, latin1)},
+                {'state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}}
+            ]]
     end,
 
     SelectorList = StateSelectorList ++ BaseSelectorList,
@@ -192,7 +197,7 @@ get_customers_uuid_by_dealer_uuid(DealerUuid) when is_binary(DealerUuid) ->
 get_customer_by_uuid(CustomerUuid) ->
     Selector = {
         '_id', CustomerUuid,
-        'state', {'$ne', ?DELETED_ST}
+        'state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}
     },
     case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
@@ -205,7 +210,7 @@ get_customer_by_uuid(CustomerUuid) ->
 get_customer_by_id(CustomerId) ->
     Selector = {
         'customer_id', CustomerId,
-        'state', {'$ne', ?DELETED_ST}
+        'state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}
     },
     case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
@@ -229,7 +234,7 @@ get_customers_by_id_preffix(DealerId, CustomerIdPreffix, State) when
         'customer_id', {'$regex', Regex, '$options', <<"i">>}
     ],
 
-    StateNotEqualDeletedSelectorList = ['state', {'$ne', ?DELETED_ST}],
+    StateNotEqualDeletedSelectorList = ['state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}],
 
     SelectorList1 =
     case State of
@@ -262,7 +267,7 @@ get_customers_by_id_preffix(DealerId, CustomerIdPreffix, State) when
 get_customer_by_email(Email) ->
     Selector = {
         'users.email', Email,
-        'state', {'$ne', ?DELETED_ST}
+        'state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}
     },
     case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
@@ -275,7 +280,7 @@ get_customer_by_email(Email) ->
 get_customer_by_msisdn(Msisdn) ->
     Selector = {
         'users.mobile_phone', Msisdn#addr.addr,
-        'state', {'$ne', ?DELETED_ST}
+        'state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}
     },
     case mongodb_storage:find_one(static_storage, customers, Selector) of
         {ok, Doc} ->
@@ -540,7 +545,7 @@ create_transaction(DealerUuid, FromCustomerUuid, ToCustomerUuid, Amount) ->
         'from', FromCustomerUuid,
         'to', ToCustomerUuid,
         'amount', Amount,
-        'state', 'in_progress',
+        'state', <<"in_progress">>,
         'time', now()
     },
     case mongodb_storage:insert(static_storage, credit_transactions, Modifier) of
@@ -554,7 +559,7 @@ complete_transaction(TransactionUuid) ->
         '_id', TransactionUuid
     },
     Modifier = {
-        '$set', {'state', 'completed'}
+        '$set', {'state', <<"completed">>}
     },
     case mongodb_storage:update(static_storage, credit_transactions, Selector, Modifier) of
         ok -> ok;
@@ -642,7 +647,7 @@ unblock_dealer_customers(DealerUUID, [Customer | OtherCustomers]) ->
 
     PrevState =
     case get_customer_previous_state(CustomerUUID) of
-        {ok, undefined} -> ?ACTIVE_ST;
+        {ok, undefined} -> bsondoc:atom_to_binary(?ACTIVE_ST);
         {ok, PS} -> PS
     end,
 

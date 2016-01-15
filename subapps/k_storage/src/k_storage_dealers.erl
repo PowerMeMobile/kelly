@@ -33,7 +33,7 @@ set_dealer(DealerUUID, Dealer = #dealer_v1{}) ->
     },
     Query = {
         '_id', DealerUUID,
-        'state', {'$ne', ?DELETED_ST}
+        'state', {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}
     },
     FindAndModify = {
         'findandmodify', atom_to_binary(?DEALERS_COLLECTION, utf8),
@@ -76,7 +76,7 @@ update_customers_state(DealerUUID, _OldState, ?ACTIVE_ST) ->
 -spec get_dealers() -> {ok, [dealer()]} | {error, term()}.
 get_dealers() ->
     Selector = {
-        state, {'$ne', ?DELETED_ST}
+        state, {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}
     },
     case mongodb_storage:find(static_storage, ?DEALERS_COLLECTION, Selector) of
         {ok, List} ->
@@ -90,7 +90,7 @@ get_dealers() ->
 get_dealer_by_uuid(DealerUUID) when is_binary(DealerUUID) ->
     Selector = {
         '_id', DealerUUID,
-        state, {'$ne', ?DELETED_ST}
+        state, {'$ne', bsondoc:atom_to_binary(?DELETED_ST)}
     },
     case mongodb_storage:find_one(static_storage, ?DEALERS_COLLECTION, Selector) of
         {ok, Doc} ->
