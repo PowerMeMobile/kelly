@@ -1,10 +1,9 @@
-{"2.13.6",
-    [{"2.12.6", [
-        {load_module, k_http_api_v1_customers},
-        {load_module, k_http_api_utils}
+{"2.15.0",
+    %% upgrade
+    [{"2.14.0", [
     ]}],
-    [{"2.12.6", [
-        {load_module, k_http_api_v1_customers},
-        {load_module, k_http_api_utils}
+
+    %% downgrade
+    [{"2.14.0", [
     ]}]
 }.

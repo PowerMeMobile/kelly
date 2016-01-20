@@ -15,6 +15,7 @@
 process(ReqDTO = #sms_status_req_v1{}) ->
     ReqId    = ReqDTO#sms_status_req_v1.req_id,
     SmsReqId = ReqDTO#sms_status_req_v1.sms_req_id,
+    {ok, Blacklisted} = get_blacklisted_statuses(SmsReqId),
     case shifted_storage:find(mt_messages, {'ri', SmsReqId},
             {'_id', 0, 'imi', 1, 'da', 1, 't', 1, 's', 1, 'rqt', 1, 'rpt', 1, 'dt', 1}) of
         {ok, []} ->
@@ -23,12 +24,12 @@ process(ReqDTO = #sms_status_req_v1{}) ->
                     {ok, Addrs} = k_storage_defers:get_recipients(SmsReqId),
                     {ok, #sms_status_resp_v1{
                         req_id = ReqId,
-                        statuses = deferred_statuses_v1(Addrs, DefTime)
+                        statuses = deferred_statuses_v1(Addrs, DefTime) ++ Blacklisted
                     }};
                 {error, no_entry} ->
                     {ok, #sms_status_resp_v1{
                         req_id = ReqId,
-                        statuses = []
+                        statuses = [] ++ Blacklisted
                     }};
                 {error, Error} ->
                     {error, Error}
@@ -36,7 +37,7 @@ process(ReqDTO = #sms_status_req_v1{}) ->
         {ok, MsgDocs} ->
             {ok, #sms_status_resp_v1{
                 req_id = ReqId,
-                statuses = statuses_v1(MsgDocs)
+                statuses = statuses_v1(MsgDocs) ++ Blacklisted
             }};
         {error, Error} ->
             {error, Error}
@@ -45,6 +46,27 @@ process(ReqDTO = #sms_status_req_v1{}) ->
 %% ===================================================================
 %% Internal
 %% ===================================================================
+
+get_blacklisted_statuses(ReqId) ->
+    case k_storage_blacklisted_request:get_blacklisted(ReqId) of
+        {ok, Blacklisted} ->
+            BlacklistedStatuses = addr_to_status(Blacklisted, now(), <<"blacklisted">>),
+            {ok, BlacklistedStatuses};
+        {error, Error} -> {error, Error}
+    end.
+
+addr_to_status(AddrList, TimeStamp, Status) ->
+    UnixEpochTimestamp = ac_datetime:timestamp_to_unixepoch(TimeStamp),
+    addr_to_status(AddrList, UnixEpochTimestamp, Status, _Acc = []).
+addr_to_status([], _UnixEpochTimestamp, _Status, Acc) -> Acc;
+addr_to_status([Addr | AddrList], UnixEpochTimestamp, Status, Acc) ->
+    SmsStatusV1 = #sms_status_v1{
+        address = Addr,
+        status = Status,
+        timestamp = UnixEpochTimestamp
+    },
+    addr_to_status(AddrList, UnixEpochTimestamp, Status, [SmsStatusV1 | Acc]).
+
 
 deferred_statuses_v1(Addrs, DefTime) ->
     deferred_statuses_v1(Addrs, DefTime, []).

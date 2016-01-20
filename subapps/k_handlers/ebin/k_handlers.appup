@@ -1,8 +1,21 @@
-{"2.13.6",
-    [{"2.12.6", [
-        {load_module, k_amqp_auth_handler}
+{"2.15.0",
+    %% upgrade
+    [{"2.14.0", [
+        {load_module, k_delivery_status_request_processor, [k_storage_blacklisted_request]},
+        {add_module, k_sms_request_blacklisted_handler},
+
+        {update, k_handlers_sup, supervisor},
+        {apply, {supervisor, restart_child, [k_handlers_sup, k_sms_request_blacklisted_handler]}}
     ]}],
-    [{"2.12.6", [
-        {load_module, k_amqp_auth_handler}
+
+    %% downgrade
+    [{"2.14.0", [
+
+        {apply, {supervisor, terminate_child, [k_handlers_sup, k_sms_request_blacklisted_handler]}},
+        {apply, {supervisor, delete_child, [k_handlers_sup, k_sms_request_blacklisted_handler]}},
+        {update, k_handlers_sup, supervisor},
+
+        {load_module, k_delivery_status_request_processor},
+        {delete_module, k_sms_request_blacklisted_handler}
     ]}]
 }.
