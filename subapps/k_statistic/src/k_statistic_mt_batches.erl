@@ -81,14 +81,19 @@ get_details(ReqId) ->
             case shifted_storage:find(mt_messages, Selector2, Projector2) of
                 {ok, Docs} ->
                     Statuses = build_statuses(Docs, Batch#batch_info.messages),
+                    {ok, BlacklistedRecipients} = k_storage_blacklisted_request:get_blacklisted(ReqId),
+                    BlacklistedRecipientsNum = length(BlacklistedRecipients),
+                    BlacklistedStatus = {blacklisted, BlacklistedRecipientsNum},
                     DoneTime = done_time(Docs),
                     Status = batch_status(Batch#batch_info.status, Statuses),
                     Resp2 = Resp ++ [
-                        {statuses, Statuses},
+                        {statuses, [BlacklistedStatus | Statuses]},
                         {done_time, DoneTime},
                         {status, Status}
                     ],
-                    {ok, Resp2};
+                    {value, {_, RecipientsNum}, Resp3} = lists:keytake(recipients, 1, Resp2),
+                    Resp4 = [{recipients, RecipientsNum + BlacklistedRecipientsNum} | Resp3],
+                    {ok, Resp4};
                 {error, Error} ->
                     {error, Error}
             end;

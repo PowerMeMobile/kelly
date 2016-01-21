@@ -1,9 +1,11 @@
-{"2.15.0",
+{"2.15.1",
     %% upgrade
     [{"2.14.0", [
+        {load_module, k_statistic_mt_batches, [k_storage_blacklisted_request]}
     ]}],
 
     %% downgrade
     [{"2.14.0", [
+        {load_module, k_statistic_mt_batches}
     ]}]
 }.

@@ -1,7 +1,7 @@
-{"2.15.0",
+{"2.15.1",
     %% upgrade
     [{"2.14.0", [
-        {add_module, k_storage_blacklisted_request} %% new module, only load necessary
+        {add_module, k_storage_blacklisted_request}
     ]}],
 
     %% downgrade
