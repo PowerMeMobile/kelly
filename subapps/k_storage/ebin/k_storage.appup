@@ -1,4 +1,4 @@
-{"2.15.1",
+{"2.15.2",
     %% upgrade
     [{"2.14.0", [
         {add_module, k_storage_blacklisted_request}

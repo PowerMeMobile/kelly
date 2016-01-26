@@ -22,17 +22,13 @@ set_blacklisted(ReqId, BlacklistedRecipients) ->
     Modifier = {'$setOnInsert', {
         'numbers', addr_to_doc(BlacklistedRecipients)
     }},
-    case mongodb_storage:upsert(static_storage, ?COLLECTION_NAME, Selector, Modifier) of
-        ok ->
-            ok;
-        {error, Reason} ->
-            {error, Reason}
-    end.
+    mongodb_storage:upsert(curr_dynamic_storage, ?COLLECTION_NAME, Selector, Modifier).
+
 
 -spec get_blacklisted(ReqId :: uuid()) -> {ok, [addr()]} | {error, term()}.
 get_blacklisted(ReqId) ->
     Selector = {'_id', ReqId},
-    case mongodb_storage:find_one(static_storage, ?COLLECTION_NAME, Selector) of
+    case shifted_storage:find_one(?COLLECTION_NAME, Selector, {}) of
         {ok, Doc} ->
             Numbers = bsondoc:at('numbers', Doc, []),
             {ok, doc_to_addr(Numbers)};
