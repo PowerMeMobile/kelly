@@ -70,7 +70,7 @@ get_details(ReqId) ->
             Batch = k_storage_utils:doc_to_mt_batch_info(Doc),
             Dict = k_storage_utils:get_uuid_to_customer_dict(
                 [Batch#batch_info.customer_uuid]),
-            Resp = build_mt_batch_resp(Batch, Dict),
+            Resp0 = build_mt_batch_resp(Batch, Dict),
             Selector2 = {'ri', ReqId},
             Projector2 = {
                 '_id', 0,
@@ -81,19 +81,17 @@ get_details(ReqId) ->
             case shifted_storage:find(mt_messages, Selector2, Projector2) of
                 {ok, Docs} ->
                     Statuses = build_statuses(Docs, Batch#batch_info.messages),
-                    {ok, BlacklistedRecipients} = k_storage_blacklisted_request:get_blacklisted(ReqId),
-                    BlacklistedRecipientsNum = length(BlacklistedRecipients),
-                    BlacklistedStatus = {blacklisted, BlacklistedRecipientsNum},
+
                     DoneTime = done_time(Docs),
                     Status = batch_status(Batch#batch_info.status, Statuses),
-                    Resp2 = Resp ++ [
-                        {statuses, [BlacklistedStatus | Statuses]},
+                    Resp1 = Resp0 ++ [
                         {done_time, DoneTime},
                         {status, Status}
                     ],
-                    {value, {_, RecipientsNum}, Resp3} = lists:keytake(recipients, 1, Resp2),
-                    Resp4 = [{recipients, RecipientsNum + BlacklistedRecipientsNum} | Resp3],
-                    {ok, Resp4};
+
+                    Resp = get_resp_consider_blacklisted(ReqId, Statuses, Resp1),
+
+                    {ok, Resp};
                 {error, Error} ->
                     {error, Error}
             end;
@@ -126,6 +124,24 @@ get_recipients(ReqId, ShowStatuses) ->
 %% ===================================================================
 %% Internals
 %% ===================================================================
+
+get_resp_consider_blacklisted(ReqId, Statuses0, Resp0) ->
+    {ok, BlacklistedRecipients} = k_storage_blacklisted_request:get_blacklisted(ReqId),
+    BlacklistedRecipientsNum = length(BlacklistedRecipients),
+    if
+        BlacklistedRecipientsNum > 0 ->
+            BlacklistedStatus = {blacklisted, BlacklistedRecipientsNum},
+            Statuses = [BlacklistedStatus | Statuses0],
+
+            {value, {_, RecipientsNum}, Resp1} = lists:keytake(recipients, 1, Resp0),
+            NewRecipientsNum = RecipientsNum + BlacklistedRecipientsNum,
+
+            [{statuses, Statuses},
+            {recipients, NewRecipientsNum} | Resp1];
+        true ->
+            [{statuses, Statuses0} | Resp0]
+    end.
+
 
 build_statuses(Docs, TotalMsgs) ->
     Statuses = merge([
