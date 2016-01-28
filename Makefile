@@ -10,8 +10,20 @@ generate: compile xref
 	$(info Rewrite RELEASES file with relative applications directory path)
 	cd rel/kelly && erl -eval '[ReleaseDir] = [D || D <- string:tokens(os:cmd("ls -1 releases/"), "\n"), D =/= "RELEASES", D =/= "start_erl.data"], ok = release_handler:create_RELEASES(".", "releases", "releases/"++ ReleaseDir ++"/kelly.rel", []).' -s init stop -noshell && cd -
 
-compile: get-deps
+compile: appup get-deps
 	@./rebar compile
+
+appup:
+	TAG=$$(git describe); echo $$TAG; FILES=$$(find ./subapps/ -name '*.appup.src'); \
+	for f in $$FILES; do \
+		SRCD=$$(dirname $$f); \
+		APPD=$$(dirname $$SRCD); \
+		EBIN=$$APPD/ebin; \
+		mkdir -p $$EBIN; \
+		BASE=$$(basename $$f); \
+		APPUP=$$EBIN/$${BASE%????}; \
+		sed "s/git/\"$$TAG\"/g" $$f > $$APPUP; \
+	done
 
 get-deps:
 	@./rebar get-deps
