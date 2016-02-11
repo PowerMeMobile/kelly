@@ -108,13 +108,11 @@ set_mt_resp_info(#resp_info{
 
 -spec set_mt_dlr_info_and_get_msg_info(#dlr_info{}) -> {ok, #msg_info{}} | {error, reason()}.
 set_mt_dlr_info_and_get_msg_info(#dlr_info{
-    gateway_id = GatewayId,
     out_msg_id = OutMsgId,
     dlr_time = DlrTime,
     dlr_status = DlrStatus
 }) ->
     Selector = {
-        'gi' , GatewayId,
         'omi', OutMsgId,
         'rd' , true,
         %% check delivered state in case if the receipt was already stored to dynamic storage,
