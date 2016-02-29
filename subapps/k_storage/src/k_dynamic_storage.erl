@@ -4,6 +4,7 @@
     set_mt_req_info/1,
     set_mt_resp_info/1,
     set_mt_dlr_info_and_get_msg_info/1,
+    set_mt_dlr_info_and_get_msg_info/4,
     set_mt_downlink_dlr_status/4,
 
     set_mt_batch_info/1,
@@ -106,19 +107,39 @@ set_mt_resp_info(#resp_info{
     {ok, StorageMode} = k_storage_manager:get_storage_mode(),
     StorageMode:set_mt_resp_info(Selector, Modifier).
 
+
+%% this method necessary to make this method backward compatible during upgrage and downgrade
 -spec set_mt_dlr_info_and_get_msg_info(#dlr_info{}) -> {ok, #msg_info{}} | {error, reason()}.
 set_mt_dlr_info_and_get_msg_info(#dlr_info{
     out_msg_id = OutMsgId,
     dlr_time = DlrTime,
     dlr_status = DlrStatus
 }) ->
-    Selector = {
-        'omi', OutMsgId,
+    set_mt_dlr_info_and_get_msg_info(OutMsgId, DlrTime, DlrStatus, undefined).
+
+
+-spec set_mt_dlr_info_and_get_msg_info(out_msg_id(), timestamp(), dlr_status(), addr() | undefined) ->
+    {ok, #msg_info{}} | {error, reason()}.
+set_mt_dlr_info_and_get_msg_info(OutMsgId, DlrTime, DlrStatus, Src) ->
+    %% Receipt source addr is actually destination addr relativelly DB document structure
+    DstAddrSelector =
+    case Src of
+        undefined -> [];
+        #addr{} ->
+            [
+                'da', {'a', Src#addr.addr, 't', Src#addr.ton, 'n', Src#addr.npi}
+            ]
+    end,
+    Selector0 = [
+        'omi', OutMsgId
+    ] ++ DstAddrSelector,
+
+    Selector = list_to_tuple(Selector0 ++ [
         'rd' , true,
         %% check delivered state in case if the receipt was already stored to dynamic storage,
         %% but failed to be stored to mailbox.
         '$or', [{s,<<"submitted">>}, {s,<<"delivered">>}]
-    },
+    ]),
     Sort = {
         'rqt', -1
     },

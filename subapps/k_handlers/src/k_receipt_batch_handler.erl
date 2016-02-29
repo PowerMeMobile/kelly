@@ -83,15 +83,10 @@ traverse_receipts(_GatewayId, _DlrTime, []) ->
 traverse_receipts(GatewayId, DlrTime, [Receipt | Receipts]) ->
     OutMsgId = Receipt#just_receipt_dto.message_id,
     DlrStatus = Receipt#just_receipt_dto.message_state,
+    Src = Receipt#just_receipt_dto.source,
     %% note that this is one-shot call. it tries to store #dlr_info{}
     %% and, if succeeds, it returns the whole document.
-    DlrInfo = #dlr_info{
-        gateway_id = GatewayId,
-        out_msg_id = OutMsgId,
-        dlr_time = DlrTime,
-        dlr_status = DlrStatus
-    },
-    case k_dynamic_storage:set_mt_dlr_info_and_get_msg_info(DlrInfo) of
+    case k_dynamic_storage:set_mt_dlr_info_and_get_msg_info(OutMsgId, DlrTime, DlrStatus, Src) of
         {ok, MsgInfo} ->
             ok = register_delivery_receipt(MsgInfo),
             traverse_receipts(GatewayId, DlrTime, Receipts);
